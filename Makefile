@@ -1,0 +1,1 @@
+CMD=g++ -shared -L/home/camille/miniconda/envs/dev.py3.khmer.assembly/lib -Wl,-rpath=/home/camille/miniconda/envs/dev.py3.khmer.assembly/lib -lpython3.5m -L/home/camille/miniconda/envs/dev.py3.khmer.assembly/lib -I/home/camille/miniconda/envs/dev.py3.khmer.assembly/include/python3.5m -I/work/khmer/khmer -I/work/khmer/lib -std=c++11 -fPIC test.c
