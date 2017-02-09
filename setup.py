@@ -127,6 +127,7 @@ for cython_ext in glob.glob(os.path.join("boink", "*.pyx")):
             "library_dirs": ["/Users/camille/work/khmer/lib",
                              "/Users/camille/work/khmer/khmer",
                              "/Users/camille/work/khmer/khmer/_oxli"],
+            "libraries": ['_khmer.cpython-35m-darwin.so'],
             "language": "c++"
         }
     
