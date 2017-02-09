@@ -99,7 +99,7 @@ def build_dir():
 
 # Don't forget to update lib/Makefile with these flags!
 EXTRA_COMPILE_ARGS = ['-O3', '-std=c++11', '-pedantic']
-EXTRA_LINK_ARGS = []
+EXTRA_LINK_ARGS = ['--verbose']
 
 if sys.platform == 'darwin':
     # force 64bit only builds
@@ -122,7 +122,11 @@ for cython_ext in glob.glob(os.path.join("boink", "*.pyx")):
             "extra_link_args": EXTRA_LINK_ARGS,
             "depends": [],
             "include_dirs": ["/Users/camille/work/khmer/lib", 
-                             "/Users/camille/work/khmer/khmer"],
+                             "/Users/camille/work/khmer/khmer",
+                             "/Users/camille/work/khmer/khmer/_oxli"],
+            "library_dirs": ["/Users/camille/work/khmer/lib",
+                             "/Users/camille/work/khmer/khmer",
+                             "/Users/camille/work/khmer/khmer/_oxli"],
             "language": "c++"
         }
     
