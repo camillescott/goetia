@@ -101,7 +101,7 @@ def build_dir():
 EXTRA_COMPILE_ARGS = ['-O3', '-std=c++11', '-pedantic']
 EXTRA_LINK_ARGS = []
 
-if sys.platform == 'darwin' and 'clang' in os.getenv('CC', 'cc'):
+if sys.platform == 'darwin':
     # force 64bit only builds
     EXTRA_COMPILE_ARGS.extend(['-arch', 'x86_64', '-mmacosx-version-min=10.7',
                                '-stdlib=libc++'])
@@ -121,7 +121,8 @@ for cython_ext in glob.glob(os.path.join("boink", "*.pyx")):
             "extra_compile_args": EXTRA_COMPILE_ARGS,
             "extra_link_args": EXTRA_LINK_ARGS,
             "depends": [],
-            "include_dirs": ["/work/khmer/lib", "/work/khmer/khmer"],
+            "include_dirs": ["/Users/camille/work/khmer/lib", 
+                             "/Users/camille/work/khmer/khmer"],
             "language": "c++"
         }
     
