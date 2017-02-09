@@ -20,6 +20,8 @@ from distutils.sysconfig import get_config_vars
 from distutils.dist import Distribution
 from distutils.errors import DistutilsPlatformError
 
+import numpy
+
 try:
     from Cython.Build import cythonize
     from Cython.Distutils import build_ext as _build_ext
@@ -36,6 +38,18 @@ OPT = get_config_vars('OPT')[0]
 os.environ['OPT'] = " ".join(
     flag for flag in OPT.split() if flag != '-Wstrict-prototypes'
 )
+
+KHMER = ''
+khmer_dirs = []
+try:
+    LIBKHMER = os.environ['LIBKHMER']
+except:
+    print("LIBKHMER var not set")
+    sys.exit(1)
+else:
+    khmer_dirs.append(os.path.join(LIBKHMER, 'khmer'))
+    khmer_dirs.append(os.path.join(LIBKHMER, 'lib'))
+    khmer_dirs.append(os.path.join(LIBKHMER, 'khmer', '_oxli'))
 
 # Checking for OpenMP support. Currently clang doesn't work with OpenMP,
 # so it needs to be disabled for now.
@@ -121,13 +135,9 @@ for cython_ext in glob.glob(os.path.join("boink", "*.pyx")):
             "extra_compile_args": EXTRA_COMPILE_ARGS,
             "extra_link_args": EXTRA_LINK_ARGS,
             "depends": [],
-            "include_dirs": ["/Users/camille/work/khmer/lib", 
-                             "/Users/camille/work/khmer/khmer",
-                             "/Users/camille/work/khmer/khmer/_oxli"],
-            "library_dirs": ["/Users/camille/work/khmer/lib",
-                             "/Users/camille/work/khmer/khmer",
-                             "/Users/camille/work/khmer/khmer/_oxli"],
-            "libraries": ['_khmer.cpython-35m-darwin.so'],
+            "libraries": ['oxli'],
+            "include_dirs": khmer_dirs + [numpy.get_include()],
+            "library_dirs": khmer_dirs,
             "language": "c++"
         }
     
