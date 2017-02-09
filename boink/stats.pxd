@@ -6,9 +6,9 @@ from khmer._oxli.parsing cimport Sequence
 
 
 cdef class PKmerFunction:
-    cdef float evaluate(self, Kmer kmer, shared_ptr[CpHashgraph] graph)
+    cdef float evaluate(self, Kmer kmer, CpHashgraph * graph)
 
 
 cdef class PSequenceFunction:
-    cdef float evaluate(self, Sequence sequence, shared_ptr[CpHashgraph] graph)
+    cdef float evaluate(self, Sequence sequence, CpHashgraph * graph)
 

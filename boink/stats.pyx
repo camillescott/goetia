@@ -9,13 +9,13 @@ from khmer._oxli.parsing import Sequence
 
 cdef class PKmerFunction:
 
-    cdef float evaluate(self, Kmer kmer, shared_ptr[CpHashgraph] graph):
+    cdef float evaluate(self, Kmer kmer, CpHashgraph * graph):
         return 1.0
 
 
 cdef class PSequenceFunction:
 
-    cdef float evaluate(self, Sequence sequence, shared_ptr[CpHashgraph] graph):
+    cdef float evaluate(self, Sequence sequence, CpHashgraph * graph):
         return 1.0
 
 

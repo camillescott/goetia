@@ -12,7 +12,7 @@ cdef class ProbabilisticGraph:
                         PKmerFunction kmer_func, 
                         PSequenceFunction sequence_func):
 
-        self._graph.reset(get_hashgraph_ptr(graph))
+        self._graph = get_hashgraph_ptr(graph)
 
         self.K = deref(self._graph).ksize()
         self.kmer_func = kmer_func
@@ -32,3 +32,5 @@ cdef class ProbabilisticGraph:
             deref(self._graph).consume_string(sequence._obj.sequence)
             return True
         return False
+
+
