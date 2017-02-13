@@ -1,21 +1,37 @@
 from libcpp.memory cimport shared_ptr, weak_ptr
 
-from khmer._oxli._oxli cimport CpHashgraph
+from khmer._oxli._oxli cimport CpHashgraph, get_hashgraph_ptr
 from khmer._oxli.hashing cimport Kmer
 from khmer._oxli.hashing import Kmer
 from khmer._oxli.parsing cimport Sequence
 from khmer._oxli.parsing import Sequence
 
 
-cdef class PKmerFunction:
+cdef class PFunction:
 
-    cdef float evaluate(self, Kmer kmer, CpHashgraph * graph):
+    def __cinit__(self, object graph=None):
+        if graph is not None:
+            self.graph = get_hashgraph_ptr(graph)
+
+    cdef void _set_graph(self, CpHashgraph * ptr):
+        self.graph = ptr
+
+    def set_graph(self, object graph):
+        self.graph = get_hashgraph_ptr(graph)
+
+
+cdef class PKmerFunction(PFunction):
+
+    cpdef float evaluate(self, Kmer kmer):
         return 1.0
 
 
-cdef class PSequenceFunction:
+cdef class PSequenceFunction(PFunction):
 
-    cdef float evaluate(self, Sequence sequence, CpHashgraph * graph):
+    cpdef float evaluate(self, Sequence sequence):
         return 1.0
 
-
+def PFunction_shim(PFunction func, object graph, *args, **kwargs):
+    cdef CpHashgraph * ptr = get_hashgraph_ptr(graph)
+    func._set_graph(ptr)
+    return func.evaluate(*args, **kwargs)

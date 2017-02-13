@@ -15,22 +15,32 @@ cdef class ProbabilisticGraph:
         self._graph = get_hashgraph_ptr(graph)
 
         self.K = deref(self._graph).ksize()
+
         self.kmer_func = kmer_func
+        self.kmer_func._set_graph(self._graph)
+
         self.sequence_func = sequence_func
+        self.sequence_func._set_graph(self._graph)
 
 
     cdef bool _insert_kmer(self, Kmer kmer):
-        cdef float p = self.kmer_func.evaluate(kmer, self._graph)
-        if p < ranf():
+        cdef float p = self.kmer_func.evaluate(kmer)
+        if p > ranf():
             deref(self._graph).add(deref(kmer._this).kmer_u)
             return True
         return False
 
     cdef bool _insert_sequence(self, Sequence sequence):
-        cdef float p = self.sequence_func.evaluate(sequence, self._graph)
-        if p < ranf():
+        cdef float p = self.sequence_func.evaluate(sequence)
+        if p > ranf():
             deref(self._graph).consume_string(sequence._obj.sequence)
             return True
         return False
 
-
+    def insert(self, object item):
+        if isinstance(item, Kmer):
+            return self._insert_kmer(item)
+        elif isinstance(item, Sequence):
+            return self._insert_sequence(item)
+        else:
+            return False
