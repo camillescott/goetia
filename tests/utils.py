@@ -2,7 +2,7 @@ import pytest
 
 import khmer
 from khmer.khmer_args import estimate_optimal_with_K_and_f as optimal_fp
-
+from khmer.tests.graph_features import get_random_sequence
 
 @pytest.fixture(params=[50000, 500000, 50000000],
                 ids=['small', 'medium', 'large'])
