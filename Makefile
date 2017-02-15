@@ -16,7 +16,6 @@ all:
 test:
 	python setup.py pytest
 
-
 clean: FORCE
 	rm -f $(PKG)/*.cpp
 	@find ./ -type d -name __pycache__ -exec rm -rf {} +

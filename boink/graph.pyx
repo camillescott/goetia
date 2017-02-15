@@ -1,5 +1,4 @@
-from khmer._oxli.utils cimport _get_n_primes_near_x
-from khmer._oxli._oxli cimport get_hashgraph_ptr
+from khmer._oxli.wrapper cimport get_hashgraph_ptr
 from khmer._oxli.hashing import Kmer
 from khmer._oxli.parsing import Sequence
 

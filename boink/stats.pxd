@@ -1,6 +1,6 @@
 from libcpp.memory cimport shared_ptr, weak_ptr
 
-from khmer._oxli._oxli cimport CpHashgraph
+from khmer._oxli.wrapper cimport CpHashgraph
 from khmer._oxli.hashing cimport Kmer
 from khmer._oxli.parsing cimport Sequence
 
