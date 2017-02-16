@@ -1,4 +1,4 @@
-from khmer._oxli._oxli cimport CpHashgraph, CpKmer, WordLength
+from khmer._oxli.wrapper cimport CpHashgraph, CpKmer, WordLength
 from khmer._oxli.hashing cimport Kmer
 from khmer._oxli.parsing cimport Sequence
 
