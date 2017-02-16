@@ -19,6 +19,13 @@ cdef class PFunction:
     def set_graph(self, object graph):
         self.graph = get_hashgraph_ptr(graph)
 
+    def save(self, filename):
+        raise NotImplementedError()
+
+    @staticmethod
+    def load(filename):
+        raise NotImplementedError()
+
 
 cdef class PKmerFunction(PFunction):
 
@@ -30,6 +37,11 @@ cdef class PSequenceFunction(PFunction):
 
     cpdef float evaluate(self, Sequence sequence):
         return 1.0
+
+
+
+
+
 
 def PFunction_shim(PFunction func, object graph, *args, **kwargs):
     cdef CpHashgraph * ptr = get_hashgraph_ptr(graph)
