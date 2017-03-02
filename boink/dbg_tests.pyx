@@ -31,3 +31,22 @@ cpdef _test_add_two_kmers():
     assert g._n_arcs() == 1
     assert g._kmer_count(s.substr(1)) == 1
     assert g._kmer_count(s.substr(0,4)) == 1
+
+
+cpdef _test_kmer_out_degree():
+    cdef string s = 'ACCGT'
+    cdef ExactDBG g = get_test_graph(s, 4)
+    assert g._kmer_out_degree(s.substr(0,4)) == 1
+    assert g._kmer_out_degree(s.substr(1,4)) == 0
+
+cpdef _test_kmer_in_degree():
+    cdef string s = 'ACCGT'
+    cdef ExactDBG g = get_test_graph(s, 4)
+    assert g._kmer_in_degree(s.substr(0,4)) == 0
+    assert g._kmer_in_degree(s.substr(1,4)) == 1
+
+cpdef _test_kmer_degree():
+    cdef string s = 'ACCGT'
+    cdef ExactDBG g = get_test_graph(s, 4)
+    assert g._kmer_degree(s.substr(0,4)) == 1
+    assert g._kmer_degree(s.substr(1,4)) == 1
