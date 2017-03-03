@@ -10,14 +10,29 @@ from lemon cimport SmartDigraph, NodeMap, Node, INVALID, CrossRefMap
 from khmer._oxli.wrapper cimport _revcomp
 from khmer._oxli.parsing cimport Alphabets
 
+
+cdef class NodeView:
+
+    cdef shared_ptr[Node] _this
+    cdef public string kmer
+    cdef public uint8_t in_degree
+    cdef public uint8_t out_degree
+    cdef public uint16_t count
+
+    @staticmethod
+    cdef NodeView wrap(Node node, string kmer, uint8_t in_degree,
+                       uint8_t out_degree, uint16_t count)
+
+
 cdef class ExactDBG:
 
     cdef SmartDigraph * graph
     cdef CrossRefMap[SmartDigraph, Node, string] * kmers
     cdef NodeMap[uint16_t] * counts
 
-    cdef int K
-    cdef string alphabet
+    cdef readonly int K
+    cdef readonly object alphabet
+    cdef string _alphabet
 
     cdef int _add_sequence(self, string) except -1
     cdef int _add_kmer(self, string) except -1
