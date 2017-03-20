@@ -5,17 +5,21 @@ import khmer
 from khmer._oxli.hashing import Kmer
 from khmer._oxli.parsing import Sequence
 
-from boink.graph import ProbabilisticGraph
-from boink.stats import PSequenceFunction, PKmerFunction, PFunction_shim
+from boink.stats import KmerCountFunction, KmerDegreeFunction
 
-def test_PKmerFunc():
+
+def test_KmerCountFunction():
     kmer = Kmer('AAAAA')
     g = khmer.Nodegraph(5, 1e4, 4)
-    f = PKmerFunction(g)
-    assert f.evaluate(kmer) == 1.0
+    g.add(str(kmer))
+    f = KmerCountFunction(g)
+    assert f.evaluate_kmer(kmer) == 1
 
-def test_PSequenceFunc():
-    sequence = Sequence(name='test', sequence='AAATAGCTAGCTCGATCGATCGGG')
+def test_KmerDegreeFunction():
+    kmer = Kmer('ACCTA')
     g = khmer.Nodegraph(5, 1e4, 4)
-    f = PSequenceFunction(g)
-    assert f.evaluate(sequence) == 1.0
+    g.add(str(kmer))
+    f = KmerDegreeFunction(g)
+    assert f.evaluate_kmer(kmer) == 0
+
+
