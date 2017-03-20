@@ -10,8 +10,13 @@ MODEXT=$(shell python -c \
 
 MODS=$(PKG)/*$(MODEXT)
 
-all:
+all: build
+
+build:
 	python setup.py build_ext --inplace
+
+install: build
+	python setup.py install
 
 test:
 	python setup.py pytest
