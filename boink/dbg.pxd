@@ -6,9 +6,12 @@ from libcpp.memory cimport unique_ptr, weak_ptr, shared_ptr
 from libcpp.string cimport string
 from libc.stdint cimport uint8_t, uint16_t, uint64_t
 
+cimport numpy as np
+
 from lemon cimport SmartDigraph, NodeMap, Node, INVALID, CrossRefMap
 from khmer._oxli.wrapper cimport _revcomp
 from khmer._oxli.parsing cimport Alphabets
+
 
 
 cdef class NodeView:
@@ -42,12 +45,18 @@ cdef class ExactDBG:
 
     cdef uint8_t _node_in_degree(self, Node node)
     cdef uint8_t _kmer_in_degree(self, string kmer)
+
     cdef uint8_t _node_out_degree(self, Node node)
     cdef uint8_t _kmer_out_degree(self, string kmer)
+
     cdef uint8_t _node_degree(self, Node node)
     cdef uint8_t _kmer_degree(self, string kmer)
+
     cdef uint16_t _node_count(self, Node node)
     cdef uint16_t _kmer_count(self, string kmer)
+
+    cdef np.ndarray[np.uint16_t] _kmer_counts(self, string kmer)
+
     cdef uint16_t _inc_node_count(self, Node node)
     cdef uint16_t _inc_kmer_count(self, string kmer)
 

@@ -6,6 +6,8 @@ import cython
 from cython.operator cimport dereference as deref
 from cython.operator cimport preincrement as preinc
 
+cimport numpy as np
+
 from libcpp cimport bool
 from libcpp.memory cimport unique_ptr, weak_ptr, shared_ptr
 from libcpp.string cimport string
@@ -147,6 +149,17 @@ cdef class ExactDBG:
         for i in range(0,sequence.length()-self.K+1):
             n_new_kmers += self._add_kmer(sequence.substr(i,self.K))
         return n_new_kmers
+
+    cdef np.ndarray[np.uint16_t] _kmer_counts(self, string sequence):
+        if sequence.length() < self.K:
+            raise ValueError('Sequence too short.')
+        cdef int i
+        cdef np.ndarray[np.uint16_t] counts = np.zeros([sequence.length()-self.K+1],
+                                                      dtype=np.uint16)
+        for i in range(0,sequence.length()-self.K+1):
+            counts[i] = self._kmer_count(sequence.substr(i,self.K))
+
+        return counts
 
     def add_kmer(self, kmer):
         cdef string cpkmer = _bstring(kmer)
