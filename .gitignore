@@ -91,3 +91,8 @@ ENV/
 
 # vim
 *.swp
+
+*.cg
+*.info
+*.json
+*.tmp
