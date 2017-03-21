@@ -13,8 +13,10 @@ from libcpp.memory cimport unique_ptr, weak_ptr, shared_ptr
 from libcpp.string cimport string
 from libc.stdint cimport uint8_t, uint16_t, uint64_t
 
-from khmer._oxli.wrapper cimport _revcomp
+from khmer._oxli.wrapper cimport (_revcomp, CpCountgraph, _hash_murmur,
+                                  HashIntoType)
 from khmer._oxli.parsing cimport Alphabets
+from khmer._oxli.utils cimport _get_n_primes_near_x
 
 from lemon cimport (SmartDigraph, Node, NodeIt, NodeMap, CrossRefMap, INVALID,
                     countNodes, countArcs, countOutArcs, countInArcs)
@@ -32,15 +34,14 @@ cdef class NodeView:
         pass
 
     @staticmethod
-    cdef NodeView wrap(Node node, string kmer, uint8_t in_degree,
-            uint8_t out_degree, uint16_t count):
+    cdef NodeView wrap(Node node, string kmer, 
+                       uint8_t in_degree, uint8_t out_degree):
 
         cdef NodeView nv = NodeView()
         nv._this.reset(new Node(node))
         nv.kmer = kmer
         nv.in_degree = in_degree
         nv.out_degree = out_degree
-        nv.count = count
 
         return nv
 
@@ -49,21 +50,22 @@ cdef class ExactDBG:
     '''An exact de Bruijn graph built with LEMON.
     '''
 
-    def __cinit__(self, K, alphabet='DNA_SIMPLE'):
+    def __cinit__(self, K, alphabet='DNA_SIMPLE', n_tables=4, table_size=1e6):
         self.K = K
         self.alphabet = alphabet
         self._alphabet = Alphabets._get(_bstring(alphabet))
         self.graph = new SmartDigraph()
         self.kmers = new CrossRefMap[SmartDigraph,Node,string](deref(self.graph))
-        self.counts = new NodeMap[uint16_t](deref(self.graph))
+        #self.counts = new NodeMap[uint16_t](deref(self.graph))
+        self.counts = new CpCounttable(K+1, 
+                          _get_n_primes_near_x(n_tables, table_size))
 
     def nodes(self):
         cdef NodeIt n = NodeIt(deref(self.graph))
         while n != INVALID:
             yield NodeView.wrap(<Node>n, deref(self.kmers)[<Node>n], 
                                 self._node_in_degree(<Node>n),
-                                self._node_out_degree(<Node>n), 
-                                self._node_count(<Node>n))
+                                self._node_out_degree(<Node>n))
             preinc(n)
 
     cdef uint64_t _n_nodes(self):
@@ -84,6 +86,7 @@ cdef class ExactDBG:
     def n_edges(self):
         return self._n_arcs()
 
+
     cdef uint8_t _node_in_degree(self, Node node):
         return countInArcs[SmartDigraph](deref(self.graph), node)
 
@@ -93,6 +96,7 @@ cdef class ExactDBG:
     def kmer_in_degree(self, kmer):
         cdef string cpkmer = _bstring(kmer)
         return self._kmer_in_degree(cpkmer)
+
 
     cdef uint8_t _node_out_degree(self, Node node):
         return countOutArcs[SmartDigraph](deref(self.graph), node)
@@ -104,6 +108,7 @@ cdef class ExactDBG:
         cdef string cpkmer = _bstring(kmer)
         return self._kmer_out_degree(cpkmer)
 
+
     cdef uint8_t _node_degree(self, Node node):
         return self._node_in_degree(node) + self._node_out_degree(node)
 
@@ -114,27 +119,19 @@ cdef class ExactDBG:
         cdef string cpkmer = _bstring(kmer)
         return self._kmer_degree(cpkmer)
 
-    cdef uint16_t _node_count(self, Node node):
-        return deref(self.counts)[node]
 
-    cdef uint16_t _kmer_count(self, string kmer):
-        return self._node_count(deref(self.kmers).get(kmer))
+    def sequence_count(self, sequence):
+        cdef string cseq = _bstring(sequence)
+        return self._get_count(cseq)
 
-    def kmer_count(self, kmer):
-        cdef string cpkmer = _bstring(kmer)
-        return self._kmer_count(cpkmer)
+    cdef uint16_t _get_count(self, string sequence):
+        cdef HashIntoType h = _hash_murmur(sequence, sequence.length())
+        return deref(self.counts).get_count(h)
 
-    cdef uint16_t _inc_node_count(self, Node node):
-        cdef uint16_t count = self._node_count(node) + 1
-        deref(self.counts).set(node, count)
-        return count
+    cdef bool _inc_count(self, string sequence):
+        cdef HashIntoType h = _hash_murmur(sequence, sequence.length())
+        return deref(self.counts).add(h)
 
-    cdef uint16_t _inc_kmer_count(self, string kmer):
-        return self._inc_node_count(deref(self.kmers).get(kmer))
-
-    def inc_kmer_count(self, kmer):
-        cdef string cpkmer = _bstring(kmer)
-        return self._inc_kmer_count(cpkmer)
 
     def add_sequence(self, sequence):
         cdef string cpsequence = _bstring(sequence)
@@ -142,75 +139,58 @@ cdef class ExactDBG:
     consume = add_sequence # alias for oxli compat
 
     cdef int _add_sequence(self, string sequence) except -1:
-        if sequence.length() < self.K:
+        if sequence.length() < self.K+1:
             raise ValueError('Sequence too short.')
         cdef int i
         cdef int n_new_kmers = 0
-        for i in range(0,sequence.length()-self.K+1):
-            n_new_kmers += self._add_kmer(sequence.substr(i,self.K))
+        for i in range(0,sequence.length()-self.K):
+            n_new_kmers += self._add_kplus1mer(sequence.substr(i,self.K+1))
         return n_new_kmers
 
     cdef np.ndarray[np.uint16_t] _kmer_counts(self, string sequence):
-        if sequence.length() < self.K:
+        if sequence.length() < self.K+1:
             raise ValueError('Sequence too short.')
         cdef int i
-        cdef np.ndarray[np.uint16_t] counts = np.zeros([sequence.length()-self.K+1],
+        cdef np.ndarray[np.uint16_t] counts = np.zeros([sequence.length()-self.K],
                                                       dtype=np.uint16)
-        for i in range(0,sequence.length()-self.K+1):
-            counts[i] = self._kmer_count(sequence.substr(i,self.K))
+        for i in range(0,sequence.length()-self.K):
+            counts[i] = self._kmer_count(sequence.substr(i,self.K+1))
 
         return counts
 
-    def add_kmer(self, kmer):
-        cdef string cpkmer = _bstring(kmer)
-        return self._add_kmer(cpkmer)
-    count = add_kmer # alias for oxli compat
+    def add_kplus1mer(self, kp1mer):
+        if len(kp1mer) != self.K+1:
+            raise ValueError('Sequence must have length K={0}; got'\
+                    '{1}'.format(self.K+1, kp1mer))
+
+        cdef string cpkp1mer = _bstring(kp1mer)
+        return self._add_kplus1mer(cpkp1mer)
+    count = add_kplus1mer # alias for oxli compat
 
     @cython.boundscheck(False)
     @cython.nonecheck(False)
     @cython.wraparound(False)
-    cdef int _add_kmer(self, string kmer) except -1:
-        if kmer.length() != self.K:
-            raise ValueError('Sequence must have length K={0}; got {1}'.format(self.K, _ustring(kmer)))
-        cdef Node node = deref(self.kmers).get(kmer)
-        cdef uint16_t count
-        #print('k-mer:', _ustring(kmer))
-        if node != INVALID:
-            self._inc_node_count(node)
+    cdef int _add_kplus1mer(self, string kp1mer) except -1:
+
+        if self._get_count(kp1mer):
+            self._inc_count(kp1mer)
             return False
 
-        node = deref(self.graph).addNode()
-        deref(self.counts).set(node, 1)
-        deref(self.kmers).set(node, kmer)
-        
-        cdef string neighbor_kmer = string(kmer)
-        cdef Node neighbor_node
-        cdef char  b
-        cdef int i
+        cdef Node left = deref(self.kmers).get(kp1mer.substr(0,self.K))
+        cdef Node right = deref(self.kmers).get(kp1mer.substr(1, self.K))
 
-        # copy the root prefix into the neighbor suffix
-        # check for left neighbor
-        for i in range(0,self.K-1):
-            neighbor_kmer[i+1] = kmer[i]
-        for b in self._alphabet:
-            neighbor_kmer[0] = b
-            #print('<--', _ustring(neighbor_kmer))
-            neighbor_node = deref(self.kmers).get(neighbor_kmer)
-            if neighbor_node != INVALID:
-                #print('** neighbor:', _ustring(neighbor_kmer))
-                deref(self.graph).addArc(neighbor_node, node)
+        if left == INVALID:
+            left = deref(self.graph).addNode()
+            deref(self.kmers).set(left, kp1mer.substr(0, self.K))
 
-        # copy the root suffix into the neighbor prefix
-        # check for right neighbor
-        for i in range(1, self.K):
-            neighbor_kmer[i-1] = kmer[i]
-        for b in self._alphabet:
-            neighbor_kmer[self.K-1] = b
-            #print('-->', _ustring(neighbor_kmer))
-            neighbor_node = deref(self.kmers).get(neighbor_kmer)
-            if neighbor_node != INVALID:
-                #print('** neighbor:', _ustring(neighbor_kmer))
-                deref(self.graph).addArc(node, neighbor_node)
+        if right == INVALID:
+            right = deref(self.graph).addNode()
+            deref(self.kmers).set(right, kp1mer.substr(1, self.K))
 
-        return True 
-        
+        deref(self.graph).addArc(left, right)
+        self._inc_count(kp1mer)
+
+        return True
+
+
+ 
