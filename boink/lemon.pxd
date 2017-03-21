@@ -111,6 +111,7 @@ cdef extern from "<lemon/smart_graph.h>" namespace "lemon::SmartDigraph":
         inline Node(NodeIt)
         inline bint operator!=(Node)
         inline bint operator!=(Invalid)
+        inline bint operator==(Invalid)
         inline bint operator!=(NodeIt)
         inline bint operator<(Node)
         inline bint operator==(Node)
