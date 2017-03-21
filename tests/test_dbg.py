@@ -80,16 +80,17 @@ def test_snp_bubble(snp_bubble_subgraph, G, K):
     (wildtype, mutant), S = snp_bubble_subgraph
     G.add_sequence(wildtype)
     for kmer in kmers(wildtype[1:-1], K):
-        #assert G.kmer_count(kmer) == 1
         assert G.kmer_degree(kmer) == 2
+    for kmer in kmers(wildtype[1:-1], K+1):
+        assert G.sequence_count(kmer) == 1
     assert G.kmer_degree(wildtype[:K]) == 1
     assert G.kmer_degree(wildtype[-K:]) == 1
 
     G.add_sequence(mutant)
     assert G.kmer_degree(wildtype[:K]) == 1
     assert G.kmer_degree(wildtype[-K:]) == 1
-    #assert G.kmer_count(wildtype[:K]) == 2
-    #assert G.kmer_count(wildtype[-K:]) == 2
+    assert G.sequence_count(wildtype[:K+1]) == 2
+    assert G.sequence_count(wildtype[-K-1:]) == 2
     
     # Check the left HDN
     assert G.kmer_out_degree(wildtype[S-K:S]) == 2
@@ -98,12 +99,14 @@ def test_snp_bubble(snp_bubble_subgraph, G, K):
     # Check the wildtype bubble path
     for kmer in kmers(wildtype[S-K+1:S+K], K):
         assert G.kmer_degree(kmer) == 2
-        #assert G.kmer_count(kmer) == 1
+    for kmer in kmers(wildtype[S-K+1:S+K], K+1):
+        assert G.sequence_count(kmer) == 1
 
     # Check the mutant bubble path
     for kmer in kmers(mutant[S-K+1:S+K], K):
         assert G.kmer_degree(kmer) == 2
-        #assert G.kmer_count(kmer) == 1
+    for kmer in kmers(mutant[S-K+1:S+K], K+1):
+        assert G.sequence_count(kmer) == 1
 
     # Check the right HDN
     assert G.kmer_out_degree(wildtype[S+1:S+K+1]) == 1
