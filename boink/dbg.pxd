@@ -4,6 +4,7 @@
 from libcpp cimport bool
 from libcpp.memory cimport unique_ptr, weak_ptr, shared_ptr
 from libcpp.string cimport string
+from libcpp.vector cimport vector
 from libc.stdint cimport uint8_t, uint16_t, uint64_t
 
 cimport numpy as np
@@ -39,6 +40,7 @@ cdef class ExactDBG:
 
     cdef int _add_sequence(self, string) except -1
     cdef int _add_kplus1mer(self, string) except -1
+    cdef int _consume_fastx(self, unicode filename) except -1
 
     cdef uint64_t _n_nodes(self)
     cdef uint64_t _n_arcs(self)
@@ -58,3 +60,8 @@ cdef class ExactDBG:
     cdef uint16_t _get_count(self, string sequence)
 
 
+cdef class CompactingDBG(ExactDBG):
+
+    #cdef void _gather_linear_path(self, vector[string]& path)
+    #cdef string _extract_contig(self, vector[string]& path)
+    pass

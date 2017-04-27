@@ -1,12 +1,13 @@
 # -*- coding: UTF-8 -*-
 # cython: c_string_type=unicode, c_string_encoding=utf8, embedsignature=True
+from __future__ import print_function
 
 import cython
-
 from cython.operator cimport dereference as deref
 from cython.operator cimport preincrement as preinc
 
 cimport numpy as np
+import sys
 
 from libcpp cimport bool
 from libcpp.memory cimport unique_ptr, weak_ptr, shared_ptr
@@ -15,7 +16,7 @@ from libc.stdint cimport uint8_t, uint16_t, uint64_t
 
 from khmer._oxli.wrapper cimport (_revcomp, CpCountgraph, _hash_murmur,
                                   HashIntoType)
-from khmer._oxli.parsing cimport Alphabets
+from khmer._oxli.parsing cimport Alphabets, Sequence, SanitizedFastxParser
 from khmer._oxli.utils cimport _get_n_primes_near_x
 
 from lemon cimport (SmartDigraph, Node, NodeIt, NodeMap, CrossRefMap, INVALID,
@@ -174,23 +175,39 @@ cdef class ExactDBG:
 
         if self._get_count(kp1mer):
             self._inc_count(kp1mer)
-            return False
-
-        cdef Node left = deref(self.kmers).get(kp1mer.substr(0,self.K))
+            return 0
+            
+        cdef int n_new = 0
+        cdef Node left = deref(self.kmers).get(kp1mer.substr(0, self.K))
         cdef Node right = deref(self.kmers).get(kp1mer.substr(1, self.K))
 
         if left == INVALID:
             left = deref(self.graph).addNode()
             deref(self.kmers).set(left, kp1mer.substr(0, self.K))
+            n_new += 1
 
         if right == INVALID:
             right = deref(self.graph).addNode()
             deref(self.kmers).set(right, kp1mer.substr(1, self.K))
+            n_new += 1
 
         deref(self.graph).addArc(left, right)
         self._inc_count(kp1mer)
 
-        return True
+        return n_new
 
+    cdef int _consume_fastx(self, unicode filename) except -1:
+        cdef SanitizedFastxParser parser = SanitizedFastxParser(filename)
+        cdef Sequence sequence
+        cdef int n_reads
+        cdef int n_kmers = 0
 
- 
+        for n_reads, sequence in enumerate(parser):
+            if n_reads % 100000 == 0:
+                print('Consumed {0} reads...'.format(n_reads), file=sys.stderr)
+            n_kmers += self._add_sequence(sequence._obj.sequence)
+
+        return n_kmers
+
+    def consume_fastx(self, filename):
+        return self._consume_fastx(filename)
