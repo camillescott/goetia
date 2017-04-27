@@ -6,7 +6,7 @@ from khmer.khmer_args import estimate_optimal_with_K_and_f as optimal_fp
 from khmer import reverse_complement as revcomp
 
 
-@pytest.fixture(params=[21,41,61,81,101],
+@pytest.fixture(params=[21,25,27,31],
                 scope='module')
 def K(request):
     return request.param
