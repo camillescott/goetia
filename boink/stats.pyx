@@ -61,7 +61,8 @@ cdef class PartitionFunction(GraphFunction):
     def __cinit__(self, object graph=None, StreamingPartitioner partitioner=None, 
                   *args, **kwargs):
         self.partitioner = partitioner._this
-        self.graph = deref(self.partitioner).graph
+        if partitioner is not None:
+            self.graph = deref(self.partitioner).graph
         self.K = deref(self.graph).ksize()
 
     cdef float _evaluate_tags(self, string sequence, set[HashIntoType]& tags):
@@ -83,7 +84,8 @@ cdef class PartitionCoverage(PartitionFunction):
         cdef uint64_t tag
         for tag in tags:
             acc += <float>deref(self.graph).get_count(tag)
-        if acc / <float>n_tags > self.coverage_cutoff:
+        cdef float val = (acc / <float>n_tags)
+        if val > self.coverage_cutoff:
             return 1.0 # dummy fitness vals
         else:
             return 0.0

@@ -53,25 +53,33 @@ class TestConditionalPartitioner:
         func = PartitionCoverage(coverage_cutoff=5, graph=cg,
                                  partitioner=ptnr)
         for i in range(5):
-            ptnr.consume(sequence, func=func)
+            print(ptnr.consume(sequence, func=func))
             assert ptnr.n_components == 0
-        ptnr.consume(sequence, func=func)
+        print(ptnr.consume(sequence, func=func))
         assert ptnr.n_components == 1
 
+    def test_two_components(self, random_sequence, K):
+        comp1 = Sequence(name='Comp1', sequence=random_sequence())
+        comp2 = Sequence(name='Comp2', sequence=random_sequence(exclude=comp1))
+
+        cg = khmer.Countgraph(K, 1e5, 4)
+        ptnr = ConditionalPartitioner(cg)
+        func = PartitionCoverage(coverage_cutoff=5, graph=cg,
+                                 partitioner=ptnr)
+        
+        for i in range(5):
+            print(ptnr.consume(comp1, func=func))
+            assert ptnr.n_components == 0
+        print(ptnr.consume(comp1, func=func))
+        assert ptnr.n_components == 1
+
+        for i in range(5):
+            ptnr.consume(comp2, func=func)
+            assert ptnr.n_components == 1
+        ptnr.consume(comp2, func=func)
+        assert ptnr.n_components == 2
+
 """
-    def test_two_components(self, random_sequence):
-        comp1 = random_sequence()
-        comp2 = random_sequence(exclude=comp1)
-
-        cg = khmer.Nodegraph(K, 1e5, 4)
-        sp = StreamingPartitioner(cg)
-        
-        sp.consume(comp1)
-        assert sp.n_components == 1
-        
-        sp.consume(comp2)
-        assert sp.n_components == 2
-
     def test_components_iter(self, random_sequence):
         comp1 = random_sequence()
         comp2 = random_sequence(exclude=comp1)

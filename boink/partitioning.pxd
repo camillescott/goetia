@@ -22,3 +22,12 @@ cdef class ConditionalPartitioner(StreamingPartitioner):
 
     cdef float min_fitness
     cdef int _consume_conditional(self, string, PartitionFunction, float&) except -1
+    cdef int _consume_conditional_pair(self, string, string,
+                                       PartitionFunction, float&) except -1
+
+cdef class DoConditionalPartitioning:
+    cdef object args
+    cdef readonly object graph
+    cdef readonly ConditionalPartitioner partitioner
+
+
