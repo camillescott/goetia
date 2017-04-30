@@ -34,8 +34,18 @@ from utils cimport _bstring
 
 cdef class ConditionalPartitioner(StreamingPartitioner):
 
-    def __cinit__(self, graph, tag_density=None):
+    def __cinit__(self, graph, tag_density=None, info_filename=None):
         self.min_fitness = 0.95
+        self.info_filename = info_filename
+        self.info_fp = open(self.info_filename, 'w')
+        if self.info_filename is not None:
+            self.info_fp.write('read_n, fitness, n_tags, n_merged, comp_size, comp_cov\n')
+
+    def __dealloc__(self):
+        try:
+            self.info_fp.close()
+        except Exception:
+            pass
 
     def consume(self, Sequence sequence, PartitionFunction func=None):
         if func is None:
@@ -61,12 +71,32 @@ cdef class ConditionalPartitioner(StreamingPartitioner):
         cdef set[HashIntoType] tags
         cdef KmerQueue seeds
         cdef set[HashIntoType] seen
-        cdef uint64_t n_new = deref(self._this).seed_sequence(sequence, tags, seeds, seen)
-        (&fitness)[0] = func._evaluate_tags(sequence, tags)
-        if fitness > self.min_fitness: # blerp
-            deref(self._this).find_connected_tags(seeds, tags, seen, False)
-            deref(self._this).create_and_connect_components(tags)
 
+        cdef uint64_t n_new = deref(self._this).seed_sequence(sequence, tags, seeds, seen)
+        self.n_consumed += 1
+        (&fitness)[0] = func._evaluate_tags(sequence, tags)
+        if fitness < self.min_fitness: # blerp
+            self.info_fp.write('{0}, {1}, {2}, {3}, {4}, {5}\n'.format(self.n_consumed,
+                                                                  fitness,
+                                                                  tags.size(),
+                                                                  None,
+                                                                  None,
+                                                                  None))
+            return n_new
+
+        deref(self._this).find_connected_tags(seeds, tags, seen, False)
+        cdef uint32_t n_merged = deref(self._this).create_and_connect_components(tags)
+        cdef ComponentPtr compptr
+        cdef float comp_cov = -1
+        compptr = deref(self._this).get_tag_component(deref(tags.begin()))
+        if n_merged > 1:
+            comp_cov = Component._mean_tag_count(compptr, self._graph_ptr)
+        self.info_fp.write('{0}, {1}, {2}, {3}, {4}, {5}\n'.format(self.n_consumed,
+                                                              fitness,
+                                                              tags.size(),
+                                                              n_merged,
+                                                              deref(compptr).get_n_tags(),
+                                                              comp_cov))
         return n_new
 
     cdef int _consume_conditional_pair(self, string first, string second,
@@ -77,12 +107,31 @@ cdef class ConditionalPartitioner(StreamingPartitioner):
         cdef set[HashIntoType] seen
         cdef uint64_t n_new = deref(self._this).seed_sequence(first, tags, seeds, seen)
         n_new +=  deref(self._this).seed_sequence(second, tags, seeds, seen)
+        self.n_consumed += 2
 
         (&fitness)[0] = func._evaluate_tags(first, tags)
-        if fitness > self.min_fitness: # blerp
-            deref(self._this).find_connected_tags(seeds, tags, seen, False)
-            deref(self._this).create_and_connect_components(tags)
-
+        if fitness < self.min_fitness: # blerp
+            self.info_fp.write('{0}, {1}, {2}, {3}, {4}, {5}\n'.format(self.n_consumed,
+                                                                  fitness,
+                                                                  tags.size(),
+                                                                  None,
+                                                                  None,
+                                                                  None))
+            return n_new
+        
+        deref(self._this).find_connected_tags(seeds, tags, seen, False)
+        cdef uint32_t n_merged = deref(self._this).create_and_connect_components(tags)
+        cdef ComponentPtr compptr
+        cdef float comp_cov = -1
+        compptr = deref(self._this).get_tag_component(deref(tags.begin()))
+        if n_merged > 1:
+            comp_cov = Component._mean_tag_count(compptr, self._graph_ptr)
+        self.info_fp.write('{0}, {1}, {2}, {3}, {4}, {5}\n'.format(self.n_consumed,
+                                                              fitness,
+                                                              tags.size(),
+                                                              n_merged,
+                                                              deref(compptr).get_n_tags(),
+                                                              comp_cov))
         return n_new
 
 
@@ -98,7 +147,12 @@ cdef class DoConditionalPartitioning:
         self.args.write_results = self.args.output_interval > 0
 
         self.graph = create_countgraph(self.args)
-        self.partitioner = ConditionalPartitioner(self.graph, tag_density=self.args.tag_density)
+
+        self.prep_results_dir()
+        part_info = os.path.join(self.args.output_dir, 'partitioner-details.csv')
+        self.partitioner = ConditionalPartitioner(self.graph, 
+                                                  tag_density=self.args.tag_density,
+                                                  info_filename=part_info)
 
     def parse_args(self, args):
         parser = build_counting_args(descr='Partition a sample',
@@ -149,8 +203,6 @@ cdef class DoConditionalPartitioning:
             json.dump(meta, fp, indent=4)
 
     def run(self):
-
-        self.prep_results_dir()
 
         if self.args.pairing_mode == 'split':
             samples = list(grouper(2, self.args.samples))

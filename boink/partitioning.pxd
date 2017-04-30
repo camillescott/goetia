@@ -21,6 +21,8 @@ __CythonIsBroken__ = MemoryError
 cdef class ConditionalPartitioner(StreamingPartitioner):
 
     cdef float min_fitness
+    cdef readonly object info_filename
+    cdef readonly object info_fp
     cdef int _consume_conditional(self, string, PartitionFunction, float&) except -1
     cdef int _consume_conditional_pair(self, string, string,
                                        PartitionFunction, float&) except -1
