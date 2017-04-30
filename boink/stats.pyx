@@ -85,10 +85,7 @@ cdef class PartitionCoverage(PartitionFunction):
         for tag in tags:
             acc += <float>deref(self.graph).get_count(tag)
         cdef float val = (acc / <float>n_tags)
-        if val > self.coverage_cutoff:
-            return 1.0 # dummy fitness vals
-        else:
-            return 0.0
+        return val / <float>self.coverage_cutoff
 
 
 cdef class KmerCountFunction(GraphFunction):
