@@ -88,6 +88,26 @@ cdef class PartitionCoverage(PartitionFunction):
         return val / <float>self.coverage_cutoff
 
 
+cdef class PartitionCoverageSlice(PartitionFunction):
+
+    def __cinit__(self, floor=10, ceiling=15, object graph=None, 
+                  StreamingPartitioner partitioner=None, *args, **kwargs):
+        self.coverage_floor = floor
+        self.coverage_ceiling = ceiling
+
+    cdef float _evaluate_tags(self, string sequence, set[HashIntoType]& tags):
+        cdef uint64_t n_tags = len(tags)
+        cdef float acc = 0
+        cdef uint64_t tag
+        for tag in tags:
+            acc += <float>deref(self.graph).get_count(tag)
+        cdef float val = (acc / <float>n_tags)
+        if self.coverage_floor < val < self.coverage_ceiling:
+            return 1.0
+        else:
+            return 0.0
+
+
 cdef class KmerCountFunction(GraphFunction):
 
     cpdef float evaluate_kmer(self, Kmer kmer):

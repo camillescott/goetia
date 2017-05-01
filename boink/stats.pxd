@@ -37,6 +37,11 @@ cdef class PartitionCoverage(PartitionFunction):
     cdef float coverage_cutoff
 
 
+cdef class PartitionCoverageSlice(PartitionFunction):
+    cdef float coverage_floor
+    cdef float coverage_ceiling
+
+
 cdef class KmerCountFunction(GraphFunction):
     cpdef float evaluate_kmer(self, Kmer)
 

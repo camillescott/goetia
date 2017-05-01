@@ -27,8 +27,7 @@ from khmer._oxli.parsing cimport BrokenPairedReader, SplitPairedReader, FastxPar
 from khmer._oxli.parsing import BrokenPairedReader, SplitPairedReader, FastxParser, Sequence
 from khmer._oxli.wrapper cimport *
 
-from boink.stats cimport PartitionFunction
-from boink.stats cimport PartitionCoverage
+from boink.stats cimport PartitionFunction, PartitionCoverage, PartitionCoverageSlice
 
 from utils cimport _bstring
 
@@ -39,7 +38,7 @@ cdef class ConditionalPartitioner(StreamingPartitioner):
         self.info_filename = info_filename
         self.info_fp = open(self.info_filename, 'w')
         if self.info_filename is not None:
-            self.info_fp.write('read_n, fitness, n_tags, n_merged, comp_size, comp_cov\n')
+            self.info_fp.write('read_n,fitness,n_tags,n_merged,comp_size,comp_cov,root_id\n')
 
     def __dealloc__(self):
         try:
@@ -76,9 +75,10 @@ cdef class ConditionalPartitioner(StreamingPartitioner):
         self.n_consumed += 1
         (&fitness)[0] = func._evaluate_tags(sequence, tags)
         if fitness < self.min_fitness: # blerp
-            self.info_fp.write('{0}, {1}, {2}, {3}, {4}, {5}\n'.format(self.n_consumed,
+            self.info_fp.write('{0},{1},{2},{3},{4},{5},{6}\n'.format(self.n_consumed,
                                                                   fitness,
                                                                   tags.size(),
+                                                                  None,
                                                                   None,
                                                                   None,
                                                                   None))
@@ -91,12 +91,13 @@ cdef class ConditionalPartitioner(StreamingPartitioner):
         compptr = deref(self._this).get_tag_component(deref(tags.begin()))
         if n_merged > 1:
             comp_cov = Component._mean_tag_count(compptr, self._graph_ptr)
-        self.info_fp.write('{0}, {1}, {2}, {3}, {4}, {5}\n'.format(self.n_consumed,
+        self.info_fp.write('{0},{1},{2},{3},{4},{5},{6}\n'.format(self.n_consumed,
                                                               fitness,
                                                               tags.size(),
                                                               n_merged,
                                                               deref(compptr).get_n_tags(),
-                                                              comp_cov))
+                                                              comp_cov,
+                                                              deref(compptr).component_id))
         return n_new
 
     cdef int _consume_conditional_pair(self, string first, string second,
@@ -111,9 +112,10 @@ cdef class ConditionalPartitioner(StreamingPartitioner):
 
         (&fitness)[0] = func._evaluate_tags(first, tags)
         if fitness < self.min_fitness: # blerp
-            self.info_fp.write('{0}, {1}, {2}, {3}, {4}, {5}\n'.format(self.n_consumed,
+            self.info_fp.write('{0},{1},{2},{3},{4},{5},{6}\n'.format(self.n_consumed,
                                                                   fitness,
                                                                   tags.size(),
+                                                                  None,
                                                                   None,
                                                                   None,
                                                                   None))
@@ -126,12 +128,13 @@ cdef class ConditionalPartitioner(StreamingPartitioner):
         compptr = deref(self._this).get_tag_component(deref(tags.begin()))
         if n_merged > 1:
             comp_cov = Component._mean_tag_count(compptr, self._graph_ptr)
-        self.info_fp.write('{0}, {1}, {2}, {3}, {4}, {5}\n'.format(self.n_consumed,
+        self.info_fp.write('{0},{1},{2},{3},{4},{5},{6}\n'.format(self.n_consumed,
                                                               fitness,
                                                               tags.size(),
                                                               n_merged,
                                                               deref(compptr).get_n_tags(),
-                                                              comp_cov))
+                                                              comp_cov,
+                                                              deref(compptr).component_id))
         return n_new
 
 
@@ -166,7 +169,8 @@ cdef class DoConditionalPartitioning:
         parser.add_argument('-Z', dest='norm', default=10, type=int)
         parser.add_argument('--output-interval', default=0, type=int)
         parser.add_argument('--tag-density', default=None, type=int)
-        parser.add_argument('--coverage', default=20, type=int)
+        parser.add_argument('--coverage', default=10, type=int)
+        parser.add_argument('--coverage-ceiling', default=None, type=int)
         
         return parser.parse_args(args)
 
@@ -189,13 +193,15 @@ cdef class DoConditionalPartitioning:
         if self.args.save:
             self.args.save = os.path.join(self.args.output_dir, 'partitioner')
 
-    def write_meta(self, n_sequences, total_kmers):
+    def write_meta(self, n_sequences, total_kmers, fitness_func):
         meta = {'samples': self.args.samples,
                 'pairing': self.args.pairing_mode,
                 'K': self.args.ksize,
                 'tag-density': self.partitioner.tag_density,
                 'n_sequences': n_sequences,
-                'n_unique_kmers': total_kmers}
+                'n_unique_kmers': total_kmers,
+                'partitioning_function': fitness_func.__class__.__module__ + '.'\
+                                         + fitness_func.__class__.__name__}
         if self.args.save:
             meta['partitioner'] = self.args.save
 
@@ -219,8 +225,17 @@ cdef class DoConditionalPartitioning:
         cdef int new_kmers = 0
         cdef int total_kmers = 0
         cdef int print_interval = self.args.output_interval if self.args.write_results else 10000
-        cdef PartitionCoverage pfunc = PartitionCoverage(coverage_cutoff=self.args.coverage,
-                                                         graph=self.graph, partitioner=self.partitioner)
+
+        cdef PartitionFunction pfunc
+        if self.args.coverage_ceiling is None:
+            pfunc = PartitionCoverage(coverage_cutoff=self.args.coverage,
+                                      graph=self.graph, partitioner=self.partitioner)
+        else:
+            pfunc = PartitionCoverageSlice(floor=self.args.coverage, 
+                                           ceiling=self.args.coverage_ceiling,
+                                           graph=self.graph, 
+                                           partitioner=self.partitioner)
+ 
         last = 0
         for group in samples:
             if self.args.pairing_mode == 'split':
@@ -258,7 +273,7 @@ cdef class DoConditionalPartitioning:
         if self.args.save:
             self.partitioner.save(self.args.save)
 
-        self.write_meta(n_sequences, total_kmers)
+        self.write_meta(n_sequences, total_kmers, pfunc)
 
         return self.partitioner
 
