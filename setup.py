@@ -100,7 +100,7 @@ def build_dir():
 
 
 # Don't forget to update lib/Makefile with these flags!
-EXTRA_COMPILE_ARGS = ['-O3', '-std=c++11', '-pedantic']
+EXTRA_COMPILE_ARGS = ['-O3', '-std=c++14', '-pedantic']
 EXTRA_LINK_ARGS = ['--verbose']
 
 if sys.platform == 'darwin':
