@@ -7,30 +7,25 @@ from cython.operator cimport dereference as deref
 
 cdef class ProbabilisticGraph:
 
-    def __cinit__(self, object graph,
-                        PKmerFunction kmer_func, 
-                        PSequenceFunction sequence_func):
+    def __cinit__(self, object graph, GraphFunction func):
 
         self._graph = get_hashgraph_ptr(graph)
 
         self.K = deref(self._graph).ksize()
 
-        self.kmer_func = kmer_func
-        self.kmer_func._set_graph(self._graph)
-
-        self.sequence_func = sequence_func
-        self.sequence_func._set_graph(self._graph)
+        self.func = func
+        self.func._set_graph(self._graph)
 
 
     cdef bool _insert_kmer(self, Kmer kmer):
-        cdef float p = self.kmer_func.evaluate(kmer)
+        cdef float p = self.func.evaluate_kmer(kmer)
         if p > ranf():
             deref(self._graph).add(deref(kmer._this).kmer_u)
             return True
         return False
 
     cdef bool _insert_sequence(self, Sequence sequence):
-        cdef float p = self.sequence_func.evaluate(sequence)
+        cdef float p = self.func.evaluate_sequence(sequence)
         if p > ranf():
             deref(self._graph).consume_string(sequence._obj.sequence)
             return True

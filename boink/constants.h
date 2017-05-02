@@ -1,0 +1,2 @@
+#define N_HEPTAMERS 16384
+#define MAX_DBG_DEGREE 8

@@ -172,7 +172,8 @@ SETUP_METADATA = \
         #        "oxli = oxli:main"
         #    ]
         # },
-        "ext_modules": cythonize(EXTENSION_MODS),
+        "ext_modules": cythonize(EXTENSION_MODS, gdb_debug = True),
+        #                        compiler_directives = {"language_level": 3}),
         # "platforms": '', # empty as is conveyed by the classifiers below
         # "license": '', # empty as is conveyed by the classifier below
         "include_package_data": True,

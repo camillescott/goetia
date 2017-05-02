@@ -9,9 +9,15 @@ MODEXT=$(shell python -c \
        "import sysconfig;print(sysconfig.get_config_var('SO'))")
 
 MODS=$(PKG)/*$(MODEXT)
+CY=$(wildcard $(PKG)/*.pyx $(PKG)/*.pxd)
 
-all:
+all: build
+
+build: $(CY)
 	python setup.py build_ext --inplace
+
+install: build
+	python setup.py install
 
 test:
 	python setup.py pytest
