@@ -10,16 +10,14 @@ import cython
 from cython.operator cimport dereference as deref
 from libc.stdint cimport uint8_t, uint16_t, uint64_t
 
-from khmer._oxli.wrapper cimport (CpHashgraph, get_hashgraph_ptr, 
-                                  _hash_forward, _hash_murmur, HashIntoType, 
-                                  _revhash, BoundedCounterType, _hash,
-                                  CpStreamingPartitioner)
-from khmer._oxli.partitioning cimport StreamingPartitioner
+from khmer._oxli.hashing cimport (_hash_forward, _hash_murmur,
+                                  _revhash, _hash)
+from khmer._oxli.graphs cimport CpHashgraph, Hashgraph
+from khmer._oxli.partitioning cimport (StreamingPartitioner,
+                                       CpStreamingPartitioner)
 from khmer._oxli.assembly cimport CompactingAssembler
 from khmer._oxli.hashing cimport Kmer
-from khmer._oxli.hashing import Kmer
-from khmer._oxli.parsing cimport Sequence
-from khmer._oxli.parsing import Sequence
+from khmer._oxli.sequence cimport Sequence
 from khmer._oxli.traversal cimport Traverser
 
 from .utils cimport _bstring, _ustring
@@ -27,21 +25,17 @@ from .utils cimport _bstring, _ustring
 
 cdef class GraphFunction:
 
-    def __cinit__(self, object graph=None, *args, **kwargs):
+    def __cinit__(self, Hashgraph graph=None, *args, **kwargs):
         if graph is not None:
-            self.graph = get_hashgraph_ptr(graph)
+            self.graph = graph
             self.K = deref(self.graph).ksize()
 
-    cdef void _set_graph(self, CpHashgraph * ptr):
+    def set_graph(self, Hashgraph graph not None):
         self.graph = ptr
         self.K = deref(self.graph).ksize()
 
-    def set_graph(self, object graph):
-        self.graph = get_hashgraph_ptr(graph)
-        self.K = deref(self.graph).ksize()
-
     cpdef int consume(self, Sequence sequence):
-        return deref(self.graph).consume_string(sequence._obj.sequence)
+        return deref(self.graph._hg_this).consume_string(sequence._obj.sequence)
 
     cpdef float evaluate_kmer(self, Kmer kmer):
         raise NotImplementedError()
@@ -56,16 +50,17 @@ cdef class GraphFunction:
     def load(filename):
         raise NotImplementedError()
 
+
 cdef class PartitionFunction(GraphFunction):
 
-    def __cinit__(self, object graph=None, StreamingPartitioner partitioner=None, 
+    def __cinit__(self, Hashgraph graph=None, StreamingPartitioner partitioner=None, 
                   *args, **kwargs):
         self.partitioner = partitioner._this
         if partitioner is not None:
             self.graph = deref(self.partitioner).graph
         self.K = deref(self.graph).ksize()
 
-    cdef float _evaluate_tags(self, string sequence, set[HashIntoType]& tags):
+    cdef float _evaluate_tags(self, string sequence, vector[HashIntoType]& tags):
         pass
 
     cpdef float evaluate_tags(self, Sequence sequence, tuple tags):
@@ -78,7 +73,7 @@ cdef class PartitionCoverage(PartitionFunction):
                   StreamingPartitioner partitioner=None, *args, **kwargs):
         self.coverage_cutoff = coverage_cutoff
 
-    cdef float _evaluate_tags(self, string sequence, set[HashIntoType]& tags):
+    cdef float _evaluate_tags(self, string sequence, vector[HashIntoType]& tags):
         cdef uint64_t n_tags = len(tags)
         cdef float acc = 0
         cdef uint64_t tag
@@ -95,7 +90,7 @@ cdef class PartitionCoverageSlice(PartitionFunction):
         self.coverage_floor = floor
         self.coverage_ceiling = ceiling
 
-    cdef float _evaluate_tags(self, string sequence, set[HashIntoType]& tags):
+    cdef float _evaluate_tags(self, string sequence, vector[HashIntoType]& tags):
         cdef uint64_t n_tags = len(tags)
         cdef float acc = 0
         cdef uint64_t tag

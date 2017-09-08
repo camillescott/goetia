@@ -8,9 +8,9 @@ import sys
 
 from khmer import Nodegraph
 from khmer._oxli.parsing cimport SanitizedFastxParser, Sequence
-from khmer._oxli.hashing cimport Kmer, CpKmer
-from khmer._oxli.wrapper cimport CpKmerIterator, CpNodegraph, CpCountgraph
-from khmer._oxli.wrapper cimport get_hashgraph_ptr
+from khmer._oxli.hashing cimport Kmer, CpKmer, CpKmerIterator
+from khmer._oxli.graphs cimport (Nodegraph, CpNodegraph, 
+                                 CpCountgraph)
 from .heap cimport MinHeap, Weighted
 from .stats cimport (GraphFunction, KmerCountFunction, KmerDegreeFunction,
                      KmerDegreeBiasFunction)
@@ -19,14 +19,14 @@ from .stats cimport (GraphFunction, KmerCountFunction, KmerDegreeFunction,
 def find_top_N_kmers(list filenames, int N, GraphFunction func,
                      object graph):
 
-    cdef object seen = Nodegraph(graph.ksize(), max(graph.hashsizes()), 
+    cdef Nodegraph seen = Nodegraph(graph.ksize(), max(graph.hashsizes()), 
                                  len(graph.hashsizes()))
     cdef MinHeap minheap = MinHeap(N)
     cdef unicode filename
     for filename in filenames:
         print('Processing {0}'.format(filename), file=sys.stderr)
-        _find_top_N_kmers(filename, N, func, <CpCountgraph *>get_hashgraph_ptr(graph),
-                <CpNodegraph *>get_hashgraph_ptr(seen), minheap)
+        _find_top_N_kmers(filename, N, func, graph._this.get(),
+                          seen._this.get(), minheap)
     cdef dict results = dict(minheap.iteritems())
 
     return results

@@ -1,14 +1,18 @@
-from libcpp.memory cimport shared_ptr, weak_ptr
-from libcpp.string cimport string
 cimport cython
 
-from khmer._oxli.wrapper cimport CpHashgraph, HashIntoType, WordLength, CpStreamingPartitioner
+from libcpp.memory cimport shared_ptr, weak_ptr
+from libcpp.string cimport string
+from libcpp.set cimport set
+from libcpp.vector cimport vector
+
+from khmer._oxli.oxli_types cimport *
+from khmer._oxli.graphs cimport CpHashgraph, Hashgraph
+from khmer._oxli.partitioning cimport CpStreamingPartitioner
 from khmer._oxli.assembly cimport CompactingAssembler
-from khmer._oxli.hashing cimport Kmer
-from khmer._oxli.parsing cimport Sequence
+from khmer._oxli.hashing cimport Kmer, CpKmer
+from khmer._oxli.sequence cimport Sequence
 from khmer._oxli.traversal cimport Traverser
 from libc.stdint cimport uint8_t, uint16_t, uint64_t
-from libcpp.set cimport set
 
 
 cdef extern from 'constants.h':
@@ -18,10 +22,9 @@ cdef extern from 'constants.h':
 
 cdef class GraphFunction:
     # have PFunction store Hashgraph ptr
-    cdef CpHashgraph * graph
+    cdef Hashgraph graph
     cdef public WordLength K
     cpdef int consume(self, Sequence sequence)
-    cdef void _set_graph(self, CpHashgraph *)
     cpdef float evaluate_kmer(self, Kmer)
     cpdef float evaluate_sequence(self, Sequence)
 
@@ -29,7 +32,7 @@ cdef class GraphFunction:
 cdef class PartitionFunction(GraphFunction):
     cdef shared_ptr[CpStreamingPartitioner] partitioner
     cdef float _evaluate_tags(self, string,
-                              set[HashIntoType]&)
+                              vector[HashIntoType]&)
     cpdef float evaluate_tags(self, Sequence, tuple)
 
 

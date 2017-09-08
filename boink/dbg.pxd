@@ -10,7 +10,8 @@ from libc.stdint cimport uint8_t, uint16_t, uint64_t
 cimport numpy as np
 
 from lemon cimport SmartDigraph, NodeMap, Node, INVALID, CrossRefMap
-from khmer._oxli.wrapper cimport _revcomp, CpCounttable
+from khmer._oxli.hashing cimport _revcomp
+from khmer._oxli.graphs cimport CpCounttable
 from khmer._oxli.parsing cimport Alphabets
 
 

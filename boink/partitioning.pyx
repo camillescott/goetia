@@ -13,6 +13,7 @@ from libcpp cimport bool
 from libcpp.string cimport string
 from libcpp.set cimport set
 from libcpp.queue cimport queue
+from libcpp.vector cimport vector
 from libcpp.memory cimport unique_ptr, weak_ptr, shared_ptr, make_shared
 
 from libc.stdint cimport uint8_t, uint32_t, uint64_t
@@ -22,10 +23,12 @@ from khmer.khmer_args import build_counting_args, create_countgraph
 from khmer.khmer_logger import (configure_logging, log_info, log_error,
                                 log_warn)
 
-from khmer._oxli.partitioning cimport StreamingPartitioner, Component
+from khmer._oxli.partitioning cimport (CpStreamingPartitioner,
+                                       StreamingPartitioner, Component,
+                                       ComponentPtr)
 from khmer._oxli.parsing cimport BrokenPairedReader, SplitPairedReader, FastxParser, Sequence
 from khmer._oxli.parsing import BrokenPairedReader, SplitPairedReader, FastxParser, Sequence
-from khmer._oxli.wrapper cimport *
+from khmer._oxli.oxli_types cimport *
 
 from boink.stats cimport PartitionFunction, PartitionCoverage, PartitionCoverageSlice
 
@@ -36,9 +39,11 @@ cdef class ConditionalPartitioner(StreamingPartitioner):
     def __cinit__(self, graph, tag_density=None, info_filename=None):
         self.min_fitness = 0.95
         self.info_filename = info_filename
-        self.info_fp = open(self.info_filename, 'w')
         if self.info_filename is not None:
+            self.info_fp = open(self.info_filename, 'w')
             self.info_fp.write('read_n,fitness,n_tags,n_merged,comp_size,comp_cov,root_id\n')
+        else:
+            self.info_fp = None
 
     def __dealloc__(self):
         try:
@@ -67,7 +72,7 @@ cdef class ConditionalPartitioner(StreamingPartitioner):
     cdef int _consume_conditional(self, string sequence, PartitionFunction func, 
                                   float& fitness) except -1:
 
-        cdef set[HashIntoType] tags
+        cdef vector[HashIntoType] tags
         cdef KmerQueue seeds
         cdef set[HashIntoType] seen
 
@@ -75,35 +80,37 @@ cdef class ConditionalPartitioner(StreamingPartitioner):
         self.n_consumed += 1
         (&fitness)[0] = func._evaluate_tags(sequence, tags)
         if fitness < self.min_fitness: # blerp
-            self.info_fp.write('{0},{1},{2},{3},{4},{5},{6}\n'.format(self.n_consumed,
-                                                                  fitness,
-                                                                  tags.size(),
-                                                                  None,
-                                                                  None,
-                                                                  None,
-                                                                  None))
+            if self.info_fp is not None:
+                self.info_fp.write('{0},{1},{2},{3},{4},{5},{6}\n'.format(self.n_consumed,
+                                                                          fitness,
+                                                                          tags.size(),
+                                                                          None,
+                                                                          None,
+                                                                          None,
+                                                                          None))
             return n_new
 
         deref(self._this).find_connected_tags(seeds, tags, seen, False)
-        cdef uint32_t n_merged = deref(self._this).create_and_connect_components(tags)
+        cdef uint32_t n_merged = deref(self._this).create_and_merge_components(tags)
         cdef ComponentPtr compptr
         cdef float comp_cov = -1
-        compptr = deref(self._this).get_tag_component(deref(tags.begin()))
+        compptr = deref(self._this).get(deref(tags.begin()))
         if n_merged > 1:
             comp_cov = Component._mean_tag_count(compptr, self._graph_ptr)
-        self.info_fp.write('{0},{1},{2},{3},{4},{5},{6}\n'.format(self.n_consumed,
-                                                              fitness,
-                                                              tags.size(),
-                                                              n_merged,
-                                                              deref(compptr).get_n_tags(),
-                                                              comp_cov,
-                                                              deref(compptr).component_id))
+        if self.info_fp is not None:
+            self.info_fp.write('{0},{1},{2},{3},{4},{5},{6}\n'.format(self.n_consumed,
+                                                                      fitness,
+                                                                      tags.size(),
+                                                                      n_merged,
+                                                                      deref(compptr).get_n_tags(),
+                                                                      comp_cov,
+                                                                      deref(compptr).component_id))
         return n_new
 
     cdef int _consume_conditional_pair(self, string first, string second,
                                          PartitionFunction func, float& fitness) except -1:
 
-        cdef set[HashIntoType] tags
+        cdef vector[HashIntoType] tags
         cdef KmerQueue seeds
         cdef set[HashIntoType] seen
         cdef uint64_t n_new = deref(self._this).seed_sequence(first, tags, seeds, seen)
@@ -112,29 +119,31 @@ cdef class ConditionalPartitioner(StreamingPartitioner):
 
         (&fitness)[0] = func._evaluate_tags(first, tags)
         if fitness < self.min_fitness: # blerp
-            self.info_fp.write('{0},{1},{2},{3},{4},{5},{6}\n'.format(self.n_consumed,
-                                                                  fitness,
-                                                                  tags.size(),
-                                                                  None,
-                                                                  None,
-                                                                  None,
-                                                                  None))
+            if self.info_fp is not None:
+                self.info_fp.write('{0},{1},{2},{3},{4},{5},{6}\n'.format(self.n_consumed,
+                                                                          fitness,
+                                                                          tags.size(),
+                                                                          None,
+                                                                          None,
+                                                                          None,
+                                                                          None))
             return n_new
         
         deref(self._this).find_connected_tags(seeds, tags, seen, False)
-        cdef uint32_t n_merged = deref(self._this).create_and_connect_components(tags)
+        cdef uint32_t n_merged = deref(self._this).create_and_merge_components(tags)
         cdef ComponentPtr compptr
         cdef float comp_cov = -1
-        compptr = deref(self._this).get_tag_component(deref(tags.begin()))
+        compptr = deref(self._this).get(deref(tags.begin()))
         if n_merged > 1:
             comp_cov = Component._mean_tag_count(compptr, self._graph_ptr)
-        self.info_fp.write('{0},{1},{2},{3},{4},{5},{6}\n'.format(self.n_consumed,
-                                                              fitness,
-                                                              tags.size(),
-                                                              n_merged,
-                                                              deref(compptr).get_n_tags(),
-                                                              comp_cov,
-                                                              deref(compptr).component_id))
+        if self.info_fp is not None:
+            self.info_fp.write('{0},{1},{2},{3},{4},{5},{6}\n'.format(self.n_consumed,
+                                                                      fitness,
+                                                                      tags.size(),
+                                                                      n_merged,
+                                                                      deref(compptr).get_n_tags(),
+                                                                      comp_cov,
+                                                                      deref(compptr).component_id))
         return n_new
 
 

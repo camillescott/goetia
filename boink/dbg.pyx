@@ -14,8 +14,8 @@ from libcpp.memory cimport unique_ptr, weak_ptr, shared_ptr
 from libcpp.string cimport string
 from libc.stdint cimport uint8_t, uint16_t, uint64_t
 
-from khmer._oxli.wrapper cimport (_revcomp, CpCountgraph, _hash_murmur,
-                                  HashIntoType)
+from khmer._oxli.oxli_types cimport *
+from khmer._oxli.hashing cimport _revcomp, _hash_murmur
 from khmer._oxli.parsing cimport Alphabets, Sequence, SanitizedFastxParser
 from khmer._oxli.utils cimport _get_n_primes_near_x
 
