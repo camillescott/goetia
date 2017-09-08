@@ -18,7 +18,7 @@ from libcpp.memory cimport unique_ptr, weak_ptr, shared_ptr, make_shared
 
 from libc.stdint cimport uint8_t, uint32_t, uint64_t
 
-from khmer import Countgraph, Nodegraph
+from khmer._oxli.graphs cimport Countgraph, Nodegraph, Hashgraph
 from khmer.khmer_args import build_counting_args, create_countgraph
 from khmer.khmer_logger import (configure_logging, log_info, log_error,
                                 log_warn)
@@ -26,8 +26,10 @@ from khmer.khmer_logger import (configure_logging, log_info, log_error,
 from khmer._oxli.partitioning cimport (CpStreamingPartitioner,
                                        StreamingPartitioner, Component,
                                        ComponentPtr)
-from khmer._oxli.parsing cimport BrokenPairedReader, SplitPairedReader, FastxParser, Sequence
-from khmer._oxli.parsing import BrokenPairedReader, SplitPairedReader, FastxParser, Sequence
+from khmer._oxli.parsing cimport BrokenPairedReader, SplitPairedReader, FastxParser
+from khmer._oxli.parsing import BrokenPairedReader, SplitPairedReader, FastxParser
+from khmer._oxli.sequence cimport Sequence
+from khmer._oxli.sequence import Sequence
 from khmer._oxli.oxli_types cimport *
 
 from boink.stats cimport PartitionFunction, PartitionCoverage, PartitionCoverageSlice
@@ -36,7 +38,7 @@ from utils cimport _bstring
 
 cdef class ConditionalPartitioner(StreamingPartitioner):
 
-    def __cinit__(self, graph, tag_density=None, info_filename=None):
+    def __cinit__(self, Hashgraph graph, tag_density=None, info_filename=None):
         self.min_fitness = 0.95
         self.info_filename = info_filename
         if self.info_filename is not None:
@@ -96,7 +98,8 @@ cdef class ConditionalPartitioner(StreamingPartitioner):
         cdef float comp_cov = -1
         compptr = deref(self._this).get(deref(tags.begin()))
         if n_merged > 1:
-            comp_cov = Component._mean_tag_count(compptr, self._graph_ptr)
+            comp_cov = Component._mean_tag_count(compptr,
+                                                 self.graph._hg_this.get())
         if self.info_fp is not None:
             self.info_fp.write('{0},{1},{2},{3},{4},{5},{6}\n'.format(self.n_consumed,
                                                                       fitness,
@@ -135,7 +138,8 @@ cdef class ConditionalPartitioner(StreamingPartitioner):
         cdef float comp_cov = -1
         compptr = deref(self._this).get(deref(tags.begin()))
         if n_merged > 1:
-            comp_cov = Component._mean_tag_count(compptr, self._graph_ptr)
+            comp_cov = Component._mean_tag_count(compptr,
+                    self.graph._hg_this.get())
         if self.info_fp is not None:
             self.info_fp.write('{0},{1},{2},{3},{4},{5},{6}\n'.format(self.n_consumed,
                                                                       fitness,

@@ -1,12 +1,12 @@
-# cython: c_string_type=unicode, c_string_encoding=utf8, embedsignature=True
-from __future__ import print_function
+# cython: c_string_type=unicode, c_string_encoding=utf8, embedsignature=True, language_level=3
 
 from cython.operator cimport dereference as deref
 from libcpp cimport bool
+from libcpp.memory cimport shared_ptr
 
 import sys
 
-from khmer import Nodegraph
+from khmer._oxli.graphs cimport Nodegraph, Hashgraph, Countgraph
 from khmer._oxli.parsing cimport SanitizedFastxParser, Sequence
 from khmer._oxli.hashing cimport Kmer, CpKmer, CpKmerIterator
 from khmer._oxli.graphs cimport (Nodegraph, CpNodegraph, 
@@ -17,28 +17,27 @@ from .stats cimport (GraphFunction, KmerCountFunction, KmerDegreeFunction,
 
 
 def find_top_N_kmers(list filenames, int N, GraphFunction func,
-                     object graph):
+                     Countgraph graph):
 
     cdef Nodegraph seen = Nodegraph(graph.ksize(), max(graph.hashsizes()), 
                                  len(graph.hashsizes()))
     cdef MinHeap minheap = MinHeap(N)
-    cdef unicode filename
     for filename in filenames:
         print('Processing {0}'.format(filename), file=sys.stderr)
-        _find_top_N_kmers(filename, N, func, graph._this.get(),
-                          seen._this.get(), minheap)
+        _find_top_N_kmers(filename, N, func,
+                          seen._ng_this, minheap)
     cdef dict results = dict(minheap.iteritems())
 
     return results
 
 
 cdef _find_top_N_kmers(unicode filename, int N, GraphFunction func,
-                       CpCountgraph * counts, CpNodegraph * seen, 
+                       shared_ptr[CpNodegraph] seen, 
                        MinHeap minheap):
 
     cdef SanitizedFastxParser parser = SanitizedFastxParser(filename)
     cdef Sequence sequence
-    cdef int K = deref(counts).ksize()
+    cdef int K = deref(seen).ksize()
     cdef CpKmer cpkmer
     cdef Kmer kmer
     cdef CpKmerIterator * it
@@ -115,11 +114,11 @@ cdef _sequence_apply(unicode filename, GraphFunction func, bool consume):
         func.evaluate_sequence(sequence)
 
 
-def find_N_most_abundant_kmers(filenames, N, graph):
+def find_N_most_abundant_kmers(filenames, N, Countgraph graph):
     return find_top_N_kmers(filenames, N, KmerCountFunction(graph), graph)
 
 
-def apply_kmer_degree_bias(filenames, graph):
+def apply_kmer_degree_bias(filenames, Countgraph graph):
     cdef KmerDegreeBiasFunction func = KmerDegreeBiasFunction(graph)
     kmer_apply(filenames, func)
     return func
