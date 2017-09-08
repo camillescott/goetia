@@ -96,3 +96,7 @@ ENV/
 *.info
 *.json
 *.tmp
+
+
+work/
+data/
