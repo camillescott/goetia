@@ -7,12 +7,12 @@ import random
 
 import khmer
 from khmer._oxli.partitioning import StreamingPartitioner, Component
-from khmer._oxli.parsing import Sequence
+from khmer._oxli.sequence import Sequence
 from khmer.khmer_args import estimate_optimal_with_K_and_f as optimal_fp
 from khmer import reverse_complement as revcomp
 from khmer import reverse_hash as revhash
 
-from utils import *
+from boink.tests.utils import *
 from boink.partitioning import ConditionalPartitioner
 from boink.stats import PartitionCoverage
 

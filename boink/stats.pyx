@@ -78,7 +78,7 @@ cdef class PartitionCoverage(PartitionFunction):
         cdef float acc = 0
         cdef uint64_t tag
         for tag in tags:
-            acc += <float>self.graph.get_count(tag)
+            acc += <float>self.graph.get(tag)
         cdef float val = (acc / <float>n_tags)
         return val / <float>self.coverage_cutoff
 
@@ -95,7 +95,7 @@ cdef class PartitionCoverageSlice(PartitionFunction):
         cdef float acc = 0
         cdef uint64_t tag
         for tag in tags:
-            acc += <float>self.graph.get_count(tag)
+            acc += <float>self.graph.get(tag)
         cdef float val = (acc / <float>n_tags)
         if self.coverage_floor < val < self.coverage_ceiling:
             return 1.0
@@ -106,7 +106,7 @@ cdef class PartitionCoverageSlice(PartitionFunction):
 cdef class KmerCountFunction(GraphFunction):
 
     cpdef float evaluate_kmer(self, Kmer kmer):
-        return <int>self.graph.get_count(kmer)
+        return <int>self.graph.get(kmer)
 
 
 cdef class KmerDegreeFunction(GraphFunction):
@@ -175,7 +175,7 @@ cdef class SamplePathsFunction(GraphFunction):
             h = _hash_murmur(_bstring(kmer), self.K)
             if (h & (self.n_batches-1)) == 0:
                 length = len(self.assembler.assemble(kmer))
-                count = self.graph.get_count(kmer)
+                count = self.graph.get(kmer)
                 #print(h, kmer, file=sys.stderr)
                 self.results.append((self.t, h, kmer, length, count))
                 if len(self.results) % 1000 == 0:

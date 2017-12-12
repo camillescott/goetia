@@ -14,20 +14,24 @@ import sysconfig
 import tempfile
 
 from setuptools import setup
-from setuptools import Extension
 from distutils.spawn import spawn
 from distutils.sysconfig import get_config_vars
 from distutils.dist import Distribution
 from distutils.errors import DistutilsPlatformError
+from setuptools.command.build_ext import build_ext as _build_ext
 
 import numpy
 
 try:
-    from Cython.Build import cythonize
-    from Cython.Distutils import build_ext as _build_ext
+    import Cython
+    from Cython.Distutils import Extension
+    HAS_CYTHON = True
+    cy_ext = 'pyx'
+
 except ImportError:
-    print('Cython not found.', file=sys.stderr)
-    from setuptools.command.build_ext import build_ext as _build_ext
+    from setuptools import Extension
+    HAS_CYTHON = False
+    cy_ext = 'cpp'
 
 # strip out -Wstrict-prototypes; a hack suggested by
 # http://stackoverflow.com/a/9740721
@@ -88,12 +92,14 @@ def check_for_openmp():
 
     return exit_code == 0
 
+
 def distutils_dir_name(dname):
     """Returns the name of a distutils build directory"""
     f = "{dirname}.{platform}-{version[0]}.{version[1]}"
     return f.format(dirname=dname,
                     platform=sysconfig.get_platform(),
                     version=sys.version_info)
+
 
 def build_dir():
     return path_join("build", distutils_dir_name("temp"))
@@ -103,6 +109,7 @@ def build_dir():
 EXTRA_COMPILE_ARGS = ['-O3', '-std=c++14', '-pedantic']
 EXTRA_LINK_ARGS = ['--verbose']
 
+
 if sys.platform == 'darwin':
     # force 64bit only builds
     EXTRA_COMPILE_ARGS.extend(['-arch', 'x86_64', '-mmacosx-version-min=10.7',
@@ -110,32 +117,51 @@ if sys.platform == 'darwin':
 else:
     EXTRA_COMPILE_ARGS.append('-fdiagnostics-color')
 
+
 if check_for_openmp():
     EXTRA_COMPILE_ARGS.extend(['-fopenmp'])
     EXTRA_LINK_ARGS.extend(['-fopenmp'])
 
+
+CY_OPTS = {
+    'embedsignature': True,
+    'language_level': 3,
+    'c_string_type': 'unicode',
+    'c_string_encoding': 'utf8'
+}
+
+
+SOURCES = glob.glob(os.path.join('src', '*.cc'))
+DEPENDS = glob.glob(os.path.join('include', '*.hh'))
+
+
 EXTENSION_MODS = []
-for cython_ext in glob.glob(os.path.join("boink", "*.pyx")):
+EXTENSION_NAMES = [(ext, "boink.{0}".format(splitext(os.path.basename(ext))[0]))
+                  for ext in glob.glob(os.path.join("boink", "*.{0}".format(cy_ext)))]
+for ext_file, ext_name in EXTENSION_NAMES:
 
     CY_EXTENSION_MOD_DICT = \
         {
-            "sources": [cython_ext],
+            "sources": [ext_file] + SOURCES,
             "extra_compile_args": EXTRA_COMPILE_ARGS,
             "extra_link_args": EXTRA_LINK_ARGS,
-            "depends": [],
+            "depends": DEPENDS,
             "libraries": ['oxli'],
-            "include_dirs": [numpy.get_include()],
+            "include_dirs": [numpy.get_include(), 'include', '.'],
             "language": "c++"
         }
+    if HAS_CYTHON:
+        CY_EXTENSION_MOD_DICT['cython_directives'] = CY_OPTS
     
-    ext_name = "boink.{0}".format(splitext(os.path.basename(cython_ext))[0])
-    CY_EXTENSION_MOD = Extension(ext_name, ** CY_EXTENSION_MOD_DICT)
-    EXTENSION_MODS.append(CY_EXTENSION_MOD)
+    module = Extension(ext_name, **CY_EXTENSION_MOD_DICT)
+    EXTENSION_MODS.append(module)
+
 
 SCRIPTS = []
 SCRIPTS.extend([path_join("scripts", script)
                 for script in os_listdir("scripts")
                 if script.endswith(".py")])
+
 
 CLASSIFIERS = [
     "Environment :: Console",
@@ -146,9 +172,9 @@ CLASSIFIERS = [
     "Operating System :: POSIX :: Linux",
     "Operating System :: MacOS :: MacOS X",
     "Programming Language :: C++",
-    "Programming Language :: Python :: 2.7",
-    "Programming Language :: Python :: 3.3",
     "Programming Language :: Python :: 3.4",
+    "Programming Language :: Python :: 3.5",
+    "Programming Language :: Python :: 3.6",
     "Topic :: Scientific/Engineering :: Bio-Informatics",
 ]
 
@@ -161,18 +187,13 @@ SETUP_METADATA = \
         "long_description": open("README.rst").read(),
         "author": "Camille Scott",
         "author_email": 'camille.scott.w@gmail.com',
-        "packages": ['boink'],
+        "packages": ['boink', 'boink.tests'],
         "package_data": {'boink/': ['*.pxd']},
         "install_requires": ['screed >= 0.9', 'bz2file'],
         "setup_requires": ["pytest-runner>=2.0,<3dev",
                            'Cython>=0.25.2', "setuptools>=18.0"],
         "scripts": SCRIPTS,
-        # "entry_points": { # Not ready for distribution yet.
-        #    'console_scripts': [
-        #        "oxli = oxli:main"
-        #    ]
-        # },
-        "ext_modules": cythonize(EXTENSION_MODS, gdb_debug = True),
+        "ext_modules": EXTENSION_MODS,
         #                        compiler_directives = {"language_level": 3}),
         # "platforms": '', # empty as is conveyed by the classifiers below
         # "license": '', # empty as is conveyed by the classifier below
@@ -181,6 +202,26 @@ SETUP_METADATA = \
         "classifiers": CLASSIFIERS
     }
 
+class BoinkBuildExt(_build_ext):
+
+    def run(self):
+        if HAS_CYTHON:
+            print('*** NOTE: Found Cython, extension files will be '
+                  'transpiled if this is an install invocation.',
+                  file=sys.stderr)
+        else:
+            print('*** WARNING: Cython not found, assuming cythonized '
+                  'files available for compilation.', file=sys.stderr)
+        
+        extensions = ('{0}:{1}'.format(x, y) for x, y in EXTENSION_NAMES)
+        print('*** EXTENSIONS:', ', '.join(extensions), file=sys.stderr)
+        print('*** INCLUDES:', ', '.join(DEPENDS), file=sys.stderr)
+        print('*** SOURCES:', ', '.join(SOURCES), file=sys.stderr)
+
+        _build_ext.run(self)
 
 
-setup(**SETUP_METADATA)
+setup(**SETUP_METADATA,
+      cmdclass = {
+         'build_ext': BoinkBuildExt
+      })

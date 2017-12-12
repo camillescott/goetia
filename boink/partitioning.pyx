@@ -33,8 +33,7 @@ from khmer._oxli.sequence import Sequence
 from khmer._oxli.oxli_types cimport *
 
 from boink.stats cimport PartitionFunction, PartitionCoverage, PartitionCoverageSlice
-
-from utils cimport _bstring
+from boink.utils cimport _bstring
 
 cdef class ConditionalPartitioner(StreamingPartitioner):
 

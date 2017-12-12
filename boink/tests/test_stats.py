@@ -3,7 +3,7 @@ import pytest
 #from .utils import *
 import khmer
 from khmer._oxli.hashing import Kmer
-from khmer._oxli.parsing import Sequence
+from khmer._oxli.sequence import Sequence
 
 from boink.stats import KmerCountFunction, KmerDegreeFunction
 

@@ -19,8 +19,9 @@ build: $(CY)
 install: build
 	python setup.py install
 
-test:
-	python setup.py pytest
+test: FORCE
+	./setup.py develop
+	py.test --pyargs boink.tests
 
 clean: FORCE
 	rm -f $(PKG)/*.cpp
