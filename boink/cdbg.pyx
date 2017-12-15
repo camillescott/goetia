@@ -202,7 +202,7 @@ cdef class StreamingCompactor:
             yield CompactNode._wrap(node)
 
     def report(self):
-        deref(self._sc_this).report()
+        return deref(self._sc_this).report()
 
     @property
     def n_nodes(self):

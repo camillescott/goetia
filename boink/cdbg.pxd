@@ -118,7 +118,7 @@ cdef extern from "cdbg.hh" namespace "boink" nogil:
         shared_ptr[CpHashgraph] graph
 
         CpStreamingCompactor(shared_ptr[CpHashgraph])
-        void report()
+        string report()
         uint64_t n_nodes()
         uint64_t n_edges()
         uint64_t n_updates()

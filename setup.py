@@ -157,10 +157,7 @@ for ext_file, ext_name in EXTENSION_NAMES:
     EXTENSION_MODS.append(module)
 
 
-SCRIPTS = []
-SCRIPTS.extend([path_join("scripts", script)
-                for script in os_listdir("scripts")
-                if script.endswith(".py")])
+SCRIPTS = glob.glob(os.path.join('scripts', '*'))
 
 
 CLASSIFIERS = [

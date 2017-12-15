@@ -21,7 +21,6 @@
 #include "oxli/assembler.hh"
 #include "oxli/alphabets.hh"
 
-#define DEBUG_LINKS
 # ifdef DEBUG_LINKS
 #   define pdebug(x) do { std::cout << std::endl << "@ " << __FILE__ <<\
                           ":" << __FUNCTION__ << ":" <<\
@@ -696,12 +695,14 @@ public:
         return nodes.n_updates() + edges.n_updates();
     }
 
-    void report() const {
-        std::cout << std::endl << "REPORT: StreamingCompactor(@" << this << " with "
-            << "Hashgraph @" << graph.get() << ")" << std::endl;
-        std::cout << "  * " << n_nodes() << " cDBG nodes (HDNs)" << std::endl;
-        std::cout << "  * " << n_edges() << " cDBG edges" << std::endl;
-        std::cout << "  * " << n_sequences_added << " sequences added" << std::endl;
+    std::string report() const {
+        std::ostringstream os;
+        os << std::endl << "REPORT: StreamingCompactor(@" << this << " with "
+           << "Hashgraph @" << graph.get() << ")" << std::endl;
+        os << "  * " << n_nodes() << " cDBG nodes (HDNs)" << std::endl;
+        os << "  * " << n_edges() << " cDBG edges" << std::endl;
+        os << "  * " << n_sequences_added << " sequences added" << std::endl;
+        return os.str();
     }
 
 
