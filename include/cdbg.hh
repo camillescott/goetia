@@ -136,6 +136,7 @@ public:
 
 };
 
+typedef std::shared_ptr<CompactEdge> CompactEdgePtr;
 typedef std::vector<CompactEdge> CompactEdgeVector;
 typedef std::unordered_map<HashIntoType, CompactEdge*> TagEdgeMap;
 typedef std::unordered_map<id_t, CompactEdge*> IDEdgeMap;
@@ -216,6 +217,7 @@ public:
             }
             compact_edges.erase(edge->edge_id);
             delete edge;
+            edge = nullptr;
             n_compact_edges--;
             _n_updates++;
         }
@@ -803,12 +805,15 @@ public:
         if (right_node != nullptr) {
             nodes.get_edge_from_left(right_node, right_edge, segment_seq);
         }
-        
-        if (left_edge != nullptr) {
+
+        if ((left_edge != nullptr && right_edge != nullptr &&
+            left_edge->edge_id == right_edge->edge_id) 
+            || left_edge != nullptr) {
+            // account for a left edge OR a loop
+
             nodes.unlink_edge(left_edge);
             edges.delete_edge(left_edge);
-        }
-        if (right_edge != nullptr) {
+        } else if (right_edge != nullptr) {
             nodes.unlink_edge(right_edge);
             edges.delete_edge(right_edge);
         }
