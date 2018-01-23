@@ -25,6 +25,7 @@ test: FORCE
 
 clean: FORCE
 	rm -f $(PKG)/*.cpp
+	rm -f $(PKG)/*.so
 	@find ./ -type d -name __pycache__ -exec rm -rf {} +
 	@find ./$(PKG)/ -type f -name *$(MODEXT) -exec rm -f {} +
 	@find ./$(PKG)/ -type f -name *.pyc -exec rm -f {} +

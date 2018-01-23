@@ -21,8 +21,9 @@
 #include "oxli/assembler.hh"
 #include "oxli/alphabets.hh"
 
-# ifdef DEBUG_LINKS
-#   define pdebug(x) do { std::cout << std::endl << "@ " << __FILE__ <<\
+#define DEBUG_CDBG
+# ifdef DEBUG_CDBG
+#   define pdebug(x) do { std::cerr << std::endl << "@ " << __FILE__ <<\
                           ":" << __FUNCTION__ << ":" <<\
                           __LINE__  << std::endl << x << std::endl;\
                           } while (0)
@@ -151,7 +152,7 @@ protected:
 
     uint64_t n_compact_edges;
     uint64_t _n_updates;
-    uint32_t tag_density;
+    uint32_t _tag_density;
 
     TagEdgeMap tags_to_edges;
     IDEdgeMap compact_edges;
@@ -163,7 +164,7 @@ public:
         KmerFactory(K), n_compact_edges(0),
         _n_updates(0) {
 
-        tag_density = DEFAULT_TAG_DENSITY;    
+        _tag_density = DEFAULT_TAG_DENSITY;    
     }
 
     uint64_t n_edges() const {
@@ -172,6 +173,10 @@ public:
 
     uint64_t n_updates() const {
         return _n_updates;
+    }
+
+    uint32_t tag_density() const {
+        return _tag_density;
     }
 
     CompactEdge* build_edge(id_t left_id, id_t right_id,
@@ -198,6 +203,12 @@ public:
         n_compact_edges++;
         _n_updates++;
         return edge;
+    }
+
+    void link_tags_to_edge(CompactEdge * edge) {
+        for (auto tag: edge->tags) {
+            tags_to_edges[tag] = edge;
+        }
     }
 
     CompactEdge* get_edge_by_id(id_t id) {
@@ -268,6 +279,17 @@ public:
         return edge;
     }
 
+    CompactEdge* get_edge(KmerSet& kmers) const {
+        CompactEdge * edge = nullptr;
+        for (auto tag: kmers) {
+            edge = get_edge(tag);
+            if (edge != nullptr) {
+                break;
+            }
+        }
+        return edge;
+    }
+
     KmerFilter get_tag_stopper(TagEdgePair& te_pair,
                                bool& found_tag) { const
         KmerFilter stopper = [&] (const Kmer& node) {
@@ -276,6 +298,18 @@ public:
         };
 
         return stopper;
+    }
+
+    KmerHelper get_tag_gatherer(UHashSet& tags) { const
+
+        KmerHelper gatherer = [&] (const Kmer& node) {
+            CompactEdge * edge = get_edge(node);
+            if (edge != nullptr) {
+                tags.insert(node);
+            }
+        };
+
+        return gatherer;
     }
 
     void write_gml(const std::string filename,
@@ -781,18 +815,24 @@ public:
     /* Update a compact dbg where there are no induced
      * HDNs
      */
-    uint64_t update_compact_dbg_linear(const std::string& sequence) {
+    uint64_t update_compact_dbg_linear(const std::string& sequence,
+                                       KmerSet& kmers) {
         pdebug("no induced HDNs, update linear...");
         uint64_t n_ops_before = n_updates();
         Kmer root_kmer = graph->build_kmer(sequence.substr(0, _ksize));
 
+        UHashSet found_tags;
+        KmerHelper tag_gatherer = edges.get_tag_gatherer(found_tags);
         CompactingAT<TRAVERSAL_LEFT> lcursor(graph.get(), root_kmer);
+        lcursor.push_helper(tag_gatherer);
         CompactingAT<TRAVERSAL_RIGHT> rcursor(graph.get(), root_kmer);
+        rcursor.push_helper(tag_gatherer);
         CompactingAssembler cassem(graph.get());
 
         std::string left_seq = cassem._assemble_directed(lcursor);
         std::string right_seq = cassem._assemble_directed(rcursor);
         std::string segment_seq = left_seq + right_seq.substr(_ksize);
+        pdebug("linear segment: " << segment_seq);
 
         CompactNode *left_node = nullptr, *right_node = nullptr;
         left_node = nodes.get_node_by_kmer(lcursor.cursor);
@@ -806,6 +846,10 @@ public:
             nodes.get_edge_from_left(right_node, right_edge, segment_seq);
         }
 
+        // meta for the induced edge
+        compact_edge_meta_t edge_meta = deduce_edge_meta(left_node, 
+                                                         right_node);
+
         if ((left_edge != nullptr && right_edge != nullptr &&
             left_edge->edge_id == right_edge->edge_id) 
             || left_edge != nullptr) {
@@ -817,11 +861,29 @@ public:
             nodes.unlink_edge(right_edge);
             edges.delete_edge(right_edge);
         }
+        edges.delete_edge_by_tag(found_tags);
 
-        compact_edge_meta_t edge_meta = deduce_edge_meta(left_node, right_node);
-        if (edge_meta == ISLAND) { // don't deal with islands for now
+        if (edge_meta == ISLAND) {
+            CompactEdge *new_edge = edges.build_edge(NULL_ID, NULL_ID,
+                                                     edge_meta, segment_seq);
+            // distribute tags
+            uint32_t n_tags = ((segment_seq.length() - _ksize) 
+                               / edges.tag_density()) + 1;
+            uint32_t tag_dist = (segment_seq.length() - _ksize) / (n_tags + 1);
+            uint32_t tag_pos = tag_dist;
+            const char * _seq = segment_seq.c_str();
+            pdebug(n_tags << " tags with dist " << tag_dist <<
+                   " starting at " << tag_pos << ", seq length" << segment_seq.length());
+
+            while (n_tags > 0) {
+                new_edge->tags.insert(graph->hash_dna(_seq + tag_pos));
+                tag_pos += tag_dist;
+                n_tags--;
+            }
+            edges.link_tags_to_edge(new_edge);
             return n_updates() - n_ops_before;
         }
+
         id_t left_id, right_id;
         left_id = (left_node != nullptr) ? left_node->node_id : NULL_ID;
         right_id = (right_node != nullptr) ? right_node->node_id : NULL_ID;
@@ -862,9 +924,7 @@ public:
                 // find the induced HDNs in the disturbed k-mers
         KmerSet induced_hdns;
         KmerSet disturbed_hdns;
-        while(!disturbed_kmers.empty()) {
-            Kmer kmer = disturbed_kmers.back();
-            disturbed_kmers.pop_back();
+        for (Kmer kmer : disturbed_kmers) {
             uint8_t l_degree, r_degree;
             l_degree = lcursor.degree(kmer);
             r_degree = rcursor.degree(kmer);
@@ -885,7 +945,7 @@ public:
         /* If there are no induced HDNs, we must have extended
          * a tip or merged two tips into a linear segment */
         if (induced_hdns.size() == 0 && disturbed_hdns.size() == 0) {
-            return update_compact_dbg_linear(sequence);
+            return update_compact_dbg_linear(sequence, disturbed_kmers);
         } else if (induced_hdns.size() == 0) {
             induced_hdns.insert(disturbed_hdns.begin(), disturbed_hdns.end());
         }
