@@ -49,6 +49,7 @@ typedef std::unordered_set<HashIntoType> UHashSet;
 typedef std::vector<HashIntoType> HashVector;
 typedef std::unordered_map<HashIntoType, id_t> HashIDMap;
 typedef std::unordered_set<id_t> IDSet;
+typedef std::vector<std::string> StringVector;
 
 
 enum compact_edge_meta_t {
@@ -56,6 +57,14 @@ enum compact_edge_meta_t {
     TIP,
     ISLAND,
     TRIVIAL
+};
+
+
+enum DNA_SIMPLE_t {
+    A,
+    C,
+    G,
+    T
 };
 
 
@@ -73,6 +82,8 @@ inline const char * edge_meta_repr(compact_edge_meta_t meta) {
 }
 
 
+
+/*
 class CompactEdgeFactory;
 class CompactEdge {
     friend class CompactEdgeFactory;
@@ -136,6 +147,7 @@ public:
     }
 
 };
+
 
 typedef std::shared_ptr<CompactEdge> CompactEdgePtr;
 typedef std::vector<CompactEdge> CompactEdgeVector;
@@ -317,119 +329,63 @@ public:
     void write_fasta(const std::string filename) const;
 
 };
+*/
 
 
-class CompactNodeFactory;
 class CompactNode {
-    friend class CompactNodeFactory;
 public:
-    Kmer kmer;
-    uint32_t count;
     const id_t node_id;
     std::string sequence;
-    bool direction;
+    HashSet tags;
+    
+    CompactNode(id_t node_id, std::string sequence) :
+        node_id(node_id), sequence(sequence) {}
 
-    CompactEdge* in_edges[4] = {nullptr, nullptr, nullptr, nullptr};
-    CompactEdge* out_edges[4] = {nullptr, nullptr, nullptr, nullptr};
-
-    CompactNode(Kmer kmer, id_t node_id) : 
-        kmer(kmer), count(0), node_id(node_id), direction(kmer.is_forward()) {}
-
-    CompactNode(Kmer kmer, std::string sequence, id_t node_id) : 
-        kmer(kmer), count(0), sequence(sequence), node_id(node_id),
-        direction(kmer.is_forward()) {}
+    std::string revcomp() const {
+        return _revcomp(sequence);
+    }
 
     friend bool operator== (const CompactNode& lhs, const CompactNode& rhs) {
         return lhs.node_id == rhs.node_id;
     }
 
-    std::string rc_sequence() const {
-        return _revcomp(sequence);
+    void update_tags(HashSet& new_tags) {
+        tags.insert(new_tags.begin(), new_tags.end());
     }
+};
 
-    bool delete_edge(CompactEdge* edge) {
-        bool deleted = false;
-        if (delete_in_edge(edge)) {
-            deleted = true;
-        }
-        if (delete_out_edge(edge)) {
-            deleted = true;
-        }
-        return deleted;
-    }
 
-    bool delete_in_edge(CompactEdge* edge) {
-        for (uint8_t i=0; i<4; i++) {
-            if (in_edges[i] == edge) {
-                in_edges[i] = nullptr;
-                return true;
-            }
-        }
-        return false;
-    }
+typedef std::pair<DNA_SIMPLE_t, id_t> EdgePair;
+typedef std::vector<EdgePair> EdgeVector;
+typedef std::vector<CompactNode> CompactNodeVector;
 
-    void add_in_edge(const char base, CompactEdge* edge) {
-        //pdebug("add in edge to " << *this << ", base=" << base
-        //        << ", edge: " << *edge);
-        in_edges[twobit_repr(base)] = edge;
-    }
 
-    CompactEdge* get_in_edge(const char base) {
-        return in_edges[twobit_repr(base)];
-    }
+class UnitigNode : public CompactNode {
+public:
+    const id_t left_id, right_id;
 
-    bool delete_out_edge(CompactEdge* edge) {
-        for (uint8_t i=0; i<4; i++) {
-            if (out_edges[i] == edge) {
-                out_edges[i] = nullptr;
-                return true;
-            }
-        }
-        return false;
-    }
+    UnitigNode(id_t node_id, std::string sequence, 
+                   id_t left_id, id_t right_id) :
+        CompactNode(node_id, sequence), left_id(left_id), right_id(right_id) {}
+};
 
-    void add_out_edge(const char base, CompactEdge* edge) {
-        //pdebug("add out edge to " << *this << ", base=" << base
-        //        << ", edge: " << *edge);
-        out_edges[twobit_repr(base)] = edge;
-    }
 
-    CompactEdge* get_out_edge(const char base) {
-        return out_edges[twobit_repr(base)];
-    }
+class DecisionNode: public CompactNode {
+public:
+    using CompactNode::CompactNode;
+    EdgeVector neighbors;
 
-    uint8_t degree() const {
-        return out_degree() + in_degree();
-    }
-
-    uint8_t out_degree() const {
-        uint8_t acc = 0;
-        for (auto edge: out_edges) {
-            if (edge != nullptr) {
-                acc++;
-            }
-        }
-        return acc;
-    }
-
-    uint8_t in_degree() const {
-        uint8_t acc = 0;
-        for (auto edge: in_edges) {
-            if (edge != nullptr) {
-                acc++;
-            }
-        }
-        return acc;
-    }
-
+/*
     friend std::ostream& operator<<(std::ostream& stream,
                                      const CompactNode& node) {
-            stream << "<CompactNode ID=" << node.node_id << " Kmer=" << node.kmer.kmer_u
+            stream << "<CompactNode ID=" << node.node_id 
+                   << " Kmer=" << node.kmer.kmer_u
                    << " Sequence=" << node.sequence
                    << " rc_Sequence=" << node.rc_sequence()
                    << " Count=" << node.count << " in_degree=" 
                    << std::to_string(node.in_degree())
-                   << " out_degree=" << std::to_string(node.out_degree()) << ">";
+                   << " out_degree=" << std::to_string(node.out_degree())
+                   << ">";
             return stream;
     }
 
@@ -451,39 +407,29 @@ public:
         }
         return os.str();
     }
+    */
 };
 
-typedef std::vector<CompactNode> CompactNodeVector;
+typedef std::shared_ptr<CompactNode> NodeSharedPtr;
+typedef std::weak_ptr<CompactNode> NodeWeakPtr;
+typedef std::vector<DecisionNode> DecisionNodeVector;
+typedef std::unordered_map<id_t, UnitigNode> UnitigNodeMap;
 
-class CompactNodeFactory : public KmerFactory {
-    friend class CompactEdgeFactory;
-protected:
 
-    // map from HDN hashes to CompactNode IDs
+class NodeCentricCDBG : public KmerFactory {
+public:
+    DecisionNodeVector decision_nodes;
+    UnitigNodeMap unitig_nodes;
     HashIDMap kmer_id_map;
-    // linear storage for CompactNodes
-    CompactNodeVector compact_nodes;
-    uint64_t n_compact_nodes;
+    
     uint64_t _n_updates;
 
-public:
-    CompactNodeFactory(WordLength K) : 
-        KmerFactory(K), n_compact_nodes(0),
-        _n_updates(0) {}
+    NodeCentricCDBG(WordLength _ksize) :
+        KmerFactory(_ksize), _n_updates(0) {}
 
-    uint64_t n_nodes() const {
-        return n_compact_nodes;
-    }
-    
-    uint64_t n_updates() const {
-        return _n_updates;
-    }
-
-    // protected linear creation of CompactNode
-    // they should never be deleted, so this is straightforward
-    CompactNode* build_node(Kmer hdn) {
-        pdebug("new compact node from " << hdn);
-        CompactNode * v = get_node_by_kmer(hdn);
+    DecisionNode& build_decision_node(Kmer decision_kmer) {
+        pdebug("new DecisionNode from " << hdn);
+        DecisionNode dnode = get_node_by_kmer(hdn);
         if (v == nullptr) {
             compact_nodes.emplace_back(hdn, n_compact_nodes);
             n_compact_nodes++;
@@ -496,20 +442,48 @@ public:
         return v;
     }
 
-    CompactNode* get_node_by_kmer(HashIntoType hdn) {
-        auto search = kmer_id_map.find(hdn);
+    DecisionNode* get_decision_node(HashIntoType decision_kmer) {
+        auto search = kmer_id_map.find(decision_kmer);
         if (search != kmer_id_map.end()) {
             id_t ID = search->second;
-            return &(compact_nodes[ID]);
+            return &(decision_nodes[ID]);
         }
         return nullptr;
     }
 
-    CompactNode* get_node_by_id(id_t id) {
+    DecisionNode* get_decision_node_by_id(id_t id) {
         if (id >= compact_nodes.size()) {
             return nullptr;
         }
         return &(compact_nodes[id]);
+    }
+
+};
+
+
+class CompactNodeFactory : public KmerFactory {
+    friend class CompactEdgeFactory;
+protected:
+
+    // map from HDN hashes to CompactNode IDs
+    HashIDMap kmer_id_map;
+    // linear storage for CompactNodes
+
+public:
+
+
+    // protected linear creation of CompactNode
+    // they should never be deleted, so this is straightforward
+    CompactNode* build_node(Kmer hdn) {
+
+    }
+
+    CompactNode* get_node_by_kmer(HashIntoType hdn) {
+
+    }
+
+    CompactNode* get_node_by_id(id_t id) {
+
     }
 
     CompactNode* get_or_build_node(Kmer hdn) {
@@ -690,11 +664,8 @@ class StreamingCompactor : public KmerFactory
 
 protected:
 
-    // map from tags to CompactEdges
-    CompactNodeFactory nodes;
-    CompactEdgeFactory edges;
-
     uint64_t n_sequences_added;
+    Traverser traverser;
 
 public:
 
@@ -703,22 +674,12 @@ public:
     StreamingCompactor(shared_ptr<Hashgraph> graph) :
         KmerFactory(graph->ksize()),
         nodes(graph->ksize()), edges(graph->ksize()),
-        n_sequences_added(0), graph(graph)
+        n_sequences_added(0), graph(graph),
+        traverser(graph.get())
     {
     }
 
-    compact_edge_meta_t deduce_edge_meta(CompactNode* in, CompactNode* out) {
-        compact_edge_meta_t edge_meta;
-        if (in == nullptr && out == nullptr) {
-           edge_meta = ISLAND;
-        } else if ((out == nullptr) != (in == nullptr))  {
-            edge_meta = TIP;
-        } else {
-            edge_meta = FULL;
-        }
-        return edge_meta;
-    }
-
+/*
     uint64_t n_nodes() const {
         return nodes.n_nodes();
     }
@@ -765,6 +726,7 @@ public:
     CompactEdge* get_edge(UHashSet& tags) const {
         return edges.get_edge(tags);
     }
+*/
 
     uint64_t consume_sequence(const std::string& sequence) {
         uint64_t prev_n_kmers = graph->n_unique_kmers();
@@ -779,38 +741,7 @@ public:
         return 0;
     }
 
-    bool validate_segment(CompactNode* root_node, CompactNode* other_node,
-                          CompactEdge* edge, std::string& sequence) {
-        pdebug("validating " << *root_node << " with  " << *edge << ", " 
-              << sequence << " and other node ID=" << 
-              ((other_node != nullptr) ? other_node->node_id : NULL_ID));
-        bool edge_valid = true;
-        if (edge->meta == TIP) {
-            if (other_node != nullptr) {
-                edge_valid = false;
-            }
-            if (!((edge->in_node_id == root_node->node_id ||
-                   edge->out_node_id == root_node->node_id) &&
-                  edge->sequence.length() == sequence.length())) {
-                edge_valid = false;
-            }
-        } else if (edge->meta == FULL) {
-            if (other_node == nullptr) {
-                edge_valid = false;
-            } else {
-                bool nodes_match;
-                nodes_match = (edge->in_node_id == root_node->node_id && 
-                               edge->out_node_id == other_node->node_id) ||
-                              (edge->out_node_id == root_node->node_id &&
-                               edge->in_node_id == other_node->node_id);
-                if (!nodes_match) {
-                    edge_valid = false;
-                }
-            }
-        }
-        pdebug("valid? = " << edge_valid);
-        return edge_valid;
-    }
+
 
     /* Update a compact dbg where there are no induced
      * HDNs
@@ -897,6 +828,47 @@ public:
         }
         
         return n_updates() - n_ops_before;
+    }
+
+    bool is_decision_node(const Kmer& node) const {
+        return traverser.left_degree(node)  > 1 ||
+               traverser.right_degree(node)> 1;
+    }
+
+
+    void insert_kmers(std::string& sequence,
+                      KmerVector& kmers,
+                      KmerVector& new_kmers) {
+
+        KmerIterator it(sequence.c_str(), _ksize);
+        while(!it.done()) {
+            Kmer kmer = it.next();
+            if (graph->add(kmer)) {
+                new_kmers.push_back(kmer);
+            }
+            kmers.push_back(kmer);
+        }
+    }
+
+    void distribute_tags(KmerVector& unitig,
+                         UHashSet& tags) const {
+        tags.insert(unitig.front());
+        tags.insert(unitig.back());
+
+        uint32_t n_tags = unitig.length() / _tag_density;
+        uint32_t tag_delta = unitig.length() / (n_tags + 1);
+        while(n_tags > 0) {
+            tags.insert(unitig[tag_delta * n_tags]);
+            n_tags--;
+        }
+    }
+
+    void decompose_sequence(std::string sequence,
+                            StringVector& incomplete_segments,
+                            CompactNodeVector& found_nodes) const {
+        // decompose the sequence into its constituent complete
+        // and incomplete unitigs and decision nodes
+
     }
 
 
