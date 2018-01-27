@@ -199,17 +199,26 @@ public:
                                             _n_updates, edge_meta);
         compact_edges[_n_updates] = edge;
 
-        pdebug("new compact edge: \n left=" << std::to_string(left_id) 
-                << std::endl << " right=" << std::to_string(right_id)
-                << std::endl << " meta=" << edge_meta_repr(edge_meta)
-                << std::endl << " sequence   =" << edge_sequence
-                << std::endl << " rc_sequence=" << _revcomp(edge_sequence)
-                << std::endl << " start   =" << edge_sequence.substr(0, _ksize+1)
-                << std::endl << " rc_start=" << _revcomp(edge_sequence.substr(0, _ksize+1))
+        pdebug("new compact edge: \n left="
+                << std::to_string(left_id) 
+                << std::endl << " right=" 
+                << std::to_string(right_id)
+                << std::endl << " meta=" 
+                << edge_meta_repr(edge_meta)
+                << std::endl << " sequence   =" 
+                << edge_sequence
+                << std::endl << " rc_sequence=" 
+                << _revcomp(edge_sequence)
+                << std::endl << " start   =" 
+                << edge_sequence.substr(0, _ksize+1)
+                << std::endl << " rc_start=" 
+                << _revcomp(edge_sequence.substr(0, _ksize+1))
                 << std::endl << " end    =" 
-                << edge_sequence.substr(edge_sequence.length()-_ksize-1, _ksize+1)
+                << edge_sequence.substr(edge_sequence.length()-_ksize-1, 
+                                        _ksize+1)
                 << std::endl << " rc_end =" 
-                << _revcomp(edge_sequence.substr(edge_sequence.length()-_ksize-1, _ksize+1)));
+                << _revcomp(edge_sequence.substr(
+                            edge_sequence.length()-_ksize-1, _ksize+1)));
 
         edge->sequence = edge_sequence;
         n_compact_edges++;
@@ -417,29 +426,34 @@ typedef std::unordered_map<id_t, UnitigNode> UnitigNodeMap;
 
 
 class NodeCentricCDBG : public KmerFactory {
+protected:
+    uint64_t _decision_node_id_gen;
+    uint64_t _unitig_node_id_gen;
 public:
     DecisionNodeVector decision_nodes;
     UnitigNodeMap unitig_nodes;
     HashIDMap kmer_id_map;
     
     uint64_t _n_updates;
+    uint64_t _n_decision_nodes;
 
     NodeCentricCDBG(WordLength _ksize) :
-        KmerFactory(_ksize), _n_updates(0) {}
+        KmerFactory(_ksize), _n_updates(0),
+        _decision_node_id_gen(0), _unitig_node_id_gen(NULL_ID-1) {}
 
-    DecisionNode& build_decision_node(Kmer decision_kmer) {
-        pdebug("new DecisionNode from " << hdn);
-        DecisionNode dnode = get_node_by_kmer(hdn);
-        if (v == nullptr) {
-            compact_nodes.emplace_back(hdn, n_compact_nodes);
-            n_compact_nodes++;
-            v = &(compact_nodes.back());
-            v->sequence = _revhash(hdn, _ksize);
-            kmer_id_map[hdn] = v->node_id;
+    DecisionNode* build_decision_node(Kmer decision_kmer,
+                                      std::string decision_sequence) {
+        pdebug("new DecisionNode from " << decision_sequence);
+        DecisionNode* node = get_decision_node(decision_kmer);
+        if (node == nullptr) {
+            decision_nodes.emplace_back(_decision_node_id_gen, decision_sequence);
+            _decision_node_id_gen++;
+            node = &(decision_nodes.back());
+            kmer_id_map[decision_kmer] = node->node_id;
             _n_updates++;
-            pdebug("Allocate: " << *v);
+            pdebug("Allocate: " << *node);
         }
-        return v;
+        return node;
     }
 
     DecisionNode* get_decision_node(HashIntoType decision_kmer) {
@@ -452,10 +466,23 @@ public:
     }
 
     DecisionNode* get_decision_node_by_id(id_t id) {
-        if (id >= compact_nodes.size()) {
+        if (id >= decision_nodes.size()) {
             return nullptr;
         }
-        return &(compact_nodes[id]);
+        return &(decision_nodes[id]);
+    }
+
+    UnitigNode* build_unitig_node(const std::string& sequence) {
+        pdebug("new UnitigNode from " << sequence);
+        HashIntoType hashed_sequence;
+        UnitigNode* node = get_unitig_node(sequence, hashed_sequence);
+        if (node == nullptr) {
+            
+        }
+    }
+
+    UnitigNode* get_unitig_node(const std::string& sequence) {
+        
     }
 
 };
