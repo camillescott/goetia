@@ -422,7 +422,7 @@ public:
 typedef std::shared_ptr<CompactNode> NodeSharedPtr;
 typedef std::weak_ptr<CompactNode> NodeWeakPtr;
 typedef std::vector<DecisionNode> DecisionNodeVector;
-typedef std::unordered_map<id_t, UnitigNode> UnitigNodeMap;
+typedef std::unordered_map<id_t, UnitigNode*> UnitigNodeMap;
 
 
 class NodeCentricCDBG : public KmerFactory {
@@ -431,7 +431,7 @@ protected:
     uint64_t _unitig_node_id_gen;
 public:
     DecisionNodeVector decision_nodes;
-    UnitigNodeMap unitig_nodes;
+    UnitigNodePtrMap unitig_nodes;
     HashIDMap kmer_id_map;
     
     uint64_t _n_updates;
@@ -477,12 +477,22 @@ public:
         HashIntoType hashed_sequence;
         UnitigNode* node = get_unitig_node(sequence, hashed_sequence);
         if (node == nullptr) {
+            node = new UnitigNode(hash_murmur_uni(sequence),
+                                  sequence, NULL_ID, NULL_id);
             
         }
     }
 
     UnitigNode* get_unitig_node(const std::string& sequence) {
-        
+        return get_unitig_node(hash_murmur_uni(sequence));
+    }
+
+    UnitigNode* get_unitig_node(const id_t sequence_hash) {
+        auto search = unitig_nodes.find(sequence_hash);
+        if (search != unitig_nodes.end()) {
+            return search->second;
+        }
+        return nullptr;
     }
 
 };
@@ -878,7 +888,7 @@ public:
     }
 
     void distribute_tags(KmerVector& unitig,
-                         UHashSet& tags) const {
+                         HashSet& tags) const {
         tags.insert(unitig.front());
         tags.insert(unitig.back());
 
@@ -895,7 +905,11 @@ public:
                             CompactNodeVector& found_nodes) const {
         // decompose the sequence into its constituent complete
         // and incomplete unitigs and decision nodes
+        KmerIterator kmers(seqeunce.c_str(), _ksize);
+        while(!kmers.done()) {
+            Kmer kmer = kmers.next();
 
+        }
     }
 
 
