@@ -344,27 +344,24 @@ public:
 class CompactNode {
 public:
     const id_t node_id;
-    std::string sequence;
-    HashSet tags;
+    std::string seed;
+    KmerVector tags;
     
-    CompactNode(id_t node_id, std::string sequence) :
-        node_id(node_id), sequence(sequence) {}
+    CompactNode(id_t node_id, std::string seed) :
+        node_id(node_id), seed(seed) {}
 
     std::string revcomp() const {
-        return _revcomp(sequence);
+        return _revcomp(seed);
     }
 
     friend bool operator== (const CompactNode& lhs, const CompactNode& rhs) {
         return lhs.node_id == rhs.node_id;
     }
 
-    void update_tags(HashSet& new_tags) {
-        tags.insert(new_tags.begin(), new_tags.end());
-    }
 };
 
 
-typedef std::pair<DNA_SIMPLE_t, id_t> EdgePair;
+typedef std::pair<DNA_SIMPLE_t, HashIntoType> EdgePair;
 typedef std::vector<EdgePair> EdgeVector;
 typedef std::vector<CompactNode> CompactNodeVector;
 
@@ -372,17 +369,40 @@ typedef std::vector<CompactNode> CompactNodeVector;
 class UnitigNode : public CompactNode {
 public:
     const id_t left_id, right_id;
+    uint64_t length;
 
-    UnitigNode(id_t node_id, std::string sequence, 
-                   id_t left_id, id_t right_id) :
-        CompactNode(node_id, sequence), left_id(left_id), right_id(right_id) {}
+    UnitigNode(id_t node_id, std::string seed, 
+               id_t left_id, id_t right_id,
+               uint64_t length) :
+        CompactNode(node_id, seed),
+        left_id(left_id), right_id(right_id),
+        length(length) {}
+
+    UnitigNode(id_t node_id, std::string seed,
+               uint64_t length) :
+        CompactNode(node_id, seed),
+        left_id(NULL_ID), right_id(NULL_ID),
+        length(length) {}
 };
 
 
 class DecisionNode: public CompactNode {
 public:
     using CompactNode::CompactNode;
-    EdgeVector neighbors;
+    EdgeVector in_edges;
+    EdgeVector out_edges;
+
+    uint8_t degree() const {
+        return in_edges.length() + out_edges.length();
+    }
+
+    uint8_t in_degree() const {
+        return in_edges.length();
+    }
+
+    uint8_t out_degree() const {
+        return out_edges.length();
+    }
 
 /*
     friend std::ostream& operator<<(std::ostream& stream,
@@ -423,7 +443,7 @@ typedef std::shared_ptr<CompactNode> NodeSharedPtr;
 typedef std::weak_ptr<CompactNode> NodeWeakPtr;
 typedef std::vector<DecisionNode> DecisionNodeVector;
 typedef std::unordered_map<id_t, UnitigNode*> UnitigNodeMap;
-
+typedef std::tuple<HashIntoType, HashIntoType, HashIntoType, HashIntoType> SegmentHash;
 
 class NodeCentricCDBG : public KmerFactory {
 protected:
@@ -442,7 +462,7 @@ public:
         _decision_node_id_gen(0), _unitig_node_id_gen(NULL_ID-1) {}
 
     DecisionNode* build_decision_node(Kmer decision_kmer,
-                                      std::string decision_sequence) {
+                                      const std::string& decision_sequence) {
         pdebug("new DecisionNode from " << decision_sequence);
         DecisionNode* node = get_decision_node(decision_kmer);
         if (node == nullptr) {
@@ -481,6 +501,7 @@ public:
                                   sequence, NULL_ID, NULL_id);
             
         }
+        return node;
     }
 
     UnitigNode* get_unitig_node(const std::string& sequence) {
@@ -867,13 +888,29 @@ public:
         return n_updates() - n_ops_before;
     }
 
-    bool is_decision_node(const Kmer& node) const {
-        return traverser.left_degree(node)  > 1 ||
-               traverser.right_degree(node)> 1;
+    bool is_decision_node(const Kmer& node,
+                          uint8_t& degree) const {
+        uint8_t ldegree, rdegree;
+        ldegree = traverser.left_degree(node);
+        rdegree = traverser.right_degree(node);
+        degree = ldegree + rdegree;
+        return ldegree  > 1 || rdegree > 1;
     }
 
+    bool is_decision_node(const Kmer& node) const {
+        return traverser.left_degree(node) > 1 ||
+               traverser.right_degree(node) > 1;
+    }
 
-    void insert_kmers(std::string& sequence,
+    bool is_disturbed_decision_node(const Kmer& node,
+                                    KmerQueue& new_lneighbors,
+                                    KmerQueue& new_rneighbors) const {
+        traverser.traverse_left(node, new_lneighbors);
+        traverser.traverse_right(node, new_rneighbors);
+
+    }
+
+    void insert_kmers(const std::string& sequence,
                       KmerVector& kmers,
                       KmerVector& new_kmers) {
 
@@ -897,6 +934,82 @@ public:
         while(n_tags > 0) {
             tags.insert(unitig[tag_delta * n_tags]);
             n_tags--;
+        }
+    }
+
+    void sort_nodes(KmerVector& kmers,
+                    KmerVector& decision_nodes,
+                    std::vector<uint32_t>& decision_positions,
+                    std::vectpr<uint8_t>& node_degrees) const {
+        uint32_t position = 0;
+        for (auto kmer : kmers) {
+            uint8_t degree;
+            if (is_decision_node(kmer, degree)) {
+                decision_nodes.push_back(kmer);
+                decision_positions.push_back(position);
+            }
+            node_degrees.push_back(degree);
+            position++;
+        }
+    }
+
+
+    uint64_t update(const std::string& sequence) {
+        KmerVector seq_kmers;
+        KmerVector new_kmers;
+        insert_kmers(sequence, seq_kmers, new_kmers);
+
+        if (new_kmers.length() == 0) {
+            return 0;
+        } else {
+            return update(sequence, seq_kmers);
+        }
+    }
+
+    uint64_t update(const std::string& sequence,
+                    KmerVector& kmers) {
+        KmerVector decision_nodes;
+        std::vector<uint32_t> decision_positions;
+        std::vector<uint8_t> node_degrees;
+        sort_nodes(kmers, decision_nodes, decision_positions,
+                   node_degrees);
+
+    }
+
+    void seed_extend_unitig(std::string sequence) {
+        
+    }
+
+    void gather_subgraph(const std::string& sequence,
+                         KmerVector& kmers,
+                         KmerVector& decision_nodes,
+                         std::vector<CompactNode*> subgraph) {
+        
+    }
+
+    void generate_segments(const std::string& sequence,
+                           KmerVector& kmers,
+                           KmerVector& decision_nodes,
+                           std::vector<uint32_t>& decision_positions,
+                           std::vector<uint8_t>& node_degrees) {
+
+        std::vector<DecisionNode*> disturbed_decision_nodes;
+        auto _nit = decision_nodes.begin();
+        auto _pit = decision_positions.begin();
+        DecisionNode* prev_decision_node = nullptr;
+        for ( ; _nit != decision_nodes.end(), _pit != decision_positions.end();
+                _nit++, _pit++) {
+            std::string decision_sequence = sequence.substr(*_pit, _ksize);
+            DecisionNode* dnode = cdbg.build_decision_node(*_nit,
+                                                           decision_sequence);
+            if (dnode->degree() < node_degrees[*_pit]) {
+                disturbed_decision_nodes.push_back(dnode);
+            }
+
+            
+
+
+            prev_decision_node = dnode;
         }
     }
 
