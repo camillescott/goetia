@@ -96,3 +96,8 @@ ENV/
 *.info
 *.json
 *.tmp
+
+
+work/
+data/
+cython_debug/

@@ -49,7 +49,7 @@ cdef class MinHeap:
         return 2 * i + 2
 
     cdef int parent(self, int i):
-        return (i - 1) / 2 
+        return (i - 1) // 2 
 
     cdef Weighted root(self):
         return self.data[0]
@@ -63,7 +63,7 @@ cdef class MinHeap:
         cdef int l, r
         cdef int m = i
         if i < 0:
-            i = (self.capacity - 1) / 2
+            i = (self.capacity - 1) // 2
             while i >= 0:
                 self.heapify(i)
                 i = i - 1
