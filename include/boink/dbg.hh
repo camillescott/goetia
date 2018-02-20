@@ -7,9 +7,7 @@
  * of the MIT license.  See the LICENSE file for details.
  */
 
-#include "hasher.hh"          
-
-#include "oxli/hashtable.hh"
+#include "hasher.hh"
 #include "oxli/storage.hh"
 
 #include <string>
@@ -87,19 +85,7 @@ public:
     }
     */
 
-    std::vector<bool> add_sequence(const string& sequence) {
-        KmerIterator<HashShifter> iter(sequence, _K);
-        std::vector<bool> consumed(sequence.length() - _K + 1);
-
-        size_t pos = 0;
-        while(!iter.done()) {
-            hash_t h = iter.next();
-            consumed[pos] = add(h);
-            ++pos;
-        }
-
-        return consumed;
-    }
+    std::vector<bool> add_sequence(const string& sequence);
 
     void save(string filename) const {
         S.save(filename, _K);
@@ -114,10 +100,3 @@ public:
 typedef dBG<oxli::BitStorage, DefaultShifter> DefaultDBG;
 
 };
-
-int main() {
-    std::string S = "ATCGGGCTGGGGTGCGCGGCATTATAAGGCTGGATG";
-    boink::DefaultDBG G(16, oxli::get_n_primes_near_x(4, 100));
-
-    G.add_sequence(S);
-}
