@@ -9,8 +9,11 @@
 
 #include "hasher.hh"          
 
+#include "oxli/hashtable.hh"
 #include "oxli/storage.hh"
 
+#include <string>
+#include <vector>
 
 namespace boink {
 
@@ -26,6 +29,8 @@ template <class StorageType,
 class dBG : public KmerClient {
     StorageType S;
     HashShifter hasher;
+
+public:
     
     explicit dBG(uint16_t K, std::vector<uint64_t> storage_size) :
         KmerClient(K), S(storage_size), hasher(K) {
@@ -46,6 +51,10 @@ class dBG : public KmerClient {
 
     bool add(const string& kmer) {
         return S.add(hash(kmer));
+    }
+
+    bool add(hash_t kmer) {
+        return S.add(kmer);
     }
 
     /*
@@ -78,9 +87,9 @@ class dBG : public KmerClient {
     }
     */
 
-    std::bitset add_sequence(const string& sequence) {
+    std::vector<bool> add_sequence(const string& sequence) {
         KmerIterator<HashShifter> iter(sequence, _K);
-        std::bitset consumed(sequence.length() - _K + 1);
+        std::vector<bool> consumed(sequence.length() - _K + 1);
 
         size_t pos = 0;
         while(!iter.done()) {
@@ -105,3 +114,10 @@ class dBG : public KmerClient {
 typedef dBG<oxli::BitStorage, DefaultShifter> DefaultDBG;
 
 };
+
+int main() {
+    std::string S = "ATCGGGCTGGGGTGCGCGGCATTATAAGGCTGGATG";
+    boink::DefaultDBG G(16, oxli::get_n_primes_near_x(4, 100));
+
+    G.add_sequence(S);
+}
