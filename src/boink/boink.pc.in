@@ -1,0 +1,11 @@
+prefix=@prefix@
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+sharedlibdir=${libdir}
+includedir=${prefix}/include
+
+Name: boink
+Description: The core shared library for the boink project
+URL: https://github.com/camillescott/boink/ 
+Version: @VERSION@
+
