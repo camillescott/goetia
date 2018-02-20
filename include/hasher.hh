@@ -33,7 +33,7 @@ public:
     std::deque<char> symbol_deque;
     using KmerClient::KmerClient;
     
-    hash_t reset(std::string& sequence) {
+    hash_t reset(const std::string& sequence) {
         if (sequence.length() < _K) {
             throw BoinkException("Sequence must be length K");
         }
@@ -170,7 +170,7 @@ class KmerIterator : public KmerClient {
 
 public:
     KmerIterator(const std::string seq, uint16_t K) :
-        KmerClient(K), Shifter(K), _seq(seq),
+        KmerClient(K), shifter(K), _seq(seq),
         index(0), _initialized(false) {
         
     }
