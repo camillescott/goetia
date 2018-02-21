@@ -1,6 +1,6 @@
 
 #include <iostream>
-#include "cdbg.hh"
+#include "boink/cdbg.hh"
 
 using namespace boink;
 
