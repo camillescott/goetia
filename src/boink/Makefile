@@ -133,7 +133,7 @@ HEADERS= \
 	dbg.hh \
 	cdbg.hh
 
-BOINK_HEADERS = $(addprefix ../include/,$(HEADERS))
+BOINK_HEADERS = $(addprefix ../../include/boink/,$(HEADERS))
 
 # START OF RULES #
 
