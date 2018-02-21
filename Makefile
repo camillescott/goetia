@@ -32,6 +32,9 @@ clean: FORCE
 	@find ./$(PKG)/ -type f -name *.cpp -exec rm -f {} +
 	rm -rf build dist $(PKG).egg-info
 
+libboink:
+	cd src/boink && $(MAKE)
+
 FORCE:
 
 
