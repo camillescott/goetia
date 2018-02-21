@@ -36,7 +36,7 @@ public:
     }
 
     hash_t hash(const string& kmer) const {
-        hasher.hash(kmer);
+        return hasher.hash(kmer);
     }
 
     /*
