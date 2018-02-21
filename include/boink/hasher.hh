@@ -79,9 +79,9 @@ public:
     }
 
     std::string get_cursor() {
-        std::string sequence;
+        std::string sequence = "";
         for (auto c : symbol_deque) {
-            sequence.append(c);
+            sequence += c;
         }
         return sequence;
     }
@@ -102,6 +102,7 @@ class RollingHashShifter : public HashShifter<RollingHashShifter<Alphabet>,
 public:
 
     using HashShifter<RollingHashShifter<Alphabet>, Alphabet>::HashShifter;
+    using HashShifter<RollingHashShifter<Alphabet>, Alphabet>::reset;
     typedef HashShifter<RollingHashShifter<Alphabet>, Alphabet> BaseShifter;
 
     RollingHashShifter(uint16_t K) :
@@ -110,7 +111,11 @@ public:
     }
 
     hash_t reset() {
-        hasher = CyclicHash<hash_t>(this->_K);
+        // This pattern "resets" a stack object
+        // by calling its destructor and reallocating
+        (&hasher)->~CyclicHash<hash_t>();
+        new (&hasher) CyclicHash<hash_t>(this->_K);
+
         for (auto c : this->symbol_deque) {
             hasher.eat(c);
         }
@@ -154,6 +159,8 @@ public:
             hashes.push_back(hasher.hashvalue);
             hasher.update(symbol, back);
         }
+
+        return hashes;
     }
 };
 
@@ -170,7 +177,7 @@ class KmerIterator : public KmerClient {
 
 public:
     KmerIterator(const std::string seq, uint16_t K) :
-        KmerClient(K), shifter(K), _seq(seq),
+        KmerClient(K), _seq(seq), shifter(K),
         index(0), _initialized(false) {
         
     }
