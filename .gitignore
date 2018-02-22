@@ -101,3 +101,5 @@ ENV/
 work/
 data/
 cython_debug/
+
+*.o
