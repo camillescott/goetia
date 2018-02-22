@@ -1,5 +1,3 @@
-
-
 # Profile?
 # Set this variable to true if you wish to profile the codes.
 WANT_PROFILING=false
@@ -119,18 +117,17 @@ export LDFLAGS
 export VERSION
 
 
-
 LIBBOINK_OBJS= \
 	dbg.o \
 	cdbg.o \
-	hasher.o \
+	hashing.o \
 	assembly.o
 
 PRECOMILE_OBJS ?=
 PRECLEAN_TARGS ?=
 
 HEADERS= \
-	hasher.hh \
+	hashing.hh \
 	dbg.hh \
 	cdbg.hh \
 	boink.hh \

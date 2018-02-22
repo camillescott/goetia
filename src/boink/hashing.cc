@@ -1,4 +1,4 @@
-#include "boink/hasher.hh"
+#include "boink/hashing.hh"
 
 using namespace boink;
 

@@ -43,12 +43,6 @@ public:
     static const std::string symbols;
     std::deque<char> symbol_deque;
     using KmerClient::KmerClient;
-
-    HashShifter(const std::string& start, uint16_t K) :
-        KmerClient(K) {
-
-        reset(start);
-    }
     
     hash_t reset(const std::string& sequence) {
         if (sequence.length() < _K) {
@@ -102,6 +96,14 @@ public:
     }
 
 private:
+
+    HashShifter(const std::string& start, uint16_t K) :
+        KmerClient(K) {
+
+        reset(start);
+    }
+
+    friend Derived;
 
     Derived& derived() {
         return *static_cast<Derived*>(this);

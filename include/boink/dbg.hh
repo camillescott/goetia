@@ -10,7 +10,7 @@
 #ifndef BDBG_HH
 #define BDBG_HH
 
-#include "hasher.hh"
+#include "hashing.hh"
 #include "oxli/storage.hh"
 
 #include <string>

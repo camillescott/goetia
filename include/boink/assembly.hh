@@ -11,7 +11,7 @@
 #define ASSEMBLY_HH
 
 #include "dbg.hh"
-#include "hasher.hh"
+#include "hashing.hh"
 
 #include <deque>
 #include <memory>
