@@ -21,6 +21,11 @@ namespace boink {
 typedef uint64_t hash_t;
 typedef std::pair<hash_t, hash_t> full_hash_t;
 
+struct AnchoredHash {
+    const char symbol;
+    hash_t hash;
+};
+
 
 class KmerClient {
 protected:
@@ -66,7 +71,7 @@ public:
         return derived().hash(sequence);
     }
 
-    std::vector<hash_t> shift_left() {
+    std::vector<AnchoredHash> shift_left() {
         return derived().shift_left();
     }
 
@@ -77,7 +82,7 @@ public:
         return h;
     }
 
-    std::vector<hash_t> shift_right() {
+    std::vector<AnchoredHash> shift_right() {
         return derived().shift_right();
     }
 
@@ -142,12 +147,12 @@ public:
         return hasher.hashvalue;
     }
 
-    std::vector<hash_t> shift_right() {
-        std::vector<hash_t> hashes;
+    std::vector<AnchoredHash> shift_right() {
+        std::vector<AnchoredHash> hashes;
         const char front = this->symbol_deque.front();
         for (auto symbol : Alphabet) {
             hasher.update(front, symbol);
-            hashes.push_back(hasher.hashvalue);
+            hashes.push_back(AnchoredHash(symbol, hasher.hashvalue));
             hasher.reverse_update(front, symbol);
         }
         return hashes;
@@ -158,12 +163,12 @@ public:
         return hash();
     }
 
-    std::vector<hash_t> shift_left() {
-        std::vector<hash_t> hashes;
+    std::vector<AnchoredHash> shift_left() {
+        std::vector<AnchoredHash> hashes;
         const char back = this->symbol_deque.back();
         for (auto symbol : Alphabet) {
             hasher.reverse_update(symbol, back);
-            hashes.push_back(hasher.hashvalue);
+            hashes.push_back(AnchoredHash(symbol, hasher.hashvalue));
             hasher.update(symbol, back);
         }
 
