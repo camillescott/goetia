@@ -7,9 +7,14 @@
  * of the MIT license.  See the LICENSE file for details.
  */
 
+#ifndef HASHING_HH
+#define HASHING_HH
+
 #include "boink.hh"
 #include "oxli/alphabets.hh"
 #include "oxli/kmer_hash.hh"
+
+#include <deque>
 
 namespace boink {
 
@@ -30,17 +35,22 @@ template <class Derived,
           const std::string& Alphabet>
 class HashShifter : public KmerClient {
 public:
+    static const std::string symbols;
     std::deque<char> symbol_deque;
     using KmerClient::KmerClient;
+
+    HashShifter(const std::string& start, uint16_t K) :
+        KmerClient(K) {
+
+        reset(start);
+    }
     
     hash_t reset(const std::string& sequence) {
         if (sequence.length() < _K) {
             throw BoinkException("Sequence must be length K");
         }
         symbol_deque.clear();
-        for (size_t i = 0; i < _K; ++i) {
-            symbol_deque.push_back(sequence[i]);
-        }
+        symbol_deque.insert(symbol_deque.begin(), sequence.begin(), sequence.begin()+_K);
         return derived().reset();
     }
 
@@ -79,11 +89,7 @@ public:
     }
 
     std::string get_cursor() {
-        std::string sequence = "";
-        for (auto c : symbol_deque) {
-            sequence += c;
-        }
-        return sequence;
+        return std::string(symbol_deque.begin(), symbol_deque.end());
     }
 
 private:
@@ -101,12 +107,12 @@ class RollingHashShifter : public HashShifter<RollingHashShifter<Alphabet>,
 
 public:
 
-    using HashShifter<RollingHashShifter<Alphabet>, Alphabet>::HashShifter;
-    using HashShifter<RollingHashShifter<Alphabet>, Alphabet>::reset;
     typedef HashShifter<RollingHashShifter<Alphabet>, Alphabet> BaseShifter;
+    using BaseShifter::HashShifter;
+    using BaseShifter::reset;
 
-    RollingHashShifter(uint16_t K) :
-        BaseShifter(K), hasher(K) {
+    RollingHashShifter(const std::string& start, uint16_t K) :
+        BaseShifter(start, K), hasher(K) {
 
     }
 
@@ -177,8 +183,8 @@ class KmerIterator : public KmerClient {
 
 public:
     KmerIterator(const std::string seq, uint16_t K) :
-        KmerClient(K), _seq(seq), shifter(K),
-        index(0), _initialized(false) {
+        KmerClient(K), _seq(seq), 
+        index(0), _initialized(false), shifter(K) {
         
     }
 
@@ -287,3 +293,5 @@ public:
 */
 
 };
+
+#endif
