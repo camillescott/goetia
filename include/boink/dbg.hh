@@ -7,6 +7,9 @@
  * of the MIT license.  See the LICENSE file for details.
  */
 
+#ifndef BDBG_HH
+#define BDBG_HH
+
 #include "hasher.hh"
 #include "oxli/storage.hh"
 
@@ -102,3 +105,5 @@ public:
 typedef dBG<oxli::BitStorage, DefaultShifter> DefaultDBG;
 
 };
+
+#endif

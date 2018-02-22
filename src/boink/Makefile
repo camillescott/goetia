@@ -123,7 +123,8 @@ export VERSION
 LIBBOINK_OBJS= \
 	dbg.o \
 	cdbg.o \
-	hasher.o
+	hasher.o \
+	assembly.o
 
 PRECOMILE_OBJS ?=
 PRECLEAN_TARGS ?=
@@ -131,7 +132,9 @@ PRECLEAN_TARGS ?=
 HEADERS= \
 	hasher.hh \
 	dbg.hh \
-	cdbg.hh
+	cdbg.hh \
+	boink.hh \
+	assembly.hh
 
 BOINK_HEADERS = $(addprefix ../../include/boink/,$(HEADERS))
 

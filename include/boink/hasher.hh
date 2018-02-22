@@ -21,9 +21,9 @@ namespace boink {
 typedef uint64_t hash_t;
 typedef std::pair<hash_t, hash_t> full_hash_t;
 
-struct AnchoredHash {
-    const char symbol;
+struct shift_t {
     hash_t hash;
+    const char symbol;
 };
 
 
@@ -71,7 +71,7 @@ public:
         return derived().hash(sequence);
     }
 
-    std::vector<AnchoredHash> shift_left() {
+    std::vector<shift_t> shift_left() {
         return derived().shift_left();
     }
 
@@ -82,7 +82,7 @@ public:
         return h;
     }
 
-    std::vector<AnchoredHash> shift_right() {
+    std::vector<shift_t> shift_right() {
         return derived().shift_right();
     }
 
@@ -95,6 +95,10 @@ public:
 
     std::string get_cursor() {
         return std::string(symbol_deque.begin(), symbol_deque.end());
+    }
+
+    void get_cursor(std::deque<char>& d) {
+        return d.insert(d.end(), symbol_deque.begin(), symbol_deque().end());
     }
 
 private:
@@ -147,12 +151,12 @@ public:
         return hasher.hashvalue;
     }
 
-    std::vector<AnchoredHash> shift_right() {
-        std::vector<AnchoredHash> hashes;
+    std::vector<shift_t> shift_right() {
+        std::vector<shift_t> hashes;
         const char front = this->symbol_deque.front();
         for (auto symbol : Alphabet) {
             hasher.update(front, symbol);
-            hashes.push_back(AnchoredHash(symbol, hasher.hashvalue));
+            hashes.push_back(shift_t(hasher.hashvalue, symbol));
             hasher.reverse_update(front, symbol);
         }
         return hashes;
@@ -163,12 +167,12 @@ public:
         return hash();
     }
 
-    std::vector<AnchoredHash> shift_left() {
-        std::vector<AnchoredHash> hashes;
+    std::vector<shift_t> shift_left() {
+        std::vector<shift_t> hashes;
         const char back = this->symbol_deque.back();
         for (auto symbol : Alphabet) {
             hasher.reverse_update(symbol, back);
-            hashes.push_back(AnchoredHash(symbol, hasher.hashvalue));
+            hashes.push_back(shift_t(hasher.hashvalue, symbol));
             hasher.update(symbol, back);
         }
 
