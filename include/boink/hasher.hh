@@ -112,9 +112,10 @@ public:
     using BaseShifter::reset;
 
     RollingHashShifter(const std::string& start, uint16_t K) :
-        BaseShifter(start, K), hasher(K) {
+        BaseShifter(start, K), hasher(K) {}
 
-    }
+    RollingHashShifter(uint16_t K) :
+        BaseShifter(K), hasher(K) {}
 
     hash_t reset() {
         // This pattern "resets" a stack object

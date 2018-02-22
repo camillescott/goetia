@@ -29,6 +29,8 @@ class dBG : public KmerClient {
     HashShifter hasher;
 
 public:
+
+    typedef HashShifter hasher_type;
     
     explicit dBG(uint16_t K, std::vector<uint64_t> storage_size) :
         KmerClient(K), S(storage_size), hasher(K) {
