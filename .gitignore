@@ -103,3 +103,6 @@ data/
 cython_debug/
 
 *.o
+**boink.pc
+**libboink.*
+**a.out

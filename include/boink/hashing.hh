@@ -16,6 +16,16 @@
 
 #include <deque>
 
+# ifdef DEBUG_HASHING
+#   define pdebug(x) do { std::cerr << std::endl << "@ " << __FILE__ <<\
+                          ":" << __FUNCTION__ << ":" <<\
+                          __LINE__  << std::endl << x << std::endl;\
+                          } while (0)
+# else
+#   define pdebug(x) do {} while (0)
+# endif
+
+
 namespace boink {
 
 typedef uint64_t hash_t;
@@ -37,52 +47,57 @@ public:
 
 
 template <class Derived,
-          const std::string& Alphabet>
+          const std::string& Alphabet = oxli::alphabets::DNA_SIMPLE>
 class HashShifter : public KmerClient {
 public:
     static const std::string symbols;
     std::deque<char> symbol_deque;
-    using KmerClient::KmerClient;
     
-    hash_t reset(const std::string& sequence) {
+    hash_t set_cursor(const std::string& sequence) {
         if (sequence.length() < _K) {
             throw BoinkException("Sequence must be length K");
         }
-        symbol_deque.clear();
-        symbol_deque.insert(symbol_deque.begin(), sequence.begin(), sequence.begin()+_K);
-        return derived().reset();
+        if (!initialized) {
+            load(sequence);
+            derived().init();
+        } else {
+            for (auto c : sequence) {
+                shift_right(c);
+            }
+        }
+        return get();
     }
 
-    hash_t reset() {
-        return derived().reset();
+    // shadowed by derived
+    hash_t get() {
+        return derived().get();
     }
 
-    hash_t hash() {
-        return derived().hash();
-    }
-
-    hash_t hash(std::string& sequence) {
+    // shadowed by derived
+    hash_t hash(const std::string& sequence) const {
         return derived().hash(sequence);
     }
 
-    std::vector<shift_t> shift_left() {
-        return derived().shift_left();
+    // shadowed by derived impl
+    std::vector<shift_t> gather_left() {
+        return derived().gather_left();
     }
 
     hash_t shift_left(const char c) {
         symbol_deque.push_front(c);
-        hash_t h = derived().shift_left(c);
+        hash_t h = derived().update_left(c);
         symbol_deque.pop_back();
         return h;
     }
 
-    std::vector<shift_t> shift_right() {
-        return derived().shift_right();
+    // shadowed by derived impl
+    std::vector<shift_t> gather_right() {
+        return derived().gather_right();
     }
 
     hash_t shift_right(const char c) {
         symbol_deque.push_back(c);
-        hash_t h = derived().shift_right(c);
+        hash_t h = derived().update_right(c);
         symbol_deque.pop_front();
         return h;
     }
@@ -98,10 +113,13 @@ public:
 private:
 
     HashShifter(const std::string& start, uint16_t K) :
-        KmerClient(K) {
+        KmerClient(K), initialized(false) {
 
-        reset(start);
+        load(start);
     }
+
+    HashShifter(uint16_t K) :
+        KmerClient(K), initialized(false) {}
 
     friend Derived;
 
@@ -109,9 +127,20 @@ private:
         return *static_cast<Derived*>(this);
     }
 
+protected:
+
+    bool initialized;
+
+    void load(const std::string& sequence) {
+        symbol_deque.clear();
+        symbol_deque.insert(symbol_deque.begin(),
+                            sequence.begin(),
+                            sequence.begin()+_K); 
+    }
+
 };
 
-template <const std::string& Alphabet>
+template <const std::string& Alphabet = oxli::alphabets::DNA_SIMPLE>
 class RollingHashShifter : public HashShifter<RollingHashShifter<Alphabet>,
                                               Alphabet> {
     CyclicHash<hash_t> hasher;
@@ -119,41 +148,43 @@ class RollingHashShifter : public HashShifter<RollingHashShifter<Alphabet>,
 public:
 
     typedef HashShifter<RollingHashShifter<Alphabet>, Alphabet> BaseShifter;
-    using BaseShifter::HashShifter;
-    using BaseShifter::reset;
+    //using BaseShifter::HashShifter;
 
     RollingHashShifter(const std::string& start, uint16_t K) :
-        BaseShifter(start, K), hasher(K) {}
+        BaseShifter(start, K), hasher(K) {
+        
+        init();
+    }
 
     RollingHashShifter(uint16_t K) :
         BaseShifter(K), hasher(K) {}
 
-    hash_t reset() {
-        // This pattern "resets" a stack object
-        // by calling its destructor and reallocating
-        (&hasher)->~CyclicHash<hash_t>();
-        new (&hasher) CyclicHash<hash_t>(this->_K);
-
+    void init() {
+        if (this->initialized) {
+            return;
+        }
         for (auto c : this->symbol_deque) {
+            pdebug("eat " << c);
             hasher.eat(c);
         }
+        pdebug("hash: " << hasher.hashvalue);
+        this->initialized = true;
+    }
+
+    hash_t get() {
         return hasher.hashvalue;
     }
 
-    hash_t hash() {
-        return hasher.hashvalue;
+    hash_t hash(const std::string& sequence) const {
+        return oxli::_hash_cyclic_forward(sequence, this->_K);
     }
 
-    hash_t hash(std::string& sequence) {
-        return _hash_cyclic_forward(sequence, this->_K);
-    }
-
-    hash_t shift_left(const char c) {
+    hash_t update_left(const char c) {
         hasher.reverse_update(c, this->symbol_deque.back());
-        return hasher.hashvalue;
+        return get();
     }
 
-    std::vector<shift_t> shift_right() {
+    std::vector<shift_t> gather_right() {
         std::vector<shift_t> hashes;
         const char front = this->symbol_deque.front();
         for (auto symbol : Alphabet) {
@@ -164,12 +195,12 @@ public:
         return hashes;
     }
 
-    hash_t shift_right(const char c) {
+    hash_t update_right(const char c) {
         hasher.update(this->symbol_deque.front(), c);
-        return hash();
+        return get();
     }
 
-    std::vector<shift_t> shift_left() {
+    std::vector<shift_t> gather_left() {
         std::vector<shift_t> hashes;
         const char back = this->symbol_deque.back();
         for (auto symbol : Alphabet) {
@@ -185,13 +216,13 @@ public:
 typedef RollingHashShifter<oxli::alphabets::DNA_SIMPLE> DefaultShifter;
 
 
-template <class Shifter>
+template <class ShifterType>
 class KmerIterator : public KmerClient {
     const std::string _seq;
     unsigned int index;
     unsigned int length;
     bool _initialized;
-    Shifter shifter;
+    HashShifter<ShifterType, oxli::alphabets::DNA_SIMPLE> shifter;
 
 public:
     KmerIterator(const std::string seq, uint16_t K) :
@@ -203,7 +234,7 @@ public:
     hash_t first() {
         _initialized = true;
 
-        shifter.reset(_seq);
+        shifter.set_cursor(_seq);
         index += 1;
         return shifter.hash();
     }

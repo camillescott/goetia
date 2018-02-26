@@ -119,7 +119,6 @@ export VERSION
 
 LIBBOINK_OBJS= \
 	dbg.o \
-	cdbg.o \
 	hashing.o \
 	assembly.o
 
@@ -129,7 +128,6 @@ PRECLEAN_TARGS ?=
 HEADERS= \
 	hashing.hh \
 	dbg.hh \
-	cdbg.hh \
 	boink.hh \
 	assembly.hh
 
