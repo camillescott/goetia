@@ -8,9 +8,24 @@ from libcpp.vector cimport vector
 from libcpp.utility cimport pair
 from libcpp.string cimport string
 
-from boink.hashing cimport _KmerClient, hash_t
+from boink.hashing cimport *
 
-cdef extern from "boink/dbg.hh":
+cdef extern from "oxli/storage.hh":
+    # Need these for the Storage template parameter;
+    # they don't need methods
+    cdef cppclass Storage "oxli::Storage":
+        pass
+    cdef cppclass BitStorage "oxli::BitStorage" (Storage):
+        pass
+    cdef cppclass NibbleStorage "oxli::NibbleStorage" (Storage):
+        pass
+    cdef cppclass QFStorage "oxli::QFStorage" (Storage):
+        pass
+    cdef cppclass ByteStorage "oxli::ByteStorage" (Storage):
+        pass
+
+
+cdef extern from "boink/dbg.hh" namespace "boink":
     ctypedef pair[bool, bool] bit_pair_t
     ctypedef vector[bit_pair_t] bit_pair_vector_t
     ctypedef uint8_t count_t
@@ -24,13 +39,20 @@ cdef extern from "boink/dbg.hh":
         bool add(string&)
 
         count_t get(string&)
-        count_t get(hash_t&)
+        count_t get(hash_t)
 
         vector[bool] add_sequence(string&)
 
+        uint64_t n_unique()
+        uint64_t n_occupied()
+
+        uint8_t ** get_raw()
+
         void save(string)
         void load(string)
+        void reset()
 
-    cdef cppclass _DefaultDBG "boink::DefaultDBG" (_dBG):
-        pass
+    ctypedef _dBG[BitStorage, DefaultShifter] DefaultDBG
 
+
+include "dbg_types.pxd.pxi"

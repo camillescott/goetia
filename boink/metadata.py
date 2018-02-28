@@ -9,6 +9,9 @@ TEMPLATE_DIR = os.path.join(BOINK_DIR, 'templates')
 def get_template_env():
     return Environment(loader=PackageLoader('boink', 'templates'))
 
+def get_typegen_env():
+    return Environment(loader=PackageLoader('boink', 'typegen'))
+
 def parse_mmetsp_metadata(sraruninfo_path,
                           assembly_dir='/mnt/research/ged/data/mmetsp/mmetsp_assemblies_trinity2.2.0_zenodo/',
                           assembly_suffix='.trinity_out_2.2.0.Trinity.fasta'):

@@ -71,12 +71,24 @@ public:
     }
     */
 
-    count_t get(const string& kmer) const {
+    const count_t get(const string& kmer) const {
         return S.get_count(hash(kmer));
     }
 
-    count_t get(hash_t& hashed_kmer) const {
+    const count_t get(hash_t hashed_kmer) const {
         return S.get_count(hashed_kmer);
+    }
+
+    uint64_t n_unique() const {
+        return S.n_unique_kmers();
+    }
+
+    uint64_t n_occupied() const {
+        return S.n_occupied();
+    }
+
+    uint8_t ** get_raw() const {
+        return S.get_raw_tables();
     }
 
     /*
@@ -92,18 +104,23 @@ public:
 
     std::vector<bool> add_sequence(const string& sequence);
 
-    void save(string filename) const {
+    void save(string filename) {
         S.save(filename, _K);
     }
 
     void load(string filename) {
-        S.load(filename, _K);
+        unsigned char ksize = _K;
+        S.load(filename, ksize);
+    }
+
+    void reset() {
+        S.reset();
     }
 };
 
 
 typedef dBG<oxli::BitStorage, DefaultShifter> DefaultDBG;
 
-};
+}
 
 #endif
