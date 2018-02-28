@@ -45,6 +45,10 @@ cdef class dBG_{{suffix}}:
     def n_unique(self):
         return deref(self._this).n_unique()
 
+    @property
+    def n_occupied(self):
+        return deref(self._this).n_occupied()
+
     def save(self, file_name):
         deref(self._this).save(_bstring(file_name))
 

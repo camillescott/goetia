@@ -43,30 +43,32 @@ def test_presence(dbg_type, ksize, random_sequence):
             assert tt.get(kmer) == 2
             assert tt.get(hashval) == 2
 
-'''
-def test_n_occupied(AnyTabletype):
+
+@using_ksize([21,151])
+def test_n_occupied(dbg_type, ksize):
     # basic get/add test
-    tt = AnyTabletype(12)
+    tt = dbg_type()
 
-    kmer = 'G' * 12
+    kmer = 'G' * ksize
 
-    assert tt.n_occupied() == 0
-    assert tt.n_unique_kmers() == 0
+    assert tt.n_occupied == 0
+    assert tt.n_unique == 0
 
     tt.add(kmer)
-    assert tt.n_occupied() == 1
-    assert tt.n_unique_kmers() == 1
+    assert tt.n_occupied == 1
+    assert tt.n_unique == 1
 
     tt.add(kmer)
     # the CQF implementation we use can use more than one slot to represent
     # counts for a single kmer
-    if not tt.__class__.__name__.startswith("QF"):
-        assert tt.n_occupied() == 1
+    if not "QF" in tt.__class__.__name__:
+        assert tt.n_occupied == 1
     else:
-        assert tt.n_occupied() == 2
-    assert tt.n_unique_kmers() == 1
+        assert tt.n_occupied == 2
+    assert tt.n_unique == 1
 
 
+'''
 def test_bad_create(Tabletype):
     # creation should fail w/bad parameters
     try:
