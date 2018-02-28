@@ -130,10 +130,11 @@ def test_add_hashval(dbg_type, ksize):
     z = kh.get(x)
     assert z == 1
 
-'''
-def test_add_dna_kmer(AnyTabletype):
+
+@using_ksize(5)
+def test_add_dna_kmer(dbg_type, ksize):
     # test add(dna)
-    kh = AnyTabletype(5)
+    kh = dbg_type()
     x = kh.add("ATGGC")
     assert x
 
@@ -141,16 +142,10 @@ def test_add_dna_kmer(AnyTabletype):
     assert z == 1
 
 
-def test_add_bad_dna_kmer(AnyTabletype):
-    # even with 'bad' dna, should succeed.
-    kh = AnyTabletype(5)
-
-    x = kh.add("ATYGC")
-
-
-def test_get_hashval(AnyTabletype):
+@using_ksize(5)
+def test_get_hashval(dbg_type, ksize):
     # test get(hashval)
-    kh = AnyTabletype(5)
+    kh = dbg_type()
     hashval = kh.hash("ATGGC")
     kh.add(hashval)
 
@@ -158,15 +153,16 @@ def test_get_hashval(AnyTabletype):
     assert z == 1
 
 
-def test_get_hashval_rc(AnyTabletype):
-    # test get(hashval)
-    kh = AnyTabletype(4)
+@using_ksize(5)
+def test_get_hashval_rc(dbg_type, ksize):
+    # fw and rc should NOT be the same on this table
+    kh = dbg_type()
     hashval = kh.hash("ATGC")
     rc = kh.hash("GCAT")
 
-    assert hashval == rc
+    assert hashval != rc
 
-
+'''
 def test_get_dna_kmer(AnyTabletype):
     # test get(dna)
     kh = AnyTabletype(5)
