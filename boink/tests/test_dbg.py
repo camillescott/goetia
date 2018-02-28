@@ -98,29 +98,16 @@ def test_hash_bad_dna(dbg_type, ksize):
     x = kh.hash("ATGYC")
 
 
+def test_hash_bad_length(dbg_type, ksize):
+    # hashing of too long should ignore extra sequence
+    kh = dbg_type()
+    test_kmer = 'A' * ksize
+    assert kh.hash(test_kmer) == kh.hash(test_kmer + 'TTTT')
+
+
+# TODO add test for k-mer too short
+
 '''
-def test_hash_bad_length(AnyTabletype):
-    # hashing of bad dna length -> error
-    kh = AnyTabletype(5)
-
-    with pytest.raises(ValueError):
-        x = kh.hash("ATGGGC")
-
-    with pytest.raises(ValueError):
-        x = kh.hash("ATGG")
-
-
-def test_reverse_hash(AnyTabletype):
-    # hashing of strings -> numbers.
-    kh = AnyTabletype(5)
-
-    try:
-        x = kh.reverse_hash(15)
-    except ValueError:
-        pytest.skip("reverse_hash not implemented on this table type")
-
-    assert isinstance(x, (unicode, str))
-
 
 def test_hashsizes(AnyTabletype):
     # hashsizes method.
@@ -129,7 +116,9 @@ def test_hashsizes(AnyTabletype):
             # CQF allocates some extra slots beyond what you request
             # exactly how many extra is an implementation detail
             kh.hashsizes()[0] >= QF_SIZE)
+'''
 
+'''
 
 def test_add_hashval(AnyTabletype):
     # test add(hashval)
