@@ -49,6 +49,10 @@ cdef class dBG_{{suffix}}:
     def n_occupied(self):
         return deref(self._this).n_occupied()
 
+    @property
+    def K(self):
+        return deref(self._this).K()
+
     def save(self, file_name):
         deref(self._this).save(_bstring(file_name))
 

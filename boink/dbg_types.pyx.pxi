@@ -45,6 +45,10 @@ cdef class dBG_BitStorage_DefaultShifter:
     def n_occupied(self):
         return deref(self._this).n_occupied()
 
+    @property
+    def K(self):
+        return deref(self._this).K()
+
     def save(self, file_name):
         deref(self._this).save(_bstring(file_name))
 
@@ -92,6 +96,10 @@ cdef class dBG_NibbleStorage_DefaultShifter:
     def n_occupied(self):
         return deref(self._this).n_occupied()
 
+    @property
+    def K(self):
+        return deref(self._this).K()
+
     def save(self, file_name):
         deref(self._this).save(_bstring(file_name))
 
@@ -138,6 +146,10 @@ cdef class dBG_ByteStorage_DefaultShifter:
     @property
     def n_occupied(self):
         return deref(self._this).n_occupied()
+
+    @property
+    def K(self):
+        return deref(self._this).K()
 
     def save(self, file_name):
         deref(self._this).save(_bstring(file_name))

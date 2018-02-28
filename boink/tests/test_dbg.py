@@ -75,28 +75,30 @@ def test_bad_create(Tabletype):
         tt = Tabletype(5, [])
     except ValueError as err:
         assert 'tablesizes needs to be one or more numbers' in str(err)
+'''
 
-
-def test_get_ksize(AnyTabletype):
+@using_ksize([21,51,81])
+def test_get_ksize(dbg_type, ksize):
     # ksize() function.
-    kh = AnyTabletype(22)
-    assert kh.ksize() == 22
+    kh = dbg_type()
+    assert kh.K == ksize
 
 
-def test_hash(AnyTabletype):
+def test_hash(dbg_type, ksize):
     # hashing of strings -> numbers.
-    kh = AnyTabletype(5)
+    kh = dbg_type()
     x = kh.hash("ATGGC")
-    assert type(x) == long
+    assert type(x) == int
 
 
-def test_hash_bad_dna(AnyTabletype):
+def test_hash_bad_dna(dbg_type, ksize):
     # hashing of bad dna -> succeeds w/o complaint
-    kh = AnyTabletype(5)
+    kh = dbg_type()
 
     x = kh.hash("ATGYC")
 
 
+'''
 def test_hash_bad_length(AnyTabletype):
     # hashing of bad dna length -> error
     kh = AnyTabletype(5)
