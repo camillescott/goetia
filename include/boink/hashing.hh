@@ -68,14 +68,34 @@ public:
         return get();
     }
 
+    bool is_valid(const char c) const {
+        for (auto symbol : symbols) {
+            if (c == symbol) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool is_valid(const std::string& sequence) const {
+        for (auto c : sequence) {
+            if(!is_valid(c)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     // shadowed by derived
     hash_t get() {
         return derived().get();
     }
 
-    // shadowed by derived
     hash_t hash(const std::string& sequence) const {
-        return derived().hash(sequence);
+        if (!is_valid(sequence)) {
+            throw BoinkException("Invalid symbol.");
+        }
+        return derived()._hash(sequence);
     }
 
     // shadowed by derived impl
@@ -84,6 +104,9 @@ public:
     }
 
     hash_t shift_left(const char c) {
+        if (!is_valid(c)) {
+            throw BoinkException("Invalid symbol.");
+        }
         symbol_deque.push_front(c);
         hash_t h = derived().update_left(c);
         symbol_deque.pop_back();
@@ -96,6 +119,9 @@ public:
     }
 
     hash_t shift_right(const char c) {
+        if (!is_valid(c)) {
+            throw BoinkException("Invalid symbol.");
+        }
         symbol_deque.push_back(c);
         hash_t h = derived().update_right(c);
         symbol_deque.pop_front();
@@ -125,6 +151,10 @@ private:
 
     Derived& derived() {
         return *static_cast<Derived*>(this);
+    }
+
+    const Derived& derived() const {
+        return *static_cast<const Derived*>(this);
     }
 
 protected:
@@ -164,10 +194,11 @@ public:
             return;
         }
         for (auto c : this->symbol_deque) {
-            pdebug("eat " << c);
+            if (!this->is_valid(c)) {
+                throw BoinkException("Invalid symbol.");
+            }
             hasher.eat(c);
         }
-        pdebug("hash: " << hasher.hashvalue);
         this->initialized = true;
     }
 
@@ -175,7 +206,7 @@ public:
         return hasher.hashvalue;
     }
 
-    hash_t hash(const std::string& sequence) const {
+    hash_t _hash(const std::string& sequence) const {
         return oxli::_hash_cyclic_forward(sequence, this->_K);
     }
 

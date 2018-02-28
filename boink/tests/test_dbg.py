@@ -95,7 +95,8 @@ def test_hash_bad_dna(dbg_type, ksize):
     # hashing of bad dna -> succeeds w/o complaint
     kh = dbg_type()
 
-    x = kh.hash("ATGYC")
+    with pytest.raises(ValueError):
+        x = kh.hash("ATGYC")
 
 
 def test_hash_bad_length(dbg_type, ksize):
