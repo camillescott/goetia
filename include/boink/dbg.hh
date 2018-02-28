@@ -102,7 +102,19 @@ public:
     }
     */
 
-    std::vector<bool> add_sequence(const string& sequence);
+    std::vector<bool> add_sequence(const string& sequence) {
+        KmerIterator<HashShifter> iter(sequence, _K);
+        std::vector<bool> consumed(sequence.length() - _K + 1);
+
+        size_t pos = 0;
+        while(!iter.done()) {
+            hash_t h = iter.next();
+            consumed[pos] = add(h);
+            ++pos;
+        }
+
+        return consumed;
+    }
 
     void save(string filename) {
         S.save(filename, _K);

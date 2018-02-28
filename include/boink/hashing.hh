@@ -222,7 +222,7 @@ class KmerIterator : public KmerClient {
     unsigned int index;
     unsigned int length;
     bool _initialized;
-    HashShifter<ShifterType, oxli::alphabets::DNA_SIMPLE> shifter;
+    ShifterType shifter;
 
 public:
     KmerIterator(const std::string seq, uint16_t K) :
@@ -236,7 +236,7 @@ public:
 
         shifter.set_cursor(_seq);
         index += 1;
-        return shifter.hash();
+        return shifter.get();
     }
 
     hash_t next() {
@@ -251,7 +251,7 @@ public:
         shifter.shift_right(_seq[index + _K - 1]);
         index += 1;
 
-        return shifter.hash();
+        return shifter.get();
     }
 
     bool done() const {

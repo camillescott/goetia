@@ -161,8 +161,8 @@ CY_OPTS = {
 }
 
 
-SOURCES = glob.glob(os.path.join('src', '*.cc'))
-DEPENDS = glob.glob(os.path.join('include', '*.hh'))
+SOURCES = glob.glob(os.path.join('src', 'boink', '*.cc'))
+DEPENDS = glob.glob(os.path.join('include', 'boink', '*.hh'))
 
 
 EXTENSION_MODS = []
@@ -215,7 +215,7 @@ SETUP_METADATA = \
         "author": "Camille Scott",
         "author_email": 'camille.scott.w@gmail.com',
         "packages": ['boink', 'boink.tests'],
-        "package_data": {'boink/': ['*.pxd']},
+        "package_data": {'boink/': ['*.pxd', '*.pxi']},
         "install_requires": ['screed >= 0.9', 'bz2file'],
         "setup_requires": ["pytest-runner>=2.0,<3dev",
                            'Cython>=0.25.2', "setuptools>=18.0"],

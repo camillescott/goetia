@@ -34,6 +34,9 @@ cdef class dBG_{{suffix}}:
     def get(self, object kmer):
         return deref(self._this).get(self._handle_kmer(kmer))
 
+    def hash(self, str kmer):
+        return deref(self._this).hash(_bstring(kmer))
+
     def add_sequence(self, str sequence):
         cdef bytes _sequence = _bstring(sequence)
         return deref(self._this).add_sequence(_sequence)
