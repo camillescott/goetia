@@ -118,11 +118,11 @@ def test_hashsizes(AnyTabletype):
             kh.hashsizes()[0] >= QF_SIZE)
 '''
 
-'''
 
-def test_add_hashval(AnyTabletype):
+@using_ksize(5)
+def test_add_hashval(dbg_type, ksize):
     # test add(hashval)
-    kh = AnyTabletype(5)
+    kh = dbg_type()
     x = kh.hash("ATGGC")
     y = kh.add(x)
     assert y
@@ -130,7 +130,7 @@ def test_add_hashval(AnyTabletype):
     z = kh.get(x)
     assert z == 1
 
-
+'''
 def test_add_dna_kmer(AnyTabletype):
     # test add(dna)
     kh = AnyTabletype(5)
