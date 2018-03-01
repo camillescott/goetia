@@ -7,7 +7,7 @@ from libcpp.memory cimport shared_ptr, make_shared
 
 cdef class dBG_{{suffix}}:
     cdef shared_ptr[_dBG[{{tparams}}]] _this
-    cdef hash_t _handle_kmer(self, object)
+    cdef hash_t _handle_kmer(self, object) except 0
 {% endfor %}
 {% endfor %}
 

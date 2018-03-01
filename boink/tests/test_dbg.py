@@ -110,9 +110,9 @@ def test_hash_bad_length(dbg_type, ksize):
 
 '''
 
-def test_hashsizes(AnyTabletype):
+def test_hashsizes(dbg_type):
     # hashsizes method.
-    kh = AnyTabletype(5)
+    kh = dbg_type(5)
     assert (kh.hashsizes() == PRIMES_1m or
             # CQF allocates some extra slots beyond what you request
             # exactly how many extra is an implementation detail
@@ -163,10 +163,11 @@ def test_get_hashval_rc(dbg_type, ksize):
 
     assert hashval != rc
 
-'''
-def test_get_dna_kmer(AnyTabletype):
+
+@using_ksize(5)
+def test_get_dna_kmer(dbg_type, ksize):
     # test get(dna)
-    kh = AnyTabletype(5)
+    kh = dbg_type()
     hashval = kh.hash("ATGGC")
     kh.add(hashval)
 
@@ -174,15 +175,17 @@ def test_get_dna_kmer(AnyTabletype):
     assert z == 1
 
 
-def test_get_bad_dna_kmer(AnyTabletype):
-    # test get(dna) with bad dna; should be fine.
-    kh = AnyTabletype(5)
+@using_ksize(5)
+def test_get_bad_dna_kmer(dbg_type, ksize):
+    # test get(dna) with bad dna; should fail
+    kh = dbg_type()
 
-    kh.hash("ATYGC")
+    with pytest.raises(ValueError):
+        kh.get("ATYGC")
 
-
-def test_consume_and_count(AnyTabletype):
-    tt = AnyTabletype(6)
+'''
+def test_consume_and_count(dbg_type):
+    tt = dbg_type(6)
 
     x = "ATGCCGATGCA"
     num_kmers = tt.consume(x)
@@ -192,10 +195,10 @@ def test_consume_and_count(AnyTabletype):
         assert tt.get(x[start:start + 6]) == 1
 
 
-def test_consume_and_count_bad_dna(AnyTabletype):
+def test_consume_and_count_bad_dna(dbg_type):
     # while we don't specifically handle bad DNA, we should at least be
     # consistent...
-    tt = AnyTabletype(6)
+    tt = dbg_type(6)
 
     x = "ATGCCGNTGCA"
     num_kmers = tt.consume(x)
@@ -204,17 +207,17 @@ def test_consume_and_count_bad_dna(AnyTabletype):
         assert tt.get(x[start:start + 6]) == 1
 
 
-def test_consume_short(AnyTabletype):
+def test_consume_short(dbg_type):
     # raise error on too short when consume is run
-    tt = AnyTabletype(6)
+    tt = dbg_type(6)
 
     x = "ATGCA"
     with pytest.raises(ValueError):
         tt.consume(x)
 
 
-def test_get_kmer_counts(AnyTabletype):
-    hi = AnyTabletype(6)
+def test_get_kmer_counts(dbg_type):
+    hi = dbg_type(6)
 
     hi.consume("AAAAAA")
     counts = hi.get_kmer_counts("AAAAAA")
@@ -236,8 +239,8 @@ def test_get_kmer_counts(AnyTabletype):
     assert counts[1] == 1
 
 
-def test_get_kmer_hashes(AnyTabletype):
-    hi = AnyTabletype(6)
+def test_get_kmer_hashes(dbg_type):
+    hi = dbg_type(6)
 
     hashes = hi.get_kmer_hashes("ACGTGCGT")
     print(hashes)
@@ -247,8 +250,8 @@ def test_get_kmer_hashes(AnyTabletype):
     assert hashes[2] == hi.hash("GTGCGT")
 
 
-def test_get_min_count(AnyTabletype):
-    hi = AnyTabletype(6)
+def test_get_min_count(dbg_type):
+    hi = dbg_type(6)
 
     # master string, 3 k-mers
     x = "ACGTGCGT"
@@ -269,8 +272,8 @@ def test_get_min_count(AnyTabletype):
     assert med == list(sorted(counts))[len(counts) // 2]
 
 
-def test_get_kmers(AnyTabletype):
-    hi = AnyTabletype(6)
+def test_get_kmers(dbg_type):
+    hi = dbg_type(6)
 
     kmers = hi.get_kmers("AAAAAA")
     assert kmers == ["AAAAAA"]
@@ -282,8 +285,8 @@ def test_get_kmers(AnyTabletype):
     assert kmers == ['AGCTTT', 'GCTTTT', 'CTTTTC']
 
 
-def test_trim_on_abundance(AnyTabletype):
-    hi = AnyTabletype(6)
+def test_trim_on_abundance(dbg_type):
+    hi = dbg_type(6)
 
     x = "ATGGCAGTAGCAGTGAGC"
     hi.consume(x[:10])
@@ -293,8 +296,8 @@ def test_trim_on_abundance(AnyTabletype):
     assert x[:pos] == y
 
 
-def test_trim_below_abundance(AnyTabletype):
-    hi = AnyTabletype(6)
+def test_trim_below_abundance(dbg_type):
+    hi = dbg_type(6)
 
     x = "ATGGCAGTAGCAGTGAGC"
     x_rc = screed.rc(x)
@@ -310,8 +313,8 @@ def test_trim_below_abundance(AnyTabletype):
 DNA = "AGCTTTTCATTCTGACTGCAACGGGCAATATGTCTCTGTGTGGATTAAAAAAAGAGTGTCTGATAGCAGC"
 
 
-def test_find_spectral_error_positions(AnyTabletype):
-    kh = AnyTabletype(8)
+def test_find_spectral_error_positions(dbg_type):
+    kh = dbg_type(8)
 
     kh.consume(DNA[:30])
 
@@ -322,8 +325,8 @@ def test_find_spectral_error_positions(AnyTabletype):
     assert posns == [30], posns
 
 
-def test_find_spectral_error_positions_6(AnyTabletype):
-    kh = AnyTabletype(8)
+def test_find_spectral_error_positions_6(dbg_type):
+    kh = dbg_type(8)
 
     kh.consume(DNA[1:])
 
@@ -334,8 +337,8 @@ def test_find_spectral_error_positions_6(AnyTabletype):
     assert posns == [0], posns
 
 
-def test_find_spectral_error_positions_5(AnyTabletype):
-    kh = AnyTabletype(8)
+def test_find_spectral_error_positions_5(dbg_type):
+    kh = dbg_type(8)
 
     kh.consume(DNA[:10])
     kh.consume(DNA[11:])
@@ -344,24 +347,24 @@ def test_find_spectral_error_positions_5(AnyTabletype):
     assert posns == [10], posns
 
 
-def test_consume_seqfile_reads_parser(AnyTabletype):
-    kh = AnyTabletype(5)
+def test_consume_seqfile_reads_parser(dbg_type):
+    kh = dbg_type(5)
     rparser = ReadParser(utils.get_test_data('test-fastq-reads.fq'))
 
     kh.consume_seqfile(rparser)
 
-    kh2 = AnyTabletype(5)
+    kh2 = dbg_type(5)
     for record in screed.open(utils.get_test_data('test-fastq-reads.fq')):
         kh2.consume(record.sequence)
 
     assert kh.get('CCGGC') == kh2.get('CCGGC')
 
 
-def test_consume_seqfile(AnyTabletype):
-    kh = AnyTabletype(5)
+def test_consume_seqfile(dbg_type):
+    kh = dbg_type(5)
     kh.consume_seqfile(utils.get_test_data('test-fastq-reads.fq'))
 
-    kh2 = AnyTabletype(5)
+    kh2 = dbg_type(5)
     for record in screed.open(utils.get_test_data('test-fastq-reads.fq')):
         kh2.consume(record.sequence)
 
@@ -410,10 +413,10 @@ def test_set_bigcount(Tabletype):
             tt.set_use_bigcount(True)
 
 
-def test_abund_dist_A(AnyTabletype):
+def test_abund_dist_A(dbg_type):
     A_filename = utils.get_test_data('all-A.fa')
 
-    kh = AnyTabletype(4)
+    kh = dbg_type(4)
     tracking = Nodegraph(4, 1, 1, primes=PRIMES_1m)
 
     kh.consume_seqfile(A_filename)
@@ -424,11 +427,11 @@ def test_abund_dist_A(AnyTabletype):
     assert dist[0] == 0
 
 
-def test_abund_dist_A_readparser(AnyTabletype):
+def test_abund_dist_A_readparser(dbg_type):
     A_filename = utils.get_test_data('all-A.fa')
     rparser = ReadParser(A_filename)
 
-    kh = AnyTabletype(4)
+    kh = dbg_type(4)
     tracking = Nodegraph(4, 1, 1, primes=PRIMES_1m)
 
     kh.consume_seqfile(A_filename)

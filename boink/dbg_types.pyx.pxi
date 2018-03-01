@@ -16,7 +16,7 @@ cdef class dBG_BitStorage_DefaultShifter:
             primes = get_n_primes_near_x(n_tables, starting_size)
             self._this = make_shared[_dBG[BitStorage,DefaultShifter]](K, primes)
 
-    cdef hash_t _handle_kmer(self, object kmer):
+    cdef hash_t _handle_kmer(self, object kmer) except 0:
         cdef hash_t handled
         if is_num(kmer):
             handled = <hash_t> kmer
@@ -67,7 +67,7 @@ cdef class dBG_NibbleStorage_DefaultShifter:
             primes = get_n_primes_near_x(n_tables, starting_size)
             self._this = make_shared[_dBG[NibbleStorage,DefaultShifter]](K, primes)
 
-    cdef hash_t _handle_kmer(self, object kmer):
+    cdef hash_t _handle_kmer(self, object kmer) except 0:
         cdef hash_t handled
         if is_num(kmer):
             handled = <hash_t> kmer
@@ -118,7 +118,7 @@ cdef class dBG_ByteStorage_DefaultShifter:
             primes = get_n_primes_near_x(n_tables, starting_size)
             self._this = make_shared[_dBG[ByteStorage,DefaultShifter]](K, primes)
 
-    cdef hash_t _handle_kmer(self, object kmer):
+    cdef hash_t _handle_kmer(self, object kmer) except 0:
         cdef hash_t handled
         if is_num(kmer):
             handled = <hash_t> kmer

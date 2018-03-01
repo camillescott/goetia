@@ -20,7 +20,7 @@ cdef class dBG_{{suffix}}:
             primes = get_n_primes_near_x(n_tables, starting_size)
             self._this = make_shared[_dBG[{{tparams}}]](K, primes)
 
-    cdef hash_t _handle_kmer(self, object kmer):
+    cdef hash_t _handle_kmer(self, object kmer) except 0:
         cdef hash_t handled
         if is_num(kmer):
             handled = <hash_t> kmer

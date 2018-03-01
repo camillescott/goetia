@@ -36,12 +36,12 @@ cdef extern from "boink/dbg.hh" namespace "boink":
 
         hash_t hash(string&) except +ValueError
         bool add(hash_t)
-        bool add(string&)
+        bool add(string&) except +ValueError
 
-        count_t get(string&)
+        count_t get(string&) except +ValueError
         count_t get(hash_t)
 
-        vector[bool] add_sequence(string&)
+        vector[bool] add_sequence(string&) except +ValueError
 
         uint64_t n_unique()
         uint64_t n_occupied()
