@@ -9,11 +9,12 @@ MODEXT=$(shell python -c \
        "import sysconfig;print(sysconfig.get_config_var('SO'))")
 
 MODS=$(PKG)/*$(MODEXT)
-CY=$(wildcard $(PKG)/*.pyx $(PKG)/*.pxd)
+CY_SOURCES=$(wildcard $(PKG)/*.pyx $(PKG)/*.pxd)
+CPP_SOURCES=$(wildcard include/boink/*.hh src/boink/*.cc)
 
 all: build
 
-build: $(CY)
+build: $(CY_SOURCES) $(CPP_SOURCES)
 	python setup.py build_ext --inplace
 
 install: build
