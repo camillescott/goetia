@@ -39,7 +39,16 @@ cdef class dBG_{{suffix}}:
 
     def add_sequence(self, str sequence):
         cdef bytes _sequence = _bstring(sequence)
-        return deref(self._this).add_sequence(_sequence)
+        cdef list hits = deref(self._this).add_sequence(_sequence)
+        return hits
+
+    # compatibility with oxli API
+    consume = add_sequence
+
+    def get_counts(self, str sequence):
+        cdef bytes _sequence = _bstring(sequence)
+        cdef list counts = deref(self._this).get_counts(_sequence)
+        return counts
 
     @property
     def n_unique(self):

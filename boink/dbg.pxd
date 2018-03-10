@@ -42,6 +42,7 @@ cdef extern from "boink/dbg.hh" namespace "boink":
         count_t get(hash_t)
 
         vector[bool] add_sequence(string&) except +ValueError
+        vector[count_t] get_counts(string&) except +ValueError
 
         uint64_t n_unique()
         uint64_t n_occupied()

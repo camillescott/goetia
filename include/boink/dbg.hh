@@ -116,6 +116,20 @@ public:
         return consumed;
     }
 
+    std::vector<count_t> get_counts(const string& sequence) {
+        KmerIterator<HashShifter> iter(sequence, _K);
+        std::vector<count_t> counts(sequence.length() - _K + 1);
+
+        size_t pos = 0;
+        while(!iter.done()) {
+            hash_t h = iter.next();
+            counts[pos] = get(h);
+            ++pos;
+        }
+
+        return counts;
+    }
+
     void save(string filename) {
         S.save(filename, _K);
     }

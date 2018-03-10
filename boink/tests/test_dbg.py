@@ -183,62 +183,75 @@ def test_get_bad_dna_kmer(dbg_type, ksize):
     with pytest.raises(ValueError):
         kh.get("ATYGC")
 
-'''
-def test_consume_and_count(dbg_type):
-    tt = dbg_type(6)
+
+@using_ksize(5)
+def test_add_sequence(dbg_type, ksize):
+    tt = dbg_type()
 
     x = "ATGCCGATGCA"
-    num_kmers = tt.consume(x)
-    assert num_kmers == len(x) - tt.ksize() + 1   # num k-mers consumed
+    num_kmers = sum(tt.add_sequence(x))
+    assert num_kmers == len(x) - ksize + 1   # num k-mers consumed
 
     for start in range(len(x) - 6 + 1):
         assert tt.get(x[start:start + 6]) == 1
 
 
-def test_consume_and_count_bad_dna(dbg_type):
+@using_ksize(5)
+def test_add_sequence_bad_dna(dbg_type):
     # while we don't specifically handle bad DNA, we should at least be
     # consistent...
-    tt = dbg_type(6)
+    tt = dbg_type()
 
     x = "ATGCCGNTGCA"
-    num_kmers = tt.consume(x)
+    with pytest.raises(ValueError):
+        num_kmers = tt.add_sequence(x)
 
-    for start in range(len(x) - 6 + 1):
-        assert tt.get(x[start:start + 6]) == 1
+    #for start in range(len(x) - 6 + 1):
+    #    assert tt.get(x[start:start + 6]) == 1
 
-
+@using_ksize(10)
 def test_consume_short(dbg_type):
     # raise error on too short when consume is run
-    tt = dbg_type(6)
+    tt = dbg_type()
 
     x = "ATGCA"
     with pytest.raises(ValueError):
-        tt.consume(x)
+        tt.add_sequence(x)
 
 
+@using_ksize(6)
 def test_get_kmer_counts(dbg_type):
-    hi = dbg_type(6)
+    hi = dbg_type()
 
-    hi.consume("AAAAAA")
-    counts = hi.get_kmer_counts("AAAAAA")
+    hi.add_sequence("AAAAAA")
+    counts = hi.get_counts("AAAAAA")
     print(counts)
     assert len(counts) == 1
     assert counts[0] == 1
 
-    hi.consume("AAAAAA")
-    counts = hi.get_kmer_counts("AAAAAA")
+    hi.add_sequence("AAAAAA")
+    counts = hi.get_counts("AAAAAA")
     print(counts)
     assert len(counts) == 1
     assert counts[0] >= 1
 
-    hi.consume("AAAAAT")
-    counts = hi.get_kmer_counts("AAAAAAT")
+    hi.add_sequence("AAAAAT")
+    counts = hi.get_counts("AAAAAAT")
     print(counts)
     assert len(counts) == 2
     assert counts[0] >= 1
     assert counts[1] == 1
 
 
+@using_ksize(5)
+def test_consume_alias(dbg_type, ksize):
+    g1 = dbg_type()
+    g2 = dbg_type()
+    assert g1.add_sequence('A' * (ksize + 1)) == \
+           g2.consume('A' * (ksize + 1))
+
+
+'''
 def test_get_kmer_hashes(dbg_type):
     hi = dbg_type(6)
 
