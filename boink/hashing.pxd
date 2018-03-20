@@ -1,6 +1,7 @@
 
 from libc.stdint cimport uint8_t, uint16_t, uint64_t
 
+from libcpp cimport bool
 from libcpp.string cimport string
 from libcpp.utility cimport pair
 from libcpp.vector cimport vector
@@ -55,5 +56,15 @@ cdef extern from "boink/hashing.hh" namespace "boink":
         _RollingHashShifter(uint16_t)
 
     ctypedef _RollingHashShifter[_DNA_SIMPLE] DefaultShifter
+
+    cdef cppclass _KmerIterator "boink::KmerIterator" [S] (_KmerClient):
+        _KmerIterator(const string, uint16_t)
+
+        hash_t first()
+        hash_t next()
+        bool done()
+        unsigned int get_start_pos()
+        unsigned int get_end_pos()
+
 
 cdef void _test()

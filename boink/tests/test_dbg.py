@@ -251,11 +251,11 @@ def test_consume_alias(dbg_type, ksize):
            g2.consume('A' * (ksize + 1))
 
 
-'''
+@using_ksize(6)
 def test_get_kmer_hashes(dbg_type):
-    hi = dbg_type(6)
+    hi = dbg_type()
 
-    hashes = hi.get_kmer_hashes("ACGTGCGT")
+    hashes = list(hi.hashes("ACGTGCGT"))
     print(hashes)
     assert len(hashes) == 3
     assert hashes[0] == hi.hash("ACGTGC")
@@ -263,6 +263,7 @@ def test_get_kmer_hashes(dbg_type):
     assert hashes[2] == hi.hash("GTGCGT")
 
 
+'''
 def test_get_min_count(dbg_type):
     hi = dbg_type(6)
 

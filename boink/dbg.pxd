@@ -53,6 +53,8 @@ cdef extern from "boink/dbg.hh" namespace "boink":
         void load(string)
         void reset()
 
+        shared_ptr[_KmerIterator[HashShifter]] get_hash_iter(string&)
+
     ctypedef _dBG[BitStorage, DefaultShifter] DefaultDBG
 
 

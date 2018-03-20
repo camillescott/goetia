@@ -18,6 +18,10 @@
 
 namespace boink {
 
+using std::string;
+using std::make_pair;
+using std::shared_ptr;
+
 typedef std::pair<bool, bool> bit_pair_t;
 typedef std::vector<bit_pair_t> bit_pair_vector_t;
 
@@ -141,6 +145,10 @@ public:
 
     void reset() {
         S.reset();
+    }
+
+    shared_ptr<KmerIterator<HashShifter>> get_hash_iter(const string& sequence) {
+        return make_shared<KmerIterator<HashShifter>>(sequence, _K);
     }
 };
 

@@ -33,6 +33,16 @@ cdef class dBG_BitStorage_DefaultShifter:
     def hash(self, str kmer):
         return deref(self._this).hash(_bstring(kmer))
 
+    def hashes(self, str sequence):
+        cdef bytes _sequence = _bstring(sequence)
+        cdef shared_ptr[_KmerIterator[DefaultShifter]] kmer_iter = \
+                deref(self._this).get_hash_iter(_sequence)
+
+        cdef hash_t h
+        while(not deref(kmer_iter).done()):
+            h = deref(kmer_iter).next()
+            yield h
+
     def add_sequence(self, str sequence):
         cdef bytes _sequence = _bstring(sequence)
         cdef list hits = deref(self._this).add_sequence(_sequence)
@@ -93,6 +103,16 @@ cdef class dBG_NibbleStorage_DefaultShifter:
     def hash(self, str kmer):
         return deref(self._this).hash(_bstring(kmer))
 
+    def hashes(self, str sequence):
+        cdef bytes _sequence = _bstring(sequence)
+        cdef shared_ptr[_KmerIterator[DefaultShifter]] kmer_iter = \
+                deref(self._this).get_hash_iter(_sequence)
+
+        cdef hash_t h
+        while(not deref(kmer_iter).done()):
+            h = deref(kmer_iter).next()
+            yield h
+
     def add_sequence(self, str sequence):
         cdef bytes _sequence = _bstring(sequence)
         cdef list hits = deref(self._this).add_sequence(_sequence)
@@ -152,6 +172,16 @@ cdef class dBG_ByteStorage_DefaultShifter:
 
     def hash(self, str kmer):
         return deref(self._this).hash(_bstring(kmer))
+
+    def hashes(self, str sequence):
+        cdef bytes _sequence = _bstring(sequence)
+        cdef shared_ptr[_KmerIterator[DefaultShifter]] kmer_iter = \
+                deref(self._this).get_hash_iter(_sequence)
+
+        cdef hash_t h
+        while(not deref(kmer_iter).done()):
+            h = deref(kmer_iter).next()
+            yield h
 
     def add_sequence(self, str sequence):
         cdef bytes _sequence = _bstring(sequence)
