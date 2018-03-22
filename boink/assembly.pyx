@@ -6,7 +6,7 @@ from libcpp.string cimport string
 from boink.dbg cimport *
 from boink import dbg
 
-include "assembly_types.pyx.pxi"
+include "assembly.pyx.pxi"
 
 def make_assembler(dBG_Base graph):
     return _make_assembler(graph)

@@ -122,7 +122,7 @@ def generate_cython_templates():
     env = get_typegen_env()
     storages, shifters = get_boink_types()
 
-    for prefix in ['dbg', 'assembly_types']:
+    for prefix in ['dbg', 'assembly']:
         pxd_tpl = env.get_template('{0}.tpl.pxd'.format(prefix))
         dst = os.path.join('boink', '{0}.pxd.pxi'.format(prefix))
         with open(dst, 'w') as fp:

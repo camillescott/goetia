@@ -60,4 +60,4 @@ cdef extern from "boink/assembly.hh" namespace "boink":
     _AssemblerMixin[GraphType] make_assembler[GraphType](shared_ptr[GraphType])
 
 
-include "assembly_types.pxd.pxi"
+include "assembly.pxd.pxi"
