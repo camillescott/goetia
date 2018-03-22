@@ -107,3 +107,4 @@ cython_debug/
 **boink.pc
 **libboink.*
 **a.out
+src/boink/test_assembly
