@@ -6,6 +6,9 @@ from libcpp.string cimport string
 from boink import dbg
 from boink.utils cimport *
 
+cdef class Assembler_Base:
+    pass
+
 
 {% for Storage_t in Storage_types %}
 {% for Shifter_t in Shifter_types %}

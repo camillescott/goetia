@@ -6,6 +6,9 @@ from libcpp.string cimport string
 from boink import dbg
 from boink.utils cimport *
 
+cdef class Assembler_Base:
+    pass
+
 
 
 cdef class Assembler_BitStorage_DefaultShifter(Assembler_Base):
