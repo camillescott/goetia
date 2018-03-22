@@ -1,3 +1,6 @@
+{% extends "base.tpl" %}
+{% from "dbg_types.tpl" import iter_types %}
+{% block code %}
 from cython.operator cimport dereference as deref
 
 from libc.stdint cimport uint64_t
@@ -6,15 +9,11 @@ from libcpp.string cimport string
 from boink import dbg
 from boink.utils cimport *
 
+
 cdef class Assembler_Base:
     pass
 
-
-{% for Storage_t in Storage_types %}
-{% for Shifter_t in Shifter_types %}
-{% set tparams %}{{Storage_t}},{{Shifter_t}}{% endset %}
-{% set suffix %}{{Storage_t}}_{{Shifter_t}}{% endset %}
-
+{% call(Storage_t, Shifter_t, tparams, suffix) iter_types(Storage_types, Shifter_types) %}
 cdef class Assembler_{{suffix}}(Assembler_Base):
 
     def __cinit__(self, dBG_{{suffix}} graph):
@@ -69,24 +68,16 @@ cdef class Assembler_{{suffix}}(Assembler_Base):
             deref(self._this).assemble_right(_bstring(seed), path)
 
         return deref(self._this).to_string(path)
+{% endcall %}
 
-
-{% endfor %}
-{% endfor %}
 
 cdef object _make_assembler(dBG_Base graph):
-    {% for Storage_t in Storage_types %}
-    {% set outer_first = loop.first %}
-    {% for Shifter_t in Shifter_types %}
-    {% set conditional %}graph.storage_type == "{{Storage_t}}" and graph.shifter_type == "{{Shifter_t}}"{% endset %}
-    {% set suffix %}{{Storage_t}}_{{Shifter_t}}{% endset %}
-    {% if outer_first and loop.first %}
-    if {{conditional}}:
-    {% else %}
-    elif {{conditional}}:
-    {% endif %}
+    {% call(Storage_t, Shifter_t, tparams, suffix) iter_types(Storage_types, Shifter_types) %}
+    if graph.storage_type == "{{Storage_t}}" and \
+       graph.shifter_type == "{{Shifter_t}}":
         return Assembler_{{suffix}}(graph)
-    {% endfor %}
-    {% endfor %}
-    else:
-        raise TypeError("Invalid dBG type.")
+    {% endcall %}
+
+    raise TypeError("Invalid dBG type.")
+
+{% endblock code %}
