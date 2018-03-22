@@ -25,6 +25,10 @@ cdef class Assembler_BitStorage_DefaultShifter(Assembler_Base):
     def cursor(self):
         return deref(self._this).get_cursor()
 
+    @cursor.setter
+    def cursor(self, str seed):
+        deref(self._this).set_cursor(_bstring(seed))
+
     def clear_seen(self):
         deref(self._this).clear_seen()
 
@@ -43,6 +47,25 @@ cdef class Assembler_BitStorage_DefaultShifter(Assembler_Base):
 
         deref(self._this).assemble(_seed, path)
         return deref(self._this).to_string(path)
+
+    def assemble_left(self, object seed=None):
+        cdef Path path
+        if seed is None:
+            deref(self._this).assemble_left(path)
+        else:
+            deref(self._this).assemble_left(_bstring(seed), path)
+
+        return deref(self._this).to_string(path)
+        
+    def assemble_right(self, object seed=None):
+        cdef Path path
+        if seed is None:
+            deref(self._this).assemble_right(path)
+        else:
+            deref(self._this).assemble_right(_bstring(seed), path)
+
+        return deref(self._this).to_string(path)
+
 
 
 cdef class Assembler_NibbleStorage_DefaultShifter(Assembler_Base):
@@ -59,6 +82,10 @@ cdef class Assembler_NibbleStorage_DefaultShifter(Assembler_Base):
     def cursor(self):
         return deref(self._this).get_cursor()
 
+    @cursor.setter
+    def cursor(self, str seed):
+        deref(self._this).set_cursor(_bstring(seed))
+
     def clear_seen(self):
         deref(self._this).clear_seen()
 
@@ -77,6 +104,25 @@ cdef class Assembler_NibbleStorage_DefaultShifter(Assembler_Base):
 
         deref(self._this).assemble(_seed, path)
         return deref(self._this).to_string(path)
+
+    def assemble_left(self, object seed=None):
+        cdef Path path
+        if seed is None:
+            deref(self._this).assemble_left(path)
+        else:
+            deref(self._this).assemble_left(_bstring(seed), path)
+
+        return deref(self._this).to_string(path)
+        
+    def assemble_right(self, object seed=None):
+        cdef Path path
+        if seed is None:
+            deref(self._this).assemble_right(path)
+        else:
+            deref(self._this).assemble_right(_bstring(seed), path)
+
+        return deref(self._this).to_string(path)
+
 
 
 cdef class Assembler_ByteStorage_DefaultShifter(Assembler_Base):
@@ -93,6 +139,10 @@ cdef class Assembler_ByteStorage_DefaultShifter(Assembler_Base):
     def cursor(self):
         return deref(self._this).get_cursor()
 
+    @cursor.setter
+    def cursor(self, str seed):
+        deref(self._this).set_cursor(_bstring(seed))
+
     def clear_seen(self):
         deref(self._this).clear_seen()
 
@@ -111,6 +161,25 @@ cdef class Assembler_ByteStorage_DefaultShifter(Assembler_Base):
 
         deref(self._this).assemble(_seed, path)
         return deref(self._this).to_string(path)
+
+    def assemble_left(self, object seed=None):
+        cdef Path path
+        if seed is None:
+            deref(self._this).assemble_left(path)
+        else:
+            deref(self._this).assemble_left(_bstring(seed), path)
+
+        return deref(self._this).to_string(path)
+        
+    def assemble_right(self, object seed=None):
+        cdef Path path
+        if seed is None:
+            deref(self._this).assemble_right(path)
+        else:
+            deref(self._this).assemble_right(_bstring(seed), path)
+
+        return deref(self._this).to_string(path)
+
 
 
 cdef object _make_assembler(dBG_Base graph):

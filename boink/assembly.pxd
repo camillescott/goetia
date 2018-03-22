@@ -9,7 +9,6 @@ from libcpp.vector import vector
 from boink.hashing cimport *
 from boink.dbg cimport *
 
-__PlaceHolder__ = ValueError
 
 cdef extern from "boink/assembly.hh" namespace "boink":
     ctypedef deque[char] Path
@@ -38,12 +37,11 @@ cdef extern from "boink/assembly.hh" namespace "boink":
         void assemble_right(Path&)
 
         void assemble(const string&, Path&)
-        void assemble(Path&)
 
         string to_string(Path&)
 
         # HashShifter methods
-        hash_t set_cursor(string&)
+        hash_t set_cursor(string&) except +ValueError
         string get_cursor()
         void get_cursor(deque[char]&)
 
@@ -56,8 +54,8 @@ cdef extern from "boink/assembly.hh" namespace "boink":
         vector[shift_t] gather_left()
         vector[shift_t] gather_right()
 
-        hash_t shift_left(const char)
-        hash_t shift_right(const char)
+        hash_t shift_left(const char) except +ValueError
+        hash_t shift_right(const char) except +ValueError
 
     _AssemblerMixin[GraphType] make_assembler[GraphType](shared_ptr[GraphType])
 

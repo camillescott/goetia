@@ -118,14 +118,18 @@ public:
 
     void assemble_left(const std::string& seed,
                        Path& path) {
+
         this->set_cursor(seed);
+        if (!this->graph->get(this->get())) {
+            return;
+        } 
+        this->get_cursor(path);
         assemble_left(path);
     }
 
     void assemble_left(Path& path) {
-        if (!this->graph->get(this->get())) {
-            return;
-        }
+        seen.insert(this->get());
+
         shift_t next;
         while (get_left(next) && !seen.count(next.hash)) {
             path.push_front(next.symbol);
@@ -135,15 +139,18 @@ public:
 
     void assemble_right(const std::string& seed,
                         Path& path) {
+
         this->set_cursor(seed);
+        if (!this->graph->get(this->get())) {
+            return;
+        }
+        this->get_cursor(path);
         assemble_right(path);
     }
 
     void assemble_right(Path& path) {
-        if (!this->graph->get(this->get())) {
-            //pdebug("seed not in graph");
-            return;
-        }
+        seen.insert(this->get());
+
         shift_t next;
         while (get_right(next) && !seen.count(next.hash)) {
             path.push_back(next.symbol);
@@ -153,20 +160,17 @@ public:
 
     void assemble(const std::string& seed,
                   Path& path) {
+
+        this->set_cursor(seed);
         if (!this->graph->get(this->hash(seed))) {
             return;
         }
-
-        this->set_cursor(seed);
-        assemble(path);
-    }
-                  
-    void assemble(Path& path) {
         this->get_cursor(path);
         assemble_left(path);
+        this->set_cursor(seed);
         assemble_right(path);
     }
-
+                  
     string to_string(Path& path) {
         return string(path.begin(), path.end());
     }
