@@ -61,4 +61,4 @@ cdef extern from "boink/dbg.hh" namespace "boink":
     ctypedef _dBG[BitStorage, DefaultShifter] DefaultDBG
 
 
-include "dbg_types.pxd.pxi"
+include "dbg.pxd.pxi"
