@@ -1,7 +1,4 @@
-
-
 # boink/dbg.pxd.pxi
-#
 # Copyright (C) 2018 Camille Scott
 # All rights reserved.
 #
