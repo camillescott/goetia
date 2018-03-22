@@ -1,5 +1,10 @@
-# -*- coding: UTF-8 -*-
-# cython: c_string_type=unicode, c_string_encoding=utf8, embedsignature=True
+# boink/heap.pxd
+# Copyright (C) 2018 Camille Scott
+# All rights reserved.
+#
+# This software may be modified and distributed under the terms
+# of the MIT license.  See the LICENSE file for details.
+
 
 cdef class Weighted:
 

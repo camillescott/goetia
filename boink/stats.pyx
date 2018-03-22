@@ -1,6 +1,10 @@
-# -*- coding: UTF-8 -*-
-# cython: c_string_type=unicode, c_string_encoding=utf8
-from __future__ import print_function
+# boink/stats.pyx
+# Copyright (C) 2018 Camille Scott
+# All rights reserved.
+#
+# This software may be modified and distributed under the terms
+# of the MIT license.  See the LICENSE file for details.
+
 import sys
 from libcpp.memory cimport shared_ptr, weak_ptr
 from libcpp.string cimport string

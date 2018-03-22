@@ -1,5 +1,9 @@
-from __future__ import print_function
-from __future__ import absolute_import
+# boink/tests/test_partitioning.py
+# Copyright (C) 2018 Camille Scott
+# All rights reserved.
+#
+# This software may be modified and distributed under the terms
+# of the MIT license.  See the LICENSE file for details.
 
 import gc
 import itertools
