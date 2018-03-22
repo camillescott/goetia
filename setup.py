@@ -107,7 +107,7 @@ def build_dir():
 
 
 def get_typegen_env():
-    return Environment(loader=PackageLoader('boink', 'typegen'),
+    return Environment(loader=PackageLoader('boink', 'templates'),
                        trim_blocks=True,
                        lstrip_blocks=True)
 
