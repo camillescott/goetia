@@ -7,14 +7,19 @@ from libcpp.vector cimport vector
 from khmer._oxli.utils import get_n_primes_near_x, is_str, is_num
 from boink.utils cimport _bstring, _ustring
 
+cdef class dBG_Base:
+    pass
 
-cdef class dBG_BitStorage_DefaultShifter:
+
+cdef class dBG_BitStorage_DefaultShifter(dBG_Base):
 
     def __cinit__(self, int K, uint64_t starting_size, int n_tables):
         cdef vector[uint64_t] primes
         if type(self) is dBG_BitStorage_DefaultShifter:
             primes = get_n_primes_near_x(n_tables, starting_size)
             self._this = make_shared[_dBG[BitStorage,DefaultShifter]](K, primes)
+        self.storage_type = "BitStorage"
+        self.shifter_type = "DefaultShifter"
 
     cdef hash_t _handle_kmer(self, object kmer) except 0:
         cdef hash_t handled
@@ -78,13 +83,15 @@ cdef class dBG_BitStorage_DefaultShifter:
         return obj
 
 
-cdef class dBG_NibbleStorage_DefaultShifter:
+cdef class dBG_NibbleStorage_DefaultShifter(dBG_Base):
 
     def __cinit__(self, int K, uint64_t starting_size, int n_tables):
         cdef vector[uint64_t] primes
         if type(self) is dBG_NibbleStorage_DefaultShifter:
             primes = get_n_primes_near_x(n_tables, starting_size)
             self._this = make_shared[_dBG[NibbleStorage,DefaultShifter]](K, primes)
+        self.storage_type = "NibbleStorage"
+        self.shifter_type = "DefaultShifter"
 
     cdef hash_t _handle_kmer(self, object kmer) except 0:
         cdef hash_t handled
@@ -148,13 +155,15 @@ cdef class dBG_NibbleStorage_DefaultShifter:
         return obj
 
 
-cdef class dBG_ByteStorage_DefaultShifter:
+cdef class dBG_ByteStorage_DefaultShifter(dBG_Base):
 
     def __cinit__(self, int K, uint64_t starting_size, int n_tables):
         cdef vector[uint64_t] primes
         if type(self) is dBG_ByteStorage_DefaultShifter:
             primes = get_n_primes_near_x(n_tables, starting_size)
             self._this = make_shared[_dBG[ByteStorage,DefaultShifter]](K, primes)
+        self.storage_type = "ByteStorage"
+        self.shifter_type = "DefaultShifter"
 
     cdef hash_t _handle_kmer(self, object kmer) except 0:
         cdef hash_t handled

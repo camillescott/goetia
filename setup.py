@@ -122,17 +122,18 @@ def generate_cython_templates():
     env = get_typegen_env()
     storages, shifters = get_boink_types()
 
-    pxd_tpl = env.get_template('dbg_types.tpl.pxd')
-    with open(os.path.join('boink', 'dbg_types.pxd.pxi'), 'w') as fp:
-        res = pxd_tpl.render(Storage_types=storages,
-                             Shifter_types=shifters)
-        fp.write(res)
+    for prefix in ['dbg_types', 'assembly_types']:
+        pxd_tpl = env.get_template('{0}.tpl.pxd'.format(prefix))
+        with open(os.path.join('boink', '{0}.pxd.pxi'.format(prefix)), 'w') as fp:
+            res = pxd_tpl.render(Storage_types=storages,
+                                 Shifter_types=shifters)
+            fp.write(res)
 
-    pyx_tpl = env.get_template('dbg_types.tpl.pyx')
-    with open(os.path.join('boink', 'dbg_types.pyx.pxi'), 'w') as fp:
-        res = pyx_tpl.render(Storage_types=storages,
-                             Shifter_types=shifters)
-        fp.write(res)
+        pyx_tpl = env.get_template('{0}.tpl.pyx'.format(prefix))
+        with open(os.path.join('boink', '{0}.pyx.pxi'.format(prefix)), 'w') as fp:
+            res = pyx_tpl.render(Storage_types=storages,
+                                 Shifter_types=shifters)
+            fp.write(res)
 
 
 # Don't forget to update lib/Makefile with these flags!

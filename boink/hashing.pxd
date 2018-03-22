@@ -2,6 +2,7 @@
 from libc.stdint cimport uint8_t, uint16_t, uint64_t
 
 from libcpp cimport bool
+from libcpp.deque cimport deque
 from libcpp.string cimport string
 from libcpp.utility cimport pair
 from libcpp.vector cimport vector
@@ -31,8 +32,9 @@ cdef extern from "boink/hashing.hh" namespace "boink":
     ctypedef pair[hash_t, hash_t] full_hash_t
 
     cdef struct shift_t:
+        shift_t(hash_t, char)
         hash_t hash
-        const char symbol
+        char symbol
 
     cdef cppclass _KmerClient "boink::KmerClient":
         _KmerClient(uint16_t)
@@ -41,6 +43,10 @@ cdef extern from "boink/hashing.hh" namespace "boink":
     cdef cppclass _HashShifter "boink::HashShifter" [D,A] (_KmerClient):
         hash_t set_cursor(string&)
         string get_cursor()
+        void get_cursor(deque[char]&)
+
+        bool is_valid(const char)
+        bool is_valid(const string&)
 
         hash_t get()
         hash_t hash(string&)
@@ -63,6 +69,7 @@ cdef extern from "boink/hashing.hh" namespace "boink":
         hash_t first()
         hash_t next()
         bool done()
+
         unsigned int get_start_pos()
         unsigned int get_end_pos()
 

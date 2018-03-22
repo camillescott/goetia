@@ -7,18 +7,23 @@ from libcpp.vector cimport vector
 from khmer._oxli.utils import get_n_primes_near_x, is_str, is_num
 from boink.utils cimport _bstring, _ustring
 
+cdef class dBG_Base:
+    pass
+
 {% for Storage_t in Storage_types %}
 {% for Shifter_t in Shifter_types %}
 {% set tparams %}{{Storage_t}},{{Shifter_t}}{% endset %}
 {% set suffix %}{{Storage_t}}_{{Shifter_t}}{% endset %}
 
-cdef class dBG_{{suffix}}:
+cdef class dBG_{{suffix}}(dBG_Base):
 
     def __cinit__(self, int K, uint64_t starting_size, int n_tables):
         cdef vector[uint64_t] primes
         if type(self) is dBG_{{suffix}}:
             primes = get_n_primes_near_x(n_tables, starting_size)
             self._this = make_shared[_dBG[{{tparams}}]](K, primes)
+        self.storage_type = "{{Storage_t}}"
+        self.shifter_type = "{{Shifter_t}}"
 
     cdef hash_t _handle_kmer(self, object kmer) except 0:
         cdef hash_t handled

@@ -33,6 +33,9 @@ cdef extern from "boink/dbg.hh" namespace "boink":
 
     cdef cppclass _dBG "boink::dBG" [StorageType, HashShifter] (_KmerClient):
         _dBG(uint16_t, vector[uint64_t])
+        _dBG(uint16_t, uint64_t, uint16_t)
+
+        ctypedef HashShifter shifter_type
 
         hash_t hash(string&) except +ValueError
         bool add(hash_t)
