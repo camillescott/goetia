@@ -124,15 +124,21 @@ def generate_cython_templates():
 
     for prefix in ['dbg_types', 'assembly_types']:
         pxd_tpl = env.get_template('{0}.tpl.pxd'.format(prefix))
-        with open(os.path.join('boink', '{0}.pxd.pxi'.format(prefix)), 'w') as fp:
+        dst = os.path.join('boink', '{0}.pxd.pxi'.format(prefix))
+        with open(dst, 'w') as fp:
             res = pxd_tpl.render(Storage_types=storages,
-                                 Shifter_types=shifters)
+                                 Shifter_types=shifters,
+                                 dst_filename=dst,
+                                 tpl_filename = pxd_tpl.name)
             fp.write(res)
 
         pyx_tpl = env.get_template('{0}.tpl.pyx'.format(prefix))
-        with open(os.path.join('boink', '{0}.pyx.pxi'.format(prefix)), 'w') as fp:
+        dst = os.path.join('boink', '{0}.pyx.pxi'.format(prefix))
+        with open(dst, 'w') as fp:
             res = pyx_tpl.render(Storage_types=storages,
-                                 Shifter_types=shifters)
+                                 Shifter_types=shifters,
+                                 dst_filename=dst,
+                                 tpl_filename=pyx_tpl.name)
             fp.write(res)
 
 

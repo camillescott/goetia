@@ -1,3 +1,6 @@
+{% extends "base.tpl" %}
+{% from "dbg_types.tpl" import iter_types %}
+{% block code %}
 from cython.operator cimport dereference as deref
 
 from libc.stdint cimport uint64_t
@@ -7,14 +10,11 @@ from libcpp.vector cimport vector
 from khmer._oxli.utils import get_n_primes_near_x, is_str, is_num
 from boink.utils cimport _bstring, _ustring
 
+
 cdef class dBG_Base:
     pass
 
-{% for Storage_t in Storage_types %}
-{% for Shifter_t in Shifter_types %}
-{% set tparams %}{{Storage_t}},{{Shifter_t}}{% endset %}
-{% set suffix %}{{Storage_t}}_{{Shifter_t}}{% endset %}
-
+{% call(Storage_t, Shifter_t, tparams, suffix) iter_types(Storage_types, Shifter_types) %}
 cdef class dBG_{{suffix}}(dBG_Base):
 
     def __cinit__(self, int K, uint64_t starting_size, int n_tables):
@@ -85,29 +85,16 @@ cdef class dBG_{{suffix}}(dBG_Base):
         cdef dBG_{{suffix}} obj = cls(1, 1, 1)
         deref(obj._this).load(_bstring(file_name))
         return obj
-
-{% endfor %}
-{% endfor %}
-
+{% endcall %}
 
 cdef object _make_dbg(int K, uint64_t starting_size, int n_tables,
                       str storage='BitStorage',
                       str shifter='RollingHashShifter'):
-    {% for Storage_t in Storage_types %}
-    {% set outer_first = loop.first %}
-    {% for Shifter_t in Shifter_types %}
-    {% set conditional %}storage == "{{Storage_t}}" and shifter == "{{Shifter_t}}"{% endset %}
-    {% set suffix %}{{Storage_t}}_{{Shifter_t}}{% endset %}
-    {% if outer_first and loop.first %}
-    if {{conditional}}:
-    {% else %}
-    elif {{conditional}}:
-    {% endif %}
+
+    {% call(Storage_t, Shifter_t, tparams, suffix) iter_types(Storage_types, Shifter_types) %}
+    if storage == "{{Storage_t}}" and shifter == "{{Shifter_t}}":
         return dBG_{{suffix}}(K, starting_size, n_tables)
-    {% endfor %}
-    {% endfor %}
-    else:
-        raise TypeError("Invalid Storage or Shifter type.")
+    {% endcall %}
+    raise TypeError("Invalid Storage or Shifter type.")
 
-
-
+{% endblock code %}
