@@ -12,6 +12,7 @@
 
 #include "hashing.hh"
 #include "oxli/storage.hh"
+#include "oxli/hashtable.hh"
 
 #include <string>
 #include <vector>
@@ -37,10 +38,17 @@ class dBG : public KmerClient {
 
 public:
 
-    typedef HashShifter hasher_type;
+    typedef HashShifter shifter_type;
     
     explicit dBG(uint16_t K, std::vector<uint64_t> storage_size) :
-        KmerClient(K), S(storage_size), hasher(K) {
+        KmerClient(K),
+        S(storage_size),
+        hasher(K) {
+
+    }
+
+    explicit dBG(uint16_t K, uint64_t max_table, uint16_t N) :
+        dBG(K, oxli::get_n_primes_near_x(N, max_table)) {
 
     }
 
@@ -154,7 +162,6 @@ public:
 
 
 typedef dBG<oxli::BitStorage, DefaultShifter> DefaultDBG;
-
 }
 
 #endif

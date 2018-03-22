@@ -6,11 +6,9 @@ using namespace boink;
 
 namespace boink {
 
-template<class Derived, const std::string& Alphabet>
-const std::string HashShifter<Derived, Alphabet>::symbols = Alphabet;
-
 };
 
+/*
 int main() {
     std::string S = "ATAT";
     RollingHashShifter<> shifter(S, 4);
@@ -30,3 +28,4 @@ int main() {
     std::cout << "standalone shifted: " << shifter.hash(std::string("ATAG")) << std::endl;
 
 }
+*/

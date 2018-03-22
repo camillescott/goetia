@@ -88,7 +88,7 @@ endif
 ifneq ($(PACKAGE_VERSION),)
 VERSION = $(PACKAGE_VERSION)
 else
-VERSION = $(./setup.py version | grep Version | awk '{print $2}')
+VERSION = $(pushd ../../ && python setup.py --version && popd)
 endif
 
 # The ABI version of libboink
@@ -108,7 +108,7 @@ endif
 
 LIBBOINKSO=$(SONAME)
 
-CXXFLAGS += -DVERSION=$(VERSION)
+#CXXFLAGS += -DVERSION=$(VERSION)
 
 export CXX
 export CFLAGS
@@ -121,6 +121,9 @@ LIBBOINK_OBJS= \
 	dbg.o \
 	hashing.o \
 	assembly.o
+
+TEST_OBJS= \
+	test_assembly.o
 
 PRECOMILE_OBJS ?=
 PRECLEAN_TARGS ?=
@@ -155,12 +158,18 @@ boink.pc: boink.pc.in
 
 
 %.o: %.cc $(PRECOMILE_OBJS) $(BOINK_HEADERS)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -c -o $@ $<
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -c -o $@ $< -loxli
 
 
 $(LIBBOINKSO): $(LIBBOINK_OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(SONAME_FLAGS) -shared -o $@ $^
 	ln -sf $(SONAME) libboink.$(SHARED_EXT)
+
+test_assembly: $(BOINK_HEADERS) $(LIBBOINK_OBJS) $(TEST_OBJS)
+	$(CXX) $(LDFLAGS) -o $@ $(TEST_OBJS) $(LIBBOINK_OBJS) -loxli -L.
+
+test: test_assembly
+	./$<
 
 libboink.a: $(LIBBOINK_OBJS)
 	ar rcs $@ $^

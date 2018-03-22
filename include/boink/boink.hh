@@ -7,8 +7,16 @@
  * of the MIT license.  See the LICENSE file for details.
  */
 
+#ifndef BOINK_HH
+#define BOINK_HH
+
 #include <exception>
 #include <string>
+#include <iostream>
+#include <vector>
+#include <type_traits>
+#include <iterator>
+#include <set>
 
 namespace boink {
 
@@ -27,4 +35,7 @@ protected:
     const std::string _msg;
 };
 
-};
+} // namespace boink
+
+
+#endif

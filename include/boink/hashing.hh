@@ -33,7 +33,19 @@ typedef std::pair<hash_t, hash_t> full_hash_t;
 
 struct shift_t {
     hash_t hash;
-    const char symbol;
+    char symbol;
+
+    shift_t() : 
+        hash(0),
+        symbol('A') {
+    
+    }
+
+    shift_t(hash_t hash, char symbol) : 
+        hash(hash),
+        symbol(symbol) {
+    
+    }
 };
 
 
@@ -133,7 +145,7 @@ public:
     }
 
     void get_cursor(std::deque<char>& d) {
-        return d.insert(d.end(), symbol_deque.begin(), symbol_deque().end());
+        d.insert(d.end(), symbol_deque.begin(), symbol_deque.end());
     }
 
 private:
@@ -169,6 +181,11 @@ protected:
     }
 
 };
+
+template<class Derived, const std::string& Alphabet>
+const std::string HashShifter<Derived, Alphabet>::symbols = Alphabet;
+
+
 
 template <const std::string& Alphabet = oxli::alphabets::DNA_SIMPLE>
 class RollingHashShifter : public HashShifter<RollingHashShifter<Alphabet>,
@@ -236,7 +253,8 @@ public:
         const char back = this->symbol_deque.back();
         for (auto symbol : Alphabet) {
             hasher.reverse_update(symbol, back);
-            hashes.push_back(shift_t(hasher.hashvalue, symbol));
+            shift_t result(hasher.hashvalue, symbol);
+            hashes.push_back(result);
             hasher.update(symbol, back);
         }
 
