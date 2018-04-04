@@ -10,42 +10,34 @@ import pytest
 from boink.dbg import make_dBG
 from boink.assembly import make_assembler
 from boink.tests.utils import *
-from boink.tests.test_dbg import dbg_type
 
 
 @pytest.fixture
-def asm_type(request, ksize, dbg_type):
+def asm(request, ksize, graph, graph_type):
+    _graph_type, AdapterType = graph_type
 
-    def build():
-        G = dbg_type()
-        return make_assembler(G)
-
-    return build
+    return make_assembler(graph)
 
 
-def test_assembler_type(asm_type):
-    asm = asm_type()
+def test_assembler_type(asm):
 
     assert asm.storage_type == asm.Graph.storage_type
     assert asm.shifter_type == asm.Graph.shifter_type
 
     _, _, asm_suffix = type(asm).__name__.partition('_')
-    _, _, dbg_suffix = type(asm.Graph).__name__.partition('_')
 
-    assert asm_suffix == dbg_suffix, (asm_suffix, dbg_suffix)
+    assert asm_suffix == asm.Graph.suffix 
 
 
-def test_assembler_cursor(asm_type, ksize):
+def test_assembler_cursor(asm, ksize):
     seed = 'A' * ksize
-    asm = asm_type()
 
     asm.cursor = seed
     assert asm.cursor == seed
 
 
-def test_assembler_cursor_wrong_size(asm_type, ksize):
+def test_assembler_cursor_wrong_size(asm, ksize):
     seed = 'A' * (ksize - 1)
-    asm = asm_type()
 
     with pytest.raises(ValueError):
         asm.cursor = seed
@@ -53,46 +45,43 @@ def test_assembler_cursor_wrong_size(asm_type, ksize):
 
 class TestNonBranching:
 
-    def test_all_start_positions(self, ksize, linear_structure, asm_type):
+    def test_all_start_positions(self, ksize, linear_path, asm, consumer):
         # assemble entire contig, starting from wherever
-        _, contig = linear_structure()
-        asm = asm_type()
-        asm.Graph.add_sequence(contig)
+        contig = linear_path()
 
         for start in range(0, len(contig), 150):
+            if len(contig) - start < ksize:
+                continue
             asm.clear_seen()
             path = asm.assemble(contig[start:start + ksize])
             assert path == contig, (len(path), len(contig), start)
 
-    def test_all_left_to_beginning(self, ksize, linear_structure, asm_type):
+    def test_all_left_to_beginning(self, ksize, linear_path, asm, consumer):
         # assemble directed left
-        _, contig = linear_structure()
-        asm = asm_type()
-        asm.Graph.add_sequence(contig)
-
+        contig = linear_path()
 
         for start in range(0, len(contig), 150):
+            if len(contig) - start < ksize:
+                continue
             asm.clear_seen()
             path = asm.assemble_left(contig[start:start + ksize])
             print(path, ', ', contig[:start])
             assert path == contig[:start + ksize], start
 
-    def test_all_right_to_end(self, ksize, linear_structure, asm_type):
+    def test_all_right_to_end(self, ksize, linear_path, asm, consumer):
         # assemble directed right
-        _, contig = linear_structure()
-        asm = asm_type()
-        asm.Graph.add_sequence(contig)
+        contig = linear_path()
 
         for start in range(0, len(contig), 150):
+            if len(contig) - start < ksize:
+                continue
             asm.clear_seen()
             path = asm.assemble_right(contig[start:start + ksize])
             print(path, ', ', contig[:start])
             assert path == contig[start:], start
 
-    def test_circular(self, ksize, circular_linear_structure, asm_type):
-        _, contig = circular_linear_structure()
-        asm = asm_type()
-        asm.Graph.add_sequence(contig)
+    def test_circular(self, ksize, circular, asm, consumer):
+        contig = circular()
 
         path = asm.assemble_right(contig[:ksize])
         print(path, ',', contig)
