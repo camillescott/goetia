@@ -102,3 +102,6 @@ class TestBranchingBasic:
         
         path = asm.assemble_right(core[:ksize])
         assert path == core[:S+ksize]
+        
+        assert top == asm.assemble(top[-ksize:])
+        assert bottom == asm.assemble(bottom[-ksize:])
