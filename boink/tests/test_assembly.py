@@ -11,7 +11,6 @@ from boink.dbg import make_dBG
 from boink.assembly import make_assembler
 from boink.tests.utils import *
 from boink.tests.test_dbg import dbg_type
-from khmer.tests.graph_structure_fixtures import *
 
 
 @pytest.fixture

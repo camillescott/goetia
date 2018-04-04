@@ -14,7 +14,7 @@ from cython.operator cimport dereference as deref
 from libc.stdint cimport uint64_t
 from libcpp.string cimport string
 
-from boink import dbg
+from boink.dbg cimport *
 from boink.utils cimport *
 
 

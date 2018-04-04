@@ -19,15 +19,22 @@ from boink.utils cimport _bstring, _ustring
 
 
 cdef class dBG_Base:
-    pass
+    
+    def __cinit__(self, *args, **kwargs):
+        self.allocated = False
 
 cdef class dBG_BitStorage_DefaultShifter(dBG_Base):
 
-    def __cinit__(self, int K, uint64_t starting_size, int n_tables):
+    def __cinit__(self, int K, uint64_t starting_size, int n_tables,
+                  *args, **kwargs):
         cdef vector[uint64_t] primes
-        if type(self) is dBG_BitStorage_DefaultShifter:
+        #if type(self) is dBG_BitStorage_DefaultShifter:
+        if not self._this:
             primes = get_n_primes_near_x(n_tables, starting_size)
             self._this = make_shared[_dBG[BitStorage,DefaultShifter]](K, primes)
+            self._assembler = make_shared[_AssemblerMixin[_dBG[BitStorage,DefaultShifter]]](self._this)
+            self.allocated = True
+
         self.storage_type = "BitStorage"
         self.shifter_type = "DefaultShifter"
 
@@ -71,6 +78,19 @@ cdef class dBG_BitStorage_DefaultShifter(dBG_Base):
         cdef list counts = deref(self._this).get_counts(_sequence)
         return counts
 
+    def left_degree(self, str kmer):
+        deref(self._assembler).set_cursor(_bstring(kmer))
+        return deref(self._assembler).degree_left()
+
+    def right_degree(self, str kmer):
+        deref(self._assembler).set_cursor(_bstring(kmer))
+        return deref(self._assembler).degree_right()
+
+    def degree(self, str kmer):
+        deref(self._assembler).set_cursor(_bstring(kmer))
+        return deref(self._assembler).degree_left() + \
+               deref(self._assembler).degree_right()
+
     @property
     def n_unique(self):
         return deref(self._this).n_unique()
@@ -94,11 +114,16 @@ cdef class dBG_BitStorage_DefaultShifter(dBG_Base):
 
 cdef class dBG_NibbleStorage_DefaultShifter(dBG_Base):
 
-    def __cinit__(self, int K, uint64_t starting_size, int n_tables):
+    def __cinit__(self, int K, uint64_t starting_size, int n_tables,
+                  *args, **kwargs):
         cdef vector[uint64_t] primes
-        if type(self) is dBG_NibbleStorage_DefaultShifter:
+        #if type(self) is dBG_NibbleStorage_DefaultShifter:
+        if not self._this:
             primes = get_n_primes_near_x(n_tables, starting_size)
             self._this = make_shared[_dBG[NibbleStorage,DefaultShifter]](K, primes)
+            self._assembler = make_shared[_AssemblerMixin[_dBG[NibbleStorage,DefaultShifter]]](self._this)
+            self.allocated = True
+
         self.storage_type = "NibbleStorage"
         self.shifter_type = "DefaultShifter"
 
@@ -142,6 +167,19 @@ cdef class dBG_NibbleStorage_DefaultShifter(dBG_Base):
         cdef list counts = deref(self._this).get_counts(_sequence)
         return counts
 
+    def left_degree(self, str kmer):
+        deref(self._assembler).set_cursor(_bstring(kmer))
+        return deref(self._assembler).degree_left()
+
+    def right_degree(self, str kmer):
+        deref(self._assembler).set_cursor(_bstring(kmer))
+        return deref(self._assembler).degree_right()
+
+    def degree(self, str kmer):
+        deref(self._assembler).set_cursor(_bstring(kmer))
+        return deref(self._assembler).degree_left() + \
+               deref(self._assembler).degree_right()
+
     @property
     def n_unique(self):
         return deref(self._this).n_unique()
@@ -165,11 +203,16 @@ cdef class dBG_NibbleStorage_DefaultShifter(dBG_Base):
 
 cdef class dBG_ByteStorage_DefaultShifter(dBG_Base):
 
-    def __cinit__(self, int K, uint64_t starting_size, int n_tables):
+    def __cinit__(self, int K, uint64_t starting_size, int n_tables,
+                  *args, **kwargs):
         cdef vector[uint64_t] primes
-        if type(self) is dBG_ByteStorage_DefaultShifter:
+        #if type(self) is dBG_ByteStorage_DefaultShifter:
+        if not self._this:
             primes = get_n_primes_near_x(n_tables, starting_size)
             self._this = make_shared[_dBG[ByteStorage,DefaultShifter]](K, primes)
+            self._assembler = make_shared[_AssemblerMixin[_dBG[ByteStorage,DefaultShifter]]](self._this)
+            self.allocated = True
+
         self.storage_type = "ByteStorage"
         self.shifter_type = "DefaultShifter"
 
@@ -213,6 +256,19 @@ cdef class dBG_ByteStorage_DefaultShifter(dBG_Base):
         cdef list counts = deref(self._this).get_counts(_sequence)
         return counts
 
+    def left_degree(self, str kmer):
+        deref(self._assembler).set_cursor(_bstring(kmer))
+        return deref(self._assembler).degree_left()
+
+    def right_degree(self, str kmer):
+        deref(self._assembler).set_cursor(_bstring(kmer))
+        return deref(self._assembler).degree_right()
+
+    def degree(self, str kmer):
+        deref(self._assembler).set_cursor(_bstring(kmer))
+        return deref(self._assembler).degree_left() + \
+               deref(self._assembler).degree_right()
+
     @property
     def n_unique(self):
         return deref(self._this).n_unique()
@@ -237,7 +293,7 @@ cdef class dBG_ByteStorage_DefaultShifter(dBG_Base):
 
 cdef object _make_dbg(int K, uint64_t starting_size, int n_tables,
                       str storage='BitStorage',
-                      str shifter='RollingHashShifter'):
+                      str shifter='DefaultShifter'):
 
     if storage == "BitStorage" and shifter == "DefaultShifter":
         return dBG_BitStorage_DefaultShifter(K, starting_size, n_tables)
@@ -249,4 +305,19 @@ cdef object _make_dbg(int K, uint64_t starting_size, int n_tables,
         return dBG_ByteStorage_DefaultShifter(K, starting_size, n_tables)
 
     raise TypeError("Invalid Storage or Shifter type.")
+
+
+def get_dbg_type(str storage='BitStorage',
+                 str shifter='DefaultShifter'):
+    if storage == "BitStorage" and shifter == "DefaultShifter":
+        return dBG_BitStorage_DefaultShifter
+
+    if storage == "NibbleStorage" and shifter == "DefaultShifter":
+        return dBG_NibbleStorage_DefaultShifter
+
+    if storage == "ByteStorage" and shifter == "DefaultShifter":
+        return dBG_ByteStorage_DefaultShifter
+
+    raise TypeError("Invalid Storage or Shifter type: ({0},{1})".format(storage, shifter))
+
 

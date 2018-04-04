@@ -9,22 +9,27 @@
 # The source template is: dbg.tpl.pxd
 
 from libcpp.memory cimport shared_ptr, make_shared
-
+from boink.assembly cimport _AssemblerMixin
 
 cdef class dBG_Base:
     cdef readonly object storage_type
     cdef readonly object shifter_type
+    cdef object allocated
+
 
 cdef class dBG_BitStorage_DefaultShifter(dBG_Base):
     cdef shared_ptr[_dBG[BitStorage,DefaultShifter]] _this
+    cdef shared_ptr[_AssemblerMixin[_dBG[BitStorage,DefaultShifter]]] _assembler
     cdef hash_t _handle_kmer(self, object) except 0
 
 cdef class dBG_NibbleStorage_DefaultShifter(dBG_Base):
     cdef shared_ptr[_dBG[NibbleStorage,DefaultShifter]] _this
+    cdef shared_ptr[_AssemblerMixin[_dBG[NibbleStorage,DefaultShifter]]] _assembler
     cdef hash_t _handle_kmer(self, object) except 0
 
 cdef class dBG_ByteStorage_DefaultShifter(dBG_Base):
     cdef shared_ptr[_dBG[ByteStorage,DefaultShifter]] _this
+    cdef shared_ptr[_AssemblerMixin[_dBG[ByteStorage,DefaultShifter]]] _assembler
     cdef hash_t _handle_kmer(self, object) except 0
 
 

@@ -14,7 +14,6 @@ from libcpp.string cimport string
 from libcpp.vector import vector
 
 from boink.hashing cimport *
-from boink.dbg cimport *
 
 
 cdef extern from "boink/assembly.hh" namespace "boink":
@@ -34,8 +33,9 @@ cdef extern from "boink/assembly.hh" namespace "boink":
 
         bool get_left(shift_t&)
         bool get_right(shift_t&)
-        bool check_neighbors(vector[shift_t],
+        bool reduce_nodes(vector[shift_t]&,
                              shift_t&)
+        uint8_t count_nodes(vector[shift_t]&)
 
         void assemble_left(const string&, Path&)
         void assemble_left(Path&)

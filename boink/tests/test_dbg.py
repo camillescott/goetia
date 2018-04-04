@@ -6,244 +6,192 @@
 # of the MIT license.  See the LICENSE file for details.
 
 import pytest
-
-from boink.dbg import make_dBG
 from boink.tests.utils import *
-from khmer.tests.graph_structure_fixtures import *
-
-
-@pytest.fixture(params=['BitStorage', 'ByteStorage', 'NibbleStorage'])
-def dbg_type(request, ksize):
-
-    def build(*args):
-        if not args:
-            starting_size, n_tables = 1000000, 4
-        else:
-            starting_size, n_tables = args
-        return make_dBG(ksize, starting_size, n_tables, storage=request.param)
-
-    return build
 
 
 @using_ksize([21, 51, 101])
-def test_presence(dbg_type, ksize, random_sequence):
+def test_presence(graph, ksize, random_sequence):
     # basic get/add test
-    tt = dbg_type()
-
     for kmer in kmers(random_sequence(), ksize):
 
-        hashval = tt.hash(kmer)
+        hashval = graph.hash(kmer)
 
-        assert tt.get(kmer) == 0
-        assert tt.get(hashval) == 0
+        assert graph.get(kmer) == 0
+        assert graph.get(hashval) == 0
 
-        tt.add(kmer)
-        assert tt.get(kmer) == 1
-        assert tt.get(hashval) == 1
+        graph.add(kmer)
+        assert graph.get(kmer) == 1
+        assert graph.get(hashval) == 1
 
-        tt.add(kmer)
+        graph.add(kmer)
         # Node* types can only tell presence/absence
-        if 'Bit' in tt.__class__.__name__:
-            assert tt.get(kmer) == 1
-            assert tt.get(hashval) == 1
+        if 'Bit' in graph.storage:
+            assert graph.get(kmer) == 1
+            assert graph.get(hashval) == 1
         else:
-            assert tt.get(kmer) == 2
-            assert tt.get(hashval) == 2
+            assert graph.get(kmer) == 2
+            assert graph.get(hashval) == 2
 
 
 @using_ksize([21,151])
-def test_n_occupied(dbg_type, ksize):
+def test_n_occupied(graph, ksize):
     # basic get/add test
-    tt = dbg_type()
-
     kmer = 'G' * ksize
 
-    assert tt.n_occupied == 0
-    assert tt.n_unique == 0
+    assert graph.n_occupied == 0
+    assert graph.n_unique == 0
 
-    tt.add(kmer)
-    assert tt.n_occupied == 1
-    assert tt.n_unique == 1
+    graph.add(kmer)
+    assert graph.n_occupied == 1
+    assert graph.n_unique == 1
 
-    tt.add(kmer)
+    graph.add(kmer)
     # the CQF implementation we use can use more than one slot to represent
     # counts for a single kmer
-    if not "QF" in tt.__class__.__name__:
-        assert tt.n_occupied == 1
+    if not "QF" in graph.__class__.__name__:
+        assert graph.n_occupied == 1
     else:
-        assert tt.n_occupied == 2
-    assert tt.n_unique == 1
+        assert graph.n_occupied == 2
+    assert graph.n_unique == 1
 
-
-'''
-def test_bad_create(Tabletype):
-    # creation should fail w/bad parameters
-    try:
-        tt = Tabletype(5, [])
-    except ValueError as err:
-        assert 'tablesizes needs to be one or more numbers' in str(err)
-'''
 
 @using_ksize([21,51,81])
-def test_get_ksize(dbg_type, ksize):
-    # ksize() function.
-    kh = dbg_type()
-    assert kh.K == ksize
+def test_get_ksize(graph, ksize):
+    assert graph.K == ksize
 
 
-def test_hash(dbg_type, ksize):
+def test_hash(graph, ksize):
     # hashing of strings -> numbers.
-    kh = dbg_type()
-    x = kh.hash("ATGGC")
+    x = graph.hash("ATGGC")
     assert type(x) == int
 
 
-def test_hash_bad_dna(dbg_type, ksize):
+def test_hash_bad_dna(graph, ksize):
     # hashing of bad dna -> succeeds w/o complaint
-    kh = dbg_type()
-
     with pytest.raises(ValueError):
-        x = kh.hash("ATGYC")
+        x = graph.hash("ATGYC")
 
 
-def test_hash_bad_length(dbg_type, ksize):
+def test_hash_bad_length(graph, ksize):
     # hashing of too long should ignore extra sequence
-    kh = dbg_type()
     test_kmer = 'A' * ksize
-    assert kh.hash(test_kmer) == kh.hash(test_kmer + 'TTTT')
+    assert graph.hash(test_kmer) == graph.hash(test_kmer + 'TTTT')
 
 
 # TODO add test for k-mer too short
 
 '''
 
-def test_hashsizes(dbg_type):
+def test_hashsizes(graph):
     # hashsizes method.
-    kh = dbg_type(5)
-    assert (kh.hashsizes() == PRIMES_1m or
+    graph = dbg_type(5)
+    assert (graph.hashsizes() == PRIMES_1m or
             # CQF allocates some extra slots beyond what you request
             # exactly how many extra is an implementation detail
-            kh.hashsizes()[0] >= QF_SIZE)
+            graph.hashsizes()[0] >= QF_SIZE)
 '''
 
 
 @using_ksize(5)
-def test_add_hashval(dbg_type, ksize):
+def test_add_hashval(graph, ksize):
     # test add(hashval)
-    kh = dbg_type()
-    x = kh.hash("ATGGC")
-    y = kh.add(x)
+    x = graph.hash("ATGGC")
+    y = graph.add(x)
     assert y
 
-    z = kh.get(x)
+    z = graph.get(x)
     assert z == 1
 
 
 @using_ksize(5)
-def test_add_dna_kmer(dbg_type, ksize):
+def test_add_dna_kmer(graph, ksize):
     # test add(dna)
-    kh = dbg_type()
-    x = kh.add("ATGGC")
+    x = graph.add("ATGGC")
     assert x
 
-    z = kh.get("ATGGC")
+    z = graph.get("ATGGC")
     assert z == 1
 
 
 @using_ksize(5)
-def test_get_hashval(dbg_type, ksize):
+def test_get_hashval(graph, ksize):
     # test get(hashval)
-    kh = dbg_type()
-    hashval = kh.hash("ATGGC")
-    kh.add(hashval)
+    hashval = graph.hash("ATGGC")
+    graph.add(hashval)
 
-    z = kh.get(hashval)
+    z = graph.get(hashval)
     assert z == 1
 
 
 @using_ksize(5)
-def test_get_hashval_rc(dbg_type, ksize):
+def test_get_hashval_rc(graph, ksize):
     # fw and rc should NOT be the same on this table
-    kh = dbg_type()
-    hashval = kh.hash("ATGC")
-    rc = kh.hash("GCAT")
+    hashval = graph.hash("ATGC")
+    rc = graph.hash("GCAT")
 
     assert hashval != rc
 
 
 @using_ksize(5)
-def test_get_dna_kmer(dbg_type, ksize):
+def test_get_dna_kmer(graph, ksize):
     # test get(dna)
-    kh = dbg_type()
-    hashval = kh.hash("ATGGC")
-    kh.add(hashval)
+    hashval = graph.hash("ATGGC")
+    graph.add(hashval)
 
-    z = kh.get("ATGGC")
+    z = graph.get("ATGGC")
     assert z == 1
 
 
 @using_ksize(5)
-def test_get_bad_dna_kmer(dbg_type, ksize):
+def test_get_bad_dna_kmer(graph, ksize):
     # test get(dna) with bad dna; should fail
-    kh = dbg_type()
-
     with pytest.raises(ValueError):
-        kh.get("ATYGC")
+        graph.get("ATYGC")
 
 
 @using_ksize(5)
-def test_add_sequence(dbg_type, ksize):
-    tt = dbg_type()
-
+def test_add_sequence(graph, ksize):
     x = "ATGCCGATGCA"
-    num_kmers = sum(tt.add_sequence(x))
+    num_kmers = sum(graph.add_sequence(x))
     assert num_kmers == len(x) - ksize + 1   # num k-mers consumed
 
     for start in range(len(x) - 6 + 1):
-        assert tt.get(x[start:start + 6]) == 1
+        assert graph.get(x[start:start + 6]) == 1
 
 
 @using_ksize(5)
-def test_add_sequence_bad_dna(dbg_type):
+def test_add_sequence_bad_dna(graph):
     # while we don't specifically handle bad DNA, we should at least be
     # consistent...
-    tt = dbg_type()
-
     x = "ATGCCGNTGCA"
     with pytest.raises(ValueError):
-        num_kmers = tt.add_sequence(x)
+        num_kmers = graph.add_sequence(x)
 
-    #for start in range(len(x) - 6 + 1):
-    #    assert tt.get(x[start:start + 6]) == 1
 
 @using_ksize(10)
-def test_consume_short(dbg_type):
+def test_consume_short(graph):
     # raise error on too short when consume is run
-    tt = dbg_type()
-
     x = "ATGCA"
     with pytest.raises(ValueError):
-        tt.add_sequence(x)
+        graph.add_sequence(x)
 
 
 @using_ksize(6)
-def test_get_kmer_counts(dbg_type):
-    hi = dbg_type()
-
-    hi.add_sequence("AAAAAA")
-    counts = hi.get_counts("AAAAAA")
+def test_get_kmer_counts(graph):
+    graph.add_sequence("AAAAAA")
+    counts = graph.get_counts("AAAAAA")
     print(counts)
     assert len(counts) == 1
     assert counts[0] == 1
 
-    hi.add_sequence("AAAAAA")
-    counts = hi.get_counts("AAAAAA")
+    graph.add_sequence("AAAAAA")
+    counts = graph.get_counts("AAAAAA")
     print(counts)
     assert len(counts) == 1
     assert counts[0] >= 1
 
-    hi.add_sequence("AAAAAT")
-    counts = hi.get_counts("AAAAAAT")
+    graph.add_sequence("AAAAAT")
+    counts = graph.get_counts("AAAAAAT")
     print(counts)
     assert len(counts) == 2
     assert counts[0] >= 1
@@ -251,158 +199,109 @@ def test_get_kmer_counts(dbg_type):
 
 
 @using_ksize(5)
-def test_consume_alias(dbg_type, ksize):
-    g1 = dbg_type()
-    g2 = dbg_type()
+def test_consume_alias(graph_type, ksize):
+    g1 = graph_type(ksize, 1000, 4)
+    g2 = graph_type(ksize, 1000, 4)
     assert g1.add_sequence('A' * (ksize + 1)) == \
            g2.consume('A' * (ksize + 1))
 
 
 @using_ksize(6)
-def test_get_kmer_hashes(dbg_type):
-    hi = dbg_type()
-
-    hashes = list(hi.hashes("ACGTGCGT"))
+def test_get_kmer_hashes(graph):
+    hashes = list(graph.hashes("ACGTGCGT"))
     print(hashes)
     assert len(hashes) == 3
-    assert hashes[0] == hi.hash("ACGTGC")
-    assert hashes[1] == hi.hash("CGTGCG")
-    assert hashes[2] == hi.hash("GTGCGT")
+    assert hashes[0] == graph.hash("ACGTGC")
+    assert hashes[1] == graph.hash("CGTGCG")
+    assert hashes[2] == graph.hash("GTGCGT")
 
 
 '''
-def test_get_min_count(dbg_type):
-    hi = dbg_type(6)
+def test_get_min_count(graph):
+    graph = dbg_type(6)
 
     # master string, 3 k-mers
     x = "ACGTGCGT"
 
-    hi.add("ACGTGC")  # 3
-    hi.add("ACGTGC")
-    hi.add("ACGTGC")
+    graph.add("ACGTGC")  # 3
+    graph.add("ACGTGC")
+    graph.add("ACGTGC")
 
-    hi.add("CGTGCG")  # 1
+    graph.add("CGTGCG")  # 1
 
-    hi.add("GTGCGT")  # 2
-    hi.add("GTGCGT")
+    graph.add("GTGCGT")  # 2
+    graph.add("GTGCGT")
 
-    counts = hi.get_kmer_counts(x)
-    assert hi.get_min_count(x) == min(counts)
-    assert hi.get_max_count(x) == max(counts)
-    med, _, _ = hi.get_median_count(x)
+    counts = graph.get_kmer_counts(x)
+    assert graph.get_min_count(x) == min(counts)
+    assert graph.get_max_count(x) == max(counts)
+    med, _, _ = graph.get_median_count(x)
     assert med == list(sorted(counts))[len(counts) // 2]
 
 
-def test_get_kmers(dbg_type):
-    hi = dbg_type(6)
-
-    kmers = hi.get_kmers("AAAAAA")
-    assert kmers == ["AAAAAA"]
-
-    kmers = hi.get_kmers("AAAAAAT")
-    assert kmers == ["AAAAAA", "AAAAAT"]
-
-    kmers = hi.get_kmers("AGCTTTTC")
-    assert kmers == ['AGCTTT', 'GCTTTT', 'CTTTTC']
-
-
-def test_trim_on_abundance(dbg_type):
-    hi = dbg_type(6)
+def test_trim_on_abundance(graph):
+    graph = dbg_type(6)
 
     x = "ATGGCAGTAGCAGTGAGC"
-    hi.consume(x[:10])
+    graph.consume(x[:10])
 
-    (y, pos) = hi.trim_on_abundance(x, 1)
+    (y, pos) = graph.trim_on_abundance(x, 1)
     assert pos == 10
     assert x[:pos] == y
 
 
-def test_trim_below_abundance(dbg_type):
-    hi = dbg_type(6)
+def test_trim_below_abundance(graph):
+    graph = dbg_type(6)
 
     x = "ATGGCAGTAGCAGTGAGC"
     x_rc = screed.rc(x)
-    hi.consume(x_rc[:10])
+    graph.consume(x_rc[:10])
 
     print(len(x))
 
-    (y, pos) = hi.trim_below_abundance(x, 0)
-    assert pos == len(x) - hi.ksize() + 1
+    (y, pos) = graph.trim_below_abundance(x, 0)
+    assert pos == len(x) - graph.ksize() + 1
     assert x[:pos] == y
 
 
 DNA = "AGCTTTTCATTCTGACTGCAACGGGCAATATGTCTCTGTGTGGATTAAAAAAAGAGTGTCTGATAGCAGC"
 
 
-def test_find_spectral_error_positions(dbg_type):
-    kh = dbg_type(8)
-
-    kh.consume(DNA[:30])
-
-    for n in range(len(DNA) - 8 + 1):
-        print(n, kh.get(DNA[n:n + 8]))
-
-    posns = kh.find_spectral_error_positions(DNA, 0)
-    assert posns == [30], posns
-
-
-def test_find_spectral_error_positions_6(dbg_type):
-    kh = dbg_type(8)
-
-    kh.consume(DNA[1:])
-
-    for n in range(len(DNA) - 8 + 1):
-        print(n, kh.get(DNA[n:n + 8]))
-
-    posns = kh.find_spectral_error_positions(DNA, 0)
-    assert posns == [0], posns
-
-
-def test_find_spectral_error_positions_5(dbg_type):
-    kh = dbg_type(8)
-
-    kh.consume(DNA[:10])
-    kh.consume(DNA[11:])
-
-    posns = kh.find_spectral_error_positions(DNA, 0)
-    assert posns == [10], posns
-
-
-def test_consume_seqfile_reads_parser(dbg_type):
-    kh = dbg_type(5)
+def test_consume_seqfile_reads_parser(graph):
+    graph = dbg_type(5)
     rparser = ReadParser(utils.get_test_data('test-fastq-reads.fq'))
 
-    kh.consume_seqfile(rparser)
+    graph.consume_seqfile(rparser)
 
-    kh2 = dbg_type(5)
+    graph2 = graph(5)
     for record in screed.open(utils.get_test_data('test-fastq-reads.fq')):
-        kh2.consume(record.sequence)
+        graph2.consume(record.sequence)
 
-    assert kh.get('CCGGC') == kh2.get('CCGGC')
+    assert graph.get('CCGGC') == graph2.get('CCGGC')
 
 
 def test_consume_seqfile(dbg_type):
-    kh = dbg_type(5)
-    kh.consume_seqfile(utils.get_test_data('test-fastq-reads.fq'))
+    graph = graph(5)
+    graph.consume_seqfile(utils.get_test_data('test-fastq-reads.fq'))
 
-    kh2 = dbg_type(5)
+    graph2 = dbg_type(5)
     for record in screed.open(utils.get_test_data('test-fastq-reads.fq')):
-        kh2.consume(record.sequence)
+        graph2.consume(record.sequence)
 
-    assert kh.get('CCGGC') == kh2.get('CCGGC')
+    assert graph.get('CCGGC') == graph2.get('CCGGC')
 
 
 def test_save_load(Tabletype):
-    kh = Tabletype(5)
-    ttype = type(kh)
+    graph = Tabletype(5)
+    graphype = type(graph)
     savefile = utils.get_temp_filename('tablesave.out')
 
     # test add(dna)
-    x = kh.add("ATGGC")
-    z = kh.get("ATGGC")
+    x = graph.add("ATGGC")
+    z = graph.get("ATGGC")
     assert z == 1
 
-    kh.save(savefile)
+    graph.save(savefile)
 
     # should we provide a single load function here? yes, probably. @CTB
     loaded = ttype.load(savefile)
@@ -434,29 +333,29 @@ def test_set_bigcount(Tabletype):
             tt.set_use_bigcount(True)
 
 
-def test_abund_dist_A(dbg_type):
+def test_abund_dist_A(graph):
     A_filename = utils.get_test_data('all-A.fa')
 
-    kh = dbg_type(4)
+    graph = dbg_type(4)
     tracking = Nodegraph(4, 1, 1, primes=PRIMES_1m)
 
-    kh.consume_seqfile(A_filename)
-    dist = kh.abundance_distribution(A_filename, tracking)
+    graph.consume_seqfile(A_filename)
+    dist = graph.abundance_distribution(A_filename, tracking)
 
     print(dist[:10])
     assert sum(dist) == 1
     assert dist[0] == 0
 
 
-def test_abund_dist_A_readparser(dbg_type):
+def test_abund_dist_A_readparser(graph):
     A_filename = utils.get_test_data('all-A.fa')
     rparser = ReadParser(A_filename)
 
-    kh = dbg_type(4)
+    graph = dbg_type(4)
     tracking = Nodegraph(4, 1, 1, primes=PRIMES_1m)
 
-    kh.consume_seqfile(A_filename)
-    dist = kh.abundance_distribution(rparser, tracking)
+    graph.consume_seqfile(A_filename)
+    dist = graph.abundance_distribution(rparser, tracking)
 
     print(dist[:10])
     assert sum(dist) == 1
