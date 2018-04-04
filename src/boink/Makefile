@@ -123,7 +123,9 @@ LIBBOINK_OBJS= \
 	assembly.o
 
 TEST_OBJS= \
-	test_assembly.o
+	test_assembly.o \
+	benchmark_boink_consume.o \
+	benchmark_oxli_consume.o
 
 PRECOMILE_OBJS ?=
 PRECLEAN_TARGS ?=
@@ -165,11 +167,26 @@ $(LIBBOINKSO): $(LIBBOINK_OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(SONAME_FLAGS) -shared -o $@ $^
 	ln -sf $(SONAME) libboink.$(SHARED_EXT)
 
-test_assembly: $(BOINK_HEADERS) $(LIBBOINK_OBJS) $(TEST_OBJS)
-	$(CXX) $(LDFLAGS) -o $@ $(TEST_OBJS) $(LIBBOINK_OBJS) -loxli -L.
+test_assembly: $(BOINK_HEADERS) $(LIBBOINK_OBJS) test_assembly.o
+	$(CXX) $(LDFLAGS) -o $@ test_assembly.o $(LIBBOINK_OBJS) -loxli -L.
 
-test: test_assembly
+benchmark_boink_consume: $(BOINK_HEADERS) $(LIBBOINK_OBJS) benchmark_boink_consume.o
+	$(CXX) $(LDFLAGS) -o $@ benchmark_boink_consume.o $(LIBBOINK_OBJS) -loxli -L.
+
+benchmark_oxli_consume: $(BOINK_HEADERS) $(LIBBOINK_OBJS) benchmark_oxli_consume.o
+	$(CXX) $(LDFLAGS) -o $@ benchmark_oxli_consume.o $(LIBBOINK_OBJS) -loxli -L.
+
+test: test_assembly 
 	./$<
+
+BM_FILE_1 = /store/biodb/genomes/fugu/Takifugu_rubripes.FUGU5.dna_rm.toplevel.fa
+BM_FILE_SM = /store/biodb/genomes/sacPom.pombase.fa
+
+benchmark: benchmark_boink_consume benchmark_oxli_consume
+	echo "Boink Consume:"
+	time ./benchmark_boink_consume $(BM_FILE_1)
+	echo "Oxli Consume:"
+	time ./benchmark_oxli_consume $(BM_FILE_1)
 
 libboink.a: $(LIBBOINK_OBJS)
 	ar rcs $@ $^
