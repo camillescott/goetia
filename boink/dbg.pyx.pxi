@@ -37,6 +37,7 @@ cdef class dBG_BitStorage_DefaultShifter(dBG_Base):
 
         self.storage_type = "BitStorage"
         self.shifter_type = "DefaultShifter"
+        self.suffix = "BitStorage_DefaultShifter"
 
     cdef hash_t _handle_kmer(self, object kmer) except 0:
         cdef hash_t handled
@@ -126,6 +127,7 @@ cdef class dBG_NibbleStorage_DefaultShifter(dBG_Base):
 
         self.storage_type = "NibbleStorage"
         self.shifter_type = "DefaultShifter"
+        self.suffix = "NibbleStorage_DefaultShifter"
 
     cdef hash_t _handle_kmer(self, object kmer) except 0:
         cdef hash_t handled
@@ -215,6 +217,7 @@ cdef class dBG_ByteStorage_DefaultShifter(dBG_Base):
 
         self.storage_type = "ByteStorage"
         self.shifter_type = "DefaultShifter"
+        self.suffix = "ByteStorage_DefaultShifter"
 
     cdef hash_t _handle_kmer(self, object kmer) except 0:
         cdef hash_t handled

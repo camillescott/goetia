@@ -15,6 +15,7 @@ from boink.assembly cimport _AssemblerMixin
 cdef class dBG_Base:
     cdef readonly object storage_type
     cdef readonly object shifter_type
+    cdef readonly object suffix
     cdef object allocated
 
 

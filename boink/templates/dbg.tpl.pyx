@@ -39,6 +39,7 @@ cdef class dBG_{{suffix}}(dBG_Base):
 
         self.storage_type = "{{Storage_t}}"
         self.shifter_type = "{{Shifter_t}}"
+        self.suffix = "{{suffix}}"
 
     cdef hash_t _handle_kmer(self, object kmer) except 0:
         cdef hash_t handled
