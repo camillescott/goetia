@@ -95,6 +95,7 @@ class TestBranchingBasic:
 
         path = asm.assemble_right(sequence[:ksize])
         assert path == sequence[:S+ksize]
+        assert branch == asm.assemble(branch[-ksize:])
 
     def test_stops_at_triple_fork(self, ksize, right_triple_fork,
                                   asm, consumer):
