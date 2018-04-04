@@ -92,18 +92,34 @@ public:
         return S.get_raw_tables();
     }
 
-    std::vector<bool> add_sequence(const string& sequence) {
+    uint64_t add_sequence(const string& sequence,
+                          std::vector<bool>& consumed) {
         KmerIterator<HashShifter> iter(sequence, _K);
-        std::vector<bool> consumed(sequence.length() - _K + 1);
 
+        uint64_t n_consumed = 0;
         size_t pos = 0;
+        bool kmer_consumed;
         while(!iter.done()) {
             hash_t h = iter.next();
-            consumed[pos] = add(h);
+            kmer_consumed = add(h);
+            consumed.push_back(kmer_consumed);
+            n_consumed += kmer_consumed;
             ++pos;
         }
 
-        return consumed;
+        return n_consumed;
+    }
+
+    uint64_t add_sequence(const string& sequence) {
+        KmerIterator<HashShifter> iter(sequence, _K);
+
+        uint64_t n_consumed = 0;
+        while(!iter.done()) {
+            hash_t h = iter.next();
+            n_consumed += add(h);
+        }
+
+        return n_consumed;
     }
 
     std::vector<count_t> get_counts(const string& sequence) {

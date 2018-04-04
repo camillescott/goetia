@@ -150,9 +150,9 @@ def test_get_bad_dna_kmer(graph, ksize):
 
 
 @using_ksize(5)
-def test_add_sequence(graph, ksize):
+def test_add_sequence_and_report(graph, ksize):
     x = "ATGCCGATGCA"
-    num_kmers = sum(graph.add_sequence(x))
+    num_kmers = sum(graph.add_sequence_and_report(x))
     assert num_kmers == len(x) - ksize + 1   # num k-mers consumed
 
     for start in range(len(x) - 6 + 1):
@@ -169,7 +169,7 @@ def test_add_sequence_bad_dna(graph):
 
 
 @using_ksize(10)
-def test_consume_short(graph):
+def test_add_sequence_short(graph):
     # raise error on too short when consume is run
     x = "ATGCA"
     with pytest.raises(ValueError):
@@ -200,6 +200,7 @@ def test_get_kmer_counts(graph):
 
 @using_ksize(5)
 def test_consume_alias(graph_type, ksize):
+    _, graph_type = graph_type
     g1 = graph_type(ksize, 1000, 4)
     g2 = graph_type(ksize, 1000, 4)
     assert g1.add_sequence('A' * (ksize + 1)) == \

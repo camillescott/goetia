@@ -68,10 +68,15 @@ cdef class dBG_{{suffix}}(dBG_Base):
             h = deref(kmer_iter).next()
             yield h
 
+    def add_sequence_and_report(self, str sequence):
+        cdef bytes _sequence = _bstring(sequence)
+        cdef vector[bool] report
+        deref(self._this).add_sequence(_sequence, report)
+        return report
+
     def add_sequence(self, str sequence):
         cdef bytes _sequence = _bstring(sequence)
-        cdef list hits = deref(self._this).add_sequence(_sequence)
-        return hits
+        return deref(self._this).add_sequence(_sequence)
 
     # compatibility with oxli API
     consume = add_sequence
