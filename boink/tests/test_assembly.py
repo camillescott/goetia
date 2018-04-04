@@ -88,4 +88,17 @@ class TestNonBranching:
         assert path == contig[:len(path)]
 
 
+class TestBranchingBasic:
 
+    def test_stops_at_fork(self, ksize, right_fork, asm, consumer):
+        (sequence, branch), S = right_fork()
+
+        path = asm.assemble_right(sequence[:ksize])
+        assert path == sequence[:S+ksize]
+
+    def test_stops_at_triple_fork(self, ksize, right_triple_fork,
+                                  asm, consumer):
+        (core, top, bottom), S = right_triple_fork()
+        
+        path = asm.assemble_right(core[:ksize])
+        assert path == core[:S+ksize]
