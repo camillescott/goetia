@@ -16,7 +16,9 @@ from boink.dbg import get_dbg_type
 @pytest.fixture(params=['BitStorage', 'ByteStorage', 'NibbleStorage'])
 def graph_type(request, ksize):
 
-    class BoinkAdapter(get_dbg_type(storage=request.param)):
+    _graph_type = get_dbg_type(storage=request.param)
+
+    class BoinkAdapter(_graph_type):
         '''Basic adapter for boink dBG.
         '''
 
@@ -46,12 +48,13 @@ def graph_type(request, ksize):
                                                                   self.n_tables)
 
 
-    return BoinkAdapter
+    return _graph_type, BoinkAdapter
 
 
 @pytest.fixture
 def graph(ksize, graph_type):
-    return graph_type(ksize, 1000000, 4)
+    _graph_type, Adapter = graph_type
+    return Adapter(ksize, 1000000, 4)
 
 
 @pytest.fixture(params=[50000, 500000, 50000000],
