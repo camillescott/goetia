@@ -33,17 +33,16 @@ cdef extern from "boink/assembly.hh" namespace "boink":
 
         bool get_left(shift_t&)
         bool get_right(shift_t&)
-        bool reduce_nodes(vector[shift_t]&,
-                             shift_t&)
+        bool reduce_nodes(vector[shift_t]&, shift_t&)
         uint8_t count_nodes(vector[shift_t]&)
 
-        void assemble_left(const string&, Path&)
+        void assemble_left(const string&, Path&) except +ValueError
         void assemble_left(Path&)
 
-        void assemble_right(const string&, Path&)
+        void assemble_right(const string&, Path&) except +ValueError
         void assemble_right(Path&)
 
-        void assemble(const string&, Path&)
+        void assemble(const string&, Path&) except +ValueError
 
         string to_string(Path&)
 
@@ -56,7 +55,7 @@ cdef extern from "boink/assembly.hh" namespace "boink":
         bool is_valid(const string&)
 
         hash_t get()
-        hash_t hash(string&)
+        hash_t hash(string&) except +ValueError
 
         vector[shift_t] gather_left()
         vector[shift_t] gather_right()
