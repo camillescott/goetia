@@ -10,7 +10,6 @@
 #ifndef ASSEMBLY_HH
 #define ASSEMBLY_HH
 
-#include "dbg.hh"
 #include "hashing.hh"
 
 #include <deque>
@@ -63,12 +62,12 @@ public:
 
     uint8_t degree_left() {
         auto neighbors = this->gather_left();
-        return neighbors.size();
+        return count_nodes(neighbors);
     }
 
     uint8_t degree_right() {
         auto neighbors = this->gather_right();
-        return neighbors.size();
+        return count_nodes(neighbors);
     }
 
     uint8_t degree() {
@@ -77,7 +76,7 @@ public:
 
     bool get_left(shift_t& result) {
         std::vector<shift_t> neighbors = this->gather_left();
-        if (check_neighbors(neighbors, result)) {
+        if (reduce_nodes(neighbors, result)) {
             this->shift_left(result.symbol);
             return true;
         } else {
@@ -87,7 +86,7 @@ public:
 
     bool get_right(shift_t& result) {
         std::vector<shift_t> neighbors = this->gather_right();
-        if (check_neighbors(neighbors, result)) {
+        if (reduce_nodes(neighbors, result)) {
             this->shift_right(result.symbol);
             return true;
         } else {
@@ -95,18 +94,28 @@ public:
         }
     }
 
-    bool check_neighbors(vector<shift_t> neighbors,
+    uint8_t count_nodes(vector<shift_t>& nodes) {
+        uint8_t n_found = 0;
+        for (auto node: nodes) {
+            if(this->graph->get(node.hash)) {
+                ++n_found;
+            }
+        }
+        return n_found;
+    }
+
+    bool reduce_nodes(vector<shift_t>& nodes,
                          shift_t& result) {
         uint8_t n_found = 0;
-        for (auto neighbor : neighbors) {
+        for (auto node : nodes) {
             //pdebug("check " << neighbor.hash << " " << neighbor.symbol);
-            if(this->graph->get(neighbor.hash)) {
+            if(this->graph->get(node.hash)) {
                 //pdebug("found " << neighbor.hash);
                 ++n_found;
                 if (n_found > 1) {
                     return false;
                 }
-                result = neighbor;
+                result = node;
             }
         }
         if (n_found == 0) {

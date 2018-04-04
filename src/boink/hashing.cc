@@ -6,7 +6,7 @@ using namespace boink;
 
 namespace boink {
 
-};
+}
 
 /*
 int main() {

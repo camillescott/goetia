@@ -11,6 +11,7 @@
 #define BDBG_HH
 
 #include "hashing.hh"
+#include "assembly.hh"
 #include "oxli/storage.hh"
 #include "oxli/hashtable.hh"
 
@@ -32,19 +33,22 @@ typedef std::pair<uint8_t, uint8_t> full_count_t;
 
 template <class StorageType,
           class HashShifter>
-class dBG : public KmerClient {
+class dBG : public KmerClient,
+		    public std::enable_shared_from_this<dBG<StorageType, HashShifter>> {
     StorageType S;
     HashShifter hasher;
 
 public:
 
     typedef HashShifter shifter_type;
+	typedef AssemblerMixin<dBG<StorageType, HashShifter>> assembler_type;
     
+
     explicit dBG(uint16_t K, std::vector<uint64_t> storage_size) :
         KmerClient(K),
         S(storage_size),
         hasher(K) {
-
+        
     }
 
     explicit dBG(uint16_t K, uint64_t max_table, uint16_t N) :
@@ -52,17 +56,13 @@ public:
 
     }
 
+	shared_ptr<dBG<StorageType, HashShifter>> get_ptr() {
+		return this->shared_from_this();
+	}
+
     hash_t hash(const string& kmer) const {
         return hasher.hash(kmer);
     }
-
-    /*
-    full_hash_t hash_full(const string& kmer) const {
-        hash_t fw, rc;
-        oxli::_hash_cyclic(kmer, _K, fw, rc);
-        return std::make_pair(fw, rc);
-    }
-    */
 
     bool add(const string& kmer) {
         return S.add(hash(kmer));
@@ -71,17 +71,6 @@ public:
     bool add(hash_t kmer) {
         return S.add(kmer);
     }
-
-    /*
-    bit_pair_t add_full(full_hash_t hashed) {
-        return std::make_pair(S.add(hashed.first),
-                              S.add(hashed.second));
-    }
-
-    bit_pair_t add_full(const string& kmer) {
-        return add_full(hash_full(kmer));
-    }
-    */
 
     const count_t get(const string& kmer) const {
         return S.get_count(hash(kmer));
@@ -102,17 +91,6 @@ public:
     uint8_t ** get_raw() const {
         return S.get_raw_tables();
     }
-
-    /*
-    full_count_t get(full_hash_t fully_hashed_kmer) const {
-        return std::make_pair(get(fully_hashed_kmer.first),
-                              get(fully_hashed_kmer.second));
-    }
-
-    full_count_t get_full(const string& kmer) const {
-        return get(hash_full(kmer));
-    }
-    */
 
     std::vector<bool> add_sequence(const string& sequence) {
         KmerIterator<HashShifter> iter(sequence, _K);
@@ -158,6 +136,11 @@ public:
     shared_ptr<KmerIterator<HashShifter>> get_hash_iter(const string& sequence) {
         return make_shared<KmerIterator<HashShifter>>(sequence, _K);
     }
+
+    shared_ptr<assembler_type> get_assembler() {
+        return make_shared<assembler_type>(this->get_ptr());
+    }
+
 };
 
 
