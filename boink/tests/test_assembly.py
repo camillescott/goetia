@@ -95,7 +95,16 @@ class TestBranchingBasic:
 
         path = asm.assemble_right(sequence[:ksize])
         assert path == sequence[:S+ksize]
-        assert branch == asm.assemble(branch[-ksize:])
+        assembled_branch = asm.assemble(branch[-ksize:])
+        assert branch == assembled_branch
+    
+    def test_assembles_through_fork_from_right(self, ksize, right_fork, asm, consumer):
+        '''Test that we assemble through fork from the right when we haven't
+        assembled the core path already.'''
+        (sequence, branch), S = right_fork()
+
+        assert sequence[:S+1] + branch == asm.assemble(branch[-ksize:])
+
 
     def test_stops_at_triple_fork(self, ksize, right_triple_fork,
                                   asm, consumer):
