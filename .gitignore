@@ -108,3 +108,5 @@ cython_debug/
 **libboink.*
 **a.out
 src/boink/test_assembly
+src/boink/benchmark_boink_consume
+src/boink/benchmark_oxli_consume

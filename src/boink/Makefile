@@ -181,12 +181,13 @@ test: test_assembly
 
 BM_FILE_1 = /store/biodb/genomes/fugu/Takifugu_rubripes.FUGU5.dna_rm.toplevel.fa
 BM_FILE_SM = /store/biodb/genomes/sacPom.pombase.fa
+BM_FILE_LG = /store/biodb/MMETSP/data/Asterionellopsis_glacialis/SRR1300451/SRR1300451_1.fastq
 
 benchmark: benchmark_boink_consume benchmark_oxli_consume
 	echo "Boink Consume:"
-	time ./benchmark_boink_consume $(BM_FILE_1)
+	time ./benchmark_boink_consume $(BM_FILE_LG)
 	echo "Oxli Consume:"
-	time ./benchmark_oxli_consume $(BM_FILE_1)
+	time ./benchmark_oxli_consume $(BM_FILE_LG)
 
 libboink.a: $(LIBBOINK_OBJS)
 	ar rcs $@ $^
