@@ -42,6 +42,7 @@ public:
 
     typedef HashShifter shifter_type;
 	typedef AssemblerMixin<dBG<StorageType, HashShifter>> assembler_type;
+    typedef KmerIterator<HashShifter> kmer_iter_type;
     
 
     explicit dBG(uint16_t K, std::vector<uint64_t> storage_size) :

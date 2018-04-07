@@ -18,6 +18,8 @@ from boink.hashing cimport *
 
 cdef extern from "boink/assembly.hh" namespace "boink":
     ctypedef deque[char] Path
+    ctypedef vector[string] StringVector
+    ctypedef vector[StringVector, StringVector] NeighborBundle
 
     cdef cppclass _AssemblerMixin "boink::AssemblerMixin" [GraphType]:
         

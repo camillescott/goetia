@@ -30,6 +30,8 @@ namespace boink {
 
 
 typedef std::deque<char> Path;
+typedef std::vector<std::string> StringVector;
+typedef std::pair<StringVector, StringVector> NeighborBundle;
 
 
 template<class GraphType>
@@ -37,11 +39,13 @@ class AssemblerMixin : public GraphType::shifter_type {
 
 protected:
 
+    using BaseShifter = typename GraphType::shifter_type;
+    using BaseShifter::_K;
     std::set<hash_t> seen;
 
 public:
 
-    using BaseShifter = typename GraphType::shifter_type;
+
     typedef std::shared_ptr<GraphType> GraphPtr;
     GraphPtr graph;
 

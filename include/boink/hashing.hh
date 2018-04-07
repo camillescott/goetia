@@ -190,11 +190,14 @@ const std::string HashShifter<Derived, Alphabet>::symbols = Alphabet;
 template <const std::string& Alphabet = oxli::alphabets::DNA_SIMPLE>
 class RollingHashShifter : public HashShifter<RollingHashShifter<Alphabet>,
                                               Alphabet> {
+protected:
+    typedef HashShifter<RollingHashShifter<Alphabet>, Alphabet> BaseShifter;
+
     CyclicHash<hash_t> hasher;
+    using BaseShifter::_K;
 
 public:
 
-    typedef HashShifter<RollingHashShifter<Alphabet>, Alphabet> BaseShifter;
     //using BaseShifter::HashShifter;
 
     RollingHashShifter(const std::string& start, uint16_t K) :
@@ -271,9 +274,11 @@ class KmerIterator : public KmerClient {
     unsigned int index;
     unsigned int length;
     bool _initialized;
-    ShifterType shifter;
 
 public:
+
+    ShifterType shifter;
+
     KmerIterator(const std::string seq, uint16_t K) :
         KmerClient(K), _seq(seq), 
         index(0), _initialized(false), shifter(K) {

@@ -167,20 +167,13 @@ CY_OPTS = {
     'c_string_encoding': 'utf8'
 }
 
-BLACKLIST = ['cdbg']
 
-SOURCES = glob.glob(os.path.join('src', 'boink', '*.cc'))
-DEPENDS = glob.glob(os.path.join('include', 'boink', '*.hh'))
+DEPENDS = ['dbg.hh', 'cdbg.hh', 'hashing.hh', 'assembly.hh', 'boink.hh',
+           'consumer.hh']
+DEPENDS = [os.path.join('include', 'boink', filename) for filename in DEPENDS]
 
-for source in SOURCES:
-    for blacklisted in BLACKLIST:
-        if blacklisted in source:
-            SOURCES.remove(source)
-
-for dep in DEPENDS:
-    for blacklisted in BLACKLIST:
-        if blacklisted in dep:
-            DEPENDS.remove(dep)
+SOURCES = [filename[:-2] + '.cc' for filename in DEPENDS]
+SOURCES = [filename for filename in SOURCES if os.path.isfile(filename)]
 
 EXTENSION_MODS = []
 EXTENSION_NAMES = [(ext, "boink.{0}".format(splitext(os.path.basename(ext))[0]))
