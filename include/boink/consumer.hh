@@ -18,6 +18,8 @@
 using namespace oxli;
 using namespace oxli:: read_parsers;
 
+#define DEFAULT_OUTPUT_INTERVAL 10000
+
 namespace boink {
 
 template <class Derived,
@@ -31,6 +33,14 @@ public:
                   uint64_t &n_consumed) {
         ReadParserPtr<ParserType> parser = get_parser<ParserType>(filename);
         process(parser, n_reads, n_consumed);
+    }
+
+    void process(string const &filename,
+                  uint64_t &n_reads,
+                  uint64_t &n_consumed,
+                  uint32_t output_interval) {
+        ReadParserPtr<ParserType> parser = get_parser<ParserType>(filename);
+        process(parser, n_reads, n_consumed, output_interval);
     }
 
     void process(read_parsers::ReadParserPtr<ParserType>& parser,
@@ -54,8 +64,38 @@ public:
 
             __sync_add_and_fetch( &n_consumed, this_n_consumed );
             __sync_add_and_fetch( &n_reads, 1 );
-        } 
+        }
+    }
 
+    void process(read_parsers::ReadParserPtr<ParserType>& parser,
+                 uint64_t &n_reads,
+                 uint64_t &n_consumed,
+                 uint32_t output_interval) {
+        Read read;
+
+        // Iterate through the reads and consume their k-mers.
+        uint32_t output_counter = 0;
+        while (!parser->is_complete( )) {
+            try {
+                read = parser->get_next_read( );
+            } catch (NoMoreReadsAvailable) {
+                break;
+            }
+
+            read.set_clean_seq();
+            uint64_t this_n_consumed = derived().process_sequence(read.cleaned_seq,
+                                                                  n_reads);
+                
+            __sync_add_and_fetch( &n_consumed, this_n_consumed );
+            __sync_add_and_fetch( &n_reads, 1 );
+            __sync_add_and_fetch( &output_counter, 1 );
+
+            if (output_counter == output_interval) {
+                output_counter = 0;
+                std::cerr << "processed " << n_reads << " reads, "
+                          << n_consumed << " unique k-mers." << std::endl;
+            }    
+        }
     }
 
 private:

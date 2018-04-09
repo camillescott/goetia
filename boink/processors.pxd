@@ -5,7 +5,7 @@
 # This software may be modified and distributed under the terms
 # of the MIT license.  See the LICENSE file for details.
 
-from libc.stdint cimport uint64_t
+from libc.stdint cimport uint32_t, uint64_t
 from libcpp.string cimport string
 
 from boink.dbg cimport *
@@ -15,6 +15,10 @@ from boink.utils cimport _bstring
 cdef extern from "boink/consumer.hh" namespace "boink":
 
     cdef cppclass _FileProcessor "boink::FileProcessor" [Derived]:
+        void process(const string&,
+                     uint64_t&,
+                     uint64_t&,
+                     uint32_t) except +ValueError
         void process(const string&,
                      uint64_t&,
                      uint64_t&) except +ValueError

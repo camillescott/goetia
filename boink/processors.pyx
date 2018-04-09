@@ -24,13 +24,14 @@ cdef class FileConsumer:
     def __cinit__(self, dBG_BitStorage_DefaultShifter graph):
         self._fc_this = make_unique[_FileConsumer[DefaultDBG]](graph._this.get())
 
-    def process(self, str input_filename):
+    def process(self, str input_filename, uint32_t output_interval=10000):
         cdef uint64_t n_reads = 0
         cdef uint64_t n_kmers = 0
 
         deref(self._fc_this).process(_bstring(input_filename),
                                      n_reads,
-                                     n_kmers)
+                                     n_kmers,
+                                     output_interval)
 
         return n_reads, n_kmers
 
@@ -43,12 +44,13 @@ cdef class DecisionNodeProcessor:
         self._dnp_this = make_unique[_DecisionNodeProcessor[DefaultDBG]](compactor._sc_this.get(),
                                                                          _output_filename)
 
-    def process(self, str input_filename):
+    def process(self, str input_filename, uint32_t output_interval=10000):
         cdef uint64_t n_reads = 0
         cdef uint64_t n_kmers = 0
 
         deref(self._dnp_this).process(_bstring(input_filename),
                                       n_reads,
-                                      n_kmers)
+                                      n_kmers,
+                                      output_interval)
 
         return n_reads, n_kmers
