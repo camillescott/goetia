@@ -6,6 +6,8 @@ BOINK_DIR = os.path.abspath(os.path.join(__file__, os.pardir))
 DATA_DIR =  os.path.join(BOINK_DIR, 'data')
 TEMPLATE_DIR = os.path.join(BOINK_DIR, 'templates')
 
+__version__ = '0.1'
+
 def get_template_env():
     return Environment(loader=PackageLoader('boink', 'templates'))
 
