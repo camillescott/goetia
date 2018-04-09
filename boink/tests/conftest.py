@@ -57,7 +57,7 @@ def graph_type(request, ksize):
 @pytest.fixture
 def graph(ksize, graph_type):
     _graph_type, Adapter = graph_type
-    return Adapter(ksize, 1000000, 4)
+    return Adapter(ksize, 10000000, 4)
 
 
 @pytest.fixture(params=[50000, 500000, 50000000],

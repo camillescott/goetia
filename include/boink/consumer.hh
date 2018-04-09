@@ -118,7 +118,7 @@ public:
           _output_filename(output_filename),
           _output_stream(_output_filename.c_str()) {
 
-        _output_stream << "read_n, l_degree, r_degree, hash, position" << std::endl;
+        _output_stream << "read_n, l_degree, r_degree, position, hash" << std::endl;
 
     }
 

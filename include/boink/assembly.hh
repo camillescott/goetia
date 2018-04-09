@@ -95,7 +95,7 @@ public:
         }
     }
 
-    uint8_t count_nodes(vector<shift_t>& nodes) {
+    uint8_t count_nodes(const vector<shift_t>& nodes) {
         uint8_t n_found = 0;
         for (auto node: nodes) {
             if(this->graph->get(node.hash)) {
@@ -105,8 +105,8 @@ public:
         return n_found;
     }
 
-    bool reduce_nodes(vector<shift_t>& nodes,
-                         shift_t& result) {
+    bool reduce_nodes(const vector<shift_t>& nodes,
+                      shift_t& result) {
         uint8_t n_found = 0;
         for (auto node : nodes) {
             //pdebug("check " << neighbor.hash << " " << neighbor.symbol);
@@ -124,6 +124,16 @@ public:
         } else {
             return true;
         }
+    }
+
+    vector<shift_t> filter_nodes(const vector<shift_t>& nodes) {
+        vector<shift_t> result;
+        for (auto node : nodes) {
+            if (this->graph->get(node.hash)) {
+                result.push_back(node);
+            }
+        }
+        return result;
     }
 
     void assemble_left(const std::string& seed,

@@ -34,6 +34,7 @@ cdef extern from "boink/assembly.hh" namespace "boink":
         bool get_right(shift_t&)
         bool reduce_nodes(vector[shift_t]&, shift_t&)
         uint8_t count_nodes(vector[shift_t]&)
+        vector[shift_t] filter_nodes(vector[shift_t]&)
 
         void assemble_left(const string&, Path&) except +ValueError
         void assemble_left(Path&)

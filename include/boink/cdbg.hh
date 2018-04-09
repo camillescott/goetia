@@ -178,6 +178,7 @@ public:
     using AssemblerType::degree_left;
     using AssemblerType::degree_right;
     using AssemblerType::count_nodes;
+    using AssemblerType::filter_nodes;
 
     StreamingCompactor(GraphType * dbg) :
         AssemblerMixin<GraphType>(dbg),
@@ -251,10 +252,10 @@ public:
         size_t pos = 0;
         while(!iter.done()) {
             hash_t h = iter.next();
-            std::vector<shift_t> left_neighbors = iter.shifter.gather_left();
-            std::vector<shift_t> right_neighbors = iter.shifter.gather_right();
+            std::vector<shift_t> left_neighbors = filter_nodes(iter.shifter.gather_left());
+            std::vector<shift_t> right_neighbors = filter_nodes(iter.shifter.gather_right());
 
-            if (count_nodes(left_neighbors) > 1 || count_nodes(right_neighbors) > 1) {
+            if (left_neighbors.size() > 1 || right_neighbors.size() > 1) {
                 StringVector left_kmers, right_kmers;
                 for (auto neighbor : left_neighbors) {
                     left_kmers.push_back(neighbor.symbol
