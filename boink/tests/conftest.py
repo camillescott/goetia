@@ -7,6 +7,9 @@
 
 import pytest
 
+from distutils import dir_util
+import os
+
 from debruijnal_enhance_o_tron.fixtures.subgraphs import *
 from debruijnal_enhance_o_tron.fixtures.sequence import *
 
@@ -74,3 +77,23 @@ def fastx_writer(tmpdir):
         return filepath
 
     return write
+
+
+@pytest.fixture
+def datadir(tmpdir, request):
+    '''
+    Fixture responsible for locating the test data directory and copying it
+    into a temporary directory.
+    '''
+    filename = request.module.__file__
+    test_dir = os.path.dirname(filename)
+    data_dir = os.path.join(test_dir, 'test-data') 
+    dir_util.copy_tree(data_dir, str(tmpdir))
+
+    def getter(filename, as_str=True):
+        filepath = tmpdir.join(filename)
+        if as_str:
+            return str(filepath)
+        return filepath
+
+    return getter

@@ -268,30 +268,6 @@ def test_trim_below_abundance(graph):
 DNA = "AGCTTTTCATTCTGACTGCAACGGGCAATATGTCTCTGTGTGGATTAAAAAAAGAGTGTCTGATAGCAGC"
 
 
-def test_consume_seqfile_reads_parser(graph):
-    graph = dbg_type(5)
-    rparser = ReadParser(utils.get_test_data('test-fastq-reads.fq'))
-
-    graph.consume_seqfile(rparser)
-
-    graph2 = graph(5)
-    for record in screed.open(utils.get_test_data('test-fastq-reads.fq')):
-        graph2.consume(record.sequence)
-
-    assert graph.get('CCGGC') == graph2.get('CCGGC')
-
-
-def test_consume_seqfile(dbg_type):
-    graph = graph(5)
-    graph.consume_seqfile(utils.get_test_data('test-fastq-reads.fq'))
-
-    graph2 = dbg_type(5)
-    for record in screed.open(utils.get_test_data('test-fastq-reads.fq')):
-        graph2.consume(record.sequence)
-
-    assert graph.get('CCGGC') == graph2.get('CCGGC')
-
-
 def test_save_load(Tabletype):
     graph = Tabletype(5)
     graphype = type(graph)
