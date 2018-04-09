@@ -11,6 +11,7 @@
 from cython.operator cimport dereference as deref
 
 from libc.stdint cimport uint64_t
+from libcpp.memory cimport make_unique
 from libcpp.string cimport string
 
 from boink.dbg cimport *
@@ -24,8 +25,8 @@ cdef class Assembler_BitStorage_DefaultShifter(Assembler_Base):
 
     def __cinit__(self, dBG_BitStorage_DefaultShifter graph):
         if type(self) is Assembler_BitStorage_DefaultShifter:
-            self._this = make_shared[_AssemblerMixin[_dBG[BitStorage,DefaultShifter]]](graph._this)
-            self._graph = graph._this
+            self._this = make_unique[_AssemblerMixin[_dBG[BitStorage,DefaultShifter]]](graph._this.get())
+            self._graph = graph._this.get()
             self.Graph = graph
         self.storage_type = graph.storage_type
         self.shifter_type = graph.shifter_type
@@ -79,8 +80,8 @@ cdef class Assembler_NibbleStorage_DefaultShifter(Assembler_Base):
 
     def __cinit__(self, dBG_NibbleStorage_DefaultShifter graph):
         if type(self) is Assembler_NibbleStorage_DefaultShifter:
-            self._this = make_shared[_AssemblerMixin[_dBG[NibbleStorage,DefaultShifter]]](graph._this)
-            self._graph = graph._this
+            self._this = make_unique[_AssemblerMixin[_dBG[NibbleStorage,DefaultShifter]]](graph._this.get())
+            self._graph = graph._this.get()
             self.Graph = graph
         self.storage_type = graph.storage_type
         self.shifter_type = graph.shifter_type
@@ -134,8 +135,8 @@ cdef class Assembler_ByteStorage_DefaultShifter(Assembler_Base):
 
     def __cinit__(self, dBG_ByteStorage_DefaultShifter graph):
         if type(self) is Assembler_ByteStorage_DefaultShifter:
-            self._this = make_shared[_AssemblerMixin[_dBG[ByteStorage,DefaultShifter]]](graph._this)
-            self._graph = graph._this
+            self._this = make_unique[_AssemblerMixin[_dBG[ByteStorage,DefaultShifter]]](graph._this.get())
+            self._graph = graph._this.get()
             self.Graph = graph
         self.storage_type = graph.storage_type
         self.shifter_type = graph.shifter_type

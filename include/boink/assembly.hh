@@ -13,7 +13,6 @@
 #include "hashing.hh"
 
 #include <deque>
-#include <memory>
 
 
 # ifdef DEBUG_ASSEMBLY
@@ -45,17 +44,15 @@ protected:
 
 public:
 
+    GraphType * graph;
 
-    typedef std::shared_ptr<GraphType> GraphPtr;
-    GraphPtr graph;
-
-    AssemblerMixin(GraphPtr graph, BaseShifter const& shifter) :
+    AssemblerMixin(GraphType * graph, BaseShifter const& shifter) :
         BaseShifter(shifter),
         graph(graph) {
 
     }
 
-    AssemblerMixin(GraphPtr graph) :
+    AssemblerMixin(GraphType * graph) :
         BaseShifter(graph->K()),
         graph(graph) {
     }
@@ -191,7 +188,7 @@ public:
 
 
 template<class dBGType>
-AssemblerMixin<dBGType> make_assembler(shared_ptr<dBGType> graph) {
+AssemblerMixin<dBGType> make_assembler(dBGType * graph) {
     return AssemblerMixin<dBGType>(graph);
 }
 

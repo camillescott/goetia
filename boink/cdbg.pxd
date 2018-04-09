@@ -6,8 +6,8 @@
 # of the MIT license.  See the LICENSE file for details.
 
 cimport cython
-from libcpp.memory cimport shared_ptr
 from libcpp.list cimport list as stdlist
+from libcpp.memory cimport unique_ptr
 from libcpp.pair cimport pair
 from libcpp.unordered_set cimport unordered_set as uset
 from libcpp.unordered_map cimport unordered_map as umap
@@ -67,16 +67,16 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
         
 
     ctypedef vector[_CompactNode] CompactNodeVector
-    ctypedef shared_ptr[_CompactNode] CompactNodePtr
-    ctypedef shared_ptr[_DecisionNode] DecisionNodePtr
-    ctypedef shared_ptr[_UnitigNode] UnitigNodePtr
+    ctypedef _CompactNode * CompactNodePtr
+    ctypedef _DecisionNode * DecisionNodePtr
+    ctypedef _UnitigNode * UnitigNodePtr
 
     cdef cppclass _cDBG "boink::cDBG" (_KmerClient):
         _cDBG(uint16_t K)
 
     cdef cppclass _StreamingCompactor "boink::StreamingCompactor" [GraphType] (_AssemblerMixin[GraphType]):
 
-        _StreamingCompactor(shared_ptr[GraphType])
+        _StreamingCompactor(GraphType *)
 
         string compactify(const string&) except +ValueError
         void compactify_right(Path&) 
@@ -85,6 +85,10 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
         bool is_decision_node(uint8_t&)
         bool is_decision_node(const string&, uint8_t&) except +ValueError
         bool is_decision_node(const string&) except +ValueError
+        void find_decision_nodes(const string&,
+                                 vector[uint32_t]&,
+                                 vector[hash_t]&,
+                                 vector[NeighborBundle]&) except +ValueError
 
         bool insert_sequence(const string&,
                              vector[uint32_t]&,
@@ -94,31 +98,29 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
         void update(const string&) except +ValueError
 
 
-
 cdef class CompactNode:
-    cdef CompactNodePtr _cn_this
+    cdef _CompactNode * _cn_this
 
     @staticmethod
-    cdef CompactNode _wrap(CompactNodePtr)
+    cdef CompactNode _wrap(_CompactNode *)
 
 
 cdef class DecisionNode(CompactNode):
-    cdef DecisionNodePtr _dn_this
+    cdef _DecisionNode * _dn_this
 
     @staticmethod
-    cdef DecisionNode _wrap(DecisionNodePtr)
+    cdef DecisionNode _wrap(_DecisionNode *)
 
 
 cdef class UnitigNode(CompactNode):
-    cdef UnitigNodePtr _un_this
+    cdef _UnitigNode * _un_this
 
     @staticmethod
-    cdef UnitigNode _wrap(UnitigNodePtr)
+    cdef UnitigNode _wrap(_UnitigNode *)
 
 
 cdef class StreamingCompactor:
-
-    cdef shared_ptr[DefaultDBG] _graph
+    cdef DefaultDBG * _graph
     # TODO jinja template StreamingCompactor template args
-    cdef shared_ptr[_StreamingCompactor[DefaultDBG]] _sc_this
+    cdef unique_ptr[_StreamingCompactor[DefaultDBG]] _sc_this
 

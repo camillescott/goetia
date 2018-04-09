@@ -9,7 +9,6 @@ from libc.stdint cimport uint8_t
 
 from libcpp cimport bool
 from libcpp.deque cimport deque
-from libcpp.memory cimport shared_ptr
 from libcpp.string cimport string
 from libcpp.vector import vector
 
@@ -22,10 +21,8 @@ cdef extern from "boink/assembly.hh" namespace "boink":
     ctypedef vector[StringVector, StringVector] NeighborBundle
 
     cdef cppclass _AssemblerMixin "boink::AssemblerMixin" [GraphType]:
-        
-        ctypedef shared_ptr[GraphType] GraphPtr
 
-        _AssemblerMixin(GraphPtr)
+        _AssemblerMixin(GraphType *)
 
         void clear_seen()
 
@@ -65,7 +62,7 @@ cdef extern from "boink/assembly.hh" namespace "boink":
         hash_t shift_left(const char) except +ValueError
         hash_t shift_right(const char) except +ValueError
 
-    _AssemblerMixin[GraphType] make_assembler[GraphType](shared_ptr[GraphType])
+    _AssemblerMixin[GraphType] make_assembler[GraphType](GraphType *)
 
 
 include "assembly.pxd.pxi"

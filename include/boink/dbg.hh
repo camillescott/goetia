@@ -15,6 +15,7 @@
 #include "oxli/storage.hh"
 #include "oxli/hashtable.hh"
 
+#include <algorithm>
 #include <string>
 #include <vector>
 
@@ -22,7 +23,6 @@ namespace boink {
 
 using std::string;
 using std::make_pair;
-using std::shared_ptr;
 
 typedef std::pair<bool, bool> bit_pair_t;
 typedef std::vector<bit_pair_t> bit_pair_vector_t;
@@ -33,12 +33,15 @@ typedef std::pair<uint8_t, uint8_t> full_count_t;
 
 template <class StorageType,
           class HashShifter>
-class dBG : public KmerClient,
-		    public std::enable_shared_from_this<dBG<StorageType, HashShifter>> {
+class dBG : public KmerClient {
     StorageType S;
     HashShifter hasher;
 
 public:
+
+    const uint16_t N;
+    const uint64_t max_table;
+    const std::vector<uint64_t> sizes;
 
     typedef HashShifter shifter_type;
 	typedef AssemblerMixin<dBG<StorageType, HashShifter>> assembler_type;
@@ -48,18 +51,26 @@ public:
     explicit dBG(uint16_t K, std::vector<uint64_t> storage_size) :
         KmerClient(K),
         S(storage_size),
-        hasher(K) {
+        hasher(K),
+        sizes(storage_size),
+        N(storage_size.size()),
+        max_table(*std::max_element(storage_size.begin(), storage_size.end())) {
         
     }
 
     explicit dBG(uint16_t K, uint64_t max_table, uint16_t N) :
-        dBG(K, oxli::get_n_primes_near_x(N, max_table)) {
+        KmerClient(K),
+        hasher(K),
+        sizes(oxli::get_n_primes_near_x(N, max_table)),
+        N(N),
+        max_table(max_table),
+        S(sizes) {
 
     }
 
-	shared_ptr<dBG<StorageType, HashShifter>> get_ptr() {
-		return this->shared_from_this();
-	}
+    std::unique_ptr<dBG<StorageType, HashShifter>> clone() const {
+        return std::make_unique<dBG<StorageType, HashShifter>>(_K, sizes);
+    }
 
     hash_t hash(const string& kmer) const {
         return hasher.hash(kmer);
@@ -150,12 +161,12 @@ public:
         S.reset();
     }
 
-    shared_ptr<KmerIterator<HashShifter>> get_hash_iter(const string& sequence) {
-        return make_shared<KmerIterator<HashShifter>>(sequence, _K);
+    unique_ptr<KmerIterator<HashShifter>> get_hash_iter(const string& sequence) {
+        return make_unique<KmerIterator<HashShifter>>(sequence, _K);
     }
 
-    shared_ptr<assembler_type> get_assembler() {
-        return make_shared<assembler_type>(this->get_ptr());
+    unique_ptr<assembler_type> get_assembler() {
+        return make_unique<assembler_type>(this);
     }
 
 };

@@ -47,8 +47,6 @@ typedef uint64_t hash_t;
 #define NULL_ID ULLONG_MAX
 #define UNITIG_START_ID 100000000000
 
-using std::make_shared;
-using std::shared_ptr;
 using std::string;
 using namespace oxli;
 
@@ -146,9 +144,9 @@ public:
 };
 
 
-typedef shared_ptr<CompactNode> CompactNodePtr;
-typedef shared_ptr<DecisionNode> DecisionNodePtr;
-typedef shared_ptr<UnitigNode> UnitigNodePtr;
+typedef CompactNode * CompactNodePtr;
+typedef DecisionNode * DecisionNodePtr;
+typedef UnitigNode * UnitigNodePtr;
 
 class cDBG : public KmerClient {
 
@@ -168,10 +166,10 @@ public:
 template <class GraphType>
 class StreamingCompactor : public AssemblerMixin<GraphType> {
 
-    shared_ptr<GraphType> dbg;
-    cDBG cdbg;
-
 public:
+
+    GraphType * dbg;
+    cDBG cdbg;
 
     using AssemblerType = AssemblerMixin<GraphType>;
     using AssemblerType::seen;
@@ -181,7 +179,7 @@ public:
     using AssemblerType::degree_right;
     using AssemblerType::count_nodes;
 
-    StreamingCompactor(shared_ptr<GraphType> dbg) :
+    StreamingCompactor(GraphType * dbg) :
         AssemblerMixin<GraphType>(dbg),
         dbg(dbg),
         cdbg(dbg->K()) {
@@ -244,14 +242,10 @@ public:
         return this->degree_left() > 1 || this->degree_right() > 1;
     }
 
-    bool insert_sequence(const std::string& sequence,
-                         std::vector<uint32_t>& decision_positions,
-                         HashVector& decision_hashes,
-                         std::vector<NeighborBundle>& decision_neighbors) {
-
-        if (!dbg->add_sequence(sequence)) {
-            return false; // if there were no new k-mers, nothing to do
-        }
+    void find_decision_nodes(const std::string& sequence,
+                             std::vector<uint32_t>& decision_positions,
+                             HashVector& decision_hashes,
+                             std::vector<NeighborBundle>& decision_neighbors) {
 
         KmerIterator<typename GraphType::shifter_type> iter(sequence, this->_K);
         size_t pos = 0;
@@ -278,8 +272,22 @@ public:
 
             ++pos;
         }
+    }
 
-        return true;
+    bool insert_sequence(const std::string& sequence,
+                         std::vector<uint32_t>& decision_positions,
+                         HashVector& decision_hashes,
+                         std::vector<NeighborBundle>& decision_neighbors) {
+
+        if (!dbg->add_sequence(sequence)) {
+            return false; // if there were no new k-mers, nothing to do
+        } else {
+            find_decision_nodes(sequence,
+                                decision_positions,
+                                decision_hashes,
+                                decision_neighbors);
+            return true;
+        }
     }
 
     /*

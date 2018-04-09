@@ -9,7 +9,7 @@
 {% from "dbg_types.tpl" import iter_types %}
 {% block code %}
 
-from libcpp.memory cimport shared_ptr, make_shared
+from libcpp.memory cimport unique_ptr
 
 from boink.dbg cimport *
 
@@ -21,8 +21,8 @@ cdef class Assembler_Base:
 
 {% call(Storage_t, Shifter_t, tparams, suffix) iter_types(Storage_types, Shifter_types) %}
 cdef class Assembler_{{suffix}}(Assembler_Base):
-    cdef shared_ptr[_AssemblerMixin[_dBG[{{tparams}}]]] _this
-    cdef shared_ptr[_dBG[{{tparams}}]] _graph
+    cdef unique_ptr[_AssemblerMixin[_dBG[{{tparams}}]]] _this
+    cdef _dBG[{{tparams}}] * _graph
     cdef readonly dBG_{{suffix}} Graph
 {% endcall %}
 

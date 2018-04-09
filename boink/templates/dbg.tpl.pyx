@@ -12,6 +12,7 @@
 from cython.operator cimport dereference as deref
 
 from libc.stdint cimport uint64_t
+from libcpp.memory cimport make_unique
 from libcpp.string cimport string
 from libcpp.vector cimport vector
 
@@ -33,8 +34,8 @@ cdef class dBG_{{suffix}}(dBG_Base):
         #if type(self) is dBG_{{suffix}}:
         if not self._this:
             primes = get_n_primes_near_x(n_tables, starting_size)
-            self._this = make_shared[_dBG[{{tparams}}]](K, primes)
-            self._assembler = make_shared[_AssemblerMixin[_dBG[{{tparams}}]]](self._this)
+            self._this = make_unique[_dBG[{{tparams}}]](K, primes)
+            self._assembler = make_unique[_AssemblerMixin[_dBG[{{tparams}}]]](self._this.get())
             self.allocated = True
 
         self.storage_type = "{{Storage_t}}"
@@ -49,6 +50,12 @@ cdef class dBG_{{suffix}}(dBG_Base):
             handled = deref(self._this).hash(_bstring(kmer))
         return handled
 
+    def clone(self):
+        cdef dBG_{{suffix}} cloned = dBG_{{suffix}}(1,1,1)
+        cloned._this = deref(self._this).clone()
+        cloned._assembler.reset(new _AssemblerMixin[_dBG[{{tparams}}]](self._this.get()))
+        return cloned
+
     def add(self, object kmer):
         return deref(self._this).add(self._handle_kmer(kmer))
 
@@ -60,7 +67,7 @@ cdef class dBG_{{suffix}}(dBG_Base):
 
     def hashes(self, str sequence):
         cdef bytes _sequence = _bstring(sequence)
-        cdef shared_ptr[_KmerIterator[{{Shifter_t}}]] kmer_iter = \
+        cdef unique_ptr[_KmerIterator[{{Shifter_t}}]] kmer_iter = \
                 deref(self._this).get_hash_iter(_sequence)
 
         cdef hash_t h

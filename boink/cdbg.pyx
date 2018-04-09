@@ -6,9 +6,8 @@
 # of the MIT license.  See the LICENSE file for details.
 
 from cython.operator cimport dereference as deref
-from libcpp.memory cimport make_shared
+from libcpp.memory cimport make_unique
 
-from boink.dbg cimport dBG_Base
 from boink.utils cimport _bstring, _ustring
 from khmer._oxli.sequence cimport Alphabets
 
@@ -16,7 +15,7 @@ from khmer._oxli.sequence cimport Alphabets
 cdef class CompactNode:
 
     @staticmethod
-    cdef CompactNode _wrap(CompactNodePtr ptr):
+    cdef CompactNode _wrap(_CompactNode * ptr):
         cdef CompactNode node = CompactNode()
         node._cn_this = ptr
         return node
@@ -42,7 +41,7 @@ cdef class CompactNode:
 cdef class UnitigNode(CompactNode):
 
     @staticmethod
-    cdef UnitigNode _wrap(UnitigNodePtr ptr):
+    cdef UnitigNode _wrap(_UnitigNode * ptr):
         cdef UnitigNode node = UnitigNode()
         node._un_this = ptr
         return node
@@ -66,7 +65,7 @@ cdef class UnitigNode(CompactNode):
 cdef class DecisionNode(CompactNode):
 
     @staticmethod
-    cdef DecisionNode _wrap(DecisionNodePtr ptr):
+    cdef DecisionNode _wrap(_DecisionNode * ptr):
         cdef DecisionNode node = DecisionNode()
         node._dn_this = ptr
         return node
@@ -88,23 +87,7 @@ cdef class DecisionNode(CompactNode):
         return deref(self._dn_this).degree()
 
     '''
-    def out_edges(self):
-        cdef string bases = Alphabets._get('DNA_SIMPLE')
-        cdef char base
-        cdef CpCompactEdge * edge
-        for base in bases:
-            edge = deref(self._cn_this).get_out_edge(base)
-            if edge != NULL:
-                yield <bytes>base, CompactEdge._wrap(edge)
 
-    def in_edges(self):
-        cdef string bases = Alphabets._get('DNA_SIMPLE')
-        cdef char base
-        cdef CpCompactEdge * edge
-        for base in bases:
-            edge = deref(self._cn_this).get_in_edge(base)
-            if edge != NULL:
-                yield <bytes>base, CompactEdge._wrap(edge)
 
     def __str__(self):
         return 'CompactNode: ID={0} count={1} in_degree={2}'\
@@ -119,20 +102,36 @@ cdef class DecisionNode(CompactNode):
 cdef class StreamingCompactor:
 
     def __cinit__(self, dBG_BitStorage_DefaultShifter graph):
-        self._graph = graph._this
+        self._graph = graph._this.get()
         
         # TODO properly template this
         if type(self) is StreamingCompactor:
             self._sc_this = \
-                make_shared[_StreamingCompactor[DefaultDBG]](self._graph)
+                make_unique[_StreamingCompactor[DefaultDBG]](self._graph)
 
     def compactify(self, str seed):
-        cdef bytes _seed = _bstring(seed)
+        cdef string _seed = _bstring(seed)
         return deref(self._sc_this).compactify(_seed)
 
+    def is_decision_node(self, str kmer):
+        cdef string _kmer = _bstring(kmer)
+        return deref(self._sc_this).is_decision_node(_kmer)
+
+    def find_decision_nodes(self, str sequence):
+        cdef string _sequence = _bstring(sequence)
+        cdef vector[uint32_t] positions
+        cdef vector[hash_t] hashes
+        cdef vector[NeighborBundle] neighbors
+
+        deref(self._sc_this).find_decision_nodes(_sequence,
+                                                 positions,
+                                                 hashes,
+                                                 neighbors)
+
+        return positions, hashes
 
     def insert_sequence(self, str sequence):
-        cdef bytes _sequence = _bstring(sequence)
+        cdef string _sequence = _bstring(sequence)
         cdef vector[uint32_t] positions
         cdef vector[hash_t] hashes
         cdef vector[NeighborBundle] neighbors

@@ -11,6 +11,7 @@
 from cython.operator cimport dereference as deref
 
 from libc.stdint cimport uint64_t
+from libcpp.memory cimport make_unique
 from libcpp.string cimport string
 from libcpp.vector cimport vector
 
@@ -31,8 +32,8 @@ cdef class dBG_BitStorage_DefaultShifter(dBG_Base):
         #if type(self) is dBG_BitStorage_DefaultShifter:
         if not self._this:
             primes = get_n_primes_near_x(n_tables, starting_size)
-            self._this = make_shared[_dBG[BitStorage,DefaultShifter]](K, primes)
-            self._assembler = make_shared[_AssemblerMixin[_dBG[BitStorage,DefaultShifter]]](self._this)
+            self._this = make_unique[_dBG[BitStorage,DefaultShifter]](K, primes)
+            self._assembler = make_unique[_AssemblerMixin[_dBG[BitStorage,DefaultShifter]]](self._this.get())
             self.allocated = True
 
         self.storage_type = "BitStorage"
@@ -47,6 +48,12 @@ cdef class dBG_BitStorage_DefaultShifter(dBG_Base):
             handled = deref(self._this).hash(_bstring(kmer))
         return handled
 
+    def clone(self):
+        cdef dBG_BitStorage_DefaultShifter cloned = dBG_BitStorage_DefaultShifter(1,1,1)
+        cloned._this = deref(self._this).clone()
+        cloned._assembler.reset(new _AssemblerMixin[_dBG[BitStorage,DefaultShifter]](self._this.get()))
+        return cloned
+
     def add(self, object kmer):
         return deref(self._this).add(self._handle_kmer(kmer))
 
@@ -58,7 +65,7 @@ cdef class dBG_BitStorage_DefaultShifter(dBG_Base):
 
     def hashes(self, str sequence):
         cdef bytes _sequence = _bstring(sequence)
-        cdef shared_ptr[_KmerIterator[DefaultShifter]] kmer_iter = \
+        cdef unique_ptr[_KmerIterator[DefaultShifter]] kmer_iter = \
                 deref(self._this).get_hash_iter(_sequence)
 
         cdef hash_t h
@@ -126,8 +133,8 @@ cdef class dBG_NibbleStorage_DefaultShifter(dBG_Base):
         #if type(self) is dBG_NibbleStorage_DefaultShifter:
         if not self._this:
             primes = get_n_primes_near_x(n_tables, starting_size)
-            self._this = make_shared[_dBG[NibbleStorage,DefaultShifter]](K, primes)
-            self._assembler = make_shared[_AssemblerMixin[_dBG[NibbleStorage,DefaultShifter]]](self._this)
+            self._this = make_unique[_dBG[NibbleStorage,DefaultShifter]](K, primes)
+            self._assembler = make_unique[_AssemblerMixin[_dBG[NibbleStorage,DefaultShifter]]](self._this.get())
             self.allocated = True
 
         self.storage_type = "NibbleStorage"
@@ -142,6 +149,12 @@ cdef class dBG_NibbleStorage_DefaultShifter(dBG_Base):
             handled = deref(self._this).hash(_bstring(kmer))
         return handled
 
+    def clone(self):
+        cdef dBG_NibbleStorage_DefaultShifter cloned = dBG_NibbleStorage_DefaultShifter(1,1,1)
+        cloned._this = deref(self._this).clone()
+        cloned._assembler.reset(new _AssemblerMixin[_dBG[NibbleStorage,DefaultShifter]](self._this.get()))
+        return cloned
+
     def add(self, object kmer):
         return deref(self._this).add(self._handle_kmer(kmer))
 
@@ -153,7 +166,7 @@ cdef class dBG_NibbleStorage_DefaultShifter(dBG_Base):
 
     def hashes(self, str sequence):
         cdef bytes _sequence = _bstring(sequence)
-        cdef shared_ptr[_KmerIterator[DefaultShifter]] kmer_iter = \
+        cdef unique_ptr[_KmerIterator[DefaultShifter]] kmer_iter = \
                 deref(self._this).get_hash_iter(_sequence)
 
         cdef hash_t h
@@ -221,8 +234,8 @@ cdef class dBG_ByteStorage_DefaultShifter(dBG_Base):
         #if type(self) is dBG_ByteStorage_DefaultShifter:
         if not self._this:
             primes = get_n_primes_near_x(n_tables, starting_size)
-            self._this = make_shared[_dBG[ByteStorage,DefaultShifter]](K, primes)
-            self._assembler = make_shared[_AssemblerMixin[_dBG[ByteStorage,DefaultShifter]]](self._this)
+            self._this = make_unique[_dBG[ByteStorage,DefaultShifter]](K, primes)
+            self._assembler = make_unique[_AssemblerMixin[_dBG[ByteStorage,DefaultShifter]]](self._this.get())
             self.allocated = True
 
         self.storage_type = "ByteStorage"
@@ -237,6 +250,12 @@ cdef class dBG_ByteStorage_DefaultShifter(dBG_Base):
             handled = deref(self._this).hash(_bstring(kmer))
         return handled
 
+    def clone(self):
+        cdef dBG_ByteStorage_DefaultShifter cloned = dBG_ByteStorage_DefaultShifter(1,1,1)
+        cloned._this = deref(self._this).clone()
+        cloned._assembler.reset(new _AssemblerMixin[_dBG[ByteStorage,DefaultShifter]](self._this.get()))
+        return cloned
+
     def add(self, object kmer):
         return deref(self._this).add(self._handle_kmer(kmer))
 
@@ -248,7 +267,7 @@ cdef class dBG_ByteStorage_DefaultShifter(dBG_Base):
 
     def hashes(self, str sequence):
         cdef bytes _sequence = _bstring(sequence)
-        cdef shared_ptr[_KmerIterator[DefaultShifter]] kmer_iter = \
+        cdef unique_ptr[_KmerIterator[DefaultShifter]] kmer_iter = \
                 deref(self._this).get_hash_iter(_sequence)
 
         cdef hash_t h
