@@ -173,6 +173,7 @@ public:
             std::vector<uint32_t> decision_positions;
             HashVector decision_hashes;
             std::vector<NeighborBundle> decision_neighbors;
+            std::set<hash_t> new_kmers;
 
             compactor->find_decision_nodes(sequence,
                                            decision_positions,

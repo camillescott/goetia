@@ -122,6 +122,26 @@ public:
         return n_consumed;
     }
 
+    uint64_t add_sequence(const string& sequence,
+                          std::set<hash_t>& new_kmers) {
+        KmerIterator<HashShifter> iter(sequence, _K);
+
+        uint64_t n_consumed = 0;
+        size_t pos = 0;
+        bool is_new;
+        while(!iter.done()) {
+            hash_t h = iter.next();
+            is_new = add(h);
+            if (is_new) {
+                new_kmers.insert(h);
+            }
+            n_consumed += is_new;
+            ++pos;
+        }
+
+        return n_consumed;
+    }
+
     uint64_t add_sequence(const string& sequence) {
         KmerIterator<HashShifter> iter(sequence, _K);
 
