@@ -30,7 +30,8 @@ namespace boink {
 
 typedef std::deque<char> Path;
 typedef std::vector<std::string> StringVector;
-typedef std::pair<StringVector, StringVector> NeighborBundle;
+typedef std::vector<kmer_t> KmerVector;
+typedef std::pair<KmerVector, KmerVector> NeighborBundle;
 
 
 template<class GraphType>

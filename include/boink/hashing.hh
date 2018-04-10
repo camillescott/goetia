@@ -49,6 +49,22 @@ struct shift_t {
 };
 
 
+struct kmer_t {
+    const std::string kmer;
+    const hash_t hash;
+
+    kmer_t(const hash_t hash, const std::string kmer) :
+        hash(hash),
+        kmer(kmer) {
+    }
+
+    bool operator==(const kmer_t& other) const {
+        return other.hash == this->hash;
+    }
+
+};
+
+
 class KmerClient {
 protected:
     const uint16_t _K;

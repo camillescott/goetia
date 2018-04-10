@@ -42,6 +42,11 @@ cdef extern from "boink/hashing.hh" namespace "boink":
         hash_t hash
         char symbol
 
+    cdef struct kmer_t:
+        kmer_t(const hash_t, const string)
+        const hash_t hash
+        const string kmer
+
     cdef cppclass _KmerClient "boink::KmerClient":
         _KmerClient(uint16_t)
         uint16_t K()
