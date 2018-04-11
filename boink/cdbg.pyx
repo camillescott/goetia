@@ -120,6 +120,75 @@ cdef class UnitigNode(CompactNode):
             yield tag
 
 
+cdef class cDBG:
+
+    @staticmethod
+    cdef cDBG _wrap(_cDBG * ptr):
+        cdef cDBG cdbg = cDBG()
+        cdbg._this = ptr
+        return cdbg
+
+    def get_unode_by_hash(self, hash_t h):
+        cdef _UnitigNode * _node = deref(self._this).get_unitig_node(h)
+        if _node != NULL:
+            return UnitigNode._wrap(_node)
+        else:
+            return None
+
+    def get_unode_by_id(self, id_t node_id):
+        cdef _UnitigNode * _node = \
+            deref(self._this).get_unitig_node_from_id(node_id)
+        if _node != NULL:
+            return UnitigNode._wrap(_node)
+        else:
+            return None
+
+    def get_dnode(self, hash_t h):
+        cdef _DecisionNode * _node = \
+            deref(self._this).get_decision_node(h)
+        if _node != NULL:
+            return DecisionNode._wrap(_node)
+        else:
+            return None
+
+    def get_dnodes(self, str sequence):
+        pass
+
+    def neighbors(self, CompactNode node):
+        for neighbor in self.left_neighbors(node):
+            yield neighbor
+        for neighbor in self.right_neighbor(node):
+            yield neighbor
+
+    def left_neighbors(self, CompactNode node):
+        if isinstance(node, UnitigNode):
+            if node.left_dnode is not None:
+                yield node.left_dnode
+        elif isinstance(node, DecisionNode):
+            for n_id in node.in_edges():
+                yield self.get_unode_by_id(n_id)
+
+    def right_neighbors(self, CompactNode node):
+        if isinstance(node, UnitigNode):
+            if node.right_dnode is not None:
+                yield node.right_dnode
+        elif isinstance(node, DecisionNode):
+            for n_id in node.out_edges():
+                yield self.get_unode_by_id(n_id)
+
+    @property
+    def n_updates(self):
+        return deref(self._this).n_updates()
+
+    @property
+    def n_unodes(self):
+        return deref(self._this).n_unitig_nodes()
+
+    @property
+    def n_dnodes(self):
+        return deref(self._this).n_decision_nodes()
+
+
 cdef class StreamingCompactor:
 
     def __cinit__(self, dBG_BitStorage_DefaultShifter graph):
@@ -129,7 +198,7 @@ cdef class StreamingCompactor:
         if type(self) is StreamingCompactor:
             self._sc_this = \
                 make_unique[_StreamingCompactor[DefaultDBG]](self._graph)
-            self._cdbg = &(deref(self._sc_this).cdbg)
+            self.cdbg = cDBG._wrap(&(deref(self._sc_this).cdbg))
 
     #def compactify(self, str seed):
     #    cdef string _seed = _bstring(seed)
@@ -155,16 +224,11 @@ cdef class StreamingCompactor:
     def get_cdbg_dnodes(self, str sequence):
         cdef string _sequence = _bstring(sequence)
         cdef vector[_DecisionNode*] dnodes = \
-            deref(self._cdbg).get_decision_nodes[DefaultShifter](_sequence)
+            deref(self.cdbg._this).get_decision_nodes[DefaultShifter](_sequence)
         cdef _DecisionNode * dnode
         for dnode in dnodes:
             if dnode != NULL:
                 yield DecisionNode._wrap(dnode)
-
-    def get_cdbg_unode_from_id(self, id_t node_id):
-        cdef _UnitigNode * unode = deref(self._cdbg).get_unitig_node_from_id(node_id)
-        return None if unode == NULL else UnitigNode._wrap(unode)
-        
 
     def insert_sequence(self, str sequence):
         cdef string _sequence = _bstring(sequence)

@@ -76,15 +76,12 @@ def test_find_decision_nodes_objects(ksize, graph, compactor, right_fork):
 
     dnode = list(compactor.get_cdbg_dnodes(core)).pop()
     assert dnode.in_degree == 1
-    in_id = list(dnode.in_edges()).pop()
-    print('in_id:', in_id)
-    unode = compactor.get_cdbg_unode_from_id(in_id)
-    print(unode.sequence)
-    assert dnode.sequence == unode.sequence[-ksize:]
+    left_unode = list(compactor.cdbg.left_neighbors(dnode)).pop()
+    print(left_unode.sequence)
+    assert dnode.sequence == left_unode.sequence[-ksize:]
 
     assert dnode.out_degree == 2
-    for out_id in dnode.out_edges():
-        unode = compactor.get_cdbg_unode_from_id(out_id)
+    for unode in compactor.cdbg.right_neighbors(dnode):
         assert dnode.sequence == unode.sequence[:ksize]
 
     #assert node.out_degree == 2

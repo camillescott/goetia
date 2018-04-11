@@ -238,6 +238,10 @@ public:
         return _n_unitig_nodes;
     }
 
+    uint64_t n_decision_nodes() const {
+        return decision_nodes.size();
+    }
+
     DecisionNode* build_decision_node(hash_t hash, const string& kmer) {
         DecisionNode * dnode = get_decision_node(hash);
         if (dnode == nullptr) {

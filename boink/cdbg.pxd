@@ -78,6 +78,7 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
 
         uint64_t n_updates() const
         uint64_t n_unitig_nodes() const
+        uint64_t n_decision_nodes() const
 
         _DecisionNode * get_decision_node(hash_t)
         vector[_DecisionNode*] get_decision_nodes[ShifterType](const string&) except +ValueError
@@ -134,9 +135,16 @@ cdef class UnitigNode(CompactNode):
     cdef UnitigNode _wrap(_UnitigNode *)
 
 
+cdef class cDBG:
+    cdef _cDBG * _this
+
+    @staticmethod
+    cdef cDBG _wrap(_cDBG *)
+
+
 cdef class StreamingCompactor:
     cdef DefaultDBG * _graph
     # TODO jinja template StreamingCompactor template args
     cdef unique_ptr[_StreamingCompactor[DefaultDBG]] _sc_this
-    cdef _cDBG * _cdbg
+    cdef public cDBG cdbg
 
