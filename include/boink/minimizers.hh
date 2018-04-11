@@ -108,6 +108,50 @@ public:
         }
         return values;
     }
+
+    void reset() {
+        RollingMin<T>::reset();
+        minimizers.clear();
+    }
+};
+
+
+template <class ShifterType>
+class WKMinimizer : public InteriorMinimizer<hash_t>,
+                    public KmerClient {
+
+public:
+
+    using InteriorMinimizer<hash_t>::InteriorMinimizer;
+    using typename InteriorMinimizer<hash_t>::value_type;
+
+    WKMinimizer(int64_t window_size,
+                uint16_t K)
+        : InteriorMinimizer<hash_t>(window_size),
+          KmerClient(K) {
+    }
+
+    std::vector<value_type> get_minimizers(const std::string& sequence) {
+        KmerIterator<ShifterType> iter(sequence, this->_K);
+        this->reset();
+        
+        while(!iter.done()) {
+            hash_t h = iter.next();
+            InteriorMinimizer<hash_t>::update(h);
+        }
+
+        return InteriorMinimizer<hash_t>::get_minimizers();
+    }
+
+    std::vector<std::pair<std::string, int64_t>> get_minimizer_kmers(const std::string& sequence) {
+        std::vector<value_type> minimizers = get_minimizers(sequence);
+        std::vector<std::pair<std::string, int64_t>> kmers;
+        for (auto min : minimizers) {
+            kmers.push_back(std::make_pair(sequence.substr(min.second, this->_K),
+                                           min.second));
+        }
+        return kmers;
+    }
 };
 
 

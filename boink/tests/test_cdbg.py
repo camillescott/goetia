@@ -84,5 +84,3 @@ def test_find_decision_nodes_objects(ksize, graph, compactor, right_fork):
     for unode in compactor.cdbg.right_neighbors(dnode):
         assert dnode.sequence == unode.sequence[:ksize]
 
-    #assert node.out_degree == 2
-    #assert hashes == [graph.hash(core[pos:pos+ksize])]

@@ -196,5 +196,21 @@ public:
 
 };
 
+
+template <class ShifterType,
+          class ParserType = FastxReader>
+class MinimizerProcessor : public FileProcessor<MinimizerProcessor<ShifterType, ParserType>,
+                                                ParserType> {
+
+protected:
+
+    WKMinimizer<ShifterType> M;
+
+public:
+
+    MinimizerProcessor(int32_t window_size)
+        : M(window_size) {}
+};
+
 } //namespace boink
 #endif
