@@ -169,7 +169,7 @@ CY_OPTS = {
 
 
 DEPENDS = ['dbg.hh', 'cdbg.hh', 'hashing.hh', 'assembly.hh', 'boink.hh',
-           'consumer.hh']
+           'consumer.hh', 'minimizers.hh']
 DEPENDS = [os.path.join('include', 'boink', filename) for filename in DEPENDS]
 
 SOURCES = [filename[:-2] + '.cc' for filename in DEPENDS]
