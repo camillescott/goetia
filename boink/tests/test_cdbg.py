@@ -64,3 +64,17 @@ def test_find_decision_nodes_fork(ksize, graph, compactor, consumer, right_fork)
     positions, hashes = compactor.find_decision_nodes(core)
     assert positions == [pos]
     assert hashes == [graph.hash(core[pos:pos+ksize])]
+
+
+@using_ksize(21)
+@pytest.mark.parametrize('graph_type', ['BitStorage'], indirect=['graph_type'])
+def test_find_decision_nodes_objects(ksize, graph, compactor, right_fork):
+    (core, branch), pos = right_fork()
+    print(core, ' ' * (pos + 1) + branch, sep='\n')
+    compactor.update(branch)
+    compactor.update(core)
+
+    node = list(compactor.get_cdbg_dnodes(core)).pop()
+    assert node.in_degree == 1
+    assert node.out_degree == 2
+    #assert hashes == [graph.hash(core[pos:pos+ksize])]

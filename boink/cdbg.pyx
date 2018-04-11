@@ -38,36 +38,13 @@ cdef class CompactNode:
         return deref(self._cn_this).node_id
 
 
-cdef class UnitigNode(CompactNode):
-
-    @staticmethod
-    cdef UnitigNode _wrap(_UnitigNode * ptr):
-        cdef UnitigNode node = UnitigNode()
-        node._un_this = ptr
-        return node
-
-    @property
-    def in_id(self):
-        cdef uint64_t in_id = deref(self._un_this).in_id
-        return None if in_id == NULL_ID else in_id
-
-    @property
-    def out_id(self):
-        cdef uint64_t out_id = deref(self._un_this).out_id
-        return None if out_id == NULL_ID else out_id
-
-    def tags(self):
-        cdef hash_t tag
-        for tag in deref(self._un_this).tags:
-            yield tag
-
-
 cdef class DecisionNode(CompactNode):
 
     @staticmethod
     cdef DecisionNode _wrap(_DecisionNode * ptr):
         cdef DecisionNode node = DecisionNode()
         node._dn_this = ptr
+        node._cn_this = <_CompactNode*>ptr
         return node
 
     @property
@@ -90,13 +67,46 @@ cdef class DecisionNode(CompactNode):
 
 
     def __str__(self):
-        return 'CompactNode: ID={0} count={1} in_degree={2}'\
+        return 'CompactNode: ID={0} count={1}'
+               ' in_degree={2}'
                ' out_degree={3} sequence={4}'.format(self.kmer,
                                                      self.count,
                                                      self.in_degree,
                                                      self.out_degree,
                                                      self.sequence)
     '''
+
+cdef class UnitigNode(CompactNode):
+
+    @staticmethod
+    cdef UnitigNode _wrap(_UnitigNode * ptr):
+        cdef UnitigNode node = UnitigNode()
+        node._un_this = ptr
+        node._cn_this = <_CompactNode*>ptr
+        return node
+
+    @property
+    def left_hash(self):
+        return deref(self._un_this).left_hash
+
+    @property
+    def right_hash(self):
+        return deref(self._un_this).right_hash
+
+    @property
+    def left_dnode(self):
+        cdef _DecisionNode * ld = deref(self._un_this).left_dnode
+        return None if ld == NULL else DecisionNode._wrap(ld)
+
+    @property
+    def right_dnode(self):
+        cdef _DecisionNode * rd = deref(self._un_this).right_dnode
+        return None if rd == NULL else DecisionNode._wrap(rd)
+
+    def tags(self):
+        cdef hash_t tag
+        for tag in deref(self._un_this).tags:
+            yield tag
 
 
 cdef class StreamingCompactor:
@@ -108,10 +118,11 @@ cdef class StreamingCompactor:
         if type(self) is StreamingCompactor:
             self._sc_this = \
                 make_unique[_StreamingCompactor[DefaultDBG]](self._graph)
+            self._cdbg = &(deref(self._sc_this).cdbg)
 
-    def compactify(self, str seed):
-        cdef string _seed = _bstring(seed)
-        return deref(self._sc_this).compactify(_seed)
+    #def compactify(self, str seed):
+    #    cdef string _seed = _bstring(seed)
+    #    return deref(self._sc_this).compactify(_seed)
 
     def is_decision_node(self, str kmer):
         cdef string _kmer = _bstring(kmer)
@@ -130,6 +141,16 @@ cdef class StreamingCompactor:
 
         return positions, hashes
 
+    def get_cdbg_dnodes(self, str sequence):
+        cdef string _sequence = _bstring(sequence)
+        cdef vector[_DecisionNode*] dnodes = \
+            deref(self._cdbg).get_decision_nodes[DefaultShifter](_sequence)
+        cdef _DecisionNode * dnode
+        for dnode in dnodes:
+            if dnode != NULL:
+                yield DecisionNode._wrap(dnode)
+        
+
     def insert_sequence(self, str sequence):
         cdef string _sequence = _bstring(sequence)
         cdef vector[uint32_t] positions
@@ -143,11 +164,11 @@ cdef class StreamingCompactor:
 
         return positions, hashes
 
-    '''
     def update(self, str sequence):
         cdef string _sequence = _bstring(sequence)
-        return deref(self._sc_this).update_compact_dbg(_sequence)
+        return deref(self._sc_this).update(_sequence)
 
+    '''
     def consume(self, str sequence):
         cdef string _sequence = _bstring(sequence)
         return deref(self._sc_this).consume_sequence(_sequence)

@@ -25,6 +25,7 @@
 #include "boink/assembly.hh"
 #include "boink/hashing.hh"
 #include "boink/dbg.hh"
+#include "boink/minimizers.hh"
 
 #define DEBUG_CDBG
 # ifdef DEBUG_CDBG
@@ -56,11 +57,7 @@ using std::pair;
 using namespace oxli;
 
 
-typedef pair<hash_t, id_t> HashIDPair;
-typedef std::unordered_set<hash_t> UHashSet;
 typedef vector<hash_t> HashVector;
-typedef std::unordered_map<hash_t, id_t> HashIDMap;
-typedef std::unordered_set<id_t> IDSet;
 
 
 enum node_meta_t {
@@ -109,19 +106,6 @@ public:
 };
 
 
-class UnitigNode : public CompactNode {
-public:
-
-    id_t in_id, out_id;
-    HashVector tags;
-
-    UnitigNode(id_t node_id, const string& sequence) :
-        CompactNode(node_id, sequence),
-        in_id(NULL_ID), out_id(NULL_ID) {}
-
-};
-
-
 class DecisionNode: public CompactNode {
 
 protected:
@@ -129,7 +113,6 @@ protected:
     bool _dirty;
 
 public:
-    using CompactNode::CompactNode;
     vector<id_t> in_edges;
     vector<id_t> out_edges;
     uint32_t count;
@@ -164,12 +147,54 @@ public:
         return false;
     }
 
+    void remove_in_edge(id_t id) {
+        for (auto it = in_edges.begin(); it != in_edges.end(); ) {
+            if (*it == id ) {
+                in_edges.erase(it);
+                return;
+            }
+        }
+    }
+
     bool has_out_edge(id_t id) const {
         for (auto out_id : out_edges) {
             if (id == out_id) return true;
         }
         return false;
     }
+
+    void remove_out_edge(id_t id) {
+        for (auto it = out_edges.begin(); it != out_edges.end(); ) {
+            if (*it == id ) {
+                out_edges.erase(it);
+                return;
+            }
+        }
+    }
+};
+
+
+class UnitigNode : public CompactNode {
+public:
+
+    DecisionNode * left_dnode, * right_dnode;
+    hash_t left_hash, right_hash;
+    HashVector tags;
+
+    UnitigNode(id_t node_id,
+               hash_t left_hash,
+               hash_t right_hash,
+               const string& sequence,
+               DecisionNode * left_dnode=nullptr,
+               DecisionNode * right_dnode=nullptr)
+        : CompactNode(node_id, sequence),
+          left_hash(left_hash),
+          right_hash(right_hash),
+          left_dnode(left_dnode),
+          right_dnode(right_dnode) {
+        
+    }
+
 };
 
 
@@ -205,12 +230,21 @@ public:
 
     }
 
+    uint64_t n_updates() const {
+        return _n_updates;
+    }
+
+    uint64_t n_unitig_nodes() const {
+        return _n_unitig_nodes;
+    }
+
     DecisionNode* build_decision_node(hash_t hash, const string& kmer) {
         DecisionNode * dnode = get_decision_node(hash);
         if (dnode == nullptr) {
+            pdebug("Build d-node " << hash << ", " << kmer);
             unique_ptr<DecisionNode> dnode_ptr = make_unique<DecisionNode>(hash, kmer);
             decision_nodes.insert(make_pair(hash, std::move(dnode_ptr)));
-            dnode = dnode_ptr.get();
+            dnode = get_decision_node(hash);
         }
         return dnode;
     }
@@ -234,41 +268,87 @@ public:
                 result.push_back(dnode);
             }
         }
-
+        
         return result;
     }
 
     UnitigNode * build_unitig_node(HashVector& tags,
                                    const string& sequence,
+                                   hash_t left_hash,
+                                   hash_t right_hash,
                                    DecisionNode * left_dnode=nullptr,
                                    DecisionNode * right_dnode=nullptr) {
 
-        unique_ptr<UnitigNode> unode = make_unique<UnitigNode>(_unitig_id_counter,
-                                                               sequence);
+        pdebug("Build u-node " << left_hash << ", " << right_hash);
+        id_t id = _unitig_id_counter;
+        unique_ptr<UnitigNode> unode = make_unique<UnitigNode>(id,
+                                                               left_hash,
+                                                               right_hash,
+                                                               sequence,
+                                                               left_dnode,
+                                                               right_dnode);
         _unitig_id_counter++;
         _n_unitig_nodes++;
 
         unode->tags.insert(std::end(unode->tags), std::begin(tags), std::end(tags));
-        unitig_nodes.insert(make_pair(unode->node_id, std::move(unode)));
+
+        for (auto tag: tags) {
+            unitig_id_map.insert(make_pair(tag, id));
+        }
+        unitig_id_map.insert(make_pair(left_hash, id));
+        unitig_id_map.insert(make_pair(right_hash, id));
 
         if (left_dnode != nullptr) {
-            if (!left_dnode->has_out_edge(unode->node_id)) {
-                left_dnode->out_edges.push_back(unode->node_id);
+            if (!left_dnode->has_out_edge(id)) {
+                left_dnode->out_edges.push_back(id);
             }
         }
         if (right_dnode != nullptr) {
-            if (!right_dnode->has_in_edge(unode->node_id)) {
-                right_dnode->in_edges.push_back(unode->node_id);
+            if (!right_dnode->has_in_edge(id)) {
+                right_dnode->in_edges.push_back(id);
             }
         }
 
-        return unode.get();
+        unitig_nodes.insert(make_pair(id, std::move(unode)));
+        return unitig_nodes[id].get();
+    }
+
+    UnitigNode * get_unitig_node(hash_t hash) {
+        auto search = unitig_id_map.find(hash);
+        if (search != unitig_id_map.end()) {
+            id_t id = search->second;
+            return unitig_nodes[id].get();
+        }
+        return nullptr;
+    }
+
+    void delete_unitig_node(UnitigNode * unode) {
+        if (unode != nullptr) {
+            id_t id = unode->node_id;
+            for (hash_t tag: unode->tags) {
+                unitig_id_map.erase(tag);
+            }
+            if (unode->left_dnode != nullptr) {
+                unode->left_dnode->remove_out_edge(id);
+            }
+            if (unode->right_dnode != nullptr) {
+                unode->right_dnode->remove_in_edge(id);
+            }
+            unitig_nodes.erase(id);
+            unode = nullptr;
+            _n_unitig_nodes--;
+            _n_updates++;
+        }
     }
 };
 
 
 template <class GraphType>
 class StreamingCompactor : public AssemblerMixin<GraphType> {
+
+protected:
+
+    uint64_t _minimizer_window_size;
 
 public:
 
@@ -284,10 +364,12 @@ public:
     using AssemblerType::count_nodes;
     using AssemblerType::filter_nodes;
 
-    StreamingCompactor(GraphType * dbg) :
+    StreamingCompactor(GraphType * dbg,
+                       uint64_t minimizer_window_size=8) :
         AssemblerMixin<GraphType>(dbg),
         dbg(dbg),
-        cdbg(dbg->K()) {
+        cdbg(dbg->K()),
+        _minimizer_window_size(minimizer_window_size) {
 
     }
 
@@ -302,8 +384,9 @@ public:
         return this->to_string(path);
     }
 
-    void compactify_right(Path& path) {
+    void compactify_right(Path& path, InteriorMinimizer<hash_t>& minimizer) {
         this->seen.insert(this->get());
+        minimizer.update(this->get());
         
         shift_t next;
         while (get_right(next)
@@ -311,11 +394,13 @@ public:
                && !(degree_left() > 1)) {
             path.push_back(next.symbol);
             this->seen.insert(next.hash);
+            minimizer.update(next.hash);
         }
     }
 
-    void compactify_left(Path& path) {
+    void compactify_left(Path& path, InteriorMinimizer<hash_t> minimizer) {
         this->seen.insert(this->get());
+        minimizer.update(this->get());
         
         shift_t next;
         while (get_left(next)
@@ -323,6 +408,7 @@ public:
                && !(degree_right() > 1)) {
             path.push_front(next.symbol);
             this->seen.insert(next.hash);
+            minimizer.update(next.hash);
         }
 
     }
@@ -432,6 +518,9 @@ public:
             if (get_decision_neighbors(iter.shifter,
                                        kmer,
                                        decision_neighbors)) {
+                pdebug("Found d-node " << h << ", " << kmer <<
+                       " ldegree " << decision_neighbors.first.size() <<
+                       " rdegree " << decision_neighbors.second.size());
                 DecisionNode * dnode;
                 dnode = cdbg.build_decision_node(h, kmer);
                 disturbed_dnodes.push_back(dnode);
@@ -476,54 +565,103 @@ public:
         }
     }
 
-    void update_linear(const string& sequence) {
-    
-    }
-
-    /*
-    void update(const string& sequence,
-                vector<uint32_t>& decision_positions,
-                HashVector& decision_hashes,
-                vector<NeighborBundle>& decision_neighbors) {
-
-        std::set<hash_t> updated_from;
-        vector<kmer_t> update_left_queue;
-        vector<kmer_t> update_right_queue;
-
-        for (size_t node_idx=0; 
-            node_idx<decision_positions.size(); ++node_idx) {
-            hash_t node_hash = decision_hashes[node_idx];
-            uint32_t kmer_pos = decision_positions[node_idx];
-            const string kmer = sequence.substr(kmer_pos, this->_K);
-            DecisionNode * decision_node = cdbg.build_decision_node(node_hash,
-                                                                    kmer);
-            NeighborBundle current_neighbors = decision_neighbors[node_idx];
-            if (decision_node->left_degree() != 
-                current_neighbors.first.size() ||
-                decision_node->right_degree() != 
-                current_neighbors.second.size()) {
-                // Then this is either a new decision node or it 
-                // got a new neighbor
-                
-                for (auto neighbor : current_neighbors.first) {
-                    // left neighbors
-                    if (new_kmers.count(neighbor.hash) && 
-                        !started_from.count(neighbor.hash)) {
-                        update_left(decision_node, neighbor, started_from);
-                    }
-                }
-
-                for (auto neighbor : current_neighbors.second) {
-                    // right neighbors
-                    if (new_kmers.count(neighbor.hash) &&
-                        !started_from.count(neighbor.hash)) {
-                        update_left(decision_node, neighbor, started_from);
-                    }
-                }
+    void update(const string& sequence) {
+        if(!dbg->add_sequence(sequence)) {
+            return;
+        } else {
+            vector<DecisionNode*> disturbed_dnodes;
+            vector<NeighborBundle> disturbed_neighbors;
+            find_disturbed_decision_nodes(sequence,
+                                          disturbed_dnodes,
+                                          disturbed_neighbors);
+            if (disturbed_dnodes.size() == 0) {
+                _update_linear(sequence);
+            } else {
+                _update_from_dnodes(sequence,
+                                    disturbed_dnodes,
+                                    disturbed_neighbors);
             }
         }
     }
-    */
+
+    void _update_linear(const string& sequence) {
+    
+    }
+
+    void _update_from_dnodes(const string& sequence,
+                             vector<DecisionNode*>& disturbed_dnodes,
+                             vector<NeighborBundle>& disturbed_neighbors) {
+
+        std::set<hash_t> updated_from;
+        pdebug(disturbed_dnodes.size() << " on d-node queue, " <<
+               disturbed_neighbors.size() << " on neighbor queue");
+
+        while(!disturbed_dnodes.empty()) {
+            DecisionNode * root_dnode = disturbed_dnodes.back();
+            NeighborBundle root_neighbors = disturbed_neighbors.back();
+            disturbed_dnodes.pop_back();
+            disturbed_neighbors.pop_back();
+
+            pdebug("updating from " << root_dnode->node_id <<  " with " <<
+                       " ldegree " << root_neighbors.first.size() <<
+                       " rdegree " << root_neighbors.second.size());
+
+            if (updated_from.count(root_dnode->node_id)) {
+                continue;
+            }
+
+            for (kmer_t left_neighbor : root_neighbors.first) {
+                if (updated_from.count(left_neighbor.hash)) {
+                    continue;
+                }
+                DecisionNode* left_dnode;
+                if ((left_dnode = cdbg.get_decision_node(left_neighbor.hash)) 
+                    != nullptr) {
+                    // handle trivial unitig nodes
+                    continue;
+                }
+
+                this->set_cursor(root_dnode->sequence);
+                Path this_segment;
+
+                InteriorMinimizer<hash_t> minimizer(_minimizer_window_size);
+                this->compactify_left(this_segment, minimizer);
+                
+                hash_t left_hash = this->get();
+                hash_t right_hash = left_neighbor.hash;
+
+                updated_from.insert(left_hash);
+                updated_from.insert(right_hash);
+
+                UnitigNode* existing_unitig = cdbg.get_unitig_node(right_hash);
+
+                if (existing_unitig != nullptr) { 
+                    if (existing_unitig->left_hash == left_hash &&
+                        existing_unitig->right_hash == right_hash) {
+                    
+                        continue;
+                    } else {
+                        cdbg.delete_unitig_node(existing_unitig);
+                    }
+                }
+
+                this_segment.push_back(root_dnode->sequence.back());
+                string segment_seq = this->to_string(this_segment);
+                HashVector tags = minimizer.get_minimizer_values();
+                left_dnode = cdbg.get_decision_node(left_hash);
+                UnitigNode * new_unitig = cdbg.build_unitig_node(tags,
+                                                                 segment_seq,
+                                                                 left_hash,
+                                                                 right_hash,
+                                                                 left_dnode,
+                                                                 root_dnode);
+            }
+
+            updated_from.insert(root_dnode->node_id);
+        }
+        pdebug("finished _update_from_dnodes with " << updated_from.size()
+                << " updated from");
+    }
 };
 
 
