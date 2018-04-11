@@ -83,6 +83,7 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
         vector[_DecisionNode*] get_decision_nodes[ShifterType](const string&) except +ValueError
 
         _UnitigNode * get_unitig_node(hash_t)
+        _UnitigNode * get_unitig_node_from_id(id_t)
 
     cdef cppclass _StreamingCompactor "boink::StreamingCompactor" [GraphType] (_AssemblerMixin[GraphType]):
         _cDBG cdbg

@@ -70,11 +70,18 @@ def test_find_decision_nodes_fork(ksize, graph, compactor, consumer, right_fork)
 @pytest.mark.parametrize('graph_type', ['BitStorage'], indirect=['graph_type'])
 def test_find_decision_nodes_objects(ksize, graph, compactor, right_fork):
     (core, branch), pos = right_fork()
-    print(core, ' ' * (pos + 1) + branch, sep='\n')
+    print('\n', core, ' ' * (pos + 1) + branch, sep='\n')
     compactor.update(branch)
     compactor.update(core)
 
-    node = list(compactor.get_cdbg_dnodes(core)).pop()
-    assert node.in_degree == 1
-    assert node.out_degree == 2
+    dnode = list(compactor.get_cdbg_dnodes(core)).pop()
+    assert dnode.in_degree == 1
+    in_id = list(dnode.in_edges()).pop()
+    print('in_id:', in_id)
+    unode = compactor.get_cdbg_unode_from_id(in_id)
+    print(unode.sequence)
+    assert dnode.sequence == unode.sequence[-ksize:]
+
+    assert False
+    #assert node.out_degree == 2
     #assert hashes == [graph.hash(core[pos:pos+ksize])]

@@ -279,8 +279,8 @@ public:
                                    DecisionNode * left_dnode=nullptr,
                                    DecisionNode * right_dnode=nullptr) {
 
-        pdebug("Build u-node " << left_hash << ", " << right_hash);
         id_t id = _unitig_id_counter;
+        pdebug("Build u-node, id=" << id << ", " << left_hash << ", " << right_hash);
         unique_ptr<UnitigNode> unode = make_unique<UnitigNode>(id,
                                                                left_hash,
                                                                right_hash,
@@ -318,6 +318,14 @@ public:
         if (search != unitig_id_map.end()) {
             id_t id = search->second;
             return unitig_nodes[id].get();
+        }
+        return nullptr;
+    }
+
+    UnitigNode * get_unitig_node_from_id(id_t id) {
+        auto search = unitig_nodes.find(id);
+        if (search != unitig_nodes.end()) {
+            return search->second.get();
         }
         return nullptr;
     }
@@ -468,7 +476,7 @@ public:
             for (auto neighbor : left_neighbors) {
                 left_kmers.push_back(kmer_t(neighbor.hash,
                                             neighbor.symbol
-                                            + root_kmer.substr(this->_K-1)));
+                                            + root_kmer.substr(0, this->_K-1)));
             }
             for (auto neighbor : right_neighbors) {
                 right_kmers.push_back(kmer_t(neighbor.hash,
@@ -621,8 +629,10 @@ public:
                     continue;
                 }
 
-                this->set_cursor(root_dnode->sequence);
+                this->set_cursor(left_neighbor.kmer);
                 Path this_segment;
+                this->get_cursor(this_segment);
+                this_segment.push_back(root_dnode->sequence.back());
 
                 InteriorMinimizer<hash_t> minimizer(_minimizer_window_size);
                 this->compactify_left(this_segment, minimizer);
@@ -645,7 +655,6 @@ public:
                     }
                 }
 
-                this_segment.push_back(root_dnode->sequence.back());
                 string segment_seq = this->to_string(this_segment);
                 HashVector tags = minimizer.get_minimizer_values();
                 left_dnode = cdbg.get_decision_node(left_hash);

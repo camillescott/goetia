@@ -63,6 +63,11 @@ cdef class DecisionNode(CompactNode):
     def degree(self):
         return deref(self._dn_this).degree()
 
+    def in_edges(self):
+        cdef id_t node_id
+        for node_id in deref(self._dn_this).in_edges:
+            yield node_id
+
     '''
 
 
@@ -149,6 +154,10 @@ cdef class StreamingCompactor:
         for dnode in dnodes:
             if dnode != NULL:
                 yield DecisionNode._wrap(dnode)
+
+    def get_cdbg_unode_from_id(self, id_t node_id):
+        cdef _UnitigNode * unode = deref(self._cdbg).get_unitig_node_from_id(node_id)
+        return None if unode == NULL else UnitigNode._wrap(unode)
         
 
     def insert_sequence(self, str sequence):
