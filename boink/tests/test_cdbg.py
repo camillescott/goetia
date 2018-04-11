@@ -82,6 +82,10 @@ def test_find_decision_nodes_objects(ksize, graph, compactor, right_fork):
     print(unode.sequence)
     assert dnode.sequence == unode.sequence[-ksize:]
 
-    assert False
+    assert dnode.out_degree == 2
+    for out_id in dnode.out_edges():
+        unode = compactor.get_cdbg_unode_from_id(out_id)
+        assert dnode.sequence == unode.sequence[:ksize]
+
     #assert node.out_degree == 2
     #assert hashes == [graph.hash(core[pos:pos+ksize])]

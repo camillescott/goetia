@@ -666,6 +666,54 @@ public:
                                                                  root_dnode);
             }
 
+            for (kmer_t right_neighbor : root_neighbors.second) {
+                if (updated_from.count(right_neighbor.hash)) {
+                    continue;
+                }
+                DecisionNode* right_dnode;
+                if ((right_dnode = cdbg.get_decision_node(right_neighbor.hash)) 
+                    != nullptr) {
+                    // handle trivial unitig nodes
+                    continue;
+                }
+
+                this->set_cursor(right_neighbor.kmer);
+                Path this_segment;
+                this->get_cursor(this_segment);
+                this_segment.push_front(root_dnode->sequence.front());
+
+                InteriorMinimizer<hash_t> minimizer(_minimizer_window_size);
+                this->compactify_right(this_segment, minimizer);
+                
+                hash_t right_hash = this->get();
+                hash_t left_hash = right_neighbor.hash;
+
+                updated_from.insert(left_hash);
+                updated_from.insert(right_hash);
+
+                UnitigNode* existing_unitig = cdbg.get_unitig_node(right_hash);
+
+                if (existing_unitig != nullptr) { 
+                    if (existing_unitig->right_hash == right_hash &&
+                        existing_unitig->right_hash == right_hash) {
+                    
+                        continue;
+                    } else {
+                        cdbg.delete_unitig_node(existing_unitig);
+                    }
+                }
+
+                string segment_seq = this->to_string(this_segment);
+                HashVector tags = minimizer.get_minimizer_values();
+                right_dnode = cdbg.get_decision_node(right_hash);
+                UnitigNode * new_unitig = cdbg.build_unitig_node(tags,
+                                                                 segment_seq,
+                                                                 left_hash,
+                                                                 right_hash,
+                                                                 root_dnode,
+                                                                 right_dnode);
+            }
+
             updated_from.insert(root_dnode->node_id);
         }
         pdebug("finished _update_from_dnodes with " << updated_from.size()

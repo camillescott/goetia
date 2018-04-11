@@ -68,6 +68,12 @@ cdef class DecisionNode(CompactNode):
         for node_id in deref(self._dn_this).in_edges:
             yield node_id
 
+
+    def out_edges(self):
+        cdef id_t node_id
+        for node_id in deref(self._dn_this).out_edges:
+            yield node_id
+
     '''
 
 
