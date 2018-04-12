@@ -207,16 +207,15 @@ class BoinkBuildExt(_build_ext):
     def run(self):
         if HAS_CYTHON:
             print('*** NOTE: Found Cython, extension files will be '
-                  'transpiled if this is an install invocation.',
-                  file=sys.stderr)
+                  'transpiled if this is an install invocation.')
         else:
             print('*** WARNING: Cython not found, assuming cythonized '
-                  'files available for compilation.', file=sys.stderr)
+                  'files available for compilation.')
 
         extensions = ('{0}:{1}'.format(x, y) for x, y in EXTENSION_NAMES)
-        print('*** EXTENSIONS:', ', '.join(extensions), file=sys.stderr)
-        print('*** INCLUDES:', ', '.join(DEPENDS), file=sys.stderr)
-        print('*** SOURCES:', ', '.join(SOURCES), file=sys.stderr)
+        print('*** EXTENSIONS:', ', '.join(extensions))
+        print('*** INCLUDES:', ', '.join(DEPENDS))
+        print('*** SOURCES:', ', '.join(SOURCES))
 
         _build_ext.run(self)
 

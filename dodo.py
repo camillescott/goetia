@@ -4,6 +4,7 @@ from collections import OrderedDict
 import glob
 import itertools
 import os
+import sysconfig
 
 from doit import create_after
 from doit.task import clean_targets
@@ -11,9 +12,10 @@ from jinja2 import Environment, PackageLoader, select_autoescape
 
 from boink.types import PARAMS
 
+DOIT_CONFIG = {'verbosity': 2}
 
 PKG       = 'boink'
-MODEXT    = sysconfig.get_config_var('SO')
+MOD_EXT    = sysconfig.get_config_var('SO')
 PYX_FILES = list(glob.glob(os.path.join(PKG, '*.pyx')))
 PXD_FILES = list(glob.glob(os.path.join(PKG, '*.pxd')))
 PY_FILES  = list(glob.glob('boink/**/*.py', recursive=True))
@@ -21,9 +23,9 @@ EXT_SOS   = [pyx[:-4]+MOD_EXT for pyx in PYX_FILES]
 
 HEADERS   = ['dbg.hh', 'cdbg.hh', 'hashing.hh', 'assembly.hh', 'boink.hh',
              'consumer.hh', 'minimizers.hh']
-HEADERS   = [os.path.join('include', 'boink', filename) for filename in DEPENDS]
+HEADERS   = [os.path.join('include', 'boink', filename) for filename in HEADERS]
 
-SOURCES   = [filename[:-2] + '.cc' for filename in DEPENDS]
+SOURCES   = [filename[:-2] + '.cc' for filename in HEADERS]
 SOURCES   = [filename for filename in SOURCES if os.path.isfile(filename)]
 
 
@@ -38,22 +40,22 @@ def generate_cpp_params(type_dict, cppclass='class'):
     cppclasses = []
     for param_bundle in itertools.product(*(v for _, v in type_dict.items())):
         result = {}
-        for name, param in zip(kwargs.keys(), param_bundle):
+        for name, param in zip(type_dict.keys(), param_bundle):
             result[name] = param
         result['suffix'] = '_'.join(param_bundle)
         result['params'] = ','.join((p.strip('_') for p in param_bundle))
         results.append(result)
-        cppclasses.append('{0}[{1}]'.format(result['params']))
+        cppclasses.append('{0}[{1}]'.format(cppclass, result['params']))
     return results, cppclasses
 
 
 def get_templates(mod_prefix):
     env = get_template_env()
     
-    pxd_template = env.get_template('{0}.tpl.pxd'.format(prefix))
-    pxd_dst_path = os.path.join('boink', '{0}.pxd.pxi'.format(prefix))
-    pyx_template = env.get_template('{0}.tpl.pyx'.format(prefix))
-    pyx_dst_path = os.path.join('boink', '{0}.pyx.pxi'.format(prefix))
+    pxd_template = env.get_template('{0}.tpl.pxd'.format(mod_prefix))
+    pxd_dst_path = os.path.join('boink', '{0}.pxd.pxi'.format(mod_prefix))
+    pyx_template = env.get_template('{0}.tpl.pyx'.format(mod_prefix))
+    pyx_dst_path = os.path.join('boink', '{0}.pyx.pxi'.format(mod_prefix))
 
     return (pxd_template, pxd_dst_path,
             pyx_template, pyx_dst_path)
@@ -68,10 +70,10 @@ def render(pxd_template, pxd_dst_path,
                                        type_bundles=type_bundles)
         fp.write(rendered)
     with open(pyx_dst_path, 'w') as fp:
-        res = pyx_tpl.render(dst_filename=pyx_dst_path,
-                             tpl_filename=pyx_template.name,
-                             type_list=type_list)
-        fp.write(res)
+        rendered = pyx_template.render(dst_filename=pyx_dst_path,
+                                       tpl_filename=pyx_template.name,
+                                       type_bundles=type_bundles)
+        fp.write(rendered)
 
 
 def setupcmd(cmd):
@@ -80,16 +82,17 @@ def setupcmd(cmd):
 
 def jinja_render_task(mod_prefix, type_dict):
 
-    pxd_tpl, pxd_dst, pyx_tpl, pyx_dst = get_template(mod_prefix)
+    pxd_tpl, pxd_dst, pyx_tpl, pyx_dst = get_templates(mod_prefix)
     type_bundles, _ = generate_cpp_params(type_dict)
                                                                  
 
     return {'name': '{0}_types'.format(mod_prefix),
-            'actions': [(render, [pxd_tpl, pxd_dst_path,
-                                  pyx_tpl, pyx_dst_path,
+            'actions': [(render, [pxd_tpl, pxd_dst,
+                                  pyx_tpl, pyx_dst,
                                   type_bundles])],
-            'targets': [pxd_dst_path, pyx_dst_path],
-            'file_dep': [pxd_tpl.name, pyx_tpl.name]}
+            'targets': [pxd_dst, pyx_dst],
+            'file_dep': [os.path.join(PKG, 'templates', pxd_tpl.name),
+                         os.path.join(PKG, 'templates', pyx_tpl.name)]}
 
 
 def task_render_extension_classes():
@@ -108,6 +111,18 @@ def task_test():
                         'py.test --pyargs boink.tests']}
 
 
+CLEAN_ACTIONS = \
+[
+    'rm -f {0}/*.cpp'.format(PKG),
+    'rm -f {0}/*.so'.format(PKG),
+    'find ./ -type d -name __pycache__ -exec rm -rf {} +',
+    'find ./{0}/ -type f -name *{1} -exec rm -f {{}} +'.format(PKG, MOD_EXT),
+    'find ./{0}/ -type f -name *.pyc -exec rm -f {{}} +'.format(PKG),
+    'find ./{0}/ -type f -name *.cpp -exec rm -f {{}} +'.format(PKG),
+    'rm -rf build dist {0}.egg-info'.format(PKG)
+]
+
+
 @create_after(executed='render_extension_classes',
               target_regex='.*\\'+MOD_EXT)
 def task_build():
@@ -118,18 +133,5 @@ def task_build():
                         SOURCES,
             'targets': EXT_SOS,
             'actions': [setupcmd(['build_ext', '--inplace'])],
-            'clean': True}
-
-
-def task_clean():
-    actions = [
-    'rm -f {0}/*.cpp'.format(PKG),
-	'rm -f {0}/*.so'.format(PKG),
-	'@find ./ -type d -name __pycache__ -exec rm -rf {} +',
-	'@find ./{0}/ -type f -name *{1} -exec rm -f {{}} +'.format(PKG, MODEXT),
-	'@find ./{0}/ -type f -name *.pyc -exec rm -f {{}} +'.format(PKG),
-	'@find ./{0}/ -type f -name *.cpp -exec rm -f {{}} +'.format(PKG),
-	'rm -rf build dist {0}.egg-info'.format(PKG)
-    ]
-    return {'actions': actions}
+            'clean':   CLEAN_ACTIONS}
 
