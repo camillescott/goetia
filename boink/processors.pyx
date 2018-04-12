@@ -54,3 +54,27 @@ cdef class DecisionNodeProcessor:
                                       output_interval)
 
         return n_reads, n_kmers
+
+
+cdef class MinimizerProcessor:
+
+    def __cinit__(self, int64_t window_size,
+                        uint16_t ksize,
+                        str output_filename):
+        cdef string _output_filename = _bstring(output_filename)
+        self._mp_this = make_unique[_MinimizerProcessor[DefaultShifter]](window_size,
+                                                                         ksize,
+                                                                         _output_filename)
+    def process(self, str input_filename, uint32_t output_interval=10000):
+        cdef uint64_t n_reads = 0
+        cdef uint64_t n_kmers = 0
+
+        deref(self._mp_this).process(_bstring(input_filename),
+                                      n_reads,
+                                      n_kmers,
+                                      output_interval)
+
+        return n_reads, n_kmers
+
+
+

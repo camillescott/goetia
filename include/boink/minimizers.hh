@@ -92,7 +92,10 @@ public:
     std::pair<T, int64_t> update(T new_value) {
         auto current = RollingMin<T>::update(new_value);
         if (this->_current_index >= this->_window_size) {
-            minimizers.push_back(current);
+            if (minimizers.empty() ||
+                current != minimizers.back()) {
+                minimizers.push_back(current);
+            }
         }
         return current;
     }

@@ -83,7 +83,7 @@ public:
             }
 
             read.set_clean_seq();
-            uint64_t this_n_consumed = derived().process_sequence(read.cleaned_seq,
+            uint64_t this_n_consumed = derived().process_sequence(read,
                                                                   n_reads);
                 
             __sync_add_and_fetch( &n_consumed, this_n_consumed );
@@ -129,9 +129,9 @@ public:
 
     }
 
-    uint64_t process_sequence(const std::string& sequence,
+    uint64_t process_sequence(const Read& read,
                               const uint64_t read_n) {
-        return graph->add_sequence(sequence);
+        return graph->add_sequence(read.cleaned_seq);
     }
 
 };
@@ -166,16 +166,16 @@ public:
         _output_stream.close();
     }
 
-    uint64_t process_sequence(const std::string& sequence,
+    uint64_t process_sequence(const Read& read,
                               const uint64_t read_n) {
-        uint64_t n_new = graph->add_sequence(sequence);
+        uint64_t n_new = graph->add_sequence(read.cleaned_seq);
         if (n_new > 0) {
             std::vector<uint32_t> decision_positions;
             HashVector decision_hashes;
             std::vector<NeighborBundle> decision_neighbors;
             std::set<hash_t> new_kmers;
 
-            compactor->find_decision_nodes(sequence,
+            compactor->find_decision_nodes(read.cleaned_seq,
                                            decision_positions,
                                            decision_hashes,
                                            decision_neighbors);
@@ -205,11 +205,37 @@ class MinimizerProcessor : public FileProcessor<MinimizerProcessor<ShifterType, 
 protected:
 
     WKMinimizer<ShifterType> M;
+    std::string _output_filename;
+    std::ofstream _output_stream;
 
 public:
 
-    MinimizerProcessor(int32_t window_size)
-        : M(window_size) {}
+    MinimizerProcessor(int32_t window_size,
+                       uint16_t K,
+                       const std::string& output_filename)
+        : M(window_size, K),
+          _output_filename(output_filename),
+          _output_stream(_output_filename.c_str()) {
+    
+    }
+
+    ~MinimizerProcessor() {
+        _output_stream.close();
+    }
+
+    uint64_t process_sequence(const Read& read,
+                              const uint64_t read_n) {
+        std::vector<typename WKMinimizer<ShifterType>::value_type> minimizers;
+        minimizers = M.get_minimizers(read.cleaned_seq);
+
+        for (auto min : minimizers) {
+            _output_stream << read_n << ","
+                           << min.second << ","
+                           << min.first << ","
+                           << read.cleaned_seq.substr(min.second, M.K())
+                           << std::endl;
+        }
+    }
 };
 
 } //namespace boink
