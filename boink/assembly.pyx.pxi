@@ -75,7 +75,6 @@ cdef class Assembler_BitStorage_DefaultShifter(Assembler_Base):
             deref(self._this).assemble_right(_bstring(seed), path)
 
         return deref(self._this).to_string(path)
-
 cdef class Assembler_NibbleStorage_DefaultShifter(Assembler_Base):
 
     def __cinit__(self, dBG_NibbleStorage_DefaultShifter graph):
@@ -130,7 +129,6 @@ cdef class Assembler_NibbleStorage_DefaultShifter(Assembler_Base):
             deref(self._this).assemble_right(_bstring(seed), path)
 
         return deref(self._this).to_string(path)
-
 cdef class Assembler_ByteStorage_DefaultShifter(Assembler_Base):
 
     def __cinit__(self, dBG_ByteStorage_DefaultShifter graph):
@@ -187,20 +185,16 @@ cdef class Assembler_ByteStorage_DefaultShifter(Assembler_Base):
         return deref(self._this).to_string(path)
 
 
-
 cdef object _make_assembler(dBG_Base graph):
     if graph.storage_type == "BitStorage" and \
        graph.shifter_type == "DefaultShifter":
         return Assembler_BitStorage_DefaultShifter(graph)
-
     if graph.storage_type == "NibbleStorage" and \
        graph.shifter_type == "DefaultShifter":
         return Assembler_NibbleStorage_DefaultShifter(graph)
-
     if graph.storage_type == "ByteStorage" and \
        graph.shifter_type == "DefaultShifter":
         return Assembler_ByteStorage_DefaultShifter(graph)
-
 
     raise TypeError("Invalid dBG type.")
 

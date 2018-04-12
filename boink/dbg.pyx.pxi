@@ -24,12 +24,13 @@ cdef class dBG_Base:
     def __cinit__(self, *args, **kwargs):
         self.allocated = False
 
+
 cdef class dBG_BitStorage_DefaultShifter(dBG_Base):
 
     def __cinit__(self, int K, uint64_t starting_size, int n_tables,
                   *args, **kwargs):
         cdef vector[uint64_t] primes
-        #if type(self) is dBG_BitStorage_DefaultShifter:
+        #if type(self) is dBG_:
         if not self._this:
             primes = get_n_primes_near_x(n_tables, starting_size)
             self._this = make_unique[_dBG[BitStorage,DefaultShifter]](K, primes)
@@ -124,13 +125,12 @@ cdef class dBG_BitStorage_DefaultShifter(dBG_Base):
         cdef dBG_BitStorage_DefaultShifter obj = cls(1, 1, 1)
         deref(obj._this).load(_bstring(file_name))
         return obj
-
 cdef class dBG_NibbleStorage_DefaultShifter(dBG_Base):
 
     def __cinit__(self, int K, uint64_t starting_size, int n_tables,
                   *args, **kwargs):
         cdef vector[uint64_t] primes
-        #if type(self) is dBG_NibbleStorage_DefaultShifter:
+        #if type(self) is dBG_:
         if not self._this:
             primes = get_n_primes_near_x(n_tables, starting_size)
             self._this = make_unique[_dBG[NibbleStorage,DefaultShifter]](K, primes)
@@ -225,13 +225,12 @@ cdef class dBG_NibbleStorage_DefaultShifter(dBG_Base):
         cdef dBG_NibbleStorage_DefaultShifter obj = cls(1, 1, 1)
         deref(obj._this).load(_bstring(file_name))
         return obj
-
 cdef class dBG_ByteStorage_DefaultShifter(dBG_Base):
 
     def __cinit__(self, int K, uint64_t starting_size, int n_tables,
                   *args, **kwargs):
         cdef vector[uint64_t] primes
-        #if type(self) is dBG_ByteStorage_DefaultShifter:
+        #if type(self) is dBG_:
         if not self._this:
             primes = get_n_primes_near_x(n_tables, starting_size)
             self._this = make_unique[_dBG[ByteStorage,DefaultShifter]](K, primes)
@@ -327,34 +326,32 @@ cdef class dBG_ByteStorage_DefaultShifter(dBG_Base):
         deref(obj._this).load(_bstring(file_name))
         return obj
 
-
 cdef object _make_dbg(int K, uint64_t starting_size, int n_tables,
                       str storage='BitStorage',
                       str shifter='DefaultShifter'):
-
-    if storage == "BitStorage" and shifter == "DefaultShifter":
+    if storage == "BitStorage" and \
+       shifter == "DefaultShifter":
         return dBG_BitStorage_DefaultShifter(K, starting_size, n_tables)
-
-    if storage == "NibbleStorage" and shifter == "DefaultShifter":
+    if storage == "NibbleStorage" and \
+       shifter == "DefaultShifter":
         return dBG_NibbleStorage_DefaultShifter(K, starting_size, n_tables)
-
-    if storage == "ByteStorage" and shifter == "DefaultShifter":
+    if storage == "ByteStorage" and \
+       shifter == "DefaultShifter":
         return dBG_ByteStorage_DefaultShifter(K, starting_size, n_tables)
-
     raise TypeError("Invalid Storage or Shifter type.")
 
 
 def get_dbg_type(str storage='BitStorage',
                  str shifter='DefaultShifter'):
-    if storage == "BitStorage" and shifter == "DefaultShifter":
+    if storage == "BitStorage" and \
+       shifter == "DefaultShifter":
         return dBG_BitStorage_DefaultShifter
-
-    if storage == "NibbleStorage" and shifter == "DefaultShifter":
+    if storage == "NibbleStorage" and \
+       shifter == "DefaultShifter":
         return dBG_NibbleStorage_DefaultShifter
-
-    if storage == "ByteStorage" and shifter == "DefaultShifter":
+    if storage == "ByteStorage" and \
+       shifter == "DefaultShifter":
         return dBG_ByteStorage_DefaultShifter
-
     raise TypeError("Invalid Storage or Shifter type: ({0},{1})".format(storage, shifter))
 
 
