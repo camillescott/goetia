@@ -55,6 +55,10 @@ def check_for_openmp():
     return exit_code == 0
 
 
+def replace_ext(filename, ext):
+    return os.path.splitext(filename)[0] + ext
+
+
 def distutils_dir_name(dname):
     """Returns the name of a distutils build directory"""
     f = "{dirname}.{platform}-{version[0]}.{version[1]}"
@@ -98,3 +102,98 @@ class BoinkReporter(ConsoleReporter):
     def skip_ignore(self, task):
         self.divider()
         super().skip_ignore(task)
+
+
+def get_cpp_includes(filename):
+    with open(filename) as fp:
+        for line in fp:
+            line = line.strip()
+            if line.startswith('#include'):
+                line = line.split()
+                name_token = line[1]
+                include_filename = name_token.strip('"<>"')
+                if include_filename.endswith('.hh'):
+                    yield include_filename
+
+
+def get_pxd_includes(filename):
+    with open(filename) as fp:
+        for line in fp:
+            line = line.strip()
+            if line.startswith('cdef extern from'):
+                tokens = line.split()
+                include_filename = tokens[3].strip('"')
+                include_filename = os.path.basename(include_filename)
+                if include_filename.endswith('.hh'):
+                    yield include_filename
+
+
+def get_object_dependencies(source_filename):
+    header_filename = os.path.splitext(source_filename)[0] + '.hh'
+    for fn in get_cpp_includes([source_filename, header_filename]):
+        yield fn
+
+
+def get_pyx_imports(filename, mods, MOD_EXT):
+    mods = [os.path.basename(fn) for fn in mods]
+    with open(filename) as fp:
+        for line in fp:
+            line = line.strip()
+            if 'cimport'  in line:
+                tokens = line.split()
+                mod = tokens[1].strip('.')
+                mod = mod.split('.')[-1]
+                mod = mod + MOD_EXT
+                if mod in mods:
+                    yield mod
+
+
+def resolve_dependencies(PYX_FILES, PYX_NAMES, PXD_FILES, PXD_NAMES,
+                         SOURCE_FILES, SOURCE_NAMES, HEADER_FILES, HEADER_NAMES,
+                         EXT_SOS, MOD_EXT, INCLUDE_DIR, PKG):
+    HEADERS = dict(zip(HEADER_NAMES, HEADER_FILES))
+    PXD     = dict(zip(PXD_NAMES, PXD_FILES))
+    PYX     = dict(zip(PYX_NAMES, PYX_FILES))
+    SOURCES = dict(zip(SOURCE_NAMES, SOURCE_FILES))
+
+    def _resolve_dependencies(filename, includes):
+        if not os.path.isfile(filename):
+            print('not found:', filename)
+            return includes
+
+        if filename.endswith('.hh'):
+            _includes = set()
+            _includes.update(get_cpp_includes(filename))
+            _includes = {inc for inc in _includes if inc in HEADERS}
+            return includes | _includes
+        elif filename.endswith('.cc'):
+            _includes = set()
+            _header_path = HEADERS[replace_ext(os.path.basename(filename), '.hh')]
+            _includes.update(_resolve_dependencies(_header_path, _includes))
+            _includes.update(get_cpp_includes(filename))
+            return includes | _includes
+        elif filename.endswith('.pyx'):
+            _includes = set()
+            _mod_imports = get_pyx_imports(filename, EXT_SOS, MOD_EXT)
+            _includes.update(_mod_imports)
+            _pxd_path = replace_ext(filename, '.pxd')
+            _includes.update(_resolve_dependencies(_pxd_path, _includes))
+            return includes | _includes
+        elif filename.endswith('.pxd'):
+            _includes = {os.path.basename(filename)}
+            _mod_imports = get_pyx_imports(filename, EXT_SOS, MOD_EXT)
+            _includes.update(_mod_imports)
+            _includes.update(get_pxd_includes(filename))
+            return includes | _includes
+        else:
+            return includes
+
+    DEP_MAP = {}
+    for mod in EXT_SOS:
+        pyx = os.path.basename(mod).split('.')[0] + '.pyx'
+        pyx_file = PYX[pyx]
+        includes = {pyx}
+        includes.update(_resolve_dependencies(pyx_file, includes))
+        DEP_MAP[mod] = includes
+
+    return DEP_MAP
