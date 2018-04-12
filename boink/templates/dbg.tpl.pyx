@@ -51,7 +51,7 @@ cdef class dBG_{{type_bundle.suffix}}(dBG_Base):
         return handled
 
     def clone(self):
-        cdef dBG_{{suffix}} cloned = dBG_{{type_bundle.suffix}}(1,1,1)
+        cdef dBG_{{type_bundle.suffix}} cloned = dBG_{{type_bundle.suffix}}(1,1,1)
         cloned._this = deref(self._this).clone()
         cloned._assembler.reset(new _AssemblerMixin[_dBG[{{type_bundle.params}}]](self._this.get()))
         return cloned
@@ -145,7 +145,7 @@ def get_dbg_type(str storage='BitStorage',
     if storage == "{{type_bundle.storage_type}}" and \
        shifter == "{{type_bundle.shifter_type}}":
         return dBG_{{type_bundle.suffix}}
-    {% endcall %}
+    {% endfor %}
     raise TypeError("Invalid Storage or Shifter type: ({0},{1})".format(storage, shifter))
 
 
