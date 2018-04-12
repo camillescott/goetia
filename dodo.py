@@ -20,7 +20,8 @@ from build_utils import (check_for_openmp,
 from boink.types import PARAMS
 
 DOIT_CONFIG = {'verbosity': 2,
-               'reporter': BoinkReporter}
+               'reporter': BoinkReporter,
+               'default_tasks': ['build']}
 
 
 PKG       = 'boink'
@@ -282,7 +283,7 @@ def task_install():
     return {'actions': [setupcmd(['install'])]}
 
 
-def _task_test():
+def task_test():
     return {'actions': [setupcmd(['develop']),
                         'py.test --pyargs boink.tests']}
 
