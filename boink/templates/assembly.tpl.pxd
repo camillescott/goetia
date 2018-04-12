@@ -6,7 +6,6 @@
  # of the MIT license.  See the LICENSE file for details.
  #}
 {% extends "base.tpl" %}
-{% from "dbg_types.tpl" import iter_types %}
 {% block code %}
 
 from libcpp.memory cimport unique_ptr
@@ -18,13 +17,12 @@ cdef class Assembler_Base:
     cdef readonly object storage_type
     cdef readonly object shifter_type
 
-
-{% call(Storage_t, Shifter_t, tparams, suffix) iter_types(Storage_types, Shifter_types) %}
-cdef class Assembler_{{suffix}}(Assembler_Base):
-    cdef unique_ptr[_AssemblerMixin[_dBG[{{tparams}}]]] _this
-    cdef _dBG[{{tparams}}] * _graph
-    cdef readonly dBG_{{suffix}} Graph
-{% endcall %}
+{% for type_bundle in type_bundles %}
+cdef class Assembler_{{type_bundle.suffix}}(Assembler_Base):
+    cdef unique_ptr[_AssemblerMixin[_dBG[{{type_bundle.params}}]]] _this
+    cdef _dBG[{{type_bundle.params}}] * _graph
+    cdef readonly dBG_{{type_bundle.suffix}} Graph
+{% endfor %}
 
 cdef object _make_assembler(dBG_Base graph)
 

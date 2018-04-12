@@ -6,7 +6,6 @@
  # of the MIT license.  See the LICENSE file for details.
  #}
 {% extends "base.tpl" %}
-{% from "dbg_types.tpl" import iter_types %}
 {% block code %}
 
 from cython.operator cimport dereference as deref
@@ -22,12 +21,12 @@ from boink.utils cimport *
 cdef class Assembler_Base:
     pass
 
-{% call(Storage_t, Shifter_t, tparams, suffix) iter_types(Storage_types, Shifter_types) %}
-cdef class Assembler_{{suffix}}(Assembler_Base):
+{% for type_bundle in type_bundles %}
+cdef class Assembler_{{type_bundle.suffix}}(Assembler_Base):
 
-    def __cinit__(self, dBG_{{suffix}} graph):
-        if type(self) is Assembler_{{suffix}}:
-            self._this = make_unique[_AssemblerMixin[_dBG[{{tparams}}]]](graph._this.get())
+    def __cinit__(self, dBG_{{type_bundle.suffix}} graph):
+        if type(self) is Assembler_{{type_bundle.suffix}}:
+            self._this = make_unique[_AssemblerMixin[_dBG[{{type_bundle.params}}]]](graph._this.get())
             self._graph = graph._this.get()
             self.Graph = graph
         self.storage_type = graph.storage_type
@@ -77,15 +76,15 @@ cdef class Assembler_{{suffix}}(Assembler_Base):
             deref(self._this).assemble_right(_bstring(seed), path)
 
         return deref(self._this).to_string(path)
-{% endcall %}
+{% endfor %}
 
 
 cdef object _make_assembler(dBG_Base graph):
-    {% call(Storage_t, Shifter_t, tparams, suffix) iter_types(Storage_types, Shifter_types) %}
-    if graph.storage_type == "{{Storage_t}}" and \
-       graph.shifter_type == "{{Shifter_t}}":
-        return Assembler_{{suffix}}(graph)
-    {% endcall %}
+    {% for type_bundle in type_bundles %}
+    if graph.storage_type == "{{type_bundle.storage_type}}" and \
+       graph.shifter_type == "{{type_bundle.shifter_type}}":
+        return Assembler_{{type_bundle.suffix}}(graph)
+    {% endfor %}
 
     raise TypeError("Invalid dBG type.")
 

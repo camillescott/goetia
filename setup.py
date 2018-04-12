@@ -21,7 +21,6 @@ from distutils.errors import DistutilsPlatformError
 from setuptools.command.build_ext import build_ext as _build_ext
 
 import numpy
-from jinja2 import Environment, PackageLoader, select_autoescape
 
 try:
     import Cython
@@ -104,42 +103,6 @@ def distutils_dir_name(dname):
 
 def build_dir():
     return path_join("build", distutils_dir_name("temp"))
-
-
-def get_typegen_env():
-    return Environment(loader=PackageLoader('boink', 'templates'),
-                       trim_blocks=True,
-                       lstrip_blocks=True)
-
-
-def get_boink_types():
-    storage = ['BitStorage', 'NibbleStorage', 'ByteStorage']
-    shifters = ['DefaultShifter']
-    return storage, shifters
-
-
-def generate_cython_templates():
-    env = get_typegen_env()
-    storages, shifters = get_boink_types()
-
-    for prefix in ['dbg', 'assembly']:
-        pxd_tpl = env.get_template('{0}.tpl.pxd'.format(prefix))
-        dst = os.path.join('boink', '{0}.pxd.pxi'.format(prefix))
-        with open(dst, 'w') as fp:
-            res = pxd_tpl.render(Storage_types=storages,
-                                 Shifter_types=shifters,
-                                 dst_filename=dst,
-                                 tpl_filename = pxd_tpl.name)
-            fp.write(res)
-
-        pyx_tpl = env.get_template('{0}.tpl.pyx'.format(prefix))
-        dst = os.path.join('boink', '{0}.pyx.pxi'.format(prefix))
-        with open(dst, 'w') as fp:
-            res = pyx_tpl.render(Storage_types=storages,
-                                 Shifter_types=shifters,
-                                 dst_filename=dst,
-                                 tpl_filename=pyx_tpl.name)
-            fp.write(res)
 
 
 # Don't forget to update lib/Makefile with these flags!
@@ -250,7 +213,6 @@ class BoinkBuildExt(_build_ext):
             print('*** WARNING: Cython not found, assuming cythonized '
                   'files available for compilation.', file=sys.stderr)
 
-        generate_cython_templates()
         extensions = ('{0}:{1}'.format(x, y) for x, y in EXTENSION_NAMES)
         print('*** EXTENSIONS:', ', '.join(extensions), file=sys.stderr)
         print('*** INCLUDES:', ', '.join(DEPENDS), file=sys.stderr)

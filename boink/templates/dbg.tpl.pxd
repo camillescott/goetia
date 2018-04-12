@@ -6,7 +6,6 @@
  # of the MIT license.  See the LICENSE file for details.
  #}
 {% extends "base.tpl" %}
-{% from "dbg_types.tpl" import iter_types %}
 {% block code %}
 
 from libcpp.memory cimport unique_ptr
@@ -18,15 +17,14 @@ cdef class dBG_Base:
     cdef readonly object suffix
     cdef object allocated
 
-
-{% call(Storage_t, Shifter_t, tparams, suffix) iter_types(Storage_types, Shifter_types) %}
-cdef class dBG_{{suffix}}(dBG_Base):
-    cdef unique_ptr[_dBG[{{tparams}}]] _this
-    cdef unique_ptr[_AssemblerMixin[_dBG[{{tparams}}]]] _assembler
+{% for type_bundle in type_bundles %}
+cdef class dBG_{{type_bundle.suffix}}(dBG_Base):
+    cdef unique_ptr[_dBG[{{type_bundle.params}}]] _this
+    cdef unique_ptr[_AssemblerMixin[_dBG[{{type_bundle.params}}]]] _assembler
     cdef hash_t _handle_kmer(self, object) except 0
-{% endcall %}
+{% endfor %}
 
 cdef object _make_dbg(int K, uint64_t starting_size, int n_tables, 
-                     str storage=*, str shifter=*)
+                      str storage=*, str shifter=*)
 
 {% endblock code %}

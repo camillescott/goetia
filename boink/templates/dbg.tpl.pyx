@@ -6,7 +6,6 @@
  # of the MIT license.  See the LICENSE file for details.
  #}
 {% extends "base.tpl" %}
-{% from "dbg_types.tpl" import iter_types %}
 {% block code %}
 
 from cython.operator cimport dereference as deref
@@ -25,8 +24,9 @@ cdef class dBG_Base:
     def __cinit__(self, *args, **kwargs):
         self.allocated = False
 
-{% call(Storage_t, Shifter_t, tparams, suffix) iter_types(Storage_types, Shifter_types) %}
-cdef class dBG_{{suffix}}(dBG_Base):
+
+{% for type_bundle in type_bundles %}
+cdef class dBG_{{type_bundle.suffix}}(dBG_Base):
 
     def __cinit__(self, int K, uint64_t starting_size, int n_tables,
                   *args, **kwargs):
@@ -34,13 +34,13 @@ cdef class dBG_{{suffix}}(dBG_Base):
         #if type(self) is dBG_{{suffix}}:
         if not self._this:
             primes = get_n_primes_near_x(n_tables, starting_size)
-            self._this = make_unique[_dBG[{{tparams}}]](K, primes)
-            self._assembler = make_unique[_AssemblerMixin[_dBG[{{tparams}}]]](self._this.get())
+            self._this = make_unique[_dBG[{{type_bundle.params}}]](K, primes)
+            self._assembler = make_unique[_AssemblerMixin[_dBG[{{type_bundle.params}}]]](self._this.get())
             self.allocated = True
 
-        self.storage_type = "{{Storage_t}}"
-        self.shifter_type = "{{Shifter_t}}"
-        self.suffix = "{{suffix}}"
+        self.storage_type = "{{type_bundle.storage_type}}"
+        self.shifter_type = "{{type_bundle.shifter_type}}"
+        self.suffix = "{{type_bundle.suffix}}"
 
     cdef hash_t _handle_kmer(self, object kmer) except 0:
         cdef hash_t handled
@@ -51,9 +51,9 @@ cdef class dBG_{{suffix}}(dBG_Base):
         return handled
 
     def clone(self):
-        cdef dBG_{{suffix}} cloned = dBG_{{suffix}}(1,1,1)
+        cdef dBG_{{suffix}} cloned = dBG_{{type_bundle.suffix}}(1,1,1)
         cloned._this = deref(self._this).clone()
-        cloned._assembler.reset(new _AssemblerMixin[_dBG[{{tparams}}]](self._this.get()))
+        cloned._assembler.reset(new _AssemblerMixin[_dBG[{{type_bundle.params}}]](self._this.get()))
         return cloned
 
     def add(self, object kmer):
@@ -67,7 +67,7 @@ cdef class dBG_{{suffix}}(dBG_Base):
 
     def hashes(self, str sequence):
         cdef bytes _sequence = _bstring(sequence)
-        cdef unique_ptr[_KmerIterator[{{Shifter_t}}]] kmer_iter = \
+        cdef unique_ptr[_KmerIterator[{{type_bundle.shifter_type}}]] kmer_iter = \
                 deref(self._this).get_hash_iter(_sequence)
 
         cdef hash_t h
@@ -123,27 +123,28 @@ cdef class dBG_{{suffix}}(dBG_Base):
 
     @classmethod
     def load(cls, file_name):
-        cdef dBG_{{suffix}} obj = cls(1, 1, 1)
+        cdef dBG_{{type_bundle.suffix}} obj = cls(1, 1, 1)
         deref(obj._this).load(_bstring(file_name))
         return obj
-{% endcall %}
+{% endfor %}
 
 cdef object _make_dbg(int K, uint64_t starting_size, int n_tables,
                       str storage='BitStorage',
                       str shifter='DefaultShifter'):
-
-    {% call(Storage_t, Shifter_t, tparams, suffix) iter_types(Storage_types, Shifter_types) %}
-    if storage == "{{Storage_t}}" and shifter == "{{Shifter_t}}":
-        return dBG_{{suffix}}(K, starting_size, n_tables)
-    {% endcall %}
+    {% for type_bundle in type_bundles %}
+    if storage == "{{type_bundle.storage_type}}" and \
+       shifter == "{{type_bundle.shifter_type}}":
+        return dBG_{{type_bundle.suffix}}(K, starting_size, n_tables)
+    {% endfor %}
     raise TypeError("Invalid Storage or Shifter type.")
 
 
 def get_dbg_type(str storage='BitStorage',
                  str shifter='DefaultShifter'):
-    {% call(Storage_t, Shifter_t, tparams, suffix) iter_types(Storage_types, Shifter_types) %}
-    if storage == "{{Storage_t}}" and shifter == "{{Shifter_t}}":
-        return dBG_{{suffix}}
+    {% for type_bundle in type_bundles %}
+    if storage == "{{type_bundle.storage_type}}" and \
+       shifter == "{{type_bundle.shifter_type}}":
+        return dBG_{{type_bundle.suffix}}
     {% endcall %}
     raise TypeError("Invalid Storage or Shifter type: ({0},{1})".format(storage, shifter))
 
