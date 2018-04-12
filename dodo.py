@@ -4,6 +4,7 @@ from collections import OrderedDict
 import glob
 import itertools
 import os
+from pprint import pprint
 import sysconfig
 import sys
 
@@ -16,30 +17,42 @@ from build_utils import (check_for_openmp,
                          distutils_dir_name,
                          build_dir,
                          BoinkReporter,
-						 title_with_actions)
+						 title_with_actions,
+                         replace_ext,
+                         resolve_dependencies)
 from boink.types import PARAMS
 
-DOIT_CONFIG = {'verbosity': 2,
-               'reporter': BoinkReporter,
-               'default_tasks': ['build']}
+DOIT_CONFIG  = {'verbosity': 2,
+                'reporter': BoinkReporter,
+                'default_tasks': ['build']}
 
 
-PKG       = 'boink'
-VERSION   = open(os.path.join(PKG, 'VERSION')).read().strip()
-MOD_EXT   = sysconfig.get_config_var('SO')
-PYX_FILES = list(glob.glob(os.path.join(PKG, '*.pyx')))
-PXD_FILES = list(glob.glob(os.path.join(PKG, '*.pxd')))
-PY_FILES  = list(glob.glob('boink/**/*.py', recursive=True))
-EXT_SOS   = [pyx[:-4]+MOD_EXT for pyx in PYX_FILES]
+PKG          = 'boink'
+VERSION      = open(os.path.join(PKG, 'VERSION')).read().strip()
+MOD_EXT      = sysconfig.get_config_var('SO')
+PYX_FILES    = list(glob.glob(os.path.join(PKG, '*.pyx')))
+PYX_NAMES    = [os.path.basename(fn) for fn in PYX_FILES]
+PXD_FILES    = list(glob.glob(os.path.join(PKG, '*.pxd')))
+PXD_NAMES    = [os.path.basename(fn) for fn in PXD_FILES]
+PY_FILES     = list(glob.glob('boink/**/*.py', recursive=True))
+EXT_SOS      = [pyx[:-4]+MOD_EXT for pyx in PYX_FILES]
 
-HEADERS   = ['dbg.hh', 'cdbg.hh', 'hashing.hh', 'assembly.hh', 'boink.hh',
-             'consumer.hh', 'minimizers.hh']
-SOURCES   = [filename[:-3] + '.cc' for filename in HEADERS]
-SOURCES   = [os.path.join('src', PKG, filename) for filename in SOURCES]
-HEADERS   = [os.path.join('include', 'boink', filename) for filename in HEADERS]
-SOURCES   = [filename for filename in SOURCES if os.path.isfile(filename)]
-OBJECTS   = [os.path.splitext(source_file)[0] + '.o' for source_file in SOURCES]
+INCLUDE_DIR  = os.path.join('include', PKG)
+HEADERS      = ['dbg.hh', 'cdbg.hh', 'hashing.hh', 'assembly.hh', 'boink.hh',
+                'consumer.hh', 'minimizers.hh', 'boink.hh']
+HEADER_NAMES = HEADERS
+SOURCES      = [filename[:-3] + '.cc' for filename in HEADERS]
+SOURCE_NAMES = SOURCES
+SOURCES      = [os.path.join('src', PKG, filename) for filename in SOURCES]
+HEADERS      = [os.path.join('include', 'boink', filename) for filename in HEADERS]
+SOURCES      = [filename for filename in SOURCES if os.path.isfile(filename)]
+OBJECTS      = [os.path.splitext(source_file)[0] + '.o' for source_file in SOURCES]
 
+
+DEP_MAP = resolve_dependencies(PYX_FILES, PYX_NAMES, PXD_FILES, PXD_NAMES,
+                               SOURCES, SOURCE_NAMES, HEADERS, HEADER_NAMES,
+                               EXT_SOS, MOD_EXT, INCLUDE_DIR, PKG)
+pprint(DEP_MAP)
 # Start libboink compile vars
 
 PROFILING   = False
