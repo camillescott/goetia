@@ -7,6 +7,15 @@ import tempfile
 from doit.reporter import ConsoleReporter
 
 
+def get_compiler(CXX):
+    output = subprocess.check_output([CXX, '--version'], encoding='UTF-8')
+    print(output)
+    if 'clang' in output:
+        return 'clang'
+    if 'GCC' in output:
+        return 'gcc'
+
+
 # Checking for OpenMP support. Currently clang doesn't work with OpenMP,
 # so it needs to be disabled for now.
 # This function comes from the yt project:
