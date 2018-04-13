@@ -16,6 +16,7 @@ from jinja2 import Environment, PackageLoader, select_autoescape
 from build_utils import (check_for_openmp,
                          distutils_dir_name,
                          build_dir,
+                         lib_dir,
                          BoinkReporter,
 						 title_with_actions,
                          replace_ext,
@@ -63,7 +64,7 @@ DEBUG_FLAGS = ['-g']
 PREFIX      = '/usr/local'
 
 CXX         = os.environ.get('CXX', 'cc')
-INCLUDES    = ['-I', os.path.abspath('include/')]
+INCLUDES    = ['-I', os.path.abspath('include/'), '-I.']
 WARNINGS    = ['-Wall']
 COMMON      = ['-O3', '-fPIC', '-fno-omit-frame-pointer']
 
@@ -100,9 +101,7 @@ if COLOR:
     CXXFLAGS += ['-fdiagnostics-color']
 
 if sys.platform == 'darwin':
-    CXXFLAGS += ['-arch',
-                 'x86_64',
-                 '-mmacosx-version-min=10.7',
+    CXXFLAGS += [ '-mmacosx-version-min=10.7',
                  '-stdlib=libc++']
 
 LIB_VERSION = '1'
@@ -124,6 +123,19 @@ LIBBOINKSHARED = os.path.join(LIBDIR, 'lib{0}.{1}'.format(PKG, SHARED_EXT))
 CXXFLAGS  += ['-DVERSION={0}'.format(VERSION)]
 
 
+CYTHON_DIRECTIVES = \
+{
+    'embedsignature': True,
+    'c_string_type': 'unicode',
+    'c_string_encoding': 'utf8'
+}
+CYTHON_FLAGS     = ['-X', ','.join(('{0}={1}'.format(k, v) \
+                                    for (k, v) in CYTHON_DIRECTIVES.items())),
+                    '-3',
+                    '--line-directives',
+                    '--cplus']
+
+
 def cxx_command(source, target):
     cmd = [ CXX ] \
           + CXXFLAGS \
@@ -139,6 +151,39 @@ def link_command(objects, target):
           + ['-shared', '-o', target] \
           + objects
     return ' '.join(cmd)
+
+
+def cython_command(pyx_file):
+    cmd = [ 'cython' ] \
+          + ['-I include/'] \
+          + CYTHON_FLAGS \
+          + [pyx_file]
+    return ' '.join(cmd)
+
+
+def cy_cxx_command(cy_source, cy_dst):
+    cmd = [ CXX ] \
+          + [sysconfig.get_config_var('CFLAGS')] \
+          + INCLUDES \
+          + ['-I'+sysconfig.get_config_var('INCLUDEPY')] \
+          + LDFLAGS \
+          + ['-c ', cy_source] \
+          + ['-o', cy_dst] \
+          + CXXFLAGS
+    return ' '.join(cmd)
+
+
+def cy_link_command(cy_object, mod):
+    PYLDSHARE = sysconfig.get_config_var('LDSHARED')
+    PYLDSHARE = PYLDSHARE.split()[1:] # remove compiler invoke
+    cmd = [ CXX ] \
+          + PYLDSHARE \
+          + [cy_object] \
+          + LDFLAGS \
+          + ['-o', mod]
+    return ' '.join(cmd)
+
+print(build_dir())
 
 
 def task_display_libboink_config():
@@ -325,3 +370,33 @@ def task_build():
             'actions': [setupcmd(['build_ext', '--inplace'])],
             'clean':   CLEAN_ACTIONS}
 
+def task_cythonize_analysis():
+    source = 'boink/analysis.pyx'
+    target = 'boink/analysis.cpp'
+    return {'title': title_with_actions,
+            'file_dep': [source],
+            'targets': [target,
+                        build_dir()],
+            'actions': ['mkdir -p ' + build_dir(),
+                        cython_command(source)],
+            'clean': True}
+
+def task_compile_analysis_cpp():
+    source = 'boink/analysis.cpp'
+    target = os.path.join(build_dir(), 'analysis.o')
+    return {'title': title_with_actions,
+            'file_dep': [source],
+            'targets': [target],
+            'actions': [cy_cxx_command(source,
+                                       target)],
+            'clean': True}
+
+def task_link_analysis_mod():
+    source = os.path.join(build_dir(), 'analysis.o')
+    target = os.path.join(lib_dir(), 'analysis.cpython-36m-darwin.so')
+    return {'title': title_with_actions,
+            'file_dep': [source],
+            'targets': [target],
+            'actions': ['mkdir -p ' + lib_dir(),
+                        cy_link_command(source, target)],
+            'clean': True}

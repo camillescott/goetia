@@ -2,6 +2,8 @@ import functools
 import os
 import shutil
 import subprocess
+import sys
+import sysconfig
 import tempfile
 
 from doit.reporter import ConsoleReporter
@@ -78,6 +80,10 @@ def distutils_dir_name(dname):
 
 def build_dir():
     return os.path.join("build", distutils_dir_name("temp"))
+
+
+def lib_dir():
+    return os.path.join("build", distutils_dir_name("lib"))
 
 
 def title_with_actions(task):
@@ -173,26 +179,32 @@ def resolve_dependencies(PYX_FILES, PYX_NAMES, PXD_FILES, PXD_NAMES,
         if filename.endswith('.hh'):
             _includes = set()
             _includes.update(get_cpp_includes(filename))
-            _includes = {inc for inc in _includes if inc in HEADERS}
+            _includes = {HEADERS[inc] for inc in _includes}
             return includes | _includes
         elif filename.endswith('.cc'):
             _includes = set()
             _header_path = HEADERS[replace_ext(os.path.basename(filename), '.hh')]
+            _includes.add(_header_path)
             _includes.update(_resolve_dependencies(_header_path, _includes))
             _includes.update(get_cpp_includes(filename))
             return includes | _includes
         elif filename.endswith('.pyx'):
             _includes = set()
             _mod_imports = get_pyx_imports(filename, EXT_SOS, MOD_EXT)
+            _mod_imports = [os.path.join(PKG, fn) for fn in _mod_imports]
             _includes.update(_mod_imports)
             _pxd_path = replace_ext(filename, '.pxd')
+            if os.path.isfile(_pxd_path):
+                _includes.add(_pxd_path)
             _includes.update(_resolve_dependencies(_pxd_path, _includes))
             return includes | _includes
         elif filename.endswith('.pxd'):
-            _includes = {os.path.basename(filename)}
+            _includes = set()
             _mod_imports = get_pyx_imports(filename, EXT_SOS, MOD_EXT)
+            _mod_imports = [os.path.join(PKG, fn) for fn in _mod_imports]
             _includes.update(_mod_imports)
-            _includes.update(get_pxd_includes(filename))
+            _headers = [HEADERS[h] for h in get_pxd_includes(filename)]
+            _includes.update(_headers)
             return includes | _includes
         else:
             return includes
@@ -200,9 +212,14 @@ def resolve_dependencies(PYX_FILES, PYX_NAMES, PXD_FILES, PXD_NAMES,
     DEP_MAP = {}
     for mod in EXT_SOS:
         pyx = os.path.basename(mod).split('.')[0] + '.pyx'
+        cpp = replace_ext(pyx, '.cpp')
+        os.path.join(PKG, cpp)
         pyx_file = PYX[pyx]
-        includes = {pyx}
+        includes = {pyx_file}
         includes.update(_resolve_dependencies(pyx_file, includes))
         DEP_MAP[mod] = includes
+        for fn, deps in DEP_MAP.items():
+            if fn in deps:
+                deps.remove(fn)
 
     return DEP_MAP
