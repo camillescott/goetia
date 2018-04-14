@@ -21,7 +21,7 @@ cdef class FileProcessor:
 
 cdef class FileConsumer:
 
-    def __cinit__(self, dBG_BitStorage_DefaultShifter graph):
+    def __cinit__(self, dBG__BitStorage__DefaultShifter graph):
         self._fc_this = make_unique[_FileConsumer[DefaultDBG]](graph._this.get())
 
     def process(self, str input_filename, uint32_t output_interval=10000):
@@ -62,7 +62,7 @@ cdef class MinimizerProcessor:
                         uint16_t ksize,
                         str output_filename):
         cdef string _output_filename = _bstring(output_filename)
-        self._mp_this = make_unique[_MinimizerProcessor[DefaultShifter]](window_size,
+        self._mp_this = make_unique[_MinimizerProcessor[_DefaultShifter]](window_size,
                                                                          ksize,
                                                                          _output_filename)
     def process(self, str input_filename, uint32_t output_interval=10000):

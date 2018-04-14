@@ -191,7 +191,7 @@ cdef class cDBG:
 
 cdef class StreamingCompactor:
 
-    def __cinit__(self, dBG_BitStorage_DefaultShifter graph):
+    def __cinit__(self, dBG__BitStorage__DefaultShifter graph):
         self._graph = graph._this.get()
         
         # TODO properly template this
@@ -224,7 +224,7 @@ cdef class StreamingCompactor:
     def get_cdbg_dnodes(self, str sequence):
         cdef string _sequence = _bstring(sequence)
         cdef vector[_DecisionNode*] dnodes = \
-            deref(self.cdbg._this).get_decision_nodes[DefaultShifter](_sequence)
+            deref(self.cdbg._this).get_decision_nodes[_DefaultShifter](_sequence)
         cdef _DecisionNode * dnode
         for dnode in dnodes:
             if dnode != NULL:

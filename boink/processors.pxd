@@ -47,4 +47,4 @@ cdef class DecisionNodeProcessor(FileProcessor):
 
 
 cdef class MinimizerProcessor(FileProcessor):
-    cdef unique_ptr[_MinimizerProcessor[DefaultShifter]] _mp_this
+    cdef unique_ptr[_MinimizerProcessor[_DefaultShifter]] _mp_this

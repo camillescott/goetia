@@ -20,15 +20,15 @@ from boink.hashing cimport *
 cdef extern from "oxli/storage.hh":
     # Need these for the Storage template parameter;
     # they don't need methods
-    cdef cppclass Storage "oxli::Storage":
+    cdef cppclass _Storage "oxli::Storage":
         pass
-    cdef cppclass BitStorage "oxli::BitStorage" (Storage):
+    cdef cppclass _BitStorage "oxli::BitStorage" (_Storage):
         pass
-    cdef cppclass NibbleStorage "oxli::NibbleStorage" (Storage):
+    cdef cppclass _NibbleStorage "oxli::NibbleStorage" (_Storage):
         pass
-    cdef cppclass QFStorage "oxli::QFStorage" (Storage):
+    cdef cppclass _QFStorage "oxli::QFStorage" (_Storage):
         pass
-    cdef cppclass ByteStorage "oxli::ByteStorage" (Storage):
+    cdef cppclass _ByteStorage "oxli::ByteStorage" (_Storage):
         pass
 
 
@@ -68,7 +68,7 @@ cdef extern from "boink/dbg.hh" namespace "boink":
 
         unique_ptr[_KmerIterator[HashShifter]] get_hash_iter(string&)
 
-    ctypedef _dBG[BitStorage, DefaultShifter] DefaultDBG
+    ctypedef _dBG[_BitStorage, _DefaultShifter] DefaultDBG
 
 
-include "dbg.pxd.pxi"
+include "dbg.tpl.pxd.pxi"

@@ -41,4 +41,4 @@ cdef class InteriorMinimizer:
 
 
 cdef class WKMinimizer(InteriorMinimizer):
-    cdef unique_ptr[_WKMinimizer[DefaultShifter]] _wk_this
+    cdef unique_ptr[_WKMinimizer[_DefaultShifter]] _wk_this

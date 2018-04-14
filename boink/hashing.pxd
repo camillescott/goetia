@@ -72,7 +72,7 @@ cdef extern from "boink/hashing.hh" namespace "boink":
         _RollingHashShifter(string&, uint16_t)
         _RollingHashShifter(uint16_t)
 
-    ctypedef _RollingHashShifter[_DNA_SIMPLE] DefaultShifter
+    ctypedef _RollingHashShifter[_DNA_SIMPLE] _DefaultShifter "boink::DefaultShifter"
 
     cdef cppclass _KmerIterator "boink::KmerIterator" [S] (_KmerClient):
         _KmerIterator(const string, uint16_t)

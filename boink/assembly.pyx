@@ -12,9 +12,8 @@ from libcpp.string cimport string
 
 from boink.dbg cimport *
 
-include "assembly.pyx.pxi"
+include "assembly.tpl.pyx.pxi"
 
 def make_assembler(dBG_Base graph):
     return _make_assembler(graph)
-
 
