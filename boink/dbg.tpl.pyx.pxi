@@ -327,8 +327,8 @@ cdef class dBG__NibbleStorage__DefaultShifter(dBG_Base):
         return obj
 
 cdef object _make_dbg(int K, uint64_t starting_size, int n_tables,
-                      str storage='BitStorage',
-                      str shifter='DefaultShifter'):
+                      str storage='_BitStorage',
+                      str shifter='_DefaultShifter'):
     if storage == "_BitStorage" and \
        shifter == "_DefaultShifter":
         return dBG__BitStorage__DefaultShifter(K, starting_size, n_tables)
@@ -341,8 +341,8 @@ cdef object _make_dbg(int K, uint64_t starting_size, int n_tables,
     raise TypeError("Invalid Storage or Shifter type.")
 
 
-def get_dbg_type(str storage='BitStorage',
-                 str shifter='DefaultShifter'):
+def get_dbg_type(str storage='_BitStorage',
+                 str shifter='_DefaultShifter'):
     if storage == "_BitStorage" and \
        shifter == "_DefaultShifter":
         return dBG__BitStorage__DefaultShifter

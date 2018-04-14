@@ -17,7 +17,7 @@ def compactor(ksize, graph):
 
 
 @using_ksize(21)
-@pytest.mark.parametrize('graph_type', ['BitStorage'], indirect=['graph_type'])
+@pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
 def test_insert_fork_noop(ksize, graph, compactor, right_fork):
     '''Nothing should happen with this ordering,
     because branch does not include the decision node and
@@ -41,7 +41,7 @@ def test_insert_fork_noop(ksize, graph, compactor, right_fork):
 
 
 @using_ksize(21)
-@pytest.mark.parametrize('graph_type', ['BitStorage'], indirect=['graph_type'])
+@pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
 def test_insert_fork(ksize, graph, compactor, right_fork):
     (core, branch), pos = right_fork()
     print(core, ' ' * (pos + 1) + branch, sep='\n')
@@ -56,7 +56,7 @@ def test_insert_fork(ksize, graph, compactor, right_fork):
 
 
 @using_ksize(21)
-@pytest.mark.parametrize('graph_type', ['BitStorage'], indirect=['graph_type'])
+@pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
 def test_find_decision_nodes_fork(ksize, graph, compactor, consumer, right_fork):
     (core, branch), pos = right_fork()
     print(core, ' ' * (pos + 1) + branch, sep='\n')
@@ -67,7 +67,7 @@ def test_find_decision_nodes_fork(ksize, graph, compactor, consumer, right_fork)
 
 
 @using_ksize(21)
-@pytest.mark.parametrize('graph_type', ['BitStorage'], indirect=['graph_type'])
+@pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
 def test_find_decision_nodes_objects(ksize, graph, compactor, right_fork):
     (core, branch), pos = right_fork()
     print('\n', core, ' ' * (pos + 1) + branch, sep='\n')
