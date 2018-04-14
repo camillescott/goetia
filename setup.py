@@ -23,7 +23,8 @@ from setuptools.command.build_ext import build_ext as _build_ext
 import numpy
 from build_utils import (check_for_openmp,
                          distutils_dir_name,
-                         build_dir)
+                         build_dir,
+                         get_compiler)
 
 try:
     import Cython
@@ -45,17 +46,20 @@ OPT = get_config_vars('OPT')[0]
 os.environ['OPT'] = " ".join(
     flag for flag in OPT.split() if flag != '-Wstrict-prototypes'
 )
-
+CXX = os.environ.get('CXX', 'c++')
 
 # Don't forget to update lib/Makefile with these flags!
 EXTRA_COMPILE_ARGS = ['-O3', '-std=c++14', '-pedantic']
-EXTRA_LINK_ARGS = ['--verbose']
+EXTRA_LINK_ARGS = []
 
 
 if sys.platform == 'darwin':
     # force 64bit only builds
-    EXTRA_COMPILE_ARGS.extend(['-arch', 'x86_64', '-mmacosx-version-min=10.7',
-                               '-stdlib=libc++'])
+    EXTRA_COMPILE_ARGS.extend(['-arch', 'x86_64', '-mmacosx-version-min=10.7'])
+
+
+if get_compiler(CXX) == 'clang':
+    EXTRA_COMPILE_ARGS.extend(['-stdlib=libc++', '-Wno-c++1z-extensions'])
 else:
     EXTRA_COMPILE_ARGS.append('-fdiagnostics-color')
 
