@@ -1,0 +1,86 @@
+extensions:
+    - name: analysis
+    - name: assembly
+      types:
+        - GraphType
+      templates:
+        - assembly.tpl.pxd
+        - assembly.tpl.pyx
+    - name: cdbg
+      types:
+        - GraphType
+    - name: dbg
+      types:
+        - StorageType
+        - ShifterType
+      templates:
+        - dbg.tpl.pxd
+        - dbg.tpl.pyx
+    - name: hashing
+      types:
+        - AlphabetType
+    - name: heap
+    - name: minimizers
+      types:
+        - RollingMinType
+    - name: partitioning
+    - name: processors
+      types:
+        - GraphType
+        - ParserType
+    - name: stats
+    - name: utils
+
+headers:
+    - dbg.hh
+    - cdbg.hh
+    - hashing.hh
+    - assembly.hh
+    - boink.hh
+    - consumer.hh
+    - minimizers.hh
+    - boink.hh
+
+types:
+    - name: StorageType
+      composites: null
+      types:
+        - BitStorage
+        - ByteStorage
+        - NibbleStorage
+    - name: ShifterType
+      composites: 
+        - AlphabetType
+      types:
+        - DefaultShifter
+#        - RollingHashShifter
+    - name: AlphabetType
+      composites: null
+      types:
+        - DNA_SIMPLE
+        - DNAN_SIMPLE
+        - RNA_SIMPLE
+        - RNAN_SIMPLE
+        - IUPAC_AA
+        - IUPAC_NUCL
+    - name: GraphType
+      composites:
+        - StorageType
+        - ShifterType
+      types: null
+    - name: StreamingCompactorType
+      composites: 
+        - GraphType
+      types: null
+    - name: AssemblerType
+      composites:
+        - GraphType
+      types: null
+    - name: ParserType
+      composites: null
+      types:
+        - FastxReader
+    - name: RollingMinType
+      composites: null
+      types:
+        - hash_t

@@ -1,4 +1,5 @@
 import functools
+import itertools
 import os
 import shutil
 import subprocess
@@ -7,8 +8,13 @@ import sysconfig
 import tempfile
 
 from doit.reporter import ConsoleReporter
+from jinja2 import Environment, PackageLoader, select_autoescape
 
-
+'''
+*
+* Compiler stuff
+*
+'''
 def get_compiler(CXX):
     output = subprocess.check_output([CXX, '--version'], encoding='UTF-8')
     print(output)
@@ -65,9 +71,33 @@ def check_for_openmp():
 
     return exit_code == 0
 
+'''
+*
+* File stuff
+*
+'''
+
+def flatten(L):
+    return [item for sublist in L for item in sublist]
+
 
 def replace_ext(filename, ext):
     return os.path.splitext(filename)[0] + ext
+
+
+def replace_exts(files, ext):
+    if type(files) is list:
+        return [replace_ext(fn, ext) for fn in files]
+    else:
+        return {k:replace_ext(v, ext) for k,v in files.items()}
+
+
+def isfile_filter(files):
+    if type(files) is list:
+        return [fn for fn in files if os.path.isfile(fn)]
+    else:
+        return {k:v for k,v in files.items() if os.path.isfile(v)}
+
 
 
 def distutils_dir_name(dname):
@@ -85,41 +115,64 @@ def build_dir():
 def lib_dir():
     return os.path.join("build", distutils_dir_name("lib"))
 
+'''
+*
+* Printing stuff
+*
+'''
+
+def get_console_size():
+    try:
+        rows, columns = os.popen('stty size', 'r').read().split()
+    except:
+        rows, columns = 80, 80
+    return int(rows), int(columns)
+
+
+def major_divider():
+    _, columns = get_console_size()
+    return '\n{0}\n'.format('=' * columns)
+
+
+def minor_divider():
+    _, columns = get_console_size()
+    return '\n{0}\n'.format('-' * columns)
+
 
 def title_with_actions(task):
     """return task name task actions"""
     if task.actions:
-        title = "\n\t".join([str(action) for action in task.actions])
+        title = "\n".join([str(action) for action in task.actions])
     # A task that contains no actions at all
     # is used as group task
     else:
         title = "Group: %s" % ", ".join(task.task_dep)
-    return "%s\n%s"% (task.name, title)
+    return "%s\n%s\n%s"% (task.name, title, minor_divider())
 
 
 class BoinkReporter(ConsoleReporter):
 
-    def divider(self):
-        self.write('\n')
-        self.write('=' * 80)
-        self.write('\n')
-
     def execute_task(self, task):
         if task.actions and (task.name[0] != '_'):
-            self.divider()
+            self.write(major_divider())
             super().execute_task(task)
 
     def skip_uptodate(self, task):
         if task.name[0] != '_':
-            self.divider()
+            self.write(major_divider())
             super().skip_uptodate(task)
     
     def skip_ignore(self, task):
-        self.divider()
+        self.write(major_divider())
         super().skip_ignore(task)
 
+'''
+*
+* Cython stuff
+*
+'''
 
-def get_cpp_includes(filename):
+def get_cpp_includes(filename, include_dir):
     with open(filename) as fp:
         for line in fp:
             line = line.strip()
@@ -128,10 +181,10 @@ def get_cpp_includes(filename):
                 name_token = line[1]
                 include_filename = name_token.strip('"<>"')
                 if include_filename.endswith('.hh'):
-                    yield include_filename
+                    yield os.path.join(include_dir, include_filename)
 
 
-def get_pxd_includes(filename):
+def get_pxd_includes(filename, include_dir):
     with open(filename) as fp:
         for line in fp:
             line = line.strip()
@@ -140,7 +193,7 @@ def get_pxd_includes(filename):
                 include_filename = tokens[3].strip('"')
                 include_filename = os.path.basename(include_filename)
                 if include_filename.endswith('.hh'):
-                    yield include_filename
+                    yield os.path.join(include_dir, include_filename)
 
 
 def get_object_dependencies(source_filename):
@@ -163,30 +216,23 @@ def get_pyx_imports(filename, mods, MOD_EXT):
                     yield mod
 
 
-def resolve_dependencies(PYX_FILES, PYX_NAMES, PXD_FILES, PXD_NAMES,
-                         SOURCE_FILES, SOURCE_NAMES, HEADER_FILES, HEADER_NAMES,
+def resolve_dependencies(PYX_FILES, PXD_FILES,
                          EXT_SOS, MOD_EXT, INCLUDE_DIR, PKG):
-    HEADERS = dict(zip(HEADER_NAMES, HEADER_FILES))
-    PXD     = dict(zip(PXD_NAMES, PXD_FILES))
-    PYX     = dict(zip(PYX_NAMES, PYX_FILES))
-    SOURCES = dict(zip(SOURCE_NAMES, SOURCE_FILES))
 
     def _resolve_dependencies(filename, includes):
         if not os.path.isfile(filename):
-            print('not found:', filename)
             return includes
 
         if filename.endswith('.hh'):
             _includes = set()
-            _includes.update(get_cpp_includes(filename))
-            _includes = {HEADERS[inc] for inc in _includes}
+            _includes.update(get_cpp_includes(filename, INCLUDE_DIR))
             return includes | _includes
         elif filename.endswith('.cc'):
             _includes = set()
-            _header_path = HEADERS[replace_ext(os.path.basename(filename), '.hh')]
+            _header_path = replace_ext(os.path.basename(filename), '.hh')
             _includes.add(_header_path)
             _includes.update(_resolve_dependencies(_header_path, _includes))
-            _includes.update(get_cpp_includes(filename))
+            _includes.update(get_cpp_includes(filename, INCLUDE_DIR))
             return includes | _includes
         elif filename.endswith('.pyx'):
             _includes = set()
@@ -203,18 +249,15 @@ def resolve_dependencies(PYX_FILES, PYX_NAMES, PXD_FILES, PXD_NAMES,
             _mod_imports = get_pyx_imports(filename, EXT_SOS, MOD_EXT)
             _mod_imports = [os.path.join(PKG, fn) for fn in _mod_imports]
             _includes.update(_mod_imports)
-            _headers = [HEADERS[h] for h in get_pxd_includes(filename)]
-            _includes.update(_headers)
+            _includes.update(get_pxd_includes(filename, INCLUDE_DIR))
             return includes | _includes
         else:
             return includes
 
     DEP_MAP = {}
-    for mod in EXT_SOS:
-        pyx = os.path.basename(mod).split('.')[0] + '.pyx'
-        cpp = replace_ext(pyx, '.cpp')
-        os.path.join(PKG, cpp)
-        pyx_file = PYX[pyx]
+    for mod, soname in EXT_SOS.items():
+        pyx_file = PYX_FILES[mod]
+        cpp = replace_ext(pyx_file, '.cpp')
         includes = {pyx_file}
         includes.update(_resolve_dependencies(pyx_file, includes))
         DEP_MAP[mod] = includes
@@ -223,3 +266,56 @@ def resolve_dependencies(PYX_FILES, PYX_NAMES, PXD_FILES, PXD_NAMES,
                 deps.remove(fn)
 
     return DEP_MAP
+
+'''
+*
+* Jinja stuff
+*
+'''
+
+def get_template_env():
+    return Environment(loader=PackageLoader('boink', 'templates'),
+                       trim_blocks=True,
+                       lstrip_blocks=True)
+
+
+def generate_cpp_params(type_dict, cppclass='class'):
+    results = []
+    cppclasses = []
+    for param_bundle in itertools.product(*(v for _, v in type_dict.items())):
+        result = {}
+        for name, param in zip(type_dict.keys(), param_bundle):
+            result[name] = param
+        result['suffix'] = '_'.join(param_bundle)
+        result['params'] = ','.join(param_bundle)
+        results.append(result)
+        cppclasses.append('{0}[{1}]'.format(cppclass, result['params']))
+    return results, cppclasses
+
+
+def get_templates(mod_prefix):
+    env = get_template_env()
+    
+    pxd_template = env.get_template('{0}.tpl.pxd'.format(mod_prefix))
+    pxd_dst_path = os.path.join('boink', pxd_template.name + '.pxi')
+    pyx_template = env.get_template('{0}.tpl.pyx'.format(mod_prefix))
+    pyx_dst_path = os.path.join('boink', pyx_template.name + '.pxi')
+
+    return (pxd_template, pxd_dst_path,
+            pyx_template, pyx_dst_path)
+
+
+def render(pxd_template, pxd_dst_path,
+           pyx_template, pyx_dst_path, type_bundles):
+    
+    with open(pxd_dst_path, 'w') as fp:
+        rendered = pxd_template.render(dst_filename=pxd_dst_path,
+                                       tpl_filename=pxd_template.name,
+                                       type_bundles=type_bundles)
+        fp.write(rendered)
+    with open(pyx_dst_path, 'w') as fp:
+        rendered = pyx_template.render(dst_filename=pyx_dst_path,
+                                       tpl_filename=pyx_template.name,
+                                       type_bundles=type_bundles)
+        fp.write(rendered)
+

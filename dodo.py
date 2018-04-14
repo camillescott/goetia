@@ -10,8 +10,7 @@ import sys
 
 from doit import create_after
 from doit.task import clean_targets
-
-from jinja2 import Environment, PackageLoader, select_autoescape
+import yaml
 
 from build_utils import (check_for_openmp,
                          distutils_dir_name,
@@ -20,40 +19,52 @@ from build_utils import (check_for_openmp,
                          BoinkReporter,
 						 title_with_actions,
                          replace_ext,
-                         resolve_dependencies)
-from boink.types import PARAMS
+                         replace_exts,
+                         resolve_dependencies,
+                         isfile_filter,
+                         flatten,
+                         render,
+                         get_templates,
+                         generate_cpp_params)
 
 DOIT_CONFIG  = {'verbosity': 2,
                 'reporter': BoinkReporter,
-                'default_tasks': ['build']}
+                'default_tasks': ['extensions']}
+EXT_META     = yaml.load(open('extensions.yaml').read())
 
 
 PKG          = 'boink'
 VERSION      = open(os.path.join(PKG, 'VERSION')).read().strip()
 MOD_EXT      = sysconfig.get_config_var('SO')
-PYX_FILES    = list(glob.glob(os.path.join(PKG, '*.pyx')))
-PYX_NAMES    = [os.path.basename(fn) for fn in PYX_FILES]
-PXD_FILES    = list(glob.glob(os.path.join(PKG, '*.pxd')))
-PXD_NAMES    = [os.path.basename(fn) for fn in PXD_FILES]
+MOD_NAMES    = [m['name'] for m in EXT_META['extensions']]
+PYX_FILES    = {m: os.path.join(PKG, '{0}.pyx'.format(m)) for m in MOD_NAMES}
+PXD_FILES    = isfile_filter(replace_exts(PYX_FILES, '.pxd'))
+TPL_FILES    = {m['name']:m['templates'] for m in EXT_META['extensions'] \
+                if 'templates' in m} 
 PY_FILES     = list(glob.glob('boink/**/*.py', recursive=True))
-EXT_SOS      = [pyx[:-4]+MOD_EXT for pyx in PYX_FILES]
+MOD_FILES    = {m:m+MOD_EXT for m in MOD_NAMES}
 
 INCLUDE_DIR  = os.path.join('include', PKG)
-HEADERS      = ['dbg.hh', 'cdbg.hh', 'hashing.hh', 'assembly.hh', 'boink.hh',
-                'consumer.hh', 'minimizers.hh', 'boink.hh']
-HEADER_NAMES = HEADERS
-SOURCES      = [filename[:-3] + '.cc' for filename in HEADERS]
-SOURCE_NAMES = SOURCES
-SOURCES      = [os.path.join('src', PKG, filename) for filename in SOURCES]
-HEADERS      = [os.path.join('include', 'boink', filename) for filename in HEADERS]
-SOURCES      = [filename for filename in SOURCES if os.path.isfile(filename)]
-OBJECTS      = [os.path.splitext(source_file)[0] + '.o' for source_file in SOURCES]
+SOURCE_DIR   = os.path.join('src', PKG)
+HEADER_NAMES = EXT_META['headers']
+HEADER_FILES = [os.path.join(INCLUDE_DIR, header) for header in HEADER_NAMES]
+SOURCE_NAMES = replace_exts(HEADER_NAMES, '.cc')
+SOURCE_FILES = isfile_filter([os.path.join(SOURCE_DIR, source) \
+                             for source in SOURCE_NAMES])
+OBJECT_FILES = replace_exts(SOURCE_FILES, '.o')
+
+DEP_MAP = resolve_dependencies(PYX_FILES,
+                               PXD_FILES,
+                               MOD_FILES,
+                               MOD_EXT,
+                               INCLUDE_DIR,
+                               PKG)
+#pprint(PYX_FILES)
+#pprint(PXD_FILES)
+#pprint(TPL_FILES)
+#pprint(DEP_MAP)
 
 
-DEP_MAP = resolve_dependencies(PYX_FILES, PYX_NAMES, PXD_FILES, PXD_NAMES,
-                               SOURCES, SOURCE_NAMES, HEADERS, HEADER_NAMES,
-                               EXT_SOS, MOD_EXT, INCLUDE_DIR, PKG)
-pprint(DEP_MAP)
 # Start libboink compile vars
 
 PROFILING   = False
@@ -135,6 +146,14 @@ CYTHON_FLAGS     = ['-X', ','.join(('{0}={1}'.format(k, v) \
                     '--line-directives',
                     '--cplus']
 
+new_types = []
+for type_dict in EXT_META['types']:
+    if type_dict['types'] is not None:
+        type_dict['types'] = ['_'+_type for _type in type_dict['types']]
+    #new_types.append(type_dict)
+#EXT_META['types'] = new_types
+pprint(EXT_META)
+
 
 def cxx_command(source, target):
     cmd = [ CXX ] \
@@ -183,16 +202,14 @@ def cy_link_command(cy_object, mod):
           + ['-o', mod]
     return ' '.join(cmd)
 
-print(build_dir())
-
 
 def task_display_libboink_config():
 
     def print_config():
         print('CXX:', CXX)
-        print('SOURCES:', *SOURCES)
-        print('HEADERS:', *HEADERS)
-        print('OBJECTS:', *OBJECTS)
+        print('SOURCES:', *SOURCE_FILES)
+        print('HEADERS:', *HEADER_FILES)
+        print('OBJECTS:', *OBJECT_FILES)
         print('Compile:', cxx_command('SOURCE.cc', 'TARGET.o'))
         print('Link:', link_command(['OBJECT_1.o', 'OBJECT_2.o',
                                      'OBJECT_N.o'], SONAME))
@@ -201,12 +218,11 @@ def task_display_libboink_config():
 
 
 def task_compile_libboink():
-    for source_file in SOURCES:
-        object_file = os.path.splitext(source_file)[0] + '.o'
+    for source_file, object_file in zip(SOURCE_FILES, OBJECT_FILES):
 
         yield {'name': object_file,
                'title': title_with_actions,
-               'file_dep': HEADERS + [source_file],
+               'file_dep': HEADER_FILES + [source_file],
                'task_dep': ['display_libboink_config'],
                'targets': [object_file],
                'actions': [cxx_command(source_file, object_file)],
@@ -214,14 +230,13 @@ def task_compile_libboink():
 
 
 def task_link_libboink():
-    objects     = [os.path.splitext(fn)[0] + '.o' for fn in SOURCES]
-    link_action = link_command(objects, LIBBOINKSO)
+    link_action = link_command(OBJECT_FILES, LIBBOINKSO)
     ln_action   = ' '.join(['ln -sf',
                             os.path.abspath(LIBBOINKSO),
                             os.path.abspath(LIBBOINKSHARED)])
 
     return {'title': title_with_actions,
-            'file_dep': objects,
+            'file_dep': OBJECT_FILES,
             'task_dep': ['display_libboink_config'],
             'targets': [LIBBOINKSO],
             'actions': [link_action, ln_action],
@@ -249,10 +264,10 @@ def task_boink_ranlib():
     target = 'lib{0}.a'.format(PKG)
 
     return {'title': title_with_actions,
-            'file_dep': OBJECTS,
+            'file_dep': OBJECT_FILES,
             'task_dep': ['display_libboink_config'],
             'targets': [target],
-            'actions': ['ar rcs {0} {1}'.format(target, ' '.join(OBJECTS)),
+            'actions': ['ar rcs {0} {1}'.format(target, ' '.join(OBJECT_FILES)),
                         'ranlib {0}'.format(target)],
             'clean': True}
 
@@ -263,78 +278,8 @@ def task_libboink():
                          'boink_pc',
                          'boink_ranlib']}
 
-
-def get_template_env():
-    return Environment(loader=PackageLoader('boink', 'templates'),
-                       trim_blocks=True,
-                       lstrip_blocks=True)
-
-
-def generate_cpp_params(type_dict, cppclass='class'):
-    results = []
-    cppclasses = []
-    for param_bundle in itertools.product(*(v for _, v in type_dict.items())):
-        result = {}
-        for name, param in zip(type_dict.keys(), param_bundle):
-            result[name] = param
-        result['suffix'] = '_'.join(param_bundle)
-        result['params'] = ','.join((p.strip('_') for p in param_bundle))
-        results.append(result)
-        cppclasses.append('{0}[{1}]'.format(cppclass, result['params']))
-    return results, cppclasses
-
-
-def get_templates(mod_prefix):
-    env = get_template_env()
-    
-    pxd_template = env.get_template('{0}.tpl.pxd'.format(mod_prefix))
-    pxd_dst_path = os.path.join('boink', '{0}.pxd.pxi'.format(mod_prefix))
-    pyx_template = env.get_template('{0}.tpl.pyx'.format(mod_prefix))
-    pyx_dst_path = os.path.join('boink', '{0}.pyx.pxi'.format(mod_prefix))
-
-    return (pxd_template, pxd_dst_path,
-            pyx_template, pyx_dst_path)
-
-
-def render(pxd_template, pxd_dst_path,
-           pyx_template, pyx_dst_path, type_bundles):
-    
-    with open(pxd_dst_path, 'w') as fp:
-        rendered = pxd_template.render(dst_filename=pxd_dst_path,
-                                       tpl_filename=pxd_template.name,
-                                       type_bundles=type_bundles)
-        fp.write(rendered)
-    with open(pyx_dst_path, 'w') as fp:
-        rendered = pyx_template.render(dst_filename=pyx_dst_path,
-                                       tpl_filename=pyx_template.name,
-                                       type_bundles=type_bundles)
-        fp.write(rendered)
-
-
 def setupcmd(cmd):
     return ' '.join(['python', 'setup.py'] + cmd)
-
-
-def jinja_render_task(mod_prefix, type_dict):
-
-    pxd_tpl, pxd_dst, pyx_tpl, pyx_dst = get_templates(mod_prefix)
-    type_bundles, _ = generate_cpp_params(type_dict)
-                                                                 
-
-    return {'name': '{0}_types'.format(mod_prefix),
-            'actions': [(render, [pxd_tpl, pxd_dst,
-                                  pyx_tpl, pyx_dst,
-                                  type_bundles])],
-            'targets': [pxd_dst, pyx_dst],
-            'file_dep': [os.path.join(PKG, 'templates', pxd_tpl.name),
-                         os.path.join(PKG, 'templates', pyx_tpl.name)]}
-
-
-def task_render_extension_classes():
-    dbg_types = OrderedDict(storage_type=PARAMS['StorageTypes'],
-                            shifter_type=PARAMS['ShifterTypes'])
-    yield jinja_render_task('dbg', dbg_types)
-    yield jinja_render_task('assembly', dbg_types)
 
 
 def task_install():
@@ -344,6 +289,30 @@ def task_install():
 def task_test():
     return {'actions': [setupcmd(['develop']),
                         'py.test --pyargs boink.tests']}
+
+
+def jinja_render_task(mod_prefix, type_dict):
+
+    pxd_tpl, pxd_dst, pyx_tpl, pyx_dst = get_templates(mod_prefix)
+    type_bundles, _ = generate_cpp_params(type_dict)
+    print(type_bundles)
+
+    return {'name': '{0}_types'.format(mod_prefix),
+            'actions': [(render, [pxd_tpl, pxd_dst,
+                                  pyx_tpl, pyx_dst,
+                                  type_bundles])],
+            'targets': [pxd_dst, pyx_dst],
+            'file_dep': [os.path.join(PKG, 'templates', pxd_tpl.name),
+                         os.path.join(PKG, 'templates', pyx_tpl.name)],
+            'clean': True}
+
+
+def task_render_extension_classes():
+    types = {t['name']: t['types'] for t in EXT_META['types']}
+    for mod_name, tpl_file in TPL_FILES.items():
+        dbg_types = OrderedDict(storage_type=types['StorageType'],
+                                shifter_type=types['ShifterType'])
+        yield jinja_render_task(mod_name, dbg_types)
 
 
 CLEAN_ACTIONS = \
@@ -358,45 +327,44 @@ CLEAN_ACTIONS = \
 ]
 
 
-@create_after(executed='render_extension_classes',
-              target_regex='.*\\'+MOD_EXT)
-def task_build():
-    return {'file_dep': list(glob.glob('boink/*.pxi')) +
-                        PYX_FILES +
-                        PXD_FILES +
-                        HEADERS +
-                        SOURCES,
-            'targets': EXT_SOS,
-            'actions': [setupcmd(['build_ext', '--inplace'])],
-            'clean':   CLEAN_ACTIONS}
+def task_cythonize():
+    templated = flatten(list(TPL_FILES.values()))
+    file_dep = [os.path.join(PKG, t)+'.pxi' for t in templated]
+    for mod, source in PYX_FILES.items():
+        target = replace_ext(source, '.cpp')
+        yield { 'name': target,
+                'title': title_with_actions,
+                'file_dep': file_dep + [source],
+                'targets': [target],
+                'actions': ['mkdir -p ' + build_dir(),
+                            cython_command(source)],
+                'clean': True}
 
-def task_cythonize_analysis():
-    source = 'boink/analysis.pyx'
-    target = 'boink/analysis.cpp'
-    return {'title': title_with_actions,
-            'file_dep': [source],
-            'targets': [target,
-                        build_dir()],
-            'actions': ['mkdir -p ' + build_dir(),
-                        cython_command(source)],
-            'clean': True}
 
-def task_compile_analysis_cpp():
-    source = 'boink/analysis.cpp'
-    target = os.path.join(build_dir(), 'analysis.o')
-    return {'title': title_with_actions,
-            'file_dep': [source],
-            'targets': [target],
-            'actions': [cy_cxx_command(source,
-                                       target)],
-            'clean': True}
+def task_compile_cython_cpp():
+    for mod in MOD_NAMES:
+        source = os.path.join(PKG, '{0}.cpp'.format(mod))
+        target = os.path.join(build_dir(), '{0}.o'.format(mod))
+        yield { 'name': target,
+                'title': title_with_actions,
+                'file_dep': [source],
+                'targets': [target],
+                'actions': [cy_cxx_command(source,
+                                           target)],
+                'clean': True}
 
-def task_link_analysis_mod():
-    source = os.path.join(build_dir(), 'analysis.o')
-    target = os.path.join(lib_dir(), 'analysis.cpython-36m-darwin.so')
-    return {'title': title_with_actions,
-            'file_dep': [source],
-            'targets': [target],
-            'actions': ['mkdir -p ' + lib_dir(),
-                        cy_link_command(source, target)],
-            'clean': True}
+def task_extensions():
+    for mod, pyx_file in PYX_FILES.items():
+        source = os.path.join(build_dir(),
+                              '{0}.o'.format(mod))
+        target = os.path.join(lib_dir(),
+                              '{0}.cpython-36m-darwin.so'.format(mod))
+        cp_target = os.path.join(PKG, os.path.basename(target))
+        yield {'name': target,
+                'title': title_with_actions,
+                'file_dep': [source],
+                'targets': [target, cp_target],
+                'actions': ['mkdir -p ' + lib_dir(),
+                            cy_link_command(source, target),
+                            'cp {0} {1}'.format(target, cp_target)],
+                'clean': True}
