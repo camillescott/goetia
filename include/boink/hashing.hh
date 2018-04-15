@@ -297,7 +297,7 @@ public:
 
     KmerIterator(const std::string seq, uint16_t K) :
         KmerClient(K), _seq(seq), 
-        index(0), _initialized(false), shifter(K) {
+        index(0), _initialized(false), shifter(seq, K) {
 
         if (_seq.length() < _K) {
             throw BoinkException("Sequence must have length >= K");
@@ -308,7 +308,6 @@ public:
     hash_t first() {
         _initialized = true;
 
-        shifter.set_cursor(_seq);
         index += 1;
         return shifter.get();
     }
