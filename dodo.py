@@ -70,7 +70,7 @@ DEP_MAP = resolve_dependencies(PYX_FILES,
 PROFILING   = False
 PROFILER    = 'gprof'
 COLOR       = True
-DEBUG       = False
+DEBUG       = True
 DEBUG_FLAGS = ['-g']
 PREFIX      = '/usr/local'
 
@@ -96,10 +96,11 @@ if DEBUG:
     CXXFLAGS += DEBUG_FLAGS
     CFLAGS   += DEBUG_FLAGS
 
-if PROFILER == 'gprof':
-    CXXFLAGS += ['-pg']
-    CFLAGS   += ['-pg']
-    LDFLAGS  += ['-pg']
+if PROFILING:
+    if PROFILER == 'gprof':
+        CXXFLAGS += ['-pg']
+        CFLAGS   += ['-pg']
+        LDFLAGS  += ['-pg']
 
 if sys.platform == 'linux':
     LDFLAGS  += ['-pthread']
