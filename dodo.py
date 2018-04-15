@@ -354,11 +354,10 @@ def task_compile_cython_cpp():
                 'clean': True}
 
 def task_extensions():
-    for mod, pyx_file in PYX_FILES.items():
+    for mod, mod_file in MOD_FILES.items():
         source = os.path.join(build_dir(),
                               '{0}.o'.format(mod))
-        target = os.path.join(lib_dir(),
-                              '{0}.cpython-36m-darwin.so'.format(mod))
+        target = os.path.join(lib_dir(), mod_file)
         cp_target = os.path.join(PKG, os.path.basename(target))
         yield {'name': target,
                 'title': title_with_actions,
