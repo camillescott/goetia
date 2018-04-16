@@ -83,4 +83,3 @@ def test_find_decision_nodes_objects(ksize, graph, compactor, right_fork):
     assert dnode.out_degree == 2
     for unode in compactor.cdbg.right_neighbors(dnode):
         assert dnode.sequence == unode.sequence[:ksize]
-

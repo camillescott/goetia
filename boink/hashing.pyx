@@ -9,6 +9,7 @@ from cython.operator cimport dereference as deref
 
 from boink.utils cimport _bstring, _ustring
 
+
 cdef void _test():
     cdef _DefaultShifter * shifter = new _DefaultShifter(4)
     print(deref(shifter).set_cursor(_bstring('AAAA')))

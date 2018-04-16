@@ -16,6 +16,7 @@ from libc.stdint cimport uint8_t, uint32_t, uint64_t
 
 from boink.assembly cimport *
 from boink.hashing cimport *
+
 from boink.dbg cimport *
 from boink.minimizers cimport _InteriorMinimizer
 

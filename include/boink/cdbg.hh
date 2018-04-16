@@ -43,11 +43,6 @@
 
 namespace boink {
 
-typedef uint64_t id_t;
-typedef uint64_t hash_t;
-#define NULL_ID ULLONG_MAX
-#define UNITIG_START_ID 100000000000
-
 using std::string;
 using std::unique_ptr;
 using std::make_unique;
@@ -56,6 +51,10 @@ using std::pair;
 
 using namespace oxli;
 
+typedef uint64_t id_t;
+typedef pair<hash_t, hash_t> junction_t;
+#define NULL_ID ULLONG_MAX
+#define UNITIG_START_ID 100000000000
 
 typedef vector<hash_t> HashVector;
 
@@ -604,7 +603,8 @@ public:
                              vector<DecisionNode*>& disturbed_dnodes,
                              vector<NeighborBundle>& disturbed_neighbors) {
 
-        std::set<hash_t> updated_from;
+        std::set<hash_t> updated_dnodes;
+        std::set<junction_t> updated_junctions;
         pdebug(disturbed_dnodes.size() << " on d-node queue, " <<
                disturbed_neighbors.size() << " on neighbor queue");
 
@@ -618,12 +618,14 @@ public:
                        " ldegree " << root_neighbors.first.size() <<
                        " rdegree " << root_neighbors.second.size());
 
-            if (updated_from.count(root_dnode->node_id)) {
+            if (updated_dnodes.count(root_dnode->node_id)) {
                 continue;
             }
 
             for (kmer_t left_neighbor : root_neighbors.first) {
-                if (updated_from.count(left_neighbor.hash)) {
+                junction_t rjunction = make_pair(left_neighbor.hash,
+                                                 root_dnode->node_id);
+                if (updated_junctions.count(rjunction)) {
                     continue;
                 }
                 DecisionNode* left_dnode;
@@ -641,11 +643,10 @@ public:
                 InteriorMinimizer<hash_t> minimizer(_minimizer_window_size);
                 this->compactify_left(this_segment, minimizer);
                 
-                hash_t left_hash = this->get();
-                hash_t right_hash = left_neighbor.hash;
-
-                updated_from.insert(left_hash);
-                updated_from.insert(right_hash);
+                junction_t ljunction = make_pair(this->get(),
+                                                 this->shift_right(this_segment[this->_K]));
+                hash_t left_hash=ljunction.second, right_hash=rjunction.first;;
+                updated_junctions.insert(ljunction);
 
                 UnitigNode* existing_unitig = cdbg.get_unitig_node(right_hash);
 
@@ -671,7 +672,9 @@ public:
             }
 
             for (kmer_t right_neighbor : root_neighbors.second) {
-                if (updated_from.count(right_neighbor.hash)) {
+                junction_t ljunction = make_pair(root_dnode->node_id,
+                                                 right_neighbor.hash);
+                if (updated_junctions.count(ljunction)) {
                     continue;
                 }
                 DecisionNode* right_dnode;
@@ -688,13 +691,12 @@ public:
 
                 InteriorMinimizer<hash_t> minimizer(_minimizer_window_size);
                 this->compactify_right(this_segment, minimizer);
+
+                junction_t rjunction = make_pair(this->shift_left(*(this_segment.end()-(this->_K)-1)),
+                                                 this->get());
+                hash_t left_hash=ljunction.second, right_hash=rjunction.first;
                 
-                hash_t right_hash = this->get();
-                hash_t left_hash = right_neighbor.hash;
-
-                updated_from.insert(left_hash);
-                updated_from.insert(right_hash);
-
+                updated_junctions.insert(rjunction);
                 UnitigNode* existing_unitig = cdbg.get_unitig_node(right_hash);
 
                 if (existing_unitig != nullptr) { 
@@ -718,9 +720,9 @@ public:
                                                                  right_dnode);
             }
 
-            updated_from.insert(root_dnode->node_id);
+            updated_dnodes.insert(root_dnode->node_id);
         }
-        pdebug("finished _update_from_dnodes with " << updated_from.size()
+        pdebug("finished _update_from_dnodes with " << updated_dnodes.size()
                 << " updated from");
     }
 };
