@@ -29,7 +29,7 @@ from build_utils import (check_for_openmp,
 
 DOIT_CONFIG  = {'verbosity': 2,
                 'reporter': BoinkReporter,
-                'default_tasks': ['extensions']}
+                'default_tasks': ['build']}
 EXT_META     = yaml.load(open('extensions.yaml').read())
 
 
@@ -366,21 +366,27 @@ def task_compile_cython_cpp():
     for mod in MOD_NAMES:
         source = os.path.join(PKG, '{0}.cpp'.format(mod))
         target = os.path.join(build_dir(), '{0}.o'.format(mod))
+        file_dep = []
+        for dep in DEP_MAP[mod]:
+            if dep.endswith('.hh'):
+                file_dep.append(dep)
+
         yield { 'name': target,
                 'title': title_with_actions,
-                'file_dep': [source],
+                'file_dep': file_dep + [source],
                 'targets': [target],
                 'actions': [cy_cxx_command(source,
                                            target)],
                 'clean': True}
 
 
-def task_extensions():
+def task_build():
     for mod, mod_file in MOD_FILES.items():
         source = os.path.join(build_dir(),
                               '{0}.o'.format(mod))
         target = os.path.join(lib_dir(), mod_file)
         cp_target = os.path.join(PKG, os.path.basename(target))
+
         yield {'name': target,
                 'title': title_with_actions,
                 'file_dep': [source],
