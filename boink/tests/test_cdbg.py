@@ -68,7 +68,7 @@ def test_find_decision_nodes_fork(ksize, graph, compactor, consumer, right_fork)
 
 @using_ksize(21)
 @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
-def test_find_decision_nodes_objects(ksize, graph, compactor, right_fork):
+def test_update_fork(ksize, graph, compactor, right_fork):
     (core, branch), pos = right_fork()
     print('\n', core, ' ' * (pos + 1) + branch, sep='\n')
     compactor.update(branch)
@@ -83,3 +83,30 @@ def test_find_decision_nodes_objects(ksize, graph, compactor, right_fork):
     assert dnode.out_degree == 2
     for unode in compactor.cdbg.right_neighbors(dnode):
         assert dnode.sequence == unode.sequence[:ksize]
+
+    assert compactor.cdbg.n_dnodes == 1
+    assert compactor.cdbg.n_unodes == 3
+
+
+@using_ksize(21)
+@pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
+def test_update_triple_fork(ksize, graph, compactor, right_triple_fork):
+    (core, top, bottom), pos = right_triple_fork()
+    print('\n', core, ' ' * (pos + 1) + top, sep='\n')
+    compactor.update(top)
+    compactor.update(bottom)
+    compactor.update(core)
+
+    dnode = list(compactor.get_cdbg_dnodes(core)).pop()
+    assert dnode.in_degree == 1
+    left_unode = list(compactor.cdbg.left_neighbors(dnode)).pop()
+    print(left_unode.sequence)
+    assert dnode.sequence == left_unode.sequence[-ksize:]
+
+    assert dnode.out_degree == 3
+    for unode in compactor.cdbg.right_neighbors(dnode):
+        assert dnode.sequence == unode.sequence[:ksize]
+
+    assert compactor.cdbg.n_dnodes == 1
+    assert compactor.cdbg.n_unodes == 4
+
