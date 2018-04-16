@@ -121,6 +121,19 @@ def lib_dir():
 *
 '''
 
+class TermCodes:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+def text(txt, code):
+    return code + txt + TermCodes.ENDC
+
 def get_console_size():
     try:
         rows, columns = os.popen('stty size', 'r').read().split()
@@ -147,7 +160,9 @@ def title_with_actions(task):
     # is used as group task
     else:
         title = "Group: %s" % ", ".join(task.task_dep)
-    return "%s\n%s\n%s"% (task.name, title, minor_divider())
+    return "{name}\n{title}\n{div}".format(name=text(task.name, TermCodes.HEADER),
+                                           title=title,
+                                           div=minor_divider())
 
 
 class BoinkReporter(ConsoleReporter):
@@ -155,12 +170,16 @@ class BoinkReporter(ConsoleReporter):
     def execute_task(self, task):
         if task.actions and (task.name[0] != '_'):
             self.write(major_divider())
-            super().execute_task(task)
+            self.write('\n')
+            self.write(text('RUN: ', TermCodes.WARNING))
+            self.write(task.title())
 
     def skip_uptodate(self, task):
         if task.name[0] != '_':
             self.write(major_divider())
-            super().skip_uptodate(task)
+            self.write('\n')
+            self.write(text('UP-TO-DATE: ', TermCodes.OKBLUE))
+            self.write(task.title())
     
     def skip_ignore(self, task):
         self.write(major_divider())
