@@ -41,6 +41,8 @@ PYX_FILES    = {m: os.path.join(PKG, '{0}.pyx'.format(m)) for m in MOD_NAMES}
 PXD_FILES    = isfile_filter(replace_exts(PYX_FILES, '.pxd'))
 TPL_FILES    = {m['name']:m['templates'] for m in EXT_META['extensions'] \
                 if 'templates' in m} 
+PXI_FILES    = {m:[os.path.join(PKG, t+'.pxi') for t in TPL_FILES[m]] \
+                for m in TPL_FILES}
 PY_FILES     = list(glob.glob('boink/**/*.py', recursive=True))
 MOD_FILES    = {m:m+MOD_EXT for m in MOD_NAMES}
 
@@ -56,10 +58,9 @@ OBJECT_FILES = replace_exts(SOURCE_FILES, '.o')
 DEP_MAP = resolve_dependencies(PYX_FILES,
                                PXD_FILES,
                                MOD_FILES,
-                               MOD_EXT,
                                INCLUDE_DIR,
                                PKG)
-#pprint(PYX_FILES)
+#pprint(PXI_FILES)
 #pprint(PXD_FILES)
 #pprint(TPL_FILES)
 #pprint(DEP_MAP)
@@ -147,13 +148,10 @@ CYTHON_FLAGS     = ['-X', ','.join(('{0}={1}'.format(k, v) \
                     '--line-directives',
                     '--cplus']
 
-new_types = []
 for type_dict in EXT_META['types']:
     if type_dict['types'] is not None:
         type_dict['types'] = ['_'+_type for _type in type_dict['types']]
-    #new_types.append(type_dict)
-#EXT_META['types'] = new_types
-pprint(EXT_META)
+#pprint(EXT_META)
 
 
 def cxx_command(source, target):
@@ -296,7 +294,6 @@ def jinja_render_task(mod_prefix, type_dict):
 
     pxd_tpl, pxd_dst, pyx_tpl, pyx_dst = get_templates(mod_prefix)
     type_bundles, _ = generate_cpp_params(type_dict)
-    print(type_bundles)
 
     return {'name': '{0}_types'.format(mod_prefix),
             'actions': [(render, [pxd_tpl, pxd_dst,
@@ -316,6 +313,7 @@ def task_render_extension_classes():
         yield jinja_render_task(mod_name, dbg_types)
 
 
+
 CLEAN_ACTIONS = \
 [
     'rm -f {0}/*.cpp'.format(PKG),
@@ -329,9 +327,18 @@ CLEAN_ACTIONS = \
 
 
 def task_cythonize():
-    templated = flatten(list(TPL_FILES.values()))
-    file_dep = [os.path.join(PKG, t)+'.pxi' for t in templated]
+
     for mod, source in PYX_FILES.items():
+        file_dep = []
+        for dep in DEP_MAP[mod]:
+            dep_name = os.path.basename(dep).split('.')[0]
+            if dep.endswith('.pxd') or dep.endswith('.pyx'):
+                file_dep.append(dep)
+            if dep_name in TPL_FILES:
+                file_dep.extend(PXI_FILES[dep_name])
+        if mod in TPL_FILES:
+            file_dep.extend(PXI_FILES[mod])
+
         target = replace_ext(source, '.cpp')
         yield { 'name': target,
                 'title': title_with_actions,
@@ -353,6 +360,7 @@ def task_compile_cython_cpp():
                 'actions': [cy_cxx_command(source,
                                            target)],
                 'clean': True}
+
 
 def task_extensions():
     for mod, mod_file in MOD_FILES.items():

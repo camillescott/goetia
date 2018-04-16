@@ -202,8 +202,7 @@ def get_object_dependencies(source_filename):
         yield fn
 
 
-def get_pyx_imports(filename, mods, MOD_EXT):
-    mods = [os.path.basename(fn) for fn in mods]
+def get_pyx_imports(filename, MOD_FILES, PKG):
     with open(filename) as fp:
         for line in fp:
             line = line.strip()
@@ -211,13 +210,14 @@ def get_pyx_imports(filename, mods, MOD_EXT):
                 tokens = line.split()
                 mod = tokens[1].strip('.')
                 mod = mod.split('.')[-1]
-                mod = mod + MOD_EXT
-                if mod in mods:
-                    yield mod
+                if mod in MOD_FILES:
+                    pyx = os.path.join(PKG, mod+'.pyx')
+                    pxd = replace_ext(pyx, '.pxd')
+                    yield from  isfile_filter([pyx, pxd])
 
 
 def resolve_dependencies(PYX_FILES, PXD_FILES,
-                         EXT_SOS, MOD_EXT, INCLUDE_DIR, PKG):
+                         MOD_FILES, INCLUDE_DIR, PKG):
 
     def _resolve_dependencies(filename, includes):
         if not os.path.isfile(filename):
@@ -236,8 +236,7 @@ def resolve_dependencies(PYX_FILES, PXD_FILES,
             return includes | _includes
         elif filename.endswith('.pyx'):
             _includes = set()
-            _mod_imports = get_pyx_imports(filename, EXT_SOS, MOD_EXT)
-            _mod_imports = [os.path.join(PKG, fn) for fn in _mod_imports]
+            _mod_imports = get_pyx_imports(filename, MOD_FILES, PKG)
             _includes.update(_mod_imports)
             _pxd_path = replace_ext(filename, '.pxd')
             if os.path.isfile(_pxd_path):
@@ -246,8 +245,7 @@ def resolve_dependencies(PYX_FILES, PXD_FILES,
             return includes | _includes
         elif filename.endswith('.pxd'):
             _includes = set()
-            _mod_imports = get_pyx_imports(filename, EXT_SOS, MOD_EXT)
-            _mod_imports = [os.path.join(PKG, fn) for fn in _mod_imports]
+            _mod_imports = get_pyx_imports(filename, MOD_FILES, PKG)
             _includes.update(_mod_imports)
             _includes.update(get_pxd_includes(filename, INCLUDE_DIR))
             return includes | _includes
@@ -255,16 +253,19 @@ def resolve_dependencies(PYX_FILES, PXD_FILES,
             return includes
 
     DEP_MAP = {}
-    for mod, soname in EXT_SOS.items():
+    for mod, soname in MOD_FILES.items():
         pyx_file = PYX_FILES[mod]
         cpp = replace_ext(pyx_file, '.cpp')
         includes = {pyx_file}
         includes.update(_resolve_dependencies(pyx_file, includes))
         DEP_MAP[mod] = includes
-        for fn, deps in DEP_MAP.items():
-            if fn in deps:
-                deps.remove(fn)
-
+        #for fn, deps in DEP_MAP.items():
+        #    if fn in deps:
+        #        deps.remove(fn)
+    for mod, mod_deps in DEP_MAP.items():
+        mod_path = os.path.join(PKG, MOD_FILES[mod])
+        if mod_path in mod_deps:
+            mod_deps.remove(mod_path)
     return DEP_MAP
 
 '''
