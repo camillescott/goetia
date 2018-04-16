@@ -185,6 +185,16 @@ class BoinkReporter(ConsoleReporter):
         self.write(major_divider())
         super().skip_ignore(task)
 
+    def _write_failure(self, result, write_exception=True):
+        self.write(text(major_divider(), TermCodes.FAIL))
+        err = text(result['exception'].get_name(), TermCodes.FAIL)
+        tsk = text(result['task'].name, TermCodes.HEADER)
+        msg = '%s - taskid:%s\n' % (err, tsk)
+        self.write(msg)
+        if write_exception:
+            self.write(result['exception'].get_msg())
+            self.write("\n")
+
 '''
 *
 * Cython stuff
