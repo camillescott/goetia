@@ -54,7 +54,7 @@ using namespace oxli;
 typedef uint64_t id_t;
 typedef pair<hash_t, hash_t> junction_t;
 #define NULL_ID ULLONG_MAX
-#define UNITIG_START_ID 100000000000
+#define UNITIG_START_ID 0
 
 typedef vector<hash_t> HashVector;
 
@@ -127,16 +127,20 @@ public:
         return _dirty;
     }
 
+    void set_dirty(bool dirty) {
+        _dirty = dirty;
+    }
+
     uint8_t degree() const {
-        return in_edges.size() + out_edges.size();
+        return in_degree() + out_degree();
     }
 
     uint8_t in_degree() const {
-        return in_edges.size();
+        return (uint8_t)in_edges.size();
     }
 
     uint8_t out_degree() const {
-        return out_edges.size();
+        return (uint8_t)out_edges.size();
     }
 
     bool has_in_edge(id_t id) const {
@@ -170,8 +174,17 @@ public:
             }
         }
     }
+
+    friend std::ostream& operator<<(std::ostream& o, const DecisionNode& dn);
 };
 
+
+std::ostream& operator<<(std::ostream& o, const DecisionNode& dn) {
+    o << "<DNode ID/hash=" << dn.node_id << " k-mer=" << dn.sequence
+      << " Dl=" << std::to_string(dn.in_degree()) 
+      << " Dr=" << std::to_string(dn.out_degree())
+      << " count=" << dn.count << ">";
+}
 
 class UnitigNode : public CompactNode {
 public:
@@ -614,9 +627,7 @@ public:
             disturbed_dnodes.pop_back();
             disturbed_neighbors.pop_back();
 
-            pdebug("updating from " << root_dnode->node_id <<  " with " <<
-                       " ldegree " << root_neighbors.first.size() <<
-                       " rdegree " << root_neighbors.second.size());
+            pdebug("updating from " << *root_dnode);
 
             if (updated_dnodes.count(root_dnode->node_id)) {
                 continue;
