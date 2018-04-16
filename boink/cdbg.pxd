@@ -61,12 +61,16 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
         bool has_out_edge(id_t) const
         void remove_out_edge(id_t)
 
+        string repr()
+
     cdef cppclass _UnitigNode "boink::UnitigNode" (_CompactNode):
         _DecisionNode * left_dnode
         _DecisionNode * right_dnode
         hash_t left_hash
         hash_t right_hash
         HashVector tags
+
+        string repr()
 
         _UnitigNode(id_t, hash_t, hash_t, const string&)
         

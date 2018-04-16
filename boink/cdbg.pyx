@@ -74,18 +74,9 @@ cdef class DecisionNode(CompactNode):
         for node_id in deref(self._dn_this).out_edges:
             yield node_id
 
-    '''
-
-
     def __str__(self):
-        return 'CompactNode: ID={0} count={1}'
-               ' in_degree={2}'
-               ' out_degree={3} sequence={4}'.format(self.kmer,
-                                                     self.count,
-                                                     self.in_degree,
-                                                     self.out_degree,
-                                                     self.sequence)
-    '''
+        return deref(self._dn_this).repr()
+
 
 cdef class UnitigNode(CompactNode):
 
@@ -118,6 +109,9 @@ cdef class UnitigNode(CompactNode):
         cdef hash_t tag
         for tag in deref(self._un_this).tags:
             yield tag
+
+    def __str__(self):
+        return deref(self._un_this).repr()
 
 
 cdef class cDBG:
