@@ -131,16 +131,16 @@ public:
         _dirty = dirty;
     }
 
-    uint8_t degree() const {
+    const size_t degree() const {
         return in_degree() + out_degree();
     }
 
-    uint8_t in_degree() const {
-        return (uint8_t)in_edges.size();
+    const size_t in_degree() const {
+        return in_edges.size();
     }
 
-    uint8_t out_degree() const {
-        return (uint8_t)out_edges.size();
+    const size_t out_degree() const {
+        return out_edges.size();
     }
 
     bool has_in_edge(id_t id) const {
@@ -181,9 +181,10 @@ public:
 
 std::ostream& operator<<(std::ostream& o, const DecisionNode& dn) {
     o << "<DNode ID/hash=" << dn.node_id << " k-mer=" << dn.sequence
-      << " Dl=" << std::to_string(dn.in_degree()) 
+      << " Dl=" << std::to_string(dn.in_degree())
       << " Dr=" << std::to_string(dn.out_degree())
-      << " count=" << dn.count << ">";
+      << " count=" << dn.count << " dirty=" << dn.is_dirty() << ">";
+    return o;
 }
 
 class UnitigNode : public CompactNode {
@@ -609,7 +610,7 @@ public:
     }
 
     void _update_linear(const string& sequence) {
-    
+        pdebug("no-op" << sequence);
     }
 
     void _update_from_dnodes(const string& sequence,

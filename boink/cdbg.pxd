@@ -52,9 +52,9 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
         vector[id_t] out_edges
         uint32_t count
 
-        uint8_t degree() const
-        uint8_t in_degree() const
-        uint8_t out_degree() const
+        size_t degree() const
+        size_t in_degree() const
+        size_t out_degree() const
 
         bool has_in_edge(id_t) const
         void remove_in_edge(id_t)
