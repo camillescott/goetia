@@ -8,7 +8,7 @@ from pprint import pprint
 import sysconfig
 import sys
 
-from doit import create_after
+from doit import create_after, get_var
 from doit.task import clean_targets
 import yaml
 
@@ -68,14 +68,15 @@ DEP_MAP = resolve_dependencies(PYX_FILES,
 
 # Start libboink compile vars
 
-PROFILING   = False
+PROFILING   = get_var('PROFILING', False)
 PROFILER    = 'gprof'
 COLOR       = True
-DEBUG       = True
-DEBUG_FLAGS = ['-g']
+DEBUG       = get_var('DEBUG', False)
+print('Debug', DEBUG)
+DEBUG_FLAGS = ['-ggdb']
 PREFIX      = '/usr/local'
 
-CXX         = os.environ.get('CXX', 'cc')
+CXX         = get_var('CXX', os.environ.get('CXX', 'cc'))
 INCLUDES    = ['-I', os.path.abspath('include/'), '-I.']
 WARNINGS    = ['-Wall']
 COMMON      = ['-O3', '-fPIC', '-fno-omit-frame-pointer']
@@ -93,9 +94,21 @@ CFLAGS     += CPPFLAGS
 
 LDFLAGS     = ['-loxli']
 
+CY_CFLAGS   = sysconfig.get_config_var('CFLAGS').split()
+try:
+    CY_CFLAGS.remove('-g')
+except ValueError:
+    pass
+
 if DEBUG:
     CXXFLAGS += DEBUG_FLAGS
     CFLAGS   += DEBUG_FLAGS
+    try:
+        CY_CFLAGS.remove('-DNDEBUG')
+        CY_CFLAGS.remove('-O3')
+        CXXFLAGS.remove('-O3')
+    except ValueError:
+        pass
 
 if PROFILING:
     if PROFILER == 'gprof':
@@ -181,7 +194,7 @@ def cython_command(pyx_file):
 
 def cy_cxx_command(cy_source, cy_dst):
     cmd = [ CXX ] \
-          + [sysconfig.get_config_var('CFLAGS')] \
+          + CY_CFLAGS \
           + INCLUDES \
           + ['-I'+sysconfig.get_config_var('INCLUDEPY')] \
           + LDFLAGS \
