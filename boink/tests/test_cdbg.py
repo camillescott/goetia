@@ -188,3 +188,23 @@ def test_component_merge(ksize, graph, compactor, right_triple_fork,
     assert left == dnodes[0]
     assert left.sequence == middle.sequence[:ksize]
     assert middle.sequence[-ksize:] == right.sequence
+
+
+@using_ksize(7)
+@using_length(40)
+@pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
+def test_update_snp_bubble(ksize, graph, compactor, snp_bubble):
+    (wildtype, snp), L, R = snp_bubble()
+
+    compactor.update(wildtype)
+    compactor.update(snp)
+    
+    assert compactor.cdbg.n_dnodes == 2
+    assert compactor.cdbg.n_unodes == 4
+
+    dnodes = list(compactor.get_cdbg_dnodes(wildtype))
+    left, right = dnodes
+    assert left.left_degree == 1
+    assert left.right_degree == 2
+    assert right.left_degree == 2
+    assert right.right_degree == 1
