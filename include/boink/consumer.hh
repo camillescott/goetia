@@ -228,7 +228,8 @@ public:
           _output_filename(output_filename),
           _output_stream(_output_filename.c_str()) {
 
-        //_output_stream << "read_n, l_degree, r_degree, position, hash" << std::endl;
+        _output_stream << compactor->cdbg.meta_counter.header() 
+                       << ",n_dnodes,n_unodes" << std::endl;
 
     }
 
@@ -237,13 +238,24 @@ public:
     }
 
     void process_sequence(const Read& read) {
-        compactor->update(read.cleaned_seq);
+        try {
+            compactor->update(read.cleaned_seq);
+        } catch (BoinkException &e) {
+            std::cerr << "WARNING: Bad sequence encountered: "
+                      << read.cleaned_seq << ", exception was "
+                      << e.what() << std::endl;
+        }
     }
 
     void report() {
         std::cerr << "\tcurrently " << compactor->cdbg.n_decision_nodes()
                   << " d-nodes, " << compactor->cdbg.n_unitig_nodes()
                   << " u-nodes." << std::endl;
+        _output_stream << this->n_reads() << ","
+                       << compactor->cdbg.meta_counter
+                       << "," << compactor->cdbg.n_decision_nodes()
+                       << "," << compactor->cdbg.n_unitig_nodes()
+                       << std::endl;
     }
 };
 

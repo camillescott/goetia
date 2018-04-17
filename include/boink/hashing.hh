@@ -105,6 +105,14 @@ public:
         return false;
     }
 
+    void _validate(const char c) const {
+        if (!this->is_valid(c)) {
+            string msg("Invalid symbol: ");
+            msg += c;
+            throw BoinkException(msg.c_str());
+        }
+    }
+
     bool is_valid(const std::string& sequence) const {
         for (auto c : sequence) {
             if(!is_valid(c)) {
@@ -114,15 +122,21 @@ public:
         return true;
     }
 
+    void _validate(const std::string& sequence) const {
+        if (!is_valid(sequence)) {
+            string msg("Invalid symbol in ");
+            msg += sequence;
+            throw BoinkException(msg.c_str());
+        }
+    }
+
     // shadowed by derived
     hash_t get() {
         return derived().get();
     }
 
     hash_t hash(const std::string& sequence) const {
-        if (!is_valid(sequence)) {
-            throw BoinkException("Invalid symbol.");
-        }
+        _validate(sequence);
         return derived()._hash(sequence);
     }
 
@@ -132,9 +146,7 @@ public:
     }
 
     hash_t shift_left(const char c) {
-        if (!is_valid(c)) {
-            throw BoinkException("Invalid symbol.");
-        }
+        _validate(c);
         symbol_deque.push_front(c);
         hash_t h = derived().update_left(c);
         symbol_deque.pop_back();
@@ -147,9 +159,7 @@ public:
     }
 
     hash_t shift_right(const char c) {
-        if (!is_valid(c)) {
-            throw BoinkException("Invalid symbol.");
-        }
+        _validate(c);
         symbol_deque.push_back(c);
         hash_t h = derived().update_right(c);
         symbol_deque.pop_front();
@@ -230,9 +240,7 @@ public:
             return;
         }
         for (auto c : this->symbol_deque) {
-            if (!this->is_valid(c)) {
-                throw BoinkException("Invalid symbol.");
-            }
+            this->_validate(c);
             hasher.eat(c);
         }
         this->initialized = true;
