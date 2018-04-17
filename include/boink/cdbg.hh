@@ -419,6 +419,10 @@ public:
         return decision_nodes.size();
     }
 
+    uint64_t n_tags() const {
+        return unitig_tag_map.size();
+    }
+
     DecisionNode* build_dnode(hash_t hash, const string& kmer) {
         DecisionNode * dnode = get_dnode(hash);
         if (dnode == nullptr) {

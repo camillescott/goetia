@@ -250,6 +250,10 @@ cdef class cDBG:
     def n_dnodes(self):
         return deref(self._this).n_decision_nodes()
 
+    @property
+    def n_tags(self):
+        return deref(self._this).n_tags()
+
 
 cdef class StreamingCompactor:
 
