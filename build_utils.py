@@ -142,14 +142,18 @@ def get_console_size():
     return int(rows), int(columns)
 
 
-def major_divider():
+def major_divider(text=''):
     _, columns = get_console_size()
-    return '\n{0}\n'.format('=' * columns)
+    if text:
+        text = '== {0} '.format(text)
+    return '\n{0}{1}'.format(text, '=' * (columns-len(text)))
 
 
-def minor_divider():
+def minor_divider(text=''):
     _, columns = get_console_size()
-    return '\n{0}\n'.format('-' * columns)
+    if text:
+        text = '-- {0} '.format(text)
+    return '{0}{1}'.format(text, '-' * (columns-len(text)))
 
 
 def title_with_actions(task):
@@ -160,25 +164,27 @@ def title_with_actions(task):
     # is used as group task
     else:
         title = "Group: %s" % ", ".join(task.task_dep)
-    return "{name}\n{title}\n{div}".format(name=text(task.name, TermCodes.HEADER),
-                                           title=title,
-                                           div=minor_divider())
+    return "Name: {name}\n{title}\n".format(
+            name=text(task.name, TermCodes.HEADER),
+            title=title)
 
 
 class BoinkReporter(ConsoleReporter):
 
     def execute_task(self, task):
         if task.actions and (task.name[0] != '_'):
-            self.write(major_divider())
+            self.write(text(major_divider('RUN TASK'), TermCodes.WARNING))
             self.write('\n')
-            self.write(text('RUN: ', TermCodes.WARNING))
             self.write(task.title())
+            self.write(text(minor_divider('task output'),
+                       TermCodes.OKGREEN))
+            self.write('\n')
 
     def skip_uptodate(self, task):
         if task.name[0] != '_':
-            self.write(major_divider())
+            self.write(text(major_divider('TASK UP-TO-DATE'),
+                            TermCodes.OKBLUE))
             self.write('\n')
-            self.write(text('UP-TO-DATE: ', TermCodes.OKBLUE))
             self.write(task.title())
     
     def skip_ignore(self, task):
@@ -186,7 +192,7 @@ class BoinkReporter(ConsoleReporter):
         super().skip_ignore(task)
 
     def _write_failure(self, result, write_exception=True):
-        self.write(text(major_divider(), TermCodes.FAIL))
+        self.write(text(major_divider('TASK FAILURE'), TermCodes.FAIL))
         err = text(result['exception'].get_name(), TermCodes.FAIL)
         tsk = text(result['task'].name, TermCodes.HEADER)
         msg = '%s - taskid:%s\n' % (err, tsk)
