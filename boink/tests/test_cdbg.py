@@ -5,6 +5,8 @@
 # This software may be modified and distributed under the terms
 # of the MIT license.  See the LICENSE file for details.
 
+import sys
+
 import pytest
 from boink.tests.utils import *
 
@@ -57,11 +59,11 @@ def test_insert_fork(ksize, graph, compactor, right_fork):
 
 @using_ksize(21)
 @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
-def test_find_decision_nodes_fork(ksize, graph, compactor, consumer, right_fork):
+def test_find_decision_kmers(ksize, graph, compactor, consumer, right_fork):
     (core, branch), pos = right_fork()
     print(core, ' ' * (pos + 1) + branch, sep='\n')
 
-    positions, hashes = compactor.find_decision_nodes(core)
+    positions, hashes = compactor.find_decision_kmers(core)
     assert positions == [pos]
     assert hashes == [graph.hash(core[pos:pos+ksize])]
 
@@ -75,12 +77,12 @@ def test_update_fork(ksize, graph, compactor, right_fork):
     compactor.update(core)
 
     dnode = list(compactor.get_cdbg_dnodes(core)).pop()
-    assert dnode.in_degree == 1
+    assert dnode.left_degree == 1
     left_unode = list(compactor.cdbg.left_neighbors(dnode)).pop()
     print(left_unode.sequence)
     assert dnode.sequence == left_unode.sequence[-ksize:]
 
-    assert dnode.out_degree == 2
+    assert dnode.right_degree == 2
     for unode in compactor.cdbg.right_neighbors(dnode):
         assert dnode.sequence == unode.sequence[:ksize]
 
@@ -98,12 +100,12 @@ def test_update_triple_fork(ksize, graph, compactor, right_triple_fork):
     compactor.update(core)
 
     dnode = list(compactor.get_cdbg_dnodes(core)).pop()
-    assert dnode.in_degree == 1
+    assert dnode.left_degree == 1
     left_unode = list(compactor.cdbg.left_neighbors(dnode)).pop()
     print(left_unode.sequence)
     assert dnode.sequence == left_unode.sequence[-ksize:]
 
-    assert dnode.out_degree == 3
+    assert dnode.right_degree == 3
     for unode in compactor.cdbg.right_neighbors(dnode):
         assert dnode.sequence == unode.sequence[:ksize]
 
@@ -123,17 +125,19 @@ def test_double_update(ksize, graph, compactor, right_triple_fork,
         compactor.update(top)
         compactor.update(bottom)
         if loop == 1:
+            print('CORE update', file=sys.stderr)
             compactor.update(core)
         if loop == 2:
+            print('CORE2 update', file=sys.stderr)
             core = random_sequence() + core
 
         dnode = list(compactor.get_cdbg_dnodes(core)).pop()
-        assert dnode.in_degree == 1
+        assert dnode.left_degree == 1
         left_unode = list(compactor.cdbg.left_neighbors(dnode)).pop()
         print(left_unode.sequence)
         assert dnode.sequence == left_unode.sequence[-ksize:]
 
-        assert dnode.out_degree == 3
+        assert dnode.right_degree == 3
         for unode in compactor.cdbg.right_neighbors(dnode):
             assert dnode.sequence == unode.sequence[:ksize]
 
@@ -153,11 +157,11 @@ def test_component_merge(ksize, graph, compactor, right_triple_fork,
     compactor.update(core1)
 
     dnode = list(compactor.get_cdbg_dnodes(core1)).pop()
-    assert dnode.in_degree == 1
+    assert dnode.left_degree == 1
     left_unode = list(compactor.cdbg.left_neighbors(dnode)).pop()
     assert dnode.sequence == left_unode.sequence[-ksize:]
 
-    assert dnode.out_degree == 3
+    assert dnode.right_degree == 3
     for unode in compactor.cdbg.right_neighbors(dnode):
         assert dnode.sequence == unode.sequence[:ksize]
 
@@ -166,16 +170,21 @@ def test_component_merge(ksize, graph, compactor, right_triple_fork,
 
     compactor.update(top2)
     compactor.update(bottom2)
+    print('CORE1 + CORE2 update', file=sys.stderr)
     compactor.update(core1 + core2)
 
     assert compactor.cdbg.n_dnodes == 2
+    assert compactor.cdbg.n_unodes == 7
 
     dnodes = list(compactor.get_cdbg_dnodes(core1 + core2))
     for dnode in dnodes:
-        assert dnode.in_degree == 1
-        assert dnode.out_degree == 3
-    middle_unode = list(compactor.cdbg.left_neighbors(dnodes[-1])).pop()
-    assert dnode[0].sequence == middle_unode.sequence[:ksize]
-    assert middle_unode.sequence[-ksize:] == dnode[1].sequence
+        assert dnode.left_degree == 1
+        assert dnode.right_degree == 3
 
-    assert compactor.cdbg.n_unodes == 6
+    right  = dnodes[1]
+    middle = list(compactor.cdbg.left_neighbors(right)).pop()
+    left   = list(compactor.cdbg.left_neighbors(middle)).pop()
+
+    assert left == dnodes[0]
+    assert left.sequence == middle.sequence[:ksize]
+    assert middle.sequence[-ksize:] == right.sequence
