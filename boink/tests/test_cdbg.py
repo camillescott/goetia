@@ -235,3 +235,30 @@ def test_update_trivial_dnodes(ksize, graph, compactor, tandem_quad_forks):
     assert trivial_unode.sequence[:-1] == left.sequence
     assert trivial_unode.sequence[1:] == right.sequence
     assert len(trivial_unode) == ksize + 1
+
+
+@using_ksize(21)
+@pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
+def test_linear_merge(ksize, graph, compactor, linear_path):
+    seq1 = linear_path()
+    seq2 = linear_path()
+
+    compactor.update(seq1)
+    unode = list(compactor.cdbg.unodes()).pop()
+    assert len(unode) == len(seq1)
+    assert unode.sequence == seq1
+    assert compactor.cdbg.n_unodes == 1
+
+    compactor.update(seq2)
+    assert compactor.cdbg.n_unodes == 2
+
+    unode1, unode2 = list(compactor.cdbg.unodes())
+    if unode1.node_id > unode2.node_id:
+        unode2, unode1 = unode1, unode2
+    assert unode1.sequence == seq1
+    assert unode2.sequence == seq2
+
+    compactor.update(seq1 + seq2)
+    assert compactor.cdbg.n_unodes == 1
+    unode = list(compactor.cdbg.unodes()).pop()
+    assert unode.sequence == seq1 + seq2
