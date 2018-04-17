@@ -15,19 +15,21 @@ from boink.utils cimport _bstring
 cdef extern from "boink/consumer.hh" namespace "boink":
 
     cdef cppclass _FileProcessor "boink::FileProcessor" [Derived]:
-        void process(const string&,
-                     uint64_t&,
-                     uint64_t&,
-                     uint32_t) except +ValueError
-        void process(const string&,
-                     uint64_t&,
-                     uint64_t&) except +ValueError
+        uint64_t process(const string&, uint32_t) except +ValueError
+        uint64_t process(const string&) except +ValueError
+
+        uint64_t n_reads() const
 
     cdef cppclass _FileConsumer "boink::FileConsumer" [GraphType] (_FileProcessor[_FileConsumer[GraphType]]):
         _FileConsumer(GraphType *)
+        uint64_t n_consumed()
 
     cdef cppclass _DecisionNodeProcessor "boink::DecisionNodeProcessor"[GraphType] (_FileProcessor[_DecisionNodeProcessor[GraphType]]):
         _DecisionNodeProcessor(_StreamingCompactor*,
+                               string &)
+
+    cdef cppclass _StreamingCompactorProcessor "boink::StreamingCompactorProcessor"[GraphType] (_FileProcessor[_StreamingCompactorProcessor[GraphType]]):
+        _StreamingCompactorProcessor(_StreamingCompactor*,
                                string &)
 
     cdef cppclass _MinimizerProcessor "boink::MinimizerProcessor" [ShifterType] (_FileProcessor[_MinimizerProcessor[ShifterType]]):
@@ -45,6 +47,9 @@ cdef class DecisionNodeProcessor(FileProcessor):
     cdef readonly str output_filename
     cdef unique_ptr[_DecisionNodeProcessor[DefaultDBG]] _dnp_this
 
+cdef class StreamingCompactorProcessor(FileProcessor):
+    cdef readonly str output_filename
+    cdef unique_ptr[_StreamingCompactorProcessor[DefaultDBG]] _scp_this
 
 cdef class MinimizerProcessor(FileProcessor):
     cdef unique_ptr[_MinimizerProcessor[_DefaultShifter]] _mp_this

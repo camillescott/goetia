@@ -26,26 +26,24 @@ template <class Derived,
           class ParserType = FastxReader>
 class FileProcessor {
 
+protected:
+
+    uint64_t _n_reads;
+
 public:
 
-    void process(string const &filename,
-                  uint64_t &n_reads,
-                  uint64_t &n_consumed) {
+    uint64_t process(string const &filename) {
         ReadParserPtr<ParserType> parser = get_parser<ParserType>(filename);
-        process(parser, n_reads, n_consumed);
+        return process(parser);
     }
 
-    void process(string const &filename,
-                  uint64_t &n_reads,
-                  uint64_t &n_consumed,
-                  uint32_t output_interval) {
+    uint64_t process(string const &filename,
+                     uint32_t output_interval) {
         ReadParserPtr<ParserType> parser = get_parser<ParserType>(filename);
-        process(parser, n_reads, n_consumed, output_interval);
+        return process(parser, output_interval);
     }
 
-    void process(read_parsers::ReadParserPtr<ParserType>& parser,
-                 uint64_t &n_reads,
-                 uint64_t &n_consumed) {
+    uint64_t process(read_parsers::ReadParserPtr<ParserType>& parser) {
         Read read;
 
         // Iterate through the reads and consume their k-mers.
@@ -57,20 +55,17 @@ public:
             }
 
             read.set_clean_seq();
-            uint64_t this_n_consumed = derived().process_sequence(read.cleaned_seq,
-                                                                  n_reads);
+            derived().process_sequence(read.cleaned_seq);
                 
-                //graph.add_sequence(read.cleaned_seq);
 
-            __sync_add_and_fetch( &n_consumed, this_n_consumed );
-            __sync_add_and_fetch( &n_reads, 1 );
+            __sync_add_and_fetch( &_n_reads, 1 );
         }
+
+        return _n_reads;
     }
 
-    void process(read_parsers::ReadParserPtr<ParserType>& parser,
-                 uint64_t &n_reads,
-                 uint64_t &n_consumed,
-                 uint32_t output_interval) {
+    uint64_t process(read_parsers::ReadParserPtr<ParserType>& parser,
+                     uint32_t output_interval) {
         Read read;
 
         // Iterate through the reads and consume their k-mers.
@@ -83,22 +78,28 @@ public:
             }
 
             read.set_clean_seq();
-            uint64_t this_n_consumed = derived().process_sequence(read,
-                                                                  n_reads);
+            derived().process_sequence(read);
                 
-            __sync_add_and_fetch( &n_consumed, this_n_consumed );
-            __sync_add_and_fetch( &n_reads, 1 );
+
+            __sync_add_and_fetch( &_n_reads, 1 );
             __sync_add_and_fetch( &output_counter, 1 );
 
             if (output_counter == output_interval) {
                 output_counter = 0;
-                std::cerr << "processed " << n_reads << " reads, "
-                          << n_consumed << " unique k-mers." << std::endl;
+                std::cerr << "processed " << _n_reads << " reads." << std::endl;
+                derived().report();
             }    
         }
+        return _n_reads;
+    }
+
+    uint64_t n_reads() const {
+        return _n_reads;
     }
 
 private:
+
+    FileProcessor() : _n_reads(0) {}
 
     friend Derived;
 
@@ -121,17 +122,26 @@ class FileConsumer : public FileProcessor<FileConsumer<GraphType, ParserType>,
 protected:
 
     GraphType * graph;
+    uint64_t _n_consumed;
 
 public:
 
     FileConsumer(GraphType * graph)
-        : graph(graph) {
+        : graph(graph), _n_consumed(0) {
 
     }
 
-    uint64_t process_sequence(const Read& read,
-                              const uint64_t read_n) {
-        return graph->add_sequence(read.cleaned_seq);
+    void process_sequence(const Read& read) {
+        auto this_n_consumed = graph->add_sequence(read.cleaned_seq);
+        __sync_add_and_fetch( &_n_consumed, this_n_consumed );
+    }
+
+    void report() {
+        std::cerr << "\t and " << _n_consumed << " new k-mers." << std::endl;
+    }
+
+    uint64_t n_consumed() const {
+        return _n_consumed;
     }
 
 };
@@ -143,7 +153,8 @@ class DecisionNodeProcessor : public FileProcessor<DecisionNodeProcessor<GraphTy
                                                    ParserType> {
 
 protected:
-
+    typedef FileProcessor<DecisionNodeProcessor<GraphType, ParserType>,
+                                                   ParserType> Base;
     StreamingCompactor<GraphType> * compactor;
     GraphType * graph;
     std::string _output_filename;
@@ -153,7 +164,8 @@ public:
 
     DecisionNodeProcessor(StreamingCompactor<GraphType> * compactor,
                           std::string& output_filename)
-        : compactor(compactor),
+        : Base(),
+          compactor(compactor),
           graph(compactor->dbg),
           _output_filename(output_filename),
           _output_stream(_output_filename.c_str()) {
@@ -166,8 +178,7 @@ public:
         _output_stream.close();
     }
 
-    uint64_t process_sequence(const Read& read,
-                              const uint64_t read_n) {
+    void process_sequence(const Read& read) {
         uint64_t n_new = graph->add_sequence(read.cleaned_seq);
         if (n_new > 0) {
             std::vector<uint32_t> decision_positions;
@@ -181,20 +192,61 @@ public:
                                            decision_neighbors);
 
             for (size_t i=0; i<decision_positions.size(); ++i) {
-                _output_stream << read_n << ", "
+                _output_stream << this->n_reads() << ", "
                                << decision_neighbors[i].first.size() << ", "
                                << decision_neighbors[i].second.size() << ", "
                                << decision_positions[i] << ", "
                                << decision_hashes[i] << std::endl;
             }
         }
-
-        return n_new;
     }
 
-
+    void report() {};
 
 };
+
+
+template <class GraphType,
+          class ParserType = FastxReader>
+class StreamingCompactorProcessor : 
+    public FileProcessor<StreamingCompactorProcessor<GraphType, ParserType>,
+                         ParserType> { // template class names like modern art
+
+protected:
+
+    StreamingCompactor<GraphType> * compactor;
+    GraphType * graph;
+    std::string _output_filename;
+    std::ofstream _output_stream;
+
+public:
+
+    StreamingCompactorProcessor(StreamingCompactor<GraphType> * compactor,
+                                std::string& output_filename)
+        : compactor(compactor),
+          graph(compactor->dbg),
+          _output_filename(output_filename),
+          _output_stream(_output_filename.c_str()) {
+
+        //_output_stream << "read_n, l_degree, r_degree, position, hash" << std::endl;
+
+    }
+
+    ~StreamingCompactorProcessor() {
+        _output_stream.close();
+    }
+
+    void process_sequence(const Read& read) {
+        compactor->update(read.cleaned_seq);
+    }
+
+    void report() {
+        std::cerr << "\tcurrently " << compactor->cdbg.n_decision_nodes()
+                  << " d-nodes, " << compactor->cdbg.n_unitig_nodes()
+                  << " u-nodes." << std::endl;
+    }
+};
+
 
 
 template <class ShifterType,
@@ -223,19 +275,20 @@ public:
         _output_stream.close();
     }
 
-    uint64_t process_sequence(const Read& read,
-                              const uint64_t read_n) {
+    void process_sequence(const Read& read) {
         std::vector<typename WKMinimizer<ShifterType>::value_type> minimizers;
         minimizers = M.get_minimizers(read.cleaned_seq);
 
         for (auto min : minimizers) {
-            _output_stream << read_n << ","
+            _output_stream << this->n_reads() << ","
                            << min.second << ","
                            << min.first << ","
                            << read.cleaned_seq.substr(min.second, M.K())
                            << std::endl;
         }
     }
+
+    void report() {}
 };
 
 } //namespace boink

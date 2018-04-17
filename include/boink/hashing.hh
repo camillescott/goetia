@@ -410,4 +410,5 @@ public:
 
 }
 
+#undef pdebug
 #endif
