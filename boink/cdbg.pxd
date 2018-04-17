@@ -79,11 +79,19 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
     ctypedef _UnitigNode * UnitigNodePtr
 
     cdef cppclass _cDBG "boink::cDBG" (_KmerClient):
+        ctypedef umap[hash_t,unique_ptr[_DecisionNode]].const_iterator dnode_iter_t
+        ctypedef umap[id_t,unique_ptr[_UnitigNode]].const_iterator unode_iter_t
+
         _cDBG(uint16_t K)
 
         uint64_t n_updates() const
         uint64_t n_unitig_nodes() const
         uint64_t n_decision_nodes() const
+
+        unode_iter_t unodes_begin() const
+        unode_iter_t unodes_end() const
+        dnode_iter_t dnodes_begin() const
+        dnode_iter_t dnodes_end() const
 
         _DecisionNode * get_dnode(hash_t)
         vector[_DecisionNode*] get_dnodes[ShifterType](const string&) except +ValueError

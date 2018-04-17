@@ -27,7 +27,6 @@
 #include "boink/dbg.hh"
 #include "boink/minimizers.hh"
 
-#define DEBUG_CDBG
 # ifdef DEBUG_CDBG
 #   define pdebug(x) do { std::cerr << std::endl << "@ " << __FILE__ <<\
                           ":" << __FUNCTION__ << ":" <<\
@@ -287,8 +286,19 @@ typedef UnitigNode * UnitigNodePtr;
 
 class cDBG : public KmerClient {
 
-    std::unordered_map<hash_t, std::unique_ptr<DecisionNode>> decision_nodes;
-    std::unordered_map<id_t, std::unique_ptr<UnitigNode>> unitig_nodes;
+public:
+
+    typedef std::unordered_map<hash_t,
+                               std::unique_ptr<DecisionNode>> dnode_map_t;
+    typedef dnode_map_t::const_iterator dnode_iter_t;
+    typedef std::unordered_map<id_t,
+                               std::unique_ptr<UnitigNode>> unode_map_t;
+    typedef unode_map_t::const_iterator unode_iter_t;
+
+protected:
+
+    dnode_map_t decision_nodes;
+    unode_map_t unitig_nodes;
     std::unordered_map<junction_t, id_t, junction_hash> unitig_junction_map;
     std::unordered_map<hash_t, id_t> unitig_tag_map;
 
@@ -312,6 +322,22 @@ public:
         _unitig_id_counter(UNITIG_START_ID),
         _n_unitig_nodes(0) {
 
+    }
+
+    dnode_map_t::const_iterator dnodes_begin() const {
+        return decision_nodes.cbegin();
+    }
+
+    dnode_map_t::const_iterator dnodes_end() const {
+        return decision_nodes.cend();
+    }
+
+    unode_map_t::const_iterator unodes_begin() const {
+        return unitig_nodes.cbegin();
+    }
+
+    unode_map_t::const_iterator unodes_end() const {
+        return unitig_nodes.cend();
     }
 
     uint64_t n_updates() const {
@@ -944,5 +970,5 @@ public:
 
 }
 
-
+#undef pdebug
 #endif

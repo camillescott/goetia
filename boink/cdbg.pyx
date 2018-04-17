@@ -6,6 +6,7 @@
 # of the MIT license.  See the LICENSE file for details.
 
 from cython.operator cimport dereference as deref
+from cython.operator cimport preincrement as princ
 from libcpp.memory cimport make_unique
 
 from boink.utils cimport _bstring, _ustring, make_pair
@@ -126,6 +127,10 @@ cdef class UnitigNode(CompactNode):
         return (deref(self._un_this).right_junc.first,
                 deref(self._un_this).right_junc.second)
 
+    @property
+    def meta(self):
+        return _ustring(node_meta_repr(deref(self._un_this).meta))
+
     def tags(self):
         self._check_ptr()
         cdef hash_t tag
@@ -144,6 +149,14 @@ cdef class cDBG:
         cdef cDBG cdbg = cDBG()
         cdbg._this = ptr
         return cdbg
+
+    def unodes(self):
+        cdef _cDBG.unode_iter_t it = deref(self._this).unodes_begin()
+        cdef _UnitigNode * unode
+        while(it != deref(self._this).unodes_end()):
+            unode = deref(it).second.get()
+            yield UnitigNode._wrap(unode)
+            princ(it)
 
     def get_unode_by_hash(self, hash_t h):
         cdef _UnitigNode * _node = deref(self._this).get_unode(h)
