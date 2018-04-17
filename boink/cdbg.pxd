@@ -102,6 +102,8 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
         _DecisionNode * get_left_dnode(_UnitigNode*)
         _DecisionNode * get_right_dnode(_UnitigNode*)
 
+cdef extern from "boink/compactor.hh" namespace "boink" nogil:
+
     cdef cppclass _StreamingCompactor "boink::StreamingCompactor" [GraphType] (_AssemblerMixin[GraphType]):
         _cDBG cdbg
 
