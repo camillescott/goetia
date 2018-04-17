@@ -3,48 +3,39 @@
 import argparse
 import sys
 
-from khmer._oxli.parsing import FastxParser
-from khmer.khmer_args import build_nodegraph_args, create_nodegraph
+from boink.args import build_dBG_args
+from boink.dbg import make_dBG
 from boink.cdbg import StreamingCompactor
+from boink.processors import StreamingCompactorProcessor
+
 
 
 def parse_args():
-    parser = build_nodegraph_args(descr='streaming cDBG')
-    parser.add_argument('--format', choices=['gml', 'fasta'],
-                        default='fasta')
-    parser.add_argument('--output-interval', default=0, type=int)
-    parser.add_argument('-o', dest='output',  default='/dev/stdout')
-    parser.add_argument('--savegraph')
-    parser.add_argument('-i', dest='inputs', nargs='+', 
-                        default=['/dev/stdin'])
+    parser = build_dBG_args()
+    parser.add_argument('-o', dest='output_filename', default='/dev/stdout')
+    parser.add_argument('-i', dest='inputs', nargs='+', default=['/dev/stdin'])
+    parser.add_argument('--output-interval', type=int, default=10000)
 
     args = parser.parse_args()
-
     return args
 
 
 def main():
     args = parse_args()
 
-    graph = create_nodegraph(args)
+    graph = make_dBG(args.ksize,
+                     args.max_tablesize,
+                     args.n_tables)
     compactor = StreamingCompactor(graph)
+    processor = StreamingCompactorProcessor(compactor, args.output_filename)
 
-    n_sequences = 0
     for filename in args.inputs:
-        for record in FastxParser(filename):
-            if n_sequences % args.output_interval == 0:
-                print('*', n_sequences, compactor.report(), file=sys.stderr)
-            if len(record) > args.ksize:
-                compactor.consume_and_update(record.sequence)
-            n_sequences += 1
+        processor.process(filename,
+                          output_interval=args.output_interval)
 
     if args.savegraph:
         graph.save(args.savegraph)
 
-    if args.format == 'fasta':
-        compactor.write_fasta(args.output)
-    if args.format == 'gml':
-        compactor.write_gml(args.output)
 
 
 if __name__ == '__main__':
