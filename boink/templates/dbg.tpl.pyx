@@ -136,7 +136,7 @@ cdef object _make_dbg(int K, uint64_t starting_size, int n_tables,
        shifter == "{{type_bundle.shifter_type}}":
         return dBG_{{type_bundle.suffix}}(K, starting_size, n_tables)
     {% endfor %}
-    raise TypeError("Invalid Storage or Shifter type.")
+    raise TypeError("Invalid Storage or Shifter type: ({0},{1})".format(storage, shifter))
 
 
 def get_dbg_type(str storage='_BitStorage',
