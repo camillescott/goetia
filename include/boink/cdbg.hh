@@ -114,6 +114,70 @@ inline const char * node_meta_repr(node_meta_t meta) {
 }
 
 
+struct node_meta_counter {
+
+    int64_t full_count;
+    int64_t tip_count;
+    int64_t island_count;
+    int64_t unknown_count;
+    int64_t trivial_count;
+
+    node_meta_counter() :
+        full_count(0),
+        tip_count(0),
+        island_count(0),
+        unknown_count(0),
+        trivial_count(0) {
+    }
+
+    void mutate(node_meta_t meta, int64_t amt) {
+        switch(meta) {
+            case FULL:
+                full_count += amt;
+                break;
+            case TIP:
+                tip_count += amt;
+                break;
+            case ISLAND:
+                island_count += amt;
+                break;
+            case TRIVIAL:
+                trivial_count += amt;
+                break;
+            default:
+                unknown_count += amt;
+                break;
+        }
+    }
+
+    void increment(node_meta_t meta) {
+        mutate(meta, 1);
+    }
+
+    void decrement(node_meta_t meta) {
+        mutate(meta, -1);
+    }
+
+    string repr() const {
+        std::ostringstream os;
+        os << *this;
+        return os.str();
+    }
+
+    string header() const {
+        return string("full,tip,island,trivial,unknown");
+    }
+
+    friend std::ostream& operator<<(std::ostream& o, const node_meta_counter& c);
+
+};
+
+std::ostream& operator<<(std::ostream& o, const node_meta_counter& c) {
+    o << c.full_count << "," << c.tip_count << "," << c.island_count
+      << "," << c.trivial_count << "," << c.unknown_count;
+    return o;
+}
+
 
 class CompactNode {
 public:
@@ -305,6 +369,7 @@ protected:
     uint64_t _n_updates;
     uint64_t _unitig_id_counter;
     uint64_t _n_unitig_nodes;
+
 public:
 
     enum Graph_Ops_t {
@@ -315,6 +380,8 @@ public:
         ADD_EDGE,
         INCR_DNODE_COUNT
     };
+
+    node_meta_counter meta_counter;
 
     cDBG(uint16_t K) :
         KmerClient(K),
@@ -449,6 +516,7 @@ public:
         link_unode_to_dnodes(unode.get());
 
         unode->meta = get_unode_meta(unode.get());
+        meta_counter.increment(unode->meta);
 
         // Transfer the UnitigNode's ownership to the map;
         // get its new memory address and return it
@@ -522,6 +590,7 @@ public:
         if (unode != nullptr) {
             pdebug("Deleting " << *unode);
             id_t id = unode->node_id;
+            meta_counter.decrement(unode->meta);
             for (hash_t tag: unode->tags) {
                 unitig_tag_map.erase(tag);
             }
