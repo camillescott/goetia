@@ -175,7 +175,7 @@ public:
             std::vector<NeighborBundle> decision_neighbors;
             std::set<hash_t> new_kmers;
 
-            compactor->find_decision_nodes(read.cleaned_seq,
+            compactor->find_decision_kmers(read.cleaned_seq,
                                            decision_positions,
                                            decision_hashes,
                                            decision_neighbors);

@@ -8,7 +8,7 @@
 from cython.operator cimport dereference as deref
 from libcpp.memory cimport make_unique
 
-from boink.utils cimport _bstring, _ustring
+from boink.utils cimport _bstring, _ustring, make_pair
 from khmer._oxli.sequence cimport Alphabets
 
 
@@ -20,22 +20,34 @@ cdef class CompactNode:
         node._cn_this = ptr
         return node
 
+    def _check_ptr(self):
+        if (self._cn_this == NULL):
+            raise ValueError("_CompactNode * is stale")
+
     @property
     def sequence(self):
+        self._check_ptr()
         return deref(self._cn_this).sequence
 
     def __len__(self):
+        self._check_ptr()
         return deref(self._cn_this).sequence.length()
 
     def __str__(self):
+        self._check_ptr()
         return 'CompactNode: L={0} sequence={1}'.format(len(self), self.sequence)
 
     def __repr__(self):
+        self._check_ptr()
         return str(self)
 
     @property
     def node_id(self):
+        self._check_ptr()
         return deref(self._cn_this).node_id
+
+    def __eq__(self, other):
+        return self.node_id == other.node_id
 
 
 cdef class DecisionNode(CompactNode):
@@ -47,34 +59,45 @@ cdef class DecisionNode(CompactNode):
         node._cn_this = <_CompactNode*>ptr
         return node
 
+    def _check_ptr(self):
+        if (self._dn_this == NULL):
+            raise ValueError("_DecisionNode * is stale")
+
     @property
     def count(self):
+        self._check_ptr()
         return deref(self._dn_this).count
 
     @property
-    def out_degree(self):
-        return deref(self._dn_this).out_degree()
+    def right_degree(self):
+        self._check_ptr()
+        return deref(self._dn_this).right_degree()
 
     @property
-    def in_degree(self):
-        return deref(self._dn_this).in_degree()
+    def left_degree(self):
+        self._check_ptr()
+        return deref(self._dn_this).left_degree()
 
     @property
     def degree(self):
+        self._check_ptr()
         return deref(self._dn_this).degree()
 
-    def in_edges(self):
-        cdef id_t node_id
-        for node_id in deref(self._dn_this).in_edges:
-            yield node_id
+    def left_junctions(self):
+        self._check_ptr()
+        cdef junction_t l_junc
+        for l_junc in deref(self._dn_this).left_juncs:
+            yield l_junc.first, l_junc.second
 
 
-    def out_edges(self):
-        cdef id_t node_id
-        for node_id in deref(self._dn_this).out_edges:
-            yield node_id
+    def right_junctions(self):
+        self._check_ptr()
+        cdef junction_t r_junc
+        for r_junc in deref(self._dn_this).right_juncs:
+            yield r_junc.first, r_junc.second
 
     def __str__(self):
+        self._check_ptr()
         return deref(self._dn_this).repr()
 
 
@@ -87,30 +110,30 @@ cdef class UnitigNode(CompactNode):
         node._cn_this = <_CompactNode*>ptr
         return node
 
-    @property
-    def left_hash(self):
-        return deref(self._un_this).left_hash
+    def _check_ptr(self):
+        if (self._un_this == NULL):
+            raise ValueError("_UnitigNode * is stale")
 
     @property
-    def right_hash(self):
-        return deref(self._un_this).right_hash
+    def left_junc(self):
+        self._check_ptr()
+        return (deref(self._un_this).left_junc.first,
+                deref(self._un_this).left_junc.second)
 
     @property
-    def left_dnode(self):
-        cdef _DecisionNode * ld = deref(self._un_this).left_dnode
-        return None if ld == NULL else DecisionNode._wrap(ld)
-
-    @property
-    def right_dnode(self):
-        cdef _DecisionNode * rd = deref(self._un_this).right_dnode
-        return None if rd == NULL else DecisionNode._wrap(rd)
+    def right_junc(self):
+        self._check_ptr()
+        return (deref(self._un_this).right_junc.first,
+                deref(self._un_this).right_junc.second)
 
     def tags(self):
+        self._check_ptr()
         cdef hash_t tag
         for tag in deref(self._un_this).tags:
             yield tag
 
     def __str__(self):
+        self._check_ptr()
         return deref(self._un_this).repr()
 
 
@@ -123,7 +146,7 @@ cdef class cDBG:
         return cdbg
 
     def get_unode_by_hash(self, hash_t h):
-        cdef _UnitigNode * _node = deref(self._this).get_unitig_node(h)
+        cdef _UnitigNode * _node = deref(self._this).get_unode(h)
         if _node != NULL:
             return UnitigNode._wrap(_node)
         else:
@@ -131,7 +154,16 @@ cdef class cDBG:
 
     def get_unode_by_id(self, id_t node_id):
         cdef _UnitigNode * _node = \
-            deref(self._this).get_unitig_node_from_id(node_id)
+            deref(self._this).get_unode_from_id(node_id)
+        if _node != NULL:
+            return UnitigNode._wrap(_node)
+        else:
+            return None
+
+    def get_unode_by_junc(self, tuple junc):
+        cdef junction_t j = make_pair[hash_t, hash_t](<hash_t>junc[0],
+                                                      <hash_t>junc[1])
+        cdef _UnitigNode * _node = deref(self._this).get_unode(j)
         if _node != NULL:
             return UnitigNode._wrap(_node)
         else:
@@ -139,7 +171,7 @@ cdef class cDBG:
 
     def get_dnode(self, hash_t h):
         cdef _DecisionNode * _node = \
-            deref(self._this).get_decision_node(h)
+            deref(self._this).get_dnode(h)
         if _node != NULL:
             return DecisionNode._wrap(_node)
         else:
@@ -148,27 +180,41 @@ cdef class cDBG:
     def get_dnodes(self, str sequence):
         pass
 
+    def get_left_dnode(self, UnitigNode unode):
+        cdef _DecisionNode * dnode = deref(self._this).get_left_dnode(
+                                                unode._un_this
+                                                )
+        return None if dnode == NULL else DecisionNode._wrap(dnode)
+
+    def get_right_dnode(self, UnitigNode unode):
+        cdef _DecisionNode * dnode = deref(self._this).get_right_dnode(
+                                                unode._un_this
+                                                )
+        return None if dnode == NULL else DecisionNode._wrap(dnode)
+
     def neighbors(self, CompactNode node):
-        for neighbor in self.left_neighbors(node):
+        for neighbor in node.left_neighbors(node):
             yield neighbor
         for neighbor in self.right_neighbor(node):
             yield neighbor
 
     def left_neighbors(self, CompactNode node):
         if isinstance(node, UnitigNode):
-            if node.left_dnode is not None:
-                yield node.left_dnode
-        elif isinstance(node, DecisionNode):
-            for n_id in node.in_edges():
-                yield self.get_unode_by_id(n_id)
+            neighbor = self.get_left_dnode(node)
+            if neighbor is not None:
+                yield neighbor
+        if isinstance(node, DecisionNode):
+            for junc in node.left_junctions():
+                yield self.get_unode_by_junc(junc)
 
     def right_neighbors(self, CompactNode node):
         if isinstance(node, UnitigNode):
-            if node.right_dnode is not None:
-                yield node.right_dnode
-        elif isinstance(node, DecisionNode):
-            for n_id in node.out_edges():
-                yield self.get_unode_by_id(n_id)
+            neighbor = self.get_right_dnode(node)
+            if neighbor is not None:
+                yield neighbor
+        if isinstance(node, DecisionNode):
+            for junc in node.right_junctions():
+                yield self.get_unode_by_junc(junc)
 
     @property
     def n_updates(self):
@@ -198,17 +244,17 @@ cdef class StreamingCompactor:
     #    cdef string _seed = _bstring(seed)
     #    return deref(self._sc_this).compactify(_seed)
 
-    def is_decision_node(self, str kmer):
+    def is_decision_kmer(self, str kmer):
         cdef string _kmer = _bstring(kmer)
-        return deref(self._sc_this).is_decision_node(_kmer)
+        return deref(self._sc_this).is_decision_kmer(_kmer)
 
-    def find_decision_nodes(self, str sequence):
+    def find_decision_kmers(self, str sequence):
         cdef string _sequence = _bstring(sequence)
         cdef vector[uint32_t] positions
         cdef vector[hash_t] hashes
         cdef vector[NeighborBundle] neighbors
 
-        deref(self._sc_this).find_decision_nodes(_sequence,
+        deref(self._sc_this).find_decision_kmers(_sequence,
                                                  positions,
                                                  hashes,
                                                  neighbors)
@@ -218,7 +264,7 @@ cdef class StreamingCompactor:
     def get_cdbg_dnodes(self, str sequence):
         cdef string _sequence = _bstring(sequence)
         cdef vector[_DecisionNode*] dnodes = \
-            deref(self.cdbg._this).get_decision_nodes[_DefaultShifter](_sequence)
+            deref(self.cdbg._this).get_dnodes[_DefaultShifter](_sequence)
         cdef _DecisionNode * dnode
         for dnode in dnodes:
             if dnode != NULL:
@@ -242,37 +288,6 @@ cdef class StreamingCompactor:
         return deref(self._sc_this).update(_sequence)
 
     '''
-    def consume(self, str sequence):
-        cdef string _sequence = _bstring(sequence)
-        return deref(self._sc_this).consume_sequence(_sequence)
-
-    def consume_and_update(self, str sequence):
-        cdef string _sequence = _bstring(sequence)
-        return deref(self._sc_this).consume_sequence_and_update(_sequence)
-
-    def sequence_nodes(self, str sequence):
-        cdef string _sequence = _bstring(sequence)
-        cdef vector[CpCompactNode*] nodes = \
-                deref(self._sc_this).get_nodes(_sequence)
-        cdef CpCompactNode* node
-        for node in nodes:
-            yield CompactNode._wrap(node)
-
-    def report(self):
-        return deref(self._sc_this).report()
-
-    @property
-    def n_nodes(self):
-        return deref(self._sc_this).n_nodes()
-
-    @property
-    def n_edges(self):
-        return deref(self._sc_this).n_edges()
-
-    @property
-    def n_updates(self):
-        return deref(self._sc_this).n_updates()
-
     def write_gml(self, str filename):
         cdef string _filename = _bstring(filename)
         deref(self._sc_this).write_gml(_filename)

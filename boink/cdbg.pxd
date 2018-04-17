@@ -27,6 +27,7 @@ cdef extern from "boink/cdbg.hh":
 cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
 
     ctypedef uint64_t id_t
+    ctypedef pair[hash_t, hash_t] junction_t
     ctypedef vector[hash_t] HashVector
 
     ctypedef enum node_meta_t:
@@ -48,31 +49,30 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
         bool operator==(const _CompactNode&, const _CompactNode&)
 
     cdef cppclass _DecisionNode "boink::DecisionNode" (_CompactNode):
-        vector[id_t] in_edges
-        vector[id_t] out_edges
+        vector[junction_t] left_juncs
+        vector[junction_t] right_juncs
         uint32_t count
 
         size_t degree() const
-        size_t in_degree() const
-        size_t out_degree() const
+        size_t left_degree() const
+        size_t right_degree() const
 
-        bool has_in_edge(id_t) const
-        void remove_in_edge(id_t)
-        bool has_out_edge(id_t) const
-        void remove_out_edge(id_t)
+        bool has_left_junc(junction_t) const
+        void add_left_junc(junction_t)
+        bool has_right_junc(junction_t) const
+        void add_right_junc(junction_t)
 
         string repr()
 
     cdef cppclass _UnitigNode "boink::UnitigNode" (_CompactNode):
-        _DecisionNode * left_dnode
-        _DecisionNode * right_dnode
-        hash_t left_hash
-        hash_t right_hash
+        junction_t left_junc
+        junction_t right_junc
         HashVector tags
+        node_meta_t meta
 
         string repr()
 
-        _UnitigNode(id_t, hash_t, hash_t, const string&)
+        _UnitigNode(id_t, junction_t, junction_t, const string&)
         
     ctypedef _CompactNode * CompactNodePtr
     ctypedef _DecisionNode * DecisionNodePtr
@@ -85,11 +85,14 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
         uint64_t n_unitig_nodes() const
         uint64_t n_decision_nodes() const
 
-        _DecisionNode * get_decision_node(hash_t)
-        vector[_DecisionNode*] get_decision_nodes[ShifterType](const string&) except +ValueError
+        _DecisionNode * get_dnode(hash_t)
+        vector[_DecisionNode*] get_dnodes[ShifterType](const string&) except +ValueError
 
-        _UnitigNode * get_unitig_node(hash_t)
-        _UnitigNode * get_unitig_node_from_id(id_t)
+        _UnitigNode * get_unode(hash_t)
+        _UnitigNode * get_unode(junction_t)
+        _UnitigNode * get_unode_from_id(id_t)
+        _DecisionNode * get_left_dnode(_UnitigNode*)
+        _DecisionNode * get_right_dnode(_UnitigNode*)
 
     cdef cppclass _StreamingCompactor "boink::StreamingCompactor" [GraphType] (_AssemblerMixin[GraphType]):
         _cDBG cdbg
@@ -100,16 +103,16 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
         #void compactify_right(Path&) 
         #void compactify_left(Path&)
 
-        bool is_decision_node(uint8_t&)
-        bool is_decision_node(const string&, uint8_t&) except +ValueError
-        bool is_decision_node(const string&) except +ValueError
-        void find_decision_nodes(const string&,
+        bool is_decision_kmer(uint8_t&)
+        bool is_decision_kmer(const string&, uint8_t&) except +ValueError
+        bool is_decision_kmer(const string&) except +ValueError
+        void find_decision_kmers(const string&,
                                  vector[uint32_t]&,
                                  vector[hash_t]&,
                                  vector[NeighborBundle]&) except +ValueError
-        void find_disturbed_decision_nodes(const string&,
-                                           vector[_DecisionNode*]&,
-                                           vector[NeighborBundle]&) except +ValueError
+        void find_disturbed_dnodes(const string&,
+                                   vector[_DecisionNode*]&,
+                                   vector[NeighborBundle]&) except +ValueError
 
         bool insert_sequence(const string&,
                              vector[uint32_t]&,

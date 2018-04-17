@@ -53,8 +53,34 @@ using namespace oxli;
 
 typedef uint64_t id_t;
 typedef pair<hash_t, hash_t> junction_t;
-#define NULL_ID ULLONG_MAX
-#define UNITIG_START_ID 0
+
+
+// hash_combine and pair_hash courtesy SO:
+// https://stackoverflow.com/questions/9729390/how-to-use-
+// unordered-set-with-custom-types/9729747#9729747
+template <class T>
+inline void hash_combine(std::size_t & seed, const T & v)
+{
+    std::hash<T> hasher;
+    seed ^= hasher(v) + 0x9e3779b97f4a7c15 + (seed << 6) + (seed >> 2);
+}
+
+
+struct junction_hash
+{
+    inline std::size_t operator()(const junction_t & v) const
+    {
+         std::size_t seed = 0;
+         hash_combine(seed, v.first);
+         hash_combine(seed, v.second);
+         return seed;
+    }
+};
+
+
+#define NULL_ID             ULLONG_MAX
+#define UNITIG_START_ID     0
+#define NULL_JUNCTION       make_pair(0,0)
 
 typedef vector<hash_t> HashVector;
 
@@ -77,6 +103,8 @@ inline const char * node_meta_repr(node_meta_t meta) {
             return "ISLAND";
         case TRIVIAL:
             return "TRIVIAL";
+        default:
+            return "UNKNOWN";
     }
 }
 
@@ -112,14 +140,14 @@ protected:
     bool _dirty;
 
 public:
-    vector<id_t> in_edges;
-    vector<id_t> out_edges;
+    vector<junction_t> left_juncs;
+    vector<junction_t> right_juncs;
     uint32_t count;
 
     DecisionNode(id_t node_id, const string& sequence) :
         CompactNode(node_id, sequence),
-        count(1),
-        _dirty(true) {
+        _dirty(true),
+        count(1) {
         
     }
 
@@ -132,44 +160,56 @@ public:
     }
 
     const size_t degree() const {
-        return in_degree() + out_degree();
+        return left_degree() + right_degree();
     }
 
-    const size_t in_degree() const {
-        return in_edges.size();
+    const size_t left_degree() const {
+        return left_juncs.size();
     }
 
-    const size_t out_degree() const {
-        return out_edges.size();
+    const size_t right_degree() const {
+        return right_juncs.size();
     }
 
-    bool has_in_edge(id_t id) const {
-        for (auto in_id : in_edges) {
-            if (id == in_id) return true;
+    bool has_left_junc(junction_t j) const {
+        for (auto junc : left_juncs) {
+            if (j == junc) return true;
         }
         return false;
     }
 
-    void remove_in_edge(id_t id) {
-        for (auto it = in_edges.begin(); it != in_edges.end(); ) {
-            if (*it == id ) {
-                in_edges.erase(it);
+    void add_left_junc(junction_t j) {
+        if (!has_left_junc(j)) {
+            left_juncs.push_back(j);
+        }
+    }
+
+    void remove_left_junc(junction_t j) {
+        for (auto it = left_juncs.begin(); it != left_juncs.end(); ) {
+            if (*it == j) {
+                left_juncs.erase(it);
                 return;
             }
         }
     }
 
-    bool has_out_edge(id_t id) const {
-        for (auto out_id : out_edges) {
-            if (id == out_id) return true;
+    bool has_right_junc(junction_t j) const {
+        for (auto junc : right_juncs) {
+            if (j == junc) return true;
         }
         return false;
     }
 
-    void remove_out_edge(id_t id) {
-        for (auto it = out_edges.begin(); it != out_edges.end(); ) {
-            if (*it == id ) {
-                out_edges.erase(it);
+    void add_right_junc(junction_t j) {
+        if (!has_right_junc(j)) {
+            right_juncs.push_back(j);
+        }
+    }
+
+    void remove_right_junc(junction_t j) {
+        for (auto it = right_juncs.begin(); it != right_juncs.end(); ) {
+            if (*it == j) {
+                right_juncs.erase(it);
                 return;
             }
         }
@@ -188,8 +228,8 @@ public:
 std::ostream& operator<<(std::ostream& o, const DecisionNode& dn) {
 
     o << "<DNode ID/hash=" << dn.node_id << " k-mer=" << dn.sequence
-      << " Dl=" << std::to_string(dn.in_degree())
-      << " Dr=" << std::to_string(dn.out_degree())
+      << " Dl=" << std::to_string(dn.left_degree())
+      << " Dr=" << std::to_string(dn.right_degree())
       << " count=" << dn.count << " dirty=" << dn.is_dirty() << ">";
     return o;
 }
@@ -198,21 +238,17 @@ std::ostream& operator<<(std::ostream& o, const DecisionNode& dn) {
 class UnitigNode : public CompactNode {
 public:
 
-    DecisionNode * left_dnode, * right_dnode;
-    hash_t left_hash, right_hash;
+    junction_t left_junc, right_junc;
     HashVector tags;
+    node_meta_t meta;
 
     UnitigNode(id_t node_id,
-               hash_t left_hash,
-               hash_t right_hash,
-               const string& sequence,
-               DecisionNode * left_dnode=nullptr,
-               DecisionNode * right_dnode=nullptr)
+               junction_t left_junc,
+               junction_t right_junc,
+               const string& sequence)
         : CompactNode(node_id, sequence),
-          left_hash(left_hash),
-          right_hash(right_hash),
-          left_dnode(left_dnode),
-          right_dnode(right_dnode) {
+          left_junc(left_junc),
+          right_junc(right_junc) {
         
     }
 
@@ -228,20 +264,13 @@ public:
 
 
 std::ostream& operator<<(std::ostream& o, const UnitigNode& un) {
-    o << "<UNode ID=" << un.node_id << " left=";
-    // << " k-mer=" << dn.sequence
-    if (un.left_dnode != nullptr) {
-        o << un.left_dnode->repr();
-    } else {
-        o << "NULL";
-    }
-    o << " right=";
-    if (un.right_dnode != nullptr) {
-        o << un.right_dnode->repr();
-    } else {
-        o << "NULL";
-    }
-    o << ">";
+    o << "<UNode ID=" << un.node_id
+      << " left=(" << un.left_junc.first 
+      << "," << un.left_junc.second << ")"
+      << " right=(" << un.right_junc.first 
+      << "," << un.right_junc.second << ")"
+      << " meta=" << node_meta_repr(un.meta)
+      << ">";
     return o;
 }
 
@@ -254,7 +283,8 @@ class cDBG : public KmerClient {
 
     std::unordered_map<hash_t, std::unique_ptr<DecisionNode>> decision_nodes;
     std::unordered_map<id_t, std::unique_ptr<UnitigNode>> unitig_nodes;
-    std::unordered_map<hash_t, id_t> unitig_id_map;
+    std::unordered_map<junction_t, id_t, junction_hash> unitig_junction_map;
+    std::unordered_map<hash_t, id_t> unitig_tag_map;
 
     uint64_t _n_updates;
     uint64_t _unitig_id_counter;
@@ -290,18 +320,18 @@ public:
         return decision_nodes.size();
     }
 
-    DecisionNode* build_decision_node(hash_t hash, const string& kmer) {
-        DecisionNode * dnode = get_decision_node(hash);
+    DecisionNode* build_dnode(hash_t hash, const string& kmer) {
+        DecisionNode * dnode = get_dnode(hash);
         if (dnode == nullptr) {
             pdebug("Build d-node " << hash << ", " << kmer);
             unique_ptr<DecisionNode> dnode_ptr = make_unique<DecisionNode>(hash, kmer);
             decision_nodes.insert(make_pair(hash, std::move(dnode_ptr)));
-            dnode = get_decision_node(hash);
+            dnode = get_dnode(hash);
         }
         return dnode;
     }
 
-    DecisionNode* get_decision_node(hash_t hash) {
+    DecisionNode* get_dnode(hash_t hash) {
         auto search = decision_nodes.find(hash);
         if (search != decision_nodes.end()) {
             return search->second.get();
@@ -310,13 +340,13 @@ public:
     }
 
     template<class ShifterType>
-    vector<DecisionNode*> get_decision_nodes(const string& sequence) {
+    vector<DecisionNode*> get_dnodes(const string& sequence) {
         KmerIterator<ShifterType> iter(sequence, this->_K);
         vector<DecisionNode*> result;
         while(!iter.done()) {
             hash_t h = iter.next();
             DecisionNode * dnode;
-            if ((dnode = get_decision_node(h)) != nullptr) {
+            if ((dnode = get_dnode(h)) != nullptr) {
                 result.push_back(dnode);
             }
         }
@@ -324,57 +354,124 @@ public:
         return result;
     }
 
-    UnitigNode * build_unitig_node(HashVector& tags,
-                                   const string& sequence,
-                                   hash_t left_hash,
-                                   hash_t right_hash,
-                                   DecisionNode * left_dnode=nullptr,
-                                   DecisionNode * right_dnode=nullptr) {
+    UnitigNode * build_unode(HashVector& tags,
+                             const string& sequence,
+                             junction_t left_junc,
+                             junction_t right_junc) {
 
+        // Check for existing Unitigs on these junctions
+        UnitigNode * existing_left, * existing_right;
+        bool left_valid = false, right_valid = false;
+        existing_left = get_unode(left_junc);
+        if (existing_left) {
+            if (left_junc == existing_left->left_junc &&
+                right_junc == existing_left->right_junc) {
+                left_valid = true;
+            } else {
+                delete_unode(existing_left);
+            }
+        }
+        existing_right = get_unode(right_junc);
+        if (existing_right) {
+            if (left_junc == existing_right->left_junc &&
+                right_junc == existing_right->right_junc) {
+                right_valid = true;
+            } else {
+                delete_unode(existing_right);
+            }
+        }
+
+        if (left_valid) {
+            return existing_left;
+        }
+        if (right_valid) {
+            return existing_right;
+        }
+
+        // No valid existing Unitigs, make a new one
         id_t id = _unitig_id_counter;
         unique_ptr<UnitigNode> unode = make_unique<UnitigNode>(id,
-                                                               left_hash,
-                                                               right_hash,
-                                                               sequence,
-                                                               left_dnode,
-                                                               right_dnode);
+                                                               left_junc,
+                                                               right_junc,
+                                                               sequence);
         pdebug("Build unode " << *(unode.get()));
         _unitig_id_counter++;
         _n_unitig_nodes++;
 
+        // Link up its new tags
         unode->tags.insert(std::end(unode->tags), std::begin(tags), std::end(tags));
-
         for (auto tag: tags) {
-            unitig_id_map.insert(make_pair(tag, id));
-        }
-        unitig_id_map.insert(make_pair(left_hash, id));
-        unitig_id_map.insert(make_pair(right_hash, id));
-
-        if (left_dnode != nullptr) {
-            if (!left_dnode->has_out_edge(id)) {
-                left_dnode->out_edges.push_back(id);
-            }
-        }
-        if (right_dnode != nullptr) {
-            if (!right_dnode->has_in_edge(id)) {
-                right_dnode->in_edges.push_back(id);
-            }
+            unitig_tag_map.insert(make_pair(tag, id));
         }
 
+        // Link up its junctions
+        unitig_junction_map.insert(make_pair(left_junc, id));
+        unitig_junction_map.insert(make_pair(right_junc, id));
+        link_unode_to_dnodes(unode.get());
+
+        unode->meta = get_unode_meta(unode.get());
+
+        // Transfer the UnitigNode's ownership to the map;
+        // get its new memory address and return it
         unitig_nodes.insert(make_pair(id, std::move(unode)));
         return unitig_nodes[id].get();
     }
 
-    UnitigNode * get_unitig_node(hash_t hash) {
-        auto search = unitig_id_map.find(hash);
-        if (search != unitig_id_map.end()) {
+    void link_unode_to_dnodes(UnitigNode * unode) {
+        DecisionNode * left = get_left_dnode(unode);
+        DecisionNode * right = get_right_dnode(unode);
+        if (left != nullptr) {
+            left->add_right_junc(unode->left_junc);
+        }
+        if (right != nullptr) {
+            right->add_left_junc(unode->right_junc);
+        }
+    }
+
+    DecisionNode * get_left_dnode(UnitigNode * unode) {
+        return get_dnode(unode->left_junc.first);
+    }
+
+    DecisionNode * get_right_dnode(UnitigNode * unode) {
+        return get_dnode(unode->right_junc.second);
+    }
+
+    node_meta_t get_unode_meta(UnitigNode * unode) {
+        bool has_left = false, has_right = false;
+        has_left = (get_left_dnode(unode) != nullptr);
+        has_right = (get_right_dnode(unode) != nullptr);
+        if (has_left && has_right) {
+            if (unode->left_junc == unode->right_junc) {
+                return TRIVIAL;
+            } else {
+                return FULL;
+            }
+        } else if (has_left != has_right) {
+            return TIP;
+        } else {
+            return ISLAND;
+        }
+    }
+
+    UnitigNode * get_unode(junction_t junc) {
+        auto search = unitig_junction_map.find(junc);
+        if (search != unitig_junction_map.end()) {
             id_t id = search->second;
             return unitig_nodes[id].get();
         }
         return nullptr;
     }
 
-    UnitigNode * get_unitig_node_from_id(id_t id) {
+    UnitigNode * get_unode(hash_t hash) {
+        auto search = unitig_tag_map.find(hash);
+        if (search != unitig_tag_map.end()) {
+            id_t id = search->second;
+            return unitig_nodes[id].get();
+        }
+        return nullptr;
+    }
+
+    UnitigNode * get_unode_from_id(id_t id) {
         auto search = unitig_nodes.find(id);
         if (search != unitig_nodes.end()) {
             return search->second.get();
@@ -382,19 +479,16 @@ public:
         return nullptr;
     }
 
-    void delete_unitig_node(UnitigNode * unode) {
+    void delete_unode(UnitigNode * unode) {
         if (unode != nullptr) {
             pdebug("Deleting " << *unode);
             id_t id = unode->node_id;
             for (hash_t tag: unode->tags) {
-                unitig_id_map.erase(tag);
+                unitig_tag_map.erase(tag);
             }
-            if (unode->left_dnode != nullptr) {
-                unode->left_dnode->remove_out_edge(id);
-            }
-            if (unode->right_dnode != nullptr) {
-                unode->right_dnode->remove_in_edge(id);
-            }
+            unitig_junction_map.erase(unode->left_junc);
+            unitig_junction_map.erase(unode->right_junc);
+
             unitig_nodes.erase(id);
             unode = nullptr;
             _n_unitig_nodes--;
@@ -428,9 +522,9 @@ public:
     StreamingCompactor(GraphType * dbg,
                        uint64_t minimizer_window_size=8) :
         AssemblerMixin<GraphType>(dbg),
+        _minimizer_window_size(minimizer_window_size),
         dbg(dbg),
-        cdbg(dbg->K()),
-        _minimizer_window_size(minimizer_window_size) {
+        cdbg(dbg->K()) {
 
     }
 
@@ -446,6 +540,7 @@ public:
     }
 
     void compactify_right(Path& path, InteriorMinimizer<hash_t>& minimizer) {
+        this->seen.clear();
         this->seen.insert(this->get());
         minimizer.update(this->get());
         
@@ -460,6 +555,7 @@ public:
     }
 
     void compactify_left(Path& path, InteriorMinimizer<hash_t> minimizer) {
+        this->seen.clear();
         this->seen.insert(this->get());
         minimizer.update(this->get());
         
@@ -474,7 +570,7 @@ public:
 
     }
 
-    bool is_decision_node(uint8_t& degree) {
+    bool is_decision_kmer(uint8_t& degree) {
         // oops better put notes here
         uint8_t ldegree, rdegree;
         ldegree = this->degree_left();
@@ -483,18 +579,18 @@ public:
         return ldegree > 1 || rdegree > 1;
     }
 
-    bool is_decision_node(const string& node,
+    bool is_decision_kmer(const string& node,
                           uint8_t& degree) {
         this->set_cursor(node);
-        return is_decision_node(degree);
+        return is_decision_kmer(degree);
     }
 
-    bool is_decision_node(const string& node) {
+    bool is_decision_kmer(const string& node) {
         this->set_cursor(node);
         return this->degree_left() > 1 || this->degree_right() > 1;
     }
 
-    void find_decision_nodes(const string& sequence,
+    void find_decision_kmers(const string& sequence,
                              vector<uint32_t>& decision_positions,
                              HashVector& decision_hashes,
                              vector<NeighborBundle>& decision_neighbors) {
@@ -544,9 +640,9 @@ public:
         }
     }
 
-    void find_disturbed_decision_nodes(const string& sequence,
-                                       vector<DecisionNode*>& disturbed_dnodes,
-                                       vector<NeighborBundle>& disturbed_neighbors) {
+    void find_disturbed_dnodes(const string& sequence,
+                               vector<DecisionNode*>& disturbed_dnodes,
+                               vector<NeighborBundle>& disturbed_neighbors) {
         
         KmerIterator<typename GraphType::shifter_type> iter(sequence, this->_K);
 
@@ -564,7 +660,7 @@ public:
                                        kmer,
                                        decision_neighbors)) {
                 DecisionNode * dnode;
-                dnode = cdbg.build_decision_node(flank_shifter.get(), kmer);
+                dnode = cdbg.build_dnode(flank_shifter.get(), kmer);
                 disturbed_dnodes.push_back(dnode);
                 disturbed_neighbors.push_back(decision_neighbors);
             }
@@ -583,7 +679,7 @@ public:
                        " ldegree " << decision_neighbors.first.size() <<
                        " rdegree " << decision_neighbors.second.size());
                 DecisionNode * dnode;
-                dnode = cdbg.build_decision_node(h, kmer);
+                dnode = cdbg.build_dnode(h, kmer);
                 disturbed_dnodes.push_back(dnode);
                 disturbed_neighbors.push_back(decision_neighbors);
             }
@@ -602,7 +698,7 @@ public:
                                        kmer,
                                        decision_neighbors)) {
                 DecisionNode * dnode;
-                dnode = cdbg.build_decision_node(iter.shifter.get(), kmer);
+                dnode = cdbg.build_dnode(iter.shifter.get(), kmer);
                 disturbed_dnodes.push_back(dnode);
                 disturbed_neighbors.push_back(decision_neighbors);
             }
@@ -618,7 +714,7 @@ public:
         if (!dbg->add_sequence(sequence)) {
             return false; // if there were no new k-mers, nothing to do
         } else {
-            find_decision_nodes(sequence,
+            find_decision_kmers(sequence,
                                 decision_positions,
                                 decision_hashes,
                                 decision_neighbors);
@@ -632,9 +728,9 @@ public:
         } else {
             vector<DecisionNode*> disturbed_dnodes;
             vector<NeighborBundle> disturbed_neighbors;
-            find_disturbed_decision_nodes(sequence,
-                                          disturbed_dnodes,
-                                          disturbed_neighbors);
+            find_disturbed_dnodes(sequence,
+                                  disturbed_dnodes,
+                                  disturbed_neighbors);
             if (disturbed_dnodes.size() == 0) {
                 _update_linear(sequence);
             } else {
@@ -654,7 +750,6 @@ public:
         InteriorMinimizer<hash_t> minimizer(_minimizer_window_size);
         //this->compactify(segment, minimizer);
 
-        DecisionNode * left, * right;
 
     }
 
@@ -680,17 +775,11 @@ public:
             }
 
             for (kmer_t left_neighbor : root_neighbors.first) {
-                junction_t rjunction = make_pair(left_neighbor.hash,
-                                                 root_dnode->node_id);
-                if (updated_junctions.count(rjunction)) {
+                junction_t right_junc = make_pair(left_neighbor.hash,
+                                                  root_dnode->node_id);
+                if (updated_junctions.count(right_junc)) {
                     continue;
                 }
-                //DecisionNode* left_dnode;
-                //if ((left_dnode = cdbg.get_decision_node(left_neighbor.hash)) 
-                //    != nullptr) {
-                //    // handle trivial unitig nodes
-                //    continue;
-                //}
 
                 this->set_cursor(left_neighbor.kmer);
                 Path this_segment;
@@ -700,48 +789,22 @@ public:
                 InteriorMinimizer<hash_t> minimizer(_minimizer_window_size);
                 this->compactify_left(this_segment, minimizer);
                 
-                junction_t ljunction = make_pair(this->get(),
+                junction_t left_junc = make_pair(this->get(),
                                                  this->shift_right(this_segment[this->_K]));
-                hash_t left_hash=ljunction.second, right_hash=rjunction.first;;
-                updated_junctions.insert(ljunction);
-                updated_junctions.insert(rjunction);
+                updated_junctions.insert(left_junc);
+                updated_junctions.insert(right_junc);
 
-                UnitigNode* existing_unitig = cdbg.get_unitig_node(left_hash);
-
-                if (existing_unitig != nullptr) { 
-                    if (existing_unitig->left_hash == left_hash &&
-                        existing_unitig->right_hash == right_hash) {
-                        pdebug("Existing u-node, continue " << *existing_unitig);
-                        continue;
-                    } else {
-                        cdbg.delete_unitig_node(existing_unitig);
-                    }
-                }
-
-                DecisionNode * left_dnode = cdbg.get_decision_node(this->get());
                 string segment_seq = this->to_string(this_segment);
                 HashVector tags = minimizer.get_minimizer_values();
-                left_dnode = cdbg.get_decision_node(left_hash);
-                UnitigNode * new_unitig = cdbg.build_unitig_node(tags,
-                                                                 segment_seq,
-                                                                 left_hash,
-                                                                 right_hash,
-                                                                 left_dnode,
-                                                                 root_dnode);
+                cdbg.build_unode(tags, segment_seq, left_junc, right_junc);
             }
 
             for (kmer_t right_neighbor : root_neighbors.second) {
-                junction_t ljunction = make_pair(root_dnode->node_id,
+                junction_t left_junc = make_pair(root_dnode->node_id,
                                                  right_neighbor.hash);
-                if (updated_junctions.count(ljunction)) {
+                if (updated_junctions.count(left_junc)) {
                     continue;
                 }
-                //DecisionNode* right_dnode;
-                //if ((right_dnode = cdbg.get_decision_node(right_neighbor.hash)) 
-                //    != nullptr) {
-                //    // handle trivial unitig nodes
-                //    continue;
-                //}
 
                 this->set_cursor(right_neighbor.kmer);
                 Path this_segment;
@@ -751,40 +814,22 @@ public:
                 InteriorMinimizer<hash_t> minimizer(_minimizer_window_size);
                 this->compactify_right(this_segment, minimizer);
 
-                hash_t stopped = this->get();
-                junction_t rjunction = make_pair(this->shift_left(*(this_segment.end()-(this->_K)-1)),
-                                                 stopped);
-                hash_t left_hash=ljunction.second, right_hash=rjunction.first;
-                updated_junctions.insert(ljunction);
-                updated_junctions.insert(rjunction);
-                UnitigNode* existing_unitig = cdbg.get_unitig_node(right_hash);
+                hash_t stopped_at = this->get();
+                junction_t right_junc = make_pair(this->shift_left(*(this_segment.end()-(this->_K)-1)),
+                                                  stopped_at);
+                updated_junctions.insert(left_junc);
+                updated_junctions.insert(right_junc);
 
-                if (existing_unitig != nullptr) { 
-                    if (existing_unitig->left_hash == left_hash &&
-                        existing_unitig->right_hash == right_hash) {
-                    
-                        continue;
-                    } else {
-                        cdbg.delete_unitig_node(existing_unitig);
-                    }
-                }
-
-                DecisionNode * right_dnode = cdbg.get_decision_node(rjunction.second);
                 string segment_seq = this->to_string(this_segment);
                 HashVector tags = minimizer.get_minimizer_values();
-                right_dnode = cdbg.get_decision_node(right_hash);
-                UnitigNode * new_unitig = cdbg.build_unitig_node(tags,
-                                                                 segment_seq,
-                                                                 left_hash,
-                                                                 right_hash,
-                                                                 root_dnode,
-                                                                 right_dnode);
+                cdbg.build_unode(tags, segment_seq, left_junc, right_junc);
             }
 
             updated_dnodes.insert(root_dnode->node_id);
         }
-        pdebug("finished _update_from_dnodes with " << updated_dnodes.size()
-                << " updated from");
+        pdebug("FINISHED _update_from_dnodes with " << updated_dnodes.size()
+                << " updated from; " << cdbg.n_decision_nodes() 
+                << " total d-nodes  and " << cdbg.n_unitig_nodes() << " u-nodes");
     }
 };
 
