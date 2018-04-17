@@ -5,6 +5,7 @@
 # This software may be modified and distributed under the terms
 # of the MIT license.  See the LICENSE file for details.
 
+import itertools
 import sys
 
 import pytest
@@ -190,8 +191,7 @@ def test_component_merge(ksize, graph, compactor, right_triple_fork,
     assert middle.sequence[-ksize:] == right.sequence
 
 
-@using_ksize(7)
-@using_length(40)
+@using_ksize(21)
 @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
 def test_update_snp_bubble(ksize, graph, compactor, snp_bubble):
     (wildtype, snp), L, R = snp_bubble()
@@ -208,3 +208,27 @@ def test_update_snp_bubble(ksize, graph, compactor, snp_bubble):
     assert left.right_degree == 2
     assert right.left_degree == 2
     assert right.right_degree == 1
+
+
+@using_ksize(21)
+@pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
+def test_update_trivial_dnodes(ksize, graph, compactor, tandem_quad_forks):
+    (core, left_branches, right_branches), S_l, S_r = tandem_quad_forks()
+    
+    for branch in itertools.chain(left_branches, right_branches):
+        compactor.update(branch)
+    print('CORE update', file=sys.stderr)
+    compactor.update(core)
+
+    dnodes = list(compactor.get_cdbg_dnodes(core))
+    left, right = dnodes
+    assert left.left_degree == 1
+    assert left.right_degree == 4
+    assert right.left_degree == 1
+    assert right.right_degree == 4
+    assert left.sequence[1:] == right.sequence[:-1]
+
+    trivial_unode = list(compactor.cdbg.left_neighbors(right)).pop()
+    assert trivial_unode.sequence[:-1] == left.sequence
+    assert trivial_unode.sequence[1:] == right.sequence
+    assert len(trivial_unode) == ksize + 1
