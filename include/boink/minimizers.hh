@@ -81,12 +81,11 @@ class InteriorMinimizer : public RollingMin<T> {
 
 protected:
 
-    using typename RollingMin<T>::value_type;
-
-    std::vector<value_type> minimizers;
+    std::vector<typename RollingMin<T>::value_type> minimizers;
 
 public:
 
+    using typename RollingMin<T>::value_type;
     using RollingMin<T>::RollingMin;
 
     std::pair<T, int64_t> update(T new_value) {
@@ -144,6 +143,18 @@ public:
         }
 
         return InteriorMinimizer<hash_t>::get_minimizers();
+    }
+
+    std::vector<hash_t> get_minimizer_values(const std::string& sequence) {
+        KmerIterator<ShifterType> iter(sequence, this->_K);
+        this->reset();
+
+        while(!iter.done()) {
+            hash_t h = iter.next();
+            InteriorMinimizer<hash_t>::update(h);
+        }
+
+        return InteriorMinimizer<hash_t>::get_minimizer_values();
     }
 
     std::vector<std::pair<std::string, int64_t>> get_minimizer_kmers(const std::string& sequence) {
