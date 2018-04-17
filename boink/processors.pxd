@@ -12,7 +12,7 @@ from boink.dbg cimport *
 from boink.cdbg cimport *
 from boink.utils cimport _bstring
 
-cdef extern from "boink/consumer.hh" namespace "boink":
+cdef extern from "boink/processors.hh" namespace "boink":
 
     cdef cppclass _FileProcessor "boink::FileProcessor" [Derived]:
         uint64_t process(const string&, uint32_t) except +ValueError
