@@ -158,6 +158,15 @@ cdef class cDBG:
             yield UnitigNode._wrap(unode)
             princ(it)
 
+
+    def dnodes(self):
+        cdef _cDBG.dnode_iter_t it = deref(self._this).dnodes_begin()
+        cdef _DecisionNode * dnode
+        while(it != deref(self._this).dnodes_end()):
+            dnode = deref(it).second.get()
+            yield DecisionNode._wrap(dnode)
+            princ(it)
+
     def get_unode_by_hash(self, hash_t h):
         cdef _UnitigNode * _node = deref(self._this).get_unode(h)
         if _node != NULL:
