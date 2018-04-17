@@ -77,6 +77,12 @@ struct junction_hash
     }
 };
 
+template<typename _Ty1, typename _Ty2>
+std::ostream& operator<<(std::ostream& _os, const std::pair<_Ty1, _Ty2>& _p) {
+    _os << "(" << _p.first << ", " << _p.second << ")";
+    return _os;
+}
+
 
 #define NULL_ID             ULLONG_MAX
 #define UNITIG_START_ID     0
@@ -359,11 +365,17 @@ public:
                              junction_t left_junc,
                              junction_t right_junc) {
 
+        pdebug("Attempt u-node build on..."
+                << " left=(" << left_junc.first 
+                << "," << left_junc.second << ")"
+                << " right=(" << right_junc.first 
+                << "," << right_junc.second << ")");
         // Check for existing Unitigs on these junctions
         UnitigNode * existing_left, * existing_right;
         bool left_valid = false, right_valid = false;
         existing_left = get_unode(left_junc);
         if (existing_left) {
+            pdebug("Found existing from left_junc " << *existing_left);
             if (left_junc == existing_left->left_junc &&
                 right_junc == existing_left->right_junc) {
                 left_valid = true;
@@ -373,6 +385,7 @@ public:
         }
         existing_right = get_unode(right_junc);
         if (existing_right) {
+            pdebug("Found existing from right_junc " << *existing_right);
             if (left_junc == existing_right->left_junc &&
                 right_junc == existing_right->right_junc) {
                 right_valid = true;
@@ -546,11 +559,11 @@ public:
         
         shift_t next;
         while (get_right(next)
-               && !this->seen.count(next.hash)
-               && !(degree_left() > 1)) {
+               && !this->seen.count(next.hash)) {
             path.push_back(next.symbol);
             this->seen.insert(next.hash);
             minimizer.update(next.hash);
+            if (degree_left() > 1) break;
         }
     }
 
@@ -561,11 +574,11 @@ public:
         
         shift_t next;
         while (get_left(next)
-               && !this->seen.count(next.hash)
-               && !(degree_right() > 1)) {
+               && !this->seen.count(next.hash)) {
             path.push_front(next.symbol);
             this->seen.insert(next.hash);
             minimizer.update(next.hash);
+            if (degree_right() > 1) break;
         }
 
     }
@@ -742,7 +755,7 @@ public:
     }
 
     void _update_linear(const string& sequence) {
-        pdebug("no-op" << sequence);
+        pdebug("no-op on " << sequence);
         this->set_cursor(sequence);
         Path segment;
         this->get_cursor(segment);
@@ -777,7 +790,10 @@ public:
             for (kmer_t left_neighbor : root_neighbors.first) {
                 junction_t right_junc = make_pair(left_neighbor.hash,
                                                   root_dnode->node_id);
+				pdebug("left neighbor: " << left_neighbor.kmer 
+                        << " junction: " << right_junc);
                 if (updated_junctions.count(right_junc)) {
+                    pdebug("Already updated from, continuing");
                     continue;
                 }
 
@@ -789,12 +805,19 @@ public:
                 InteriorMinimizer<hash_t> minimizer(_minimizer_window_size);
                 this->compactify_left(this_segment, minimizer);
                 
+                hash_t stopped_at = this->get();
+                std::string after = std::string(this_segment.begin()+1,
+                                                this_segment.begin()+this->_K+1);
                 junction_t left_junc = make_pair(this->get(),
-                                                 this->shift_right(this_segment[this->_K]));
+                                                 this->shift_right(after.back()));
+                string segment_seq = this->to_string(this_segment);
+                pdebug("Assembled left, stopped left of " << after
+                        << ", shifting right on " << after.back()
+                        << " with junction " << left_junc
+                        << ", sequence=" << segment_seq);
                 updated_junctions.insert(left_junc);
                 updated_junctions.insert(right_junc);
 
-                string segment_seq = this->to_string(this_segment);
                 HashVector tags = minimizer.get_minimizer_values();
                 cdbg.build_unode(tags, segment_seq, left_junc, right_junc);
             }
@@ -802,7 +825,10 @@ public:
             for (kmer_t right_neighbor : root_neighbors.second) {
                 junction_t left_junc = make_pair(root_dnode->node_id,
                                                  right_neighbor.hash);
+				pdebug("right neighbor: " << right_neighbor.kmer 
+                        << " junction: " << left_junc);
                 if (updated_junctions.count(left_junc)) {
+                    pdebug("Already updated from, continuing");
                     continue;
                 }
 
@@ -815,12 +841,17 @@ public:
                 this->compactify_right(this_segment, minimizer);
 
                 hash_t stopped_at = this->get();
-                junction_t right_junc = make_pair(this->shift_left(*(this_segment.end()-(this->_K)-1)),
+                std::string after = std::string(this_segment.end()-(this->_K)-1,
+                                                this_segment.end()-1);
+                junction_t right_junc = make_pair(this->shift_left(after.front()),
                                                   stopped_at);
+                string segment_seq = this->to_string(this_segment);
+                pdebug("Assembled right, stopped right of " << after
+                        << " with junction " << right_junc
+                        << ", sequence=" << segment_seq);
                 updated_junctions.insert(left_junc);
                 updated_junctions.insert(right_junc);
 
-                string segment_seq = this->to_string(this_segment);
                 HashVector tags = minimizer.get_minimizer_values();
                 cdbg.build_unode(tags, segment_seq, left_junc, right_junc);
             }
