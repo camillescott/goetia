@@ -83,7 +83,7 @@ public:
     
     hash_t set_cursor(const std::string& sequence) {
         if (sequence.length() < _K) {
-            throw BoinkException("Sequence must be length K");
+            throw BoinkException("Sequence must at least length K");
         }
         if (!initialized) {
             load(sequence);

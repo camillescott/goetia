@@ -556,9 +556,10 @@ public:
         this->seen.clear();
         this->seen.insert(this->get());
         minimizer.update(this->get());
+        if (degree_left() > 1) return; // make sure we don't start at dnode
         
         shift_t next;
-        while (get_right(next)
+        while (get_right(next) // because get_right implicit checks rdegree
                && !this->seen.count(next.hash)) {
             path.push_back(next.symbol);
             this->seen.insert(next.hash);
@@ -571,9 +572,10 @@ public:
         this->seen.clear();
         this->seen.insert(this->get());
         minimizer.update(this->get());
-        
+        if (degree_right() > 1) return; // don't start at dnode
+
         shift_t next;
-        while (get_left(next)
+        while (get_left(next) // because get_left implicitly checks ldegree
                && !this->seen.count(next.hash)) {
             path.push_front(next.symbol);
             this->seen.insert(next.hash);
@@ -581,6 +583,177 @@ public:
             if (degree_right() > 1) break;
         }
 
+    }
+
+    bool insert_sequence(const string& sequence,
+                         vector<uint32_t>& decision_positions,
+                         HashVector& decision_hashes,
+                         vector<NeighborBundle>& decision_neighbors) {
+
+        if (!dbg->add_sequence(sequence)) {
+            return false; // if there were no new k-mers, nothing to do
+        } else {
+            find_decision_kmers(sequence,
+                                decision_positions,
+                                decision_hashes,
+                                decision_neighbors);
+            return true;
+        }
+    }
+
+    void update(const string& sequence) {
+        if(!dbg->add_sequence(sequence)) {
+            return;
+        } else {
+            vector<DecisionNode*> disturbed_dnodes;
+            vector<NeighborBundle> disturbed_neighbors;
+            find_disturbed_dnodes(sequence,
+                                  disturbed_dnodes,
+                                  disturbed_neighbors);
+            if (disturbed_dnodes.size() == 0) {
+                _update_linear(sequence);
+            } else {
+                _update_from_dnodes(sequence,
+                                    disturbed_dnodes,
+                                    disturbed_neighbors);
+            }
+        }
+    }
+
+    void _update_linear(const string& sequence) {
+        pdebug("no-op on " << sequence);
+        this->set_cursor(sequence);
+        Path segment;
+        this->get_cursor(segment);
+
+        InteriorMinimizer<hash_t> minimizer(_minimizer_window_size);
+        //this->compactify(segment, minimizer);
+
+
+    }
+
+    void _update_from_dnodes(const string& sequence,
+                             vector<DecisionNode*>& disturbed_dnodes,
+                             vector<NeighborBundle>& disturbed_neighbors) {
+
+        std::set<hash_t> updated_dnodes;
+        std::set<junction_t> updated_junctions;
+        pdebug(disturbed_dnodes.size() << " on d-node queue, " <<
+               disturbed_neighbors.size() << " on neighbor queue");
+
+        while(!disturbed_dnodes.empty()) {
+            DecisionNode * root_dnode = disturbed_dnodes.back();
+            NeighborBundle root_neighbors = disturbed_neighbors.back();
+            disturbed_dnodes.pop_back();
+            disturbed_neighbors.pop_back();
+
+            pdebug("updating from " << *root_dnode);
+
+            if (updated_dnodes.count(root_dnode->node_id)) {
+                continue;
+            }
+
+            for (kmer_t left_neighbor : root_neighbors.first) {
+                junction_t right_junc = make_pair(left_neighbor.hash,
+                                                  root_dnode->node_id);
+				pdebug("left neighbor: " << left_neighbor.kmer 
+                        << " junction: " << right_junc);
+                if (updated_junctions.count(right_junc)) {
+                    pdebug("Already updated from, continuing");
+                    continue;
+                }
+                
+                HashVector tags;
+                std::string segment_seq;
+                junction_t left_junc;
+                if (cdbg.get_dnode(left_neighbor.hash) != nullptr) {
+                    // trivial unode
+                    left_junc = right_junc;
+                    segment_seq = left_neighbor.kmer
+                                  + root_dnode->sequence.back();
+                    pdebug("Trivial u-node, junctions " << left_junc
+                           << ", " << right_junc << ", sequence="
+                           << segment_seq);
+                } else {
+                    this->set_cursor(left_neighbor.kmer);
+                    Path this_segment;
+                    this->get_cursor(this_segment);
+                    pdebug("Start assembly left at " << this->get_cursor());
+                    this_segment.push_back(root_dnode->sequence.back());
+
+                    InteriorMinimizer<hash_t> minimizer(_minimizer_window_size);
+                    this->compactify_left(this_segment, minimizer);
+                    
+                    hash_t stopped_at = this->get();
+                    std::string after = std::string(this_segment.begin()+1,
+                                                    this_segment.begin()+this->_K+1);
+                    left_junc = make_pair(this->get(),
+                                          this->shift_right(after.back()));
+                    segment_seq = this->to_string(this_segment);
+                    pdebug("Assembled left, stopped left of " << after
+                            << ", shifting right on " << after.back()
+                            << " with junction " << left_junc
+                            << ", sequence=" << segment_seq);
+                    tags = minimizer.get_minimizer_values();
+                }
+                updated_junctions.insert(left_junc);
+                updated_junctions.insert(right_junc);
+
+                cdbg.build_unode(tags, segment_seq, left_junc, right_junc);
+            }
+
+            for (kmer_t right_neighbor : root_neighbors.second) {
+                junction_t left_junc = make_pair(root_dnode->node_id,
+                                                 right_neighbor.hash);
+				pdebug("right neighbor: " << right_neighbor.kmer 
+                        << " junction: " << left_junc);
+                if (updated_junctions.count(left_junc)) {
+                    pdebug("Already updated from, continuing");
+                    continue;
+                }
+
+                HashVector tags;
+                std::string segment_seq;
+                junction_t right_junc;
+                if (cdbg.get_dnode(right_neighbor.hash) != nullptr) {
+                    // trivial unode
+                    right_junc = left_junc;
+                    segment_seq = root_dnode->sequence.front()
+                                  + right_neighbor.kmer;
+                    pdebug("Trivial u-node, junctions " << left_junc
+                           << ", " << right_junc << ", sequence="
+                           << segment_seq);
+                } else {
+                    this->set_cursor(right_neighbor.kmer);
+                    Path this_segment;
+                    this->get_cursor(this_segment);
+                    this_segment.push_front(root_dnode->sequence.front());
+
+                    InteriorMinimizer<hash_t> minimizer(_minimizer_window_size);
+                    this->compactify_right(this_segment, minimizer);
+
+                    hash_t stopped_at = this->get();
+                    std::string after = std::string(this_segment.end()-(this->_K)-1,
+                                                    this_segment.end()-1);
+                    right_junc = make_pair(this->shift_left(after.front()),
+                                                      stopped_at);
+                    segment_seq = this->to_string(this_segment);
+                    pdebug("Assembled right, stopped right of " << after
+                            << " with junction " << right_junc
+                            << ", sequence=" << segment_seq);
+                    tags = minimizer.get_minimizer_values();
+                }
+                updated_junctions.insert(left_junc);
+                updated_junctions.insert(right_junc);
+
+                cdbg.build_unode(tags, segment_seq, left_junc, right_junc);
+            }
+
+            updated_dnodes.insert(root_dnode->node_id);
+        }
+        pdebug("FINISHED _update_from_dnodes with " << updated_dnodes.size()
+                << " updated from; " << cdbg.n_decision_nodes() 
+                << " total d-nodes  and " << cdbg.n_unitig_nodes() << " u-nodes");
     }
 
     bool is_decision_kmer(uint8_t& degree) {
@@ -719,149 +892,7 @@ public:
         }
     }
 
-    bool insert_sequence(const string& sequence,
-                         vector<uint32_t>& decision_positions,
-                         HashVector& decision_hashes,
-                         vector<NeighborBundle>& decision_neighbors) {
 
-        if (!dbg->add_sequence(sequence)) {
-            return false; // if there were no new k-mers, nothing to do
-        } else {
-            find_decision_kmers(sequence,
-                                decision_positions,
-                                decision_hashes,
-                                decision_neighbors);
-            return true;
-        }
-    }
-
-    void update(const string& sequence) {
-        if(!dbg->add_sequence(sequence)) {
-            return;
-        } else {
-            vector<DecisionNode*> disturbed_dnodes;
-            vector<NeighborBundle> disturbed_neighbors;
-            find_disturbed_dnodes(sequence,
-                                  disturbed_dnodes,
-                                  disturbed_neighbors);
-            if (disturbed_dnodes.size() == 0) {
-                _update_linear(sequence);
-            } else {
-                _update_from_dnodes(sequence,
-                                    disturbed_dnodes,
-                                    disturbed_neighbors);
-            }
-        }
-    }
-
-    void _update_linear(const string& sequence) {
-        pdebug("no-op on " << sequence);
-        this->set_cursor(sequence);
-        Path segment;
-        this->get_cursor(segment);
-
-        InteriorMinimizer<hash_t> minimizer(_minimizer_window_size);
-        //this->compactify(segment, minimizer);
-
-
-    }
-
-    void _update_from_dnodes(const string& sequence,
-                             vector<DecisionNode*>& disturbed_dnodes,
-                             vector<NeighborBundle>& disturbed_neighbors) {
-
-        std::set<hash_t> updated_dnodes;
-        std::set<junction_t> updated_junctions;
-        pdebug(disturbed_dnodes.size() << " on d-node queue, " <<
-               disturbed_neighbors.size() << " on neighbor queue");
-
-        while(!disturbed_dnodes.empty()) {
-            DecisionNode * root_dnode = disturbed_dnodes.back();
-            NeighborBundle root_neighbors = disturbed_neighbors.back();
-            disturbed_dnodes.pop_back();
-            disturbed_neighbors.pop_back();
-
-            pdebug("updating from " << *root_dnode);
-
-            if (updated_dnodes.count(root_dnode->node_id)) {
-                continue;
-            }
-
-            for (kmer_t left_neighbor : root_neighbors.first) {
-                junction_t right_junc = make_pair(left_neighbor.hash,
-                                                  root_dnode->node_id);
-				pdebug("left neighbor: " << left_neighbor.kmer 
-                        << " junction: " << right_junc);
-                if (updated_junctions.count(right_junc)) {
-                    pdebug("Already updated from, continuing");
-                    continue;
-                }
-
-                this->set_cursor(left_neighbor.kmer);
-                Path this_segment;
-                this->get_cursor(this_segment);
-                this_segment.push_back(root_dnode->sequence.back());
-
-                InteriorMinimizer<hash_t> minimizer(_minimizer_window_size);
-                this->compactify_left(this_segment, minimizer);
-                
-                hash_t stopped_at = this->get();
-                std::string after = std::string(this_segment.begin()+1,
-                                                this_segment.begin()+this->_K+1);
-                junction_t left_junc = make_pair(this->get(),
-                                                 this->shift_right(after.back()));
-                string segment_seq = this->to_string(this_segment);
-                pdebug("Assembled left, stopped left of " << after
-                        << ", shifting right on " << after.back()
-                        << " with junction " << left_junc
-                        << ", sequence=" << segment_seq);
-                updated_junctions.insert(left_junc);
-                updated_junctions.insert(right_junc);
-
-                HashVector tags = minimizer.get_minimizer_values();
-                cdbg.build_unode(tags, segment_seq, left_junc, right_junc);
-            }
-
-            for (kmer_t right_neighbor : root_neighbors.second) {
-                junction_t left_junc = make_pair(root_dnode->node_id,
-                                                 right_neighbor.hash);
-				pdebug("right neighbor: " << right_neighbor.kmer 
-                        << " junction: " << left_junc);
-                if (updated_junctions.count(left_junc)) {
-                    pdebug("Already updated from, continuing");
-                    continue;
-                }
-
-                this->set_cursor(right_neighbor.kmer);
-                Path this_segment;
-                this->get_cursor(this_segment);
-                this_segment.push_front(root_dnode->sequence.front());
-
-                InteriorMinimizer<hash_t> minimizer(_minimizer_window_size);
-                this->compactify_right(this_segment, minimizer);
-
-                hash_t stopped_at = this->get();
-                std::string after = std::string(this_segment.end()-(this->_K)-1,
-                                                this_segment.end()-1);
-                junction_t right_junc = make_pair(this->shift_left(after.front()),
-                                                  stopped_at);
-                string segment_seq = this->to_string(this_segment);
-                pdebug("Assembled right, stopped right of " << after
-                        << " with junction " << right_junc
-                        << ", sequence=" << segment_seq);
-                updated_junctions.insert(left_junc);
-                updated_junctions.insert(right_junc);
-
-                HashVector tags = minimizer.get_minimizer_values();
-                cdbg.build_unode(tags, segment_seq, left_junc, right_junc);
-            }
-
-            updated_dnodes.insert(root_dnode->node_id);
-        }
-        pdebug("FINISHED _update_from_dnodes with " << updated_dnodes.size()
-                << " updated from; " << cdbg.n_decision_nodes() 
-                << " total d-nodes  and " << cdbg.n_unitig_nodes() << " u-nodes");
-    }
 };
 
 
