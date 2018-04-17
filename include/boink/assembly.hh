@@ -15,7 +15,7 @@
 #include <deque>
 
 
-# ifdef DEBUG_ASSEMBLY
+# ifdef DEBUG_ASMLY
 #   define pdebug(x) do { std::cerr << std::endl << "@ " << __FILE__ <<\
                           ":" << __FUNCTION__ << ":" <<\
                           __LINE__  << std::endl << x << std::endl;\

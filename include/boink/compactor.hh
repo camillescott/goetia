@@ -19,7 +19,7 @@ namespace boink {
 #include "boink/minimizers.hh"
 
 
-# ifdef DEBUG_COMPACTOR
+# ifdef DEBUG_CPTR
 #   define pdebug(x) do { std::cerr << std::endl << "@ " << __FILE__ <<\
                           ":" << __FUNCTION__ << ":" <<\
                           __LINE__  << std::endl << x << std::endl;\
@@ -255,13 +255,15 @@ public:
                     InteriorMinimizer<hash_t> minimizer(_minimizer_window_size);
                     this->compactify_left(this_segment, minimizer);
                     
-                    hash_t stopped_at = this->get();
+                    hash_t stopped_at_hash = this->get();
+                    string stopped_at_kmer = this->get_cursor();
                     std::string after = std::string(this_segment.begin()+1,
                                                     this_segment.begin()+this->_K+1);
-                    left_junc = make_pair(this->get(),
+                    left_junc = make_pair(stopped_at_hash,
                                           this->shift_right(after.back()));
                     segment_seq = this->to_string(this_segment);
                     pdebug("Assembled left, stopped left of " << after
+                            << " at " << stopped_at_kmer << " " << stopped_at_hash
                             << ", shifting right on " << after.back()
                             << " with junction " << left_junc
                             << ", sequence=" << segment_seq);

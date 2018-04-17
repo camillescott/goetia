@@ -71,7 +71,19 @@ DEP_MAP = resolve_dependencies(PYX_FILES,
 PROFILING   = get_var('PROFILING', False)
 PROFILER    = 'gprof'
 COLOR       = True
+
 DEBUG       = get_var('DEBUG', False)
+DEBUG_CDBG  = get_var('DEBUG_CDBG', False)
+DEBUG_CPTR  = get_var('DEBUG_CPTR', False)
+DEBUG_ASMLY = get_var('DEBUG_ASMY', False)
+DEBUG_ALL   = get_var('DEBUG_ALL', False)
+
+if DEBUG_ALL:
+    DEBUG       = True
+    DEBUG_CDBG  = True
+    DEBUG_CPTR  = True
+    DEBUG_ASMLY = True
+
 print('Debug', DEBUG)
 DEBUG_FLAGS = ['-ggdb']
 PREFIX      = '/usr/local'
@@ -109,6 +121,12 @@ if DEBUG:
         CXXFLAGS.remove('-O3')
     except ValueError:
         pass
+    if DEBUG_CPTR:
+        CXXFLAGS += ['-DDEBUG_CPTR']
+    if DEBUG_CDBG:
+        CXXFLAGS += ['-DDEBUG_CDBG']
+    if DEBUG_ASMLY:
+        CXXFLAGS += ['-DDEBUG_ASMLY']
 
 if PROFILING:
     if PROFILER == 'gprof':

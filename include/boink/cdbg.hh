@@ -500,7 +500,6 @@ public:
                                                                left_junc,
                                                                right_junc,
                                                                sequence);
-        pdebug("Build unode " << *(unode.get()));
         _unitig_id_counter++;
         _n_unitig_nodes++;
 
@@ -517,6 +516,7 @@ public:
 
         unode->meta = get_unode_meta(unode.get());
         meta_counter.increment(unode->meta);
+        pdebug("Built unode " << *(unode.get()));
 
         // Transfer the UnitigNode's ownership to the map;
         // get its new memory address and return it
