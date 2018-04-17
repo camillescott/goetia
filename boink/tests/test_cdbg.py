@@ -75,6 +75,7 @@ def test_update_fork(ksize, graph, compactor, right_fork):
     (core, branch), pos = right_fork()
     print('\n', core, ' ' * (pos + 1) + branch, sep='\n')
     compactor.update(branch)
+    assert compactor.cdbg.n_unodes == 1
     compactor.update(core)
 
     dnode = list(compactor.get_cdbg_dnodes(core)).pop()

@@ -532,6 +532,8 @@ public:
     using AssemblerType::count_nodes;
     using AssemblerType::filter_nodes;
 
+    using ShifterType = typename GraphType::shifter_type;
+
     StreamingCompactor(GraphType * dbg,
                        uint64_t minimizer_window_size=8) :
         AssemblerMixin<GraphType>(dbg),
@@ -568,6 +570,20 @@ public:
         }
     }
 
+    void compactify_right(Path& path) {
+        this->seen.clear();
+        this->seen.insert(this->get());
+        if (degree_left() > 1) return; // make sure we don't start at dnode
+        
+        shift_t next;
+        while (get_right(next) // because get_right implicit checks rdegree
+               && !this->seen.count(next.hash)) {
+            path.push_back(next.symbol);
+            this->seen.insert(next.hash);
+            if (degree_left() > 1) break;
+        }
+    }
+
     void compactify_left(Path& path, InteriorMinimizer<hash_t> minimizer) {
         this->seen.clear();
         this->seen.insert(this->get());
@@ -582,7 +598,20 @@ public:
             minimizer.update(next.hash);
             if (degree_right() > 1) break;
         }
+    }
 
+    void compactify_left(Path& path) {
+        this->seen.clear();
+        this->seen.insert(this->get());
+        if (degree_right() > 1) return; // don't start at dnode
+
+        shift_t next;
+        while (get_left(next) // because get_left implicitly checks ldegree
+               && !this->seen.count(next.hash)) {
+            path.push_front(next.symbol);
+            this->seen.insert(next.hash);
+            if (degree_right() > 1) break;
+        }
     }
 
     bool insert_sequence(const string& sequence,
@@ -621,15 +650,31 @@ public:
     }
 
     void _update_linear(const string& sequence) {
-        pdebug("no-op on " << sequence);
-        this->set_cursor(sequence);
+        pdebug("Update linear");
+        this->set_cursor(sequence.substr(0, this->_K));
         Path segment;
-        this->get_cursor(segment);
+        segment.insert(segment.end(), sequence.begin(), sequence.end());
+        this->compactify_left(segment);
+        hash_t stopped_at = this->get();
+        char after = *(segment.begin()+this->_K);
+        junction_t left_junc = make_pair(stopped_at,
+                                         this->shift_right(after));
 
-        InteriorMinimizer<hash_t> minimizer(_minimizer_window_size);
-        //this->compactify(segment, minimizer);
 
+        this->set_cursor(sequence.substr(sequence.length()-this->_K,
+                                         this->_K));
+        this->compactify_right(segment);
+        stopped_at = this->get();
+        after = *(segment.end()-(this->_K)-1);
+        junction_t right_junc = make_pair(this->shift_left(after),
+                               stopped_at);
 
+        string segment_seq = this->to_string(segment);
+        HashVector tags;
+        WKMinimizer<ShifterType> minimizer(_minimizer_window_size,
+                                           this->_K);
+        tags = minimizer.get_minimizer_values(segment_seq);
+        cdbg.build_unode(tags, segment_seq, left_junc, right_junc);
     }
 
     void _update_from_dnodes(const string& sequence,
