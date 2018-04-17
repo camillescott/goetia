@@ -305,9 +305,13 @@ cdef class StreamingCompactor:
 
         return positions, hashes
 
-    def update(self, str sequence):
+    def update_sequence(self, str sequence):
         cdef string _sequence = _bstring(sequence)
-        return deref(self._sc_this).update(_sequence)
+        return deref(self._sc_this).update_sequence(_sequence)
+
+    def update_cdbg(self, str sequence):
+        cdef string _sequence = _bstring(sequence)
+        return deref(self._sc_this).update_cdbg(_sequence)
 
     '''
     def write_gml(self, str filename):

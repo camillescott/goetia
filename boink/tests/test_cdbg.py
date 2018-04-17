@@ -74,11 +74,11 @@ def test_find_decision_kmers(ksize, graph, compactor, consumer, right_fork):
 def test_update_fork(ksize, graph, compactor, right_fork):
     (core, branch), pos = right_fork()
     print('\n', core, ' ' * (pos + 1) + branch, sep='\n')
-    compactor.update(branch)
+    compactor.update_sequence(branch)
     assert compactor.cdbg.n_unodes == 1
     island = list(compactor.cdbg.unodes()).pop()
     assert island.meta == 'ISLAND'
-    compactor.update(core)
+    compactor.update_sequence(core)
 
     dnode = list(compactor.get_cdbg_dnodes(core)).pop()
     assert dnode.left_degree == 1
@@ -99,9 +99,9 @@ def test_update_fork(ksize, graph, compactor, right_fork):
 def test_update_triple_fork(ksize, graph, compactor, right_triple_fork):
     (core, top, bottom), pos = right_triple_fork()
     print('\n', core, ' ' * (pos + 1) + top, sep='\n')
-    compactor.update(top)
-    compactor.update(bottom)
-    compactor.update(core)
+    compactor.update_sequence(top)
+    compactor.update_sequence(bottom)
+    compactor.update_sequence(core)
 
     dnode = list(compactor.get_cdbg_dnodes(core)).pop()
     assert dnode.left_degree == 1
@@ -126,11 +126,11 @@ def test_double_update(ksize, graph, compactor, right_triple_fork,
 
 
     for loop in (1,2):
-        compactor.update(top)
-        compactor.update(bottom)
+        compactor.update_sequence(top)
+        compactor.update_sequence(bottom)
         if loop == 1:
             print('CORE update', file=sys.stderr)
-            compactor.update(core)
+            compactor.update_sequence(core)
         if loop == 2:
             print('CORE2 update', file=sys.stderr)
             core = random_sequence() + core
@@ -156,9 +156,9 @@ def test_component_merge(ksize, graph, compactor, right_triple_fork,
     (core1, top1, bottom1), pos = right_triple_fork()
     (core2, top2, bottom2), pos = right_triple_fork()
 
-    compactor.update(top1)
-    compactor.update(bottom1)
-    compactor.update(core1)
+    compactor.update_sequence(top1)
+    compactor.update_sequence(bottom1)
+    compactor.update_sequence(core1)
 
     dnode = list(compactor.get_cdbg_dnodes(core1)).pop()
     assert dnode.left_degree == 1
@@ -172,10 +172,10 @@ def test_component_merge(ksize, graph, compactor, right_triple_fork,
     assert compactor.cdbg.n_dnodes == 1
     assert compactor.cdbg.n_unodes == 4
 
-    compactor.update(top2)
-    compactor.update(bottom2)
+    compactor.update_sequence(top2)
+    compactor.update_sequence(bottom2)
     print('CORE1 + CORE2 update', file=sys.stderr)
-    compactor.update(core1 + core2)
+    compactor.update_sequence(core1 + core2)
 
     assert compactor.cdbg.n_dnodes == 2
     assert compactor.cdbg.n_unodes == 7
@@ -199,8 +199,8 @@ def test_component_merge(ksize, graph, compactor, right_triple_fork,
 def test_update_snp_bubble(ksize, graph, compactor, snp_bubble):
     (wildtype, snp), L, R = snp_bubble()
 
-    compactor.update(wildtype)
-    compactor.update(snp)
+    compactor.update_sequence(wildtype)
+    compactor.update_sequence(snp)
     
     assert compactor.cdbg.n_dnodes == 2
     assert compactor.cdbg.n_unodes == 4
@@ -219,9 +219,9 @@ def test_update_trivial_dnodes(ksize, graph, compactor, tandem_quad_forks):
     (core, left_branches, right_branches), S_l, S_r = tandem_quad_forks()
     
     for branch in itertools.chain(left_branches, right_branches):
-        compactor.update(branch)
+        compactor.update_sequence(branch)
     print('CORE update', file=sys.stderr)
-    compactor.update(core)
+    compactor.update_sequence(core)
 
     dnodes = list(compactor.get_cdbg_dnodes(core))
     left, right = dnodes
@@ -243,13 +243,13 @@ def test_linear_merge(ksize, graph, compactor, linear_path):
     seq1 = linear_path()
     seq2 = linear_path()
 
-    compactor.update(seq1)
+    compactor.update_sequence(seq1)
     unode = list(compactor.cdbg.unodes()).pop()
     assert len(unode) == len(seq1)
     assert unode.sequence == seq1
     assert compactor.cdbg.n_unodes == 1
 
-    compactor.update(seq2)
+    compactor.update_sequence(seq2)
     assert compactor.cdbg.n_unodes == 2
 
     unode1, unode2 = list(compactor.cdbg.unodes())
@@ -258,7 +258,33 @@ def test_linear_merge(ksize, graph, compactor, linear_path):
     assert unode1.sequence == seq1
     assert unode2.sequence == seq2
 
-    compactor.update(seq1 + seq2)
+    compactor.update_sequence(seq1 + seq2)
     assert compactor.cdbg.n_unodes == 1
     unode = list(compactor.cdbg.unodes()).pop()
     assert unode.sequence == seq1 + seq2
+
+
+@using_ksize(9)
+@using_length(50)
+@pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
+def test_tip_extend(ksize, graph, compactor, consumer, right_fork, linear_path):
+    (core, branch), pos = right_fork()
+    compactor.update_cdbg(branch)
+    compactor.update_cdbg(core)
+    assert compactor.cdbg.n_dnodes == 1
+    assert compactor.cdbg.n_unodes == 3
+
+    seq = linear_path()
+    print('Add ISLAND', seq, file=sys.stderr)
+    compactor.update_cdbg(seq)
+    assert compactor.cdbg.n_dnodes == 1
+    assert compactor.cdbg.n_unodes == 4
+
+    print('MERGE island with', seq+core, file=sys.stderr)
+    compactor.update_sequence(seq + core)
+    assert compactor.cdbg.n_dnodes == 1
+    assert compactor.cdbg.n_unodes == 3
+    
+    dnode = next(compactor.cdbg.dnodes())
+    extended = next(compactor.cdbg.left_neighbors(dnode))
+    assert extended.sequence == seq + core[:S+ksize]

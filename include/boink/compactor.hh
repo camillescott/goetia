@@ -152,22 +152,26 @@ public:
         }
     }
 
-    void update(const string& sequence) {
+    void update_sequence(const string& sequence) {
         if(!dbg->add_sequence(sequence)) {
             return;
         } else {
-            vector<DecisionNode*> disturbed_dnodes;
-            vector<NeighborBundle> disturbed_neighbors;
-            find_disturbed_dnodes(sequence,
-                                  disturbed_dnodes,
-                                  disturbed_neighbors);
-            if (disturbed_dnodes.size() == 0) {
-                _update_linear(sequence);
-            } else {
-                _update_from_dnodes(sequence,
-                                    disturbed_dnodes,
-                                    disturbed_neighbors);
-            }
+            update_cdbg(sequence);
+        }
+    }
+
+    void update_cdbg(const string& sequence) {
+        vector<DecisionNode*> disturbed_dnodes;
+        vector<NeighborBundle> disturbed_neighbors;
+        find_disturbed_dnodes(sequence,
+                              disturbed_dnodes,
+                              disturbed_neighbors);
+        if (disturbed_dnodes.size() == 0) {
+            _update_linear(sequence);
+        } else {
+            _update_from_dnodes(sequence,
+                                disturbed_dnodes,
+                                disturbed_neighbors);
         }
     }
 

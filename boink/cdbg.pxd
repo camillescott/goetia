@@ -129,7 +129,8 @@ cdef extern from "boink/compactor.hh" namespace "boink" nogil:
                              vector[hash_t],
                              vector[NeighborBundle]&) except +ValueError
 
-        void update(const string&) except +ValueError
+        void update_sequence(const string&) except +ValueError
+        void update_cdbg(const string&) except +ValueError
 
 
 cdef class CompactNode:

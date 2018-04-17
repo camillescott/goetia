@@ -239,7 +239,7 @@ public:
 
     void process_sequence(const Read& read) {
         try {
-            compactor->update(read.cleaned_seq);
+            compactor->update_sequence(read.cleaned_seq);
         } catch (BoinkException &e) {
             std::cerr << "WARNING: Bad sequence encountered: "
                       << read.cleaned_seq << ", exception was "
