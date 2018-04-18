@@ -14,6 +14,7 @@
 #include <iostream>
 
 #include "oxli/read_parsers.hh"
+#include "boink/parsing.hh"
 
 using namespace oxli;
 using namespace oxli:: read_parsers;
@@ -229,7 +230,7 @@ public:
           _output_stream(_output_filename.c_str()) {
 
         _output_stream << compactor->cdbg.meta_counter.header() 
-                       << ",n_dnodes,n_unodes" << std::endl;
+                       << ",n_dnodes,n_unodes,n_tags" << std::endl;
 
     }
 
@@ -255,6 +256,7 @@ public:
                        << compactor->cdbg.meta_counter
                        << "," << compactor->cdbg.n_decision_nodes()
                        << "," << compactor->cdbg.n_unitig_nodes()
+                       << "," << compactor->cdbg.n_tags()
                        << std::endl;
     }
 };
