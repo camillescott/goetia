@@ -287,4 +287,4 @@ def test_tip_extend(ksize, graph, compactor, consumer, right_fork, linear_path):
     
     dnode = next(compactor.cdbg.dnodes())
     extended = next(compactor.cdbg.left_neighbors(dnode))
-    assert extended.sequence == seq + core[:S+ksize]
+    assert extended.sequence == seq + core[:pos+ksize]
