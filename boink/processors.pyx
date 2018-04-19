@@ -21,12 +21,13 @@ cdef class FileProcessor:
 
 cdef class FileConsumer(FileProcessor):
 
-    def __cinit__(self, dBG__BitStorage__DefaultShifter graph):
-        self._fc_this = make_unique[_FileConsumer[DefaultDBG]](graph._this.get())
+    def __cinit__(self, dBG__BitStorage__DefaultShifter graph,
+                        uint32_t output_interval):
+        self._fc_this = make_unique[_FileConsumer[DefaultDBG]](graph._this.get(),
+                                                               output_interval)
 
-    def process(self, str input_filename, uint32_t output_interval=10000):
-        deref(self._fc_this).process(_bstring(input_filename),
-                                     output_interval)
+    def process(self, str input_filename):
+        deref(self._fc_this).process(_bstring(input_filename))
 
         return (deref(self._fc_this).n_reads(),
                 deref(self._fc_this).n_consumed())
@@ -35,30 +36,32 @@ cdef class FileConsumer(FileProcessor):
 
 cdef class DecisionNodeProcessor(FileProcessor):
 
-    def __cinit__(self, StreamingCompactor compactor, str output_filename):
+    def __cinit__(self, StreamingCompactor compactor, str output_filename,
+                        uint32_t output_interval):
         self.output_filename = output_filename
         cdef string _output_filename = _bstring(output_filename)
         self._dnp_this = make_unique[_DecisionNodeProcessor[DefaultDBG]](compactor._sc_this.get(),
-                                                                         _output_filename)
+                                                                         _output_filename,
+                                                                         output_interval)
 
-    def process(self, str input_filename, uint32_t output_interval=10000):
-        deref(self._dnp_this).process(_bstring(input_filename),
-                                      output_interval)
+    def process(self, str input_filename):
+        deref(self._dnp_this).process(_bstring(input_filename))
 
         return deref(self._dnp_this).n_reads()
 
 
 cdef class StreamingCompactorProcessor(FileProcessor):
 
-    def __cinit__(self, StreamingCompactor compactor, str output_filename):
+    def __cinit__(self, StreamingCompactor compactor, str output_filename,
+                        uint32_t output_interval):
         self.output_filename = output_filename
         cdef string _output_filename = _bstring(output_filename)
         self._scp_this = make_unique[_StreamingCompactorProcessor[DefaultDBG]](compactor._sc_this.get(),
-                                                                         _output_filename)
+                                                                               _output_filename,
+                                                                               output_interval)
 
-    def process(self, str input_filename, uint32_t output_interval=10000):
-        deref(self._scp_this).process(_bstring(input_filename),
-                                      output_interval)
+    def process(self, str input_filename):
+        deref(self._scp_this).process(_bstring(input_filename))
 
         return deref(self._scp_this).n_reads()
 
@@ -67,14 +70,15 @@ cdef class MinimizerProcessor(FileProcessor):
 
     def __cinit__(self, int64_t window_size,
                         uint16_t ksize,
-                        str output_filename):
+                        str output_filename,
+                        uint32_t output_interval):
         cdef string _output_filename = _bstring(output_filename)
         self._mp_this = make_unique[_MinimizerProcessor[_DefaultShifter]](window_size,
                                                                          ksize,
-                                                                         _output_filename)
-    def process(self, str input_filename, uint32_t output_interval=10000):
-        deref(self._mp_this).process(_bstring(input_filename),
-                                      output_interval)
+                                                                         _output_filename,
+                                                                         output_interval)
+    def process(self, str input_filename):
+        deref(self._mp_this).process(_bstring(input_filename))
 
         return deref(self._mp_this).n_reads()
 

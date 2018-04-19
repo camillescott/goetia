@@ -30,18 +30,52 @@ class FileProcessor {
 protected:
 
     uint64_t _n_reads;
+    uint32_t _output_interval;
+    uint32_t _output_counter;
 
 public:
+
+    FileProcessor(uint32_t output_interval=DEFAULT_OUTPUT_INTERVAL)
+        : _output_interval(output_interval),
+          _output_counter(0) {
+
+    }
+
+    uint64_t process(const string& left_filename,
+                     const string& right_filename,
+                     uint32_t min_length=0,
+                     bool force_name_match=false) {
+        SplitPairedReader<ParserType> reader(left_filename,
+                                             right_filename,
+                                             min_length,
+                                             force_name_match);
+        return process(reader);
+    }
 
     uint64_t process(string const &filename) {
         ReadParserPtr<ParserType> parser = get_parser<ParserType>(filename);
         return process(parser);
     }
 
-    uint64_t process(string const &filename,
-                     uint32_t output_interval) {
-        ReadParserPtr<ParserType> parser = get_parser<ParserType>(filename);
-        return process(parser, output_interval);
+    uint64_t process(SplitPairedReader<ParserType>& reader) {
+        ReadBundle bundle;
+        
+        while(!reader.is_complete()) {
+            bundle = reader.next();
+            derived().process_sequence(bundle);
+
+            __sync_add_and_fetch( &_n_reads,
+                                  bundle.has_left + bundle.has_right );
+            __sync_add_and_fetch( &_output_counter,
+                                  bundle.has_left + bundle.has_right);
+            if (_output_counter == _output_interval) {
+                _output_counter = 0;
+                std::cerr << "processed " << _n_reads << " reads." << std::endl;
+                derived().report();
+            }  
+        }
+
+        return _n_reads;
     }
 
     uint64_t process(read_parsers::ReadParserPtr<ParserType>& parser) {
@@ -56,42 +90,28 @@ public:
             }
 
             read.set_clean_seq();
-            derived().process_sequence(read.cleaned_seq);
-                
-
-            __sync_add_and_fetch( &_n_reads, 1 );
-        }
-
-        return _n_reads;
-    }
-
-    uint64_t process(read_parsers::ReadParserPtr<ParserType>& parser,
-                     uint32_t output_interval) {
-        Read read;
-
-        // Iterate through the reads and consume their k-mers.
-        uint32_t output_counter = 0;
-        while (!parser->is_complete( )) {
-            try {
-                read = parser->get_next_read( );
-            } catch (NoMoreReadsAvailable) {
-                break;
-            }
-
-            read.set_clean_seq();
             derived().process_sequence(read);
                 
 
             __sync_add_and_fetch( &_n_reads, 1 );
-            __sync_add_and_fetch( &output_counter, 1 );
+            __sync_add_and_fetch( &_output_counter, 1 );
 
-            if (output_counter == output_interval) {
-                output_counter = 0;
+            if (_output_counter == _output_interval) {
+                _output_counter = 0;
                 std::cerr << "processed " << _n_reads << " reads." << std::endl;
                 derived().report();
             }    
         }
         return _n_reads;
+    }
+
+    void process_sequence(ReadBundle& bundle) {
+        if (bundle.has_left) {
+            derived().process_sequence(bundle.left);
+        }
+        if (bundle.has_right) {
+            derived().process_sequence(bundle.right);
+        }
     }
 
     uint64_t n_reads() const {
@@ -125,10 +145,14 @@ protected:
     GraphType * graph;
     uint64_t _n_consumed;
 
+    typedef FileProcessor<FileConsumer<GraphType, ParserType>,
+                          ParserType> Base;
+
 public:
 
-    FileConsumer(GraphType * graph)
-        : graph(graph), _n_consumed(0) {
+    FileConsumer(GraphType * graph, uint32_t output_interval)
+        : Base(output_interval),
+          graph(graph), _n_consumed(0) {
 
     }
 
@@ -155,7 +179,7 @@ class DecisionNodeProcessor : public FileProcessor<DecisionNodeProcessor<GraphTy
 
 protected:
     typedef FileProcessor<DecisionNodeProcessor<GraphType, ParserType>,
-                                                   ParserType> Base;
+                          ParserType> Base;
     StreamingCompactor<GraphType> * compactor;
     GraphType * graph;
     std::string _output_filename;
@@ -164,8 +188,9 @@ protected:
 public:
 
     DecisionNodeProcessor(StreamingCompactor<GraphType> * compactor,
-                          std::string& output_filename)
-        : Base(),
+                          std::string& output_filename,
+                          uint32_t output_interval)
+        : Base(output_interval),
           compactor(compactor),
           graph(compactor->dbg),
           _output_filename(output_filename),
@@ -220,11 +245,16 @@ protected:
     std::string _output_filename;
     std::ofstream _output_stream;
 
+    typedef FileProcessor<StreamingCompactorProcessor<GraphType, ParserType>,
+                          ParserType> Base;
+
 public:
 
     StreamingCompactorProcessor(StreamingCompactor<GraphType> * compactor,
-                                std::string& output_filename)
-        : compactor(compactor),
+                                std::string& output_filename,
+                                uint32_t output_interval)
+        : Base(output_interval),
+          compactor(compactor),
           graph(compactor->dbg),
           _output_filename(output_filename),
           _output_stream(_output_filename.c_str()) {
@@ -274,12 +304,17 @@ protected:
     std::string _output_filename;
     std::ofstream _output_stream;
 
+    typedef FileProcessor<MinimizerProcessor<ShifterType, ParserType>,
+                                             ParserType> Base;
+
 public:
 
     MinimizerProcessor(int32_t window_size,
                        uint16_t K,
-                       const std::string& output_filename)
-        : M(window_size, K),
+                       const std::string& output_filename,
+                       uint32_t output_interval)
+        : Base(output_interval),
+          M(window_size, K),
           _output_filename(output_filename),
           _output_stream(_output_filename.c_str()) {
     

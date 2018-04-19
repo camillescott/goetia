@@ -25,11 +25,12 @@ def main():
                      args.max_tablesize,
                      args.n_tables)
     compactor = StreamingCompactor(graph)
-    processor = DecisionNodeProcessor(compactor, args.output_filename)
+    processor = DecisionNodeProcessor(compactor,
+                                      args.output_filename,
+                                      args.output_interval)
 
     for filename in args.inputs:
-        processor.process(filename,
-                          output_interval=args.output_interval)
+        processor.process(filename)
 
     if args.savegraph:
         graph.save(args.savegraph)
