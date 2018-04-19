@@ -30,8 +30,8 @@ cdef extern from "boink/parsing.hh" namespace "boink" nogil:
         _SplitPairedReader(const string&,
                            const string&)
 
-        bool is_complete()
-        _SequenceBundle next()
+        bool is_complete() except +ValueError
+        _SequenceBundle next() except +ValueError
 
 cdef class SplitPairedReader:
 
