@@ -90,6 +90,9 @@ PREFIX      = '/usr/local'
 
 CXX         = get_var('CXX', os.environ.get('CXX', 'cc'))
 INCLUDES    = ['-I', os.path.abspath('include/'), '-I.']
+PREFIX      = get_var('PREFIX', None)
+if PREFIX is not None:
+    INCLUDES += ['-I'+os.path.join(PREFIX, 'include')]
 WARNINGS    = ['-Wall']
 COMMON      = ['-O3', '-fPIC', '-fno-omit-frame-pointer']
 
