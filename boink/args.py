@@ -41,6 +41,7 @@ from argparse import _VersionAction
 from collections import namedtuple
 
 from boink.metadata import __version__
+from boink.parsing import PAIRING_MODES
 
 
 DEFAULT_K = 31
@@ -166,3 +167,15 @@ def build_dBG_args(descr=None, epilog=None, parser=None):
     return parser
 
 
+def add_pairing_args(parser):
+    """Common pairing mode argument."""
+    parser.add_argument('--pairing-mode', default='interleaved',
+                        choices=PAIRING_MODES,
+                        help='How to interpret read pairing. With `single`, '\
+                             'reads will be parsed as singletons, regardless'\
+                             ' of pairing or file order. With `interleaved`,'\
+                             ' each file will be assumed to be interleaved '\
+                             'and paired, with singletons allowed to be mixed'\
+                             ' in. With `split`, it will be assumed that each'\
+                             ' group of two files in the input list are '\
+                             'as (LEFT, RIGHT), ...')
