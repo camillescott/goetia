@@ -227,8 +227,10 @@ def get_pxd_includes(filename, include_dir):
                 tokens = line.split()
                 include_filename = tokens[3].strip('"')
                 include_filename = os.path.basename(include_filename)
-                if include_filename.endswith('.hh'):
-                    yield os.path.join(include_dir, include_filename)
+                include_filename = os.path.join(include_dir, include_filename)
+                if include_filename.endswith('.hh') and \
+                   os.path.isfile(include_filename):
+                    yield include_filename
 
 
 def get_object_dependencies(source_filename):

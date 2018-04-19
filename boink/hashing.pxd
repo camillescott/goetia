@@ -14,7 +14,7 @@ from libcpp.utility cimport pair
 from libcpp.vector cimport vector
 
 
-cdef extern from "oxli/alphabets.hh":
+cdef extern from "oxli/alphabets.hh" nogil:
     # This is a hack to trick Cython into taking static const
     # std::string objects as a template non-type parameters (by default
     # Cython only accepts regular template type parameters)
@@ -33,7 +33,7 @@ cdef extern from "oxli/alphabets.hh":
         pass
 
 
-cdef extern from "boink/hashing.hh" namespace "boink":
+cdef extern from "boink/hashing.hh" namespace "boink" nogil:
     ctypedef uint64_t hash_t
     ctypedef pair[hash_t, hash_t] full_hash_t
 

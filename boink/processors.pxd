@@ -13,7 +13,7 @@ from boink.dbg cimport *
 from boink.cdbg cimport *
 from boink.utils cimport _bstring
 
-cdef extern from "boink/processors.hh" namespace "boink":
+cdef extern from "boink/processors.hh" namespace "boink" nogil:
 
     cdef cppclass _FileProcessor "boink::FileProcessor" [Derived]:
         _FileProcessor(uint32_t)

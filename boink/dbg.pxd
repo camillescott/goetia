@@ -17,7 +17,7 @@ from libcpp.string cimport string
 
 from boink.hashing cimport *
 
-cdef extern from "oxli/storage.hh":
+cdef extern from "oxli/storage.hh" nogil:
     # Need these for the Storage template parameter;
     # they don't need methods
     cdef cppclass _Storage "oxli::Storage":
@@ -32,7 +32,7 @@ cdef extern from "oxli/storage.hh":
         pass
 
 
-cdef extern from "boink/dbg.hh" namespace "boink":
+cdef extern from "boink/dbg.hh" namespace "boink" nogil:
     ctypedef pair[bool, bool] bit_pair_t
     ctypedef vector[bit_pair_t] bit_pair_vector_t
     ctypedef uint8_t count_t

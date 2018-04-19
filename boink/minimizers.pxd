@@ -14,7 +14,7 @@ from libcpp.vector cimport vector
 
 from boink.hashing cimport *
 
-cdef extern from "boink/minimizers.hh" namespace "boink":
+cdef extern from "boink/minimizers.hh" namespace "boink" nogil:
 
     cdef cppclass _RollingMin "boink::RollingMin" [T]:
         _RollingMin(int64_t)

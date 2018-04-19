@@ -15,7 +15,7 @@ from libcpp.vector import vector
 from boink.hashing cimport *
 
 
-cdef extern from "boink/assembly.hh" namespace "boink":
+cdef extern from "boink/assembly.hh" namespace "boink" nogil:
     ctypedef deque[char] Path
     ctypedef vector[string] StringVector
     ctypedef vector[kmer_t] KmerVector
