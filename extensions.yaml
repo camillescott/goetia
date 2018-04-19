@@ -30,6 +30,9 @@ extensions:
         - ParserType
     - name: stats
     - name: utils
+    - name: parsing
+      types:
+        - ParserType
 
 headers:
     - dbg.hh
@@ -37,9 +40,10 @@ headers:
     - hashing.hh
     - assembly.hh
     - boink.hh
-    - consumer.hh
+    - processors.hh
     - minimizers.hh
     - boink.hh
+    - parsing.hh
 
 types:
     - name: StorageType
@@ -71,6 +75,10 @@ types:
     - name: StreamingCompactorType
       composites: 
         - GraphType
+      types: null
+    - name: SplitPairedReaderType
+      composites:
+        - ParserType
       types: null
     - name: AssemblerType
       composites:
