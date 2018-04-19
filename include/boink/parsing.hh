@@ -126,6 +126,15 @@ bool check_is_right(const string& name) {
     return false;
 }
 
+void filter_length(ReadBundle& bundle, uint32_t length) {
+    if (bundle.left.sequence.length() < length) {
+        bundle.has_left = false;
+    }
+    if (bundle.right.sequence.length() < length) {
+        bundle.has_right = false;
+    }
+}
+
 
 template <class ParserType = FastxReader>
 class SplitPairedReader {
@@ -137,9 +146,9 @@ class SplitPairedReader {
     uint64_t _n_reads;
 
     SplitPairedReader(const string &left,
-                      const string &right,
-                      uint32_t min_length=1,
-                      bool force_name_match=false)
+                 const string &right,
+                 uint32_t min_length=0,
+                 bool force_name_match=false)
         : _min_length(min_length),
           _force_name_match(force_name_match) {
         
@@ -147,11 +156,18 @@ class SplitPairedReader {
         right_parser = get_parser<ParserType>(right);
     }
 
+    bool is_complete() const {
+        if (left_parser->is_complete() != right_parser->is_complete()) {
+            throw BoinkException("Mismatched split paired files.");
+        }
+        return left_parser->is_complete();
+    }
+
     ReadBundle next() {
         ReadBundle result;
         try {
-            result.left = left_parser->get_next_read();
-            result.right = right_parser->get_next_read();
+            result.left = this->left_parser->get_next_read();
+            result.right = this->right_parser->get_next_read();
         } catch (NoMoreReadsAvailable) {
             result.has_left = false;
             result.has_right = false;
@@ -163,24 +179,18 @@ class SplitPairedReader {
         result.has_left = true;
         result.has_right = true;
 
-        if (_force_name_match) {
-            if (check_is_pair(result.left.name, result.right.name)) {
-                return result;
-            } else {
+        if (this->_force_name_match) {
+            if (!check_is_pair(result.left.name, result.right.name)) {
                 throw BoinkException("Unpaired reads");
             }
         }
 
+        if (this->_min_length > 0) {
+            filter_length(result, this->_min_length);
+        }
+
         return result;
     }
-
-    bool is_complete() const {
-        if (left_parser->is_complete() != right_parser->is_complete()) {
-            throw BoinkException("Mismatched split paired files.");
-        }
-        return left_parser->is_complete();
-    }
-
 };
 
 }
