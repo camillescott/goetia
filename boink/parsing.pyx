@@ -23,7 +23,7 @@ cdef class SplitPairedReader:
 
     def __iter__(self):
         cdef _SequenceBundle bundle
-        cdef read_num = 0
+        cdef object read_num = 0
 
         while not deref(self._this).is_complete():
             bundle = deref(self._this).next()
