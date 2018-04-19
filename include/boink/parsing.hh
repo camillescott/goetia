@@ -17,6 +17,8 @@
 #include "oxli/read_parsers.hh"
 #include "utils/stringutils.h"
 
+#include "boink/boink.hh"
+
 using namespace oxli;
 using namespace oxli:: read_parsers;
 
@@ -144,6 +146,8 @@ class SplitPairedReader {
     uint32_t _min_length;
     bool     _force_name_match;
     uint64_t _n_reads;
+
+public:
 
     SplitPairedReader(const string &left,
                  const string &right,
