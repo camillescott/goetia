@@ -19,8 +19,9 @@ cdef extern from "boink/processors.hh" namespace "boink":
         _FileProcessor(uint32_t)
         _FileProcessor()
 
+        uint64_t process(...) except +ValueError
         uint64_t process(const string&) except +ValueError
-        uint64_t process(const string&, const string&) except +ValueError
+        uint64_t process_paired "process"(const string&, const string&) except +ValueError
         uint64_t process(const string&,
                          const string&,
                          uint32_t,

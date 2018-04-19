@@ -60,8 +60,12 @@ cdef class StreamingCompactorProcessor(FileProcessor):
                                                                                _output_filename,
                                                                                output_interval)
 
-    def process(self, str input_filename):
-        deref(self._scp_this).process(_bstring(input_filename))
+    def process(self, str input_filename, str right_filename=None):
+        if right_filename is None:
+            deref(self._scp_this).process(_bstring(input_filename))
+        else:
+            deref(self._scp_this).process(_bstring(input_filename),
+                                          _bstring(right_filename))
 
         return deref(self._scp_this).n_reads()
 

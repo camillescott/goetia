@@ -37,7 +37,8 @@ public:
 
     FileProcessor(uint32_t output_interval=DEFAULT_OUTPUT_INTERVAL)
         : _output_interval(output_interval),
-          _output_counter(0) {
+          _output_counter(0),
+          _n_reads(0) {
 
     }
 
@@ -68,6 +69,7 @@ public:
                                   bundle.has_left + bundle.has_right );
             __sync_add_and_fetch( &_output_counter,
                                   bundle.has_left + bundle.has_right);
+
             if (_output_counter == _output_interval) {
                 _output_counter = 0;
                 std::cerr << "processed " << _n_reads << " reads." << std::endl;
@@ -91,7 +93,6 @@ public:
 
             read.set_clean_seq();
             derived().process_sequence(read);
-                
 
             __sync_add_and_fetch( &_n_reads, 1 );
             __sync_add_and_fetch( &_output_counter, 1 );
@@ -150,6 +151,8 @@ protected:
 
 public:
 
+    using Base::process_sequence;
+    
     FileConsumer(GraphType * graph, uint32_t output_interval)
         : Base(output_interval),
           graph(graph), _n_consumed(0) {
@@ -186,6 +189,8 @@ protected:
     std::ofstream _output_stream;
 
 public:
+
+    using Base::process_sequence;
 
     DecisionNodeProcessor(StreamingCompactor<GraphType> * compactor,
                           std::string& output_filename,
@@ -250,6 +255,8 @@ protected:
 
 public:
 
+    using Base::process_sequence;
+
     StreamingCompactorProcessor(StreamingCompactor<GraphType> * compactor,
                                 std::string& output_filename,
                                 uint32_t output_interval)
@@ -306,8 +313,9 @@ protected:
 
     typedef FileProcessor<MinimizerProcessor<ShifterType, ParserType>,
                                              ParserType> Base;
-
 public:
+
+    using Base::process_sequence;
 
     MinimizerProcessor(int32_t window_size,
                        uint16_t K,
