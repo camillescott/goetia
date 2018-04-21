@@ -16,6 +16,7 @@
 #include "oxli/hashtable.hh"
 
 #include <algorithm>
+#include <cmath>
 #include <string>
 #include <vector>
 
@@ -102,6 +103,12 @@ public:
 
     uint8_t ** get_raw() const {
         return S.get_raw_tables();
+    }
+
+    double estimated_fp() {
+        double fp = n_occupied() / sizes[0];
+        fp = pow(fp, N);
+        return fp;
     }
 
     uint64_t add_sequence(const string& sequence,

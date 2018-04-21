@@ -267,7 +267,8 @@ public:
           _output_stream(_output_filename.c_str()) {
 
         _output_stream << compactor->cdbg.meta_counter.header() 
-                       << ",n_dnodes,n_unodes,n_tags" << std::endl;
+                       << ",n_dnodes,n_unodes,n_tags"
+                       << ",n_updates,n_kmers,est_fp" << std::endl;
 
     }
 
@@ -294,6 +295,9 @@ public:
                        << "," << compactor->cdbg.n_decision_nodes()
                        << "," << compactor->cdbg.n_unitig_nodes()
                        << "," << compactor->cdbg.n_tags()
+                       << "," << compactor->cdbg.n_updates()
+                       << "," << compactor->dbg->n_unique()
+                       << "," << compactor->dbg->estimated_fp()
                        << std::endl;
     }
 };

@@ -633,7 +633,6 @@ public:
 
         // one row at a time
         for (i = 0; i < dnode_ids.size() + unode_ids.size(); ++i) {
-            id_t rood_id;
             std::set<id_t> neighbors;
             if (i < dnode_ids.size()) {
                 id_t root_id = dnode_ids[i];
