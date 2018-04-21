@@ -607,6 +607,83 @@ public:
             _n_updates++;
         }
     }
+
+    void write_adj_matrix(const string& filename) {
+        std::ofstream out;
+        out.open(filename);
+
+        std::cerr << "Gather node IDs." << std::endl;
+        std::vector<id_t> dnode_ids(decision_nodes.size());
+        std::vector<id_t> unode_ids(unitig_nodes.size());
+        size_t i = 0;
+        for (auto it = decision_nodes.begin(); it != decision_nodes.end(); ++it) {
+            dnode_ids[i] = it->first;
+            ++i;
+        }
+        i = 0;
+        for (auto it = unitig_nodes.begin(); it != unitig_nodes.end(); ++it) {
+            unode_ids[i] = it->first;
+            ++i;
+        }
+        std::cerr << "Sorting nodes." << std::endl;
+        std::sort(dnode_ids.begin(), dnode_ids.end());
+        std::sort(unode_ids.begin(), unode_ids.end());
+
+        std::cerr << "Writing out..." << std::endl;
+
+        // one row at a time
+        for (i = 0; i < dnode_ids.size() + unode_ids.size(); ++i) {
+            id_t rood_id;
+            std::set<id_t> neighbors;
+            if (i < dnode_ids.size()) {
+                id_t root_id = dnode_ids[i];
+                for (auto junc : decision_nodes[root_id]->left_juncs) {
+                    id_t neighbor_id = unitig_junction_map[junc];
+                    neighbors.insert(neighbor_id);
+                }
+                for (auto junc : decision_nodes[root_id]->right_juncs) {
+                    id_t neighbor_id = unitig_junction_map[junc];
+                    neighbors.insert(neighbor_id);
+                }
+                for (size_t j = 0; j < dnode_ids.size(); ++j) {
+                    out << "0 ";
+                }
+                for (auto neighbor_id : unode_ids) {
+                    if (neighbors.count(neighbor_id)) {
+                        out << neighbor_id;
+                    } else {
+                        out << "0";
+                    }
+                    out << " ";
+                }
+            } else {
+                id_t root_id = unode_ids[i];
+                id_t left = unitig_nodes[root_id]->left_junc.first;
+                id_t right = unitig_nodes[root_id]->right_junc.second;
+                if (decision_nodes.count(left)) {
+                    neighbors.insert(left);
+                }
+                if (decision_nodes.count(right)) {
+                    neighbors.insert(right);
+                }
+                for (auto neighbor_id : dnode_ids) {
+                    if (neighbors.count(neighbor_id)) {
+                        out << neighbor_id;
+                    } else {
+                        out << "0";
+                    }
+                    out << " ";
+                }
+                for (size_t j = 0; j < unode_ids.size(); ++j) {
+                    out << "0 ";
+                }
+            }
+
+            out << std::endl;
+        }
+
+        std::cerr << "Wrote " << i << "x" << i << " adjacency matrix." << std::endl;
+    }
 };
 }
 
