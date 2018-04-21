@@ -86,11 +86,10 @@ if DEBUG_ALL:
 
 print('Debug', DEBUG)
 DEBUG_FLAGS = ['-ggdb']
-PREFIX      = '/usr/local'
 
 CXX         = get_var('CXX', os.environ.get('CXX', 'cc'))
 INCLUDES    = ['-I', os.path.abspath('include/'), '-I.']
-PREFIX      = get_var('PREFIX', None)
+PREFIX      = get_var('PREFIX', sysconfig.get_config_var('prefix'))
 if PREFIX is not None:
     INCLUDES += ['-I'+os.path.join(PREFIX, 'include')]
 WARNINGS    = ['-Wall']

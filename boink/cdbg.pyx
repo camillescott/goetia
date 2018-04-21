@@ -317,6 +317,13 @@ cdef class StreamingCompactor:
         cdef string _sequence = _bstring(sequence)
         return deref(self._sc_this).update_cdbg(_sequence)
 
+    def write_unitigs(self, filename):
+        with open(filename, 'w') as fp:
+            for unode in self.cdbg.unodes:
+                name = '>{id} length={length} n_tags={n_tags}'.format(unode.node_id,
+                                                                      len(unode),
+                                                                      unode.n_tags)
+                fp.write('{0}\n{1}\n'.format(name, unode.sequence))
     '''
     def write_gml(self, str filename):
         cdef string _filename = _bstring(filename)

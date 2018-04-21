@@ -15,6 +15,7 @@ def parse_args():
     parser = build_dBG_args()
     add_pairing_args(parser)
     parser.add_argument('-o', dest='output_filename', default='/dev/stdout')
+    parser.add_argument('--cdbg-stats-filename', default='cdbg_stats.csv')
     parser.add_argument('-i', dest='inputs', nargs='+', default=['/dev/stdin'])
     parser.add_argument('--output-interval', type=int, default=10000)
     parser.add_argument('--adjmat-prefix', default=None)
@@ -31,8 +32,8 @@ def main():
                      args.n_tables)
     compactor = StreamingCompactor(graph)
     processor = StreamingCompactorProcessor(compactor,
-                                            args.output_filename,
-                                            args.adjmat_prefix,
+                                            args.cdbg_stats_filename
+                                            args.adjmat_prefix,,
                                             args.output_interval)
     if args.pairing_mode == 'split':
         _samples = grouper(2, args.inputs)
@@ -44,6 +45,8 @@ def main():
             processor.process(*sample)
         else:
             processor.process(sample)
+
+    compactor.write_unitigs(args.output_filename)
 
     if args.savegraph:
         graph.save(args.savegraph)
