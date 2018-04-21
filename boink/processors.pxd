@@ -41,6 +41,7 @@ cdef extern from "boink/processors.hh" namespace "boink" nogil:
     cdef cppclass _StreamingCompactorProcessor "boink::StreamingCompactorProcessor"[GraphType] (_FileProcessor[_StreamingCompactorProcessor[GraphType]]):
         _StreamingCompactorProcessor(_StreamingCompactor*,
                                      string &,
+                                     string &,
                                      uint32_t)
 
     cdef cppclass _MinimizerProcessor "boink::MinimizerProcessor" [ShifterType] (_FileProcessor[_MinimizerProcessor[ShifterType]]):
