@@ -104,6 +104,7 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
         _DecisionNode * get_right_dnode(_UnitigNode*)
 
         void write_adj_matrix(const string&) except +OSError
+        void write_graphml(const string&) except +OSError
 
 cdef extern from "boink/compactor.hh" namespace "boink" nogil:
 

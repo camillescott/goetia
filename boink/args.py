@@ -160,9 +160,22 @@ def build_dBG_args(descr=None, epilog=None, parser=None):
                        help='maximum amount of memory to use for data ' +
                        'structure')
 
-    group.add_argument('-s', '--savegraph', metavar="filename", default=None,
+    group.add_argument('--save-dbg', metavar="filename", default=None,
                         help='save the k-mer countgraph to disk after all '
                         'reads are loaded.')
+
+    return parser
+
+
+def add_save_cDBG_args(parser):
+    default_prefix = CUR_TIME + '.cdbg'
+    parser.add_argument('--save-cdbg-format', default=[None], nargs='+',
+                        choices=cDBG.SAVE_FORMATS)
+    parser.add_argument('--save-cdbg-prefix', default=default_prefix)
+    parser.add_argument('--save-cdbg-stats', 
+                        default=default_prefix + '.stats.csv')
+    parser.add_argumnet('--save-stats-interval', type=int, default=10000)
+    parser.add_argument('--save-cdbg-interval', type=int, default=100000)
 
     return parser
 
@@ -179,3 +192,4 @@ def add_pairing_args(parser):
                              ' in. With `split`, it will be assumed that each'\
                              ' group of two files in the input list are '\
                              'as (LEFT, RIGHT), ...')
+    return parser

@@ -1,3 +1,4 @@
+import datatime
 import os
 import pandas as pd
 from jinja2 import Environment, PackageLoader, select_autoescape
@@ -5,6 +6,7 @@ from jinja2 import Environment, PackageLoader, select_autoescape
 BOINK_DIR = os.path.abspath(os.path.join(__file__, os.pardir))
 DATA_DIR =  os.path.join(BOINK_DIR, 'data')
 TEMPLATE_DIR = os.path.join(BOINK_DIR, 'templates')
+CUR_TIME = datetime.datetime.now().strftime("%Y-%m-%d-%H:%M")
 
 __version__ = '0.1'
 

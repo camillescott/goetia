@@ -144,6 +144,9 @@ cdef class UnitigNode(CompactNode):
 
 cdef class cDBG:
 
+    SAVE_FORMATS = ['graphml', 'adjmat', 'edgelist',
+                    'gfa1', 'gfa2', 'fasta', 'gml']
+
     @staticmethod
     cdef cDBG _wrap(_cDBG * ptr):
         cdef cDBG cdbg = cDBG()
@@ -254,6 +257,41 @@ cdef class cDBG:
     def n_tags(self):
         return deref(self._this).n_tags()
 
+    def write_graphml(self, str filename):
+        cdef string _filename = _bstring(filename)
+        deref(self._this).write_graphml(_filename)
+
+    def write_unitigs(self, str filename):
+        with open(filename, 'w') as fp:
+            for unode in self.unodes:
+                name = '>{id} length={length} n_tags={n_tags}'.format(unode.node_id,
+                                                                      len(unode),
+                                                                      unode.n_tags)
+                fp.write('{0}\n{1}\n'.format(name, unode.sequence))
+
+    def write_adjmat(self, str filename):
+        cdef string _filename = _bstring(filename)
+        deref(self._this).write_adj_matrix(_filename)
+
+    def save(self, str filename, str file_format):
+        if file_format is None:
+            return
+        elif file_format in self.SAVE_FORMATS:
+            if file_format == 'graphml':
+                self.write_graphml(filename)
+            elif file_format == 'adjmat':
+                self.write_adjmat(filename)
+            elif file_format == 'fasta':
+                self.write_unitigs(filename)
+            else:
+                raise NotImplementedError("Support for {0} not yet "
+                                          "implemented".format(file_format))
+        else:
+            formats = ', '.join(self.SAVE_FORMATS)
+            raise ValueError("{0} not a valid save format. "
+                             "Format must be one of: {1}".format(file_format,
+                                                                 formats))
+
 
 cdef class StreamingCompactor:
 
@@ -265,10 +303,6 @@ cdef class StreamingCompactor:
             self._sc_this = \
                 make_unique[_StreamingCompactor[DefaultDBG]](self._graph)
             self.cdbg = cDBG._wrap(&(deref(self._sc_this).cdbg))
-
-    #def compactify(self, str seed):
-    #    cdef string _seed = _bstring(seed)
-    #    return deref(self._sc_this).compactify(_seed)
 
     def is_decision_kmer(self, str kmer):
         cdef string _kmer = _bstring(kmer)
@@ -317,19 +351,3 @@ cdef class StreamingCompactor:
         cdef string _sequence = _bstring(sequence)
         return deref(self._sc_this).update_cdbg(_sequence)
 
-    def write_unitigs(self, filename):
-        with open(filename, 'w') as fp:
-            for unode in self.cdbg.unodes:
-                name = '>{id} length={length} n_tags={n_tags}'.format(unode.node_id,
-                                                                      len(unode),
-                                                                      unode.n_tags)
-                fp.write('{0}\n{1}\n'.format(name, unode.sequence))
-    '''
-    def write_gml(self, str filename):
-        cdef string _filename = _bstring(filename)
-        deref(self._sc_this).write_gml(_filename)
-
-    def write_fasta(self, str filename):
-        cdef string _filename = _bstring(filename)
-        deref(self._sc_this).write_fasta(_filename)
-    '''
