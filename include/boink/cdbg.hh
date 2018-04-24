@@ -608,6 +608,60 @@ public:
         }
     }
 
+    void write_edge_list(const string& filename) {
+        std::ofstream out;
+        out.open(filename);
+
+        for (auto it = unitig_nodes.begin(); it != unitig_nodes.end(); ++it) {
+            
+        }
+    }
+
+    void write_graphml(const string& filename,
+                       string graph_name="cDBG") {
+        std::ofstream out;
+        out.open(filename);
+
+        out << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+               "<graphml xmlns=\"http://graphml.graphdrawing.org/xmlns\""
+               "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""
+               "xsi:schemaLocation=\"http://graphml.graphdrawing.org/xmlns "
+               "http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd\">"
+            << std::endl; // the header, open <graphml>
+        out << "<graph id=\"" << graph_name 
+            << "\" edgedefault=\"directed\" "
+            << "parse.maxindegree=\"4\" parse.maxoutdegree=\"4\">"
+            << std::endl; // open <graph>
+
+        id_t edge_counter = 0;
+        for (auto it = decision_nodes.begin(); it != decision_nodes.end(); ++it) {
+            out << "<node id=\"n" << it->first << "\"/>" << std::endl;
+            for (auto junc : it->second->left_juncs) {
+                id_t in_neighbor = unitig_junction_map[junc];
+                out << "<id=\"e" << edge_counter 
+                    << "\" source=\"n" << in_neighbor
+                    << "\" target=\"n" << it->first << "\"/>"
+                    << std::endl;
+                edge_counter++;
+            }
+            for (auto junc : it->second->right_juncs) {
+                id_t out_neighbor = unitig_junction_map[junc];
+                out << "<id=\"e" << edge_counter 
+                    << "\" source=\"n" << it->first
+                    << "\" target=\"n" << out_neighbor << "\"/>"
+                    << std::endl;
+                edge_counter++;
+            }
+        }
+
+        for (auto it = unitig_nodes.begin(); it != unitig_nodes.end(); ++it) {
+            out << "<node id=\"" << it->first << "\"/>" << std::endl;
+        }
+
+        out << "</graph>" << std::endl;
+        out << "</graphml>" << std::endl;
+    }
+
     void write_adj_matrix(const string& filename) {
         std::ofstream out;
         out.open(filename);
@@ -680,6 +734,7 @@ public:
 
             out << std::endl;
         }
+        out.close();
 
         std::cerr << "Wrote " << i << "x" << i << " adjacency matrix." << std::endl;
     }
