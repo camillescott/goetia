@@ -317,18 +317,6 @@ def task_libboink():
                          'boink_pc',
                          'boink_ranlib']}
 
-def setupcmd(cmd):
-    return ' '.join(['python', 'setup.py'] + cmd)
-
-
-def task_install():
-    return {'actions': [setupcmd(['install'])]}
-
-
-def task_test():
-    return {'actions': [setupcmd(['develop']),
-                        'py.test --pyargs boink.tests']}
-
 
 def jinja_render_task(mod_prefix, type_dict):
 
@@ -422,3 +410,22 @@ def task_build():
                             cy_link_command(source, target),
                             'cp {0} {1}'.format(target, cp_target)],
                 'clean': True}
+
+
+def setupcmd(cmd):
+    return ' '.join(['python', 'setup.py'] + cmd)
+
+
+def task_install():
+    file_dep = [os.path.join(PKG, mod_file) for mod_file in MOD_FILES.values()]
+    return {'title': title_with_actions,
+            'actions': [setupcmd(['install'])],
+            'file_dep': file_dep}
+
+
+def task_test():
+    return {'actions': [setupcmd(['develop']),
+                        'py.test --pyargs boink.tests']}
+
+
+
