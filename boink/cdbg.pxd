@@ -19,7 +19,8 @@ from boink.hashing cimport *
 
 from boink.dbg cimport *
 from boink.minimizers cimport _InteriorMinimizer
-from boink.events cimport _StreamingCompactorReport
+from boink.events cimport (_StreamingCompactorReport, _EventNotifier,
+                           _EventListener, EventNotifier, EventListener)
 
 cdef extern from "boink/cdbg.hh":
     cdef uint64_t NULL_ID
@@ -79,7 +80,7 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
     ctypedef _DecisionNode * DecisionNodePtr
     ctypedef _UnitigNode * UnitigNodePtr
 
-    cdef cppclass _cDBG "boink::cDBG" (_KmerClient):
+    cdef cppclass _cDBG "boink::cDBG" (_KmerClient, _EventListener):
         ctypedef umap[hash_t,unique_ptr[_DecisionNode]].const_iterator dnode_iter_t
         ctypedef umap[id_t,unique_ptr[_UnitigNode]].const_iterator unode_iter_t
 
@@ -109,7 +110,7 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
 
 cdef extern from "boink/compactor.hh" namespace "boink" nogil:
 
-    cdef cppclass _StreamingCompactor "boink::StreamingCompactor" [GraphType] (_AssemblerMixin[GraphType]):
+    cdef cppclass _StreamingCompactor "boink::StreamingCompactor" [GraphType] (_AssemblerMixin[GraphType], _EventNotifier):
         _cDBG cdbg
 
         _StreamingCompactor(GraphType *)
@@ -173,4 +174,5 @@ cdef class StreamingCompactor:
     # TODO jinja template StreamingCompactor template args
     cdef unique_ptr[_StreamingCompactor[DefaultDBG]] _sc_this
     cdef public cDBG cdbg
+    cdef public EventNotifier Notifier
 

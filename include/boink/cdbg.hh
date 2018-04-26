@@ -378,14 +378,14 @@ public:
                 {
                     BuildDNode* data = static_cast<BuildDNode*>(event->msg);
                     auto lock = lock_dnodes();
-                    build_dnode(data->hash, data->kmer);
+                    this->build_dnode(data->hash, data->kmer);
                 }
                 return;
             case boink::event_types::MSG_ADD_UNODE:
                 {
                     BuildUNode* data = static_cast<BuildUNode*>(event->msg);
                     auto lock = lock_unodes();
-                    build_unode(data->tags, data->sequence,
+                    this->build_unode(data->tags, data->sequence,
                                 data->left, data->right);
                 }
                 return;
@@ -393,10 +393,12 @@ public:
                 {
                     DeleteUNode * data = static_cast<DeleteUNode*>(event->msg);
                     auto lock = lock_unodes();
-                    delete_unode(get_unode_from_id(data->node_id));
+                    this->delete_unode(get_unode_from_id(data->node_id));
                 }
                 return;
             case boink::event_types::MSG_INCR_DNODE_COUNT:
+                return;
+            default:
                 return;
         }
     }
@@ -433,14 +435,6 @@ public:
         return unitig_tag_map.size();
     }
 
-    void notify_build_dnode(hash_t hash, const string& kmer) {
-        BuildDNode * data = new BuildDNode();
-        data->hash = hash;
-        data->kmer = kmer;
-        auto event = make_shared<Event>(MSG_ADD_DNODE, data);
-        this->notify(event);
-    }
-
     DecisionNode* build_dnode(hash_t hash, const string& kmer) {
         DecisionNode * dnode = get_dnode(hash);
         if (dnode == nullptr) {
@@ -473,19 +467,6 @@ public:
         }
         
         return result;
-    }
-
-    void notify_build_unode(HashVector& tags,
-                            const string& sequence,
-                            junction_t left_junc,
-                            junction_t right_junc) {
-        BuildUNode * data = new BuildUNode();
-        data->tags = tags;
-        data->sequence = sequence;
-        data->left = left_junc;
-        data->right = right_junc;
-        auto event = make_shared<Event>(MSG_ADD_UNODE, data);
-        this->notify(event);
     }
 
     UnitigNode * build_unode(HashVector& tags,
@@ -619,13 +600,6 @@ public:
             return search->second.get();
         }
         return nullptr;
-    }
-
-    void notify_delete_unode(id_t node_id) {
-        DeleteUNode * data = new DeleteUNode();
-        data->node_id = node_id;
-        auto event = make_shared<Event>(MSG_DELETE_UNODE, data);
-        this->notify(event);
     }
 
     void delete_unode(UnitigNode * unode) {

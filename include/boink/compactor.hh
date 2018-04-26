@@ -37,7 +37,8 @@ using boink::event_types::StreamingCompactorReport;
 
 
 template <class GraphType>
-class StreamingCompactor : public AssemblerMixin<GraphType> {
+class StreamingCompactor : public AssemblerMixin<GraphType>,
+                                  public EventNotifier {
 
 protected:
 
@@ -62,10 +63,12 @@ public:
     StreamingCompactor(GraphType * dbg,
                        uint64_t minimizer_window_size=8)
         : AssemblerMixin<GraphType>(dbg),
+          EventNotifier(),
           _minimizer_window_size(minimizer_window_size),
           dbg(dbg),
           cdbg(dbg->K())
     {
+        register_listener(static_cast<EventListener*>(&cdbg));
     }
     
     StreamingCompactorReport* get_report() {
@@ -156,6 +159,34 @@ public:
         }
     }
 
+    void notify_build_dnode(hash_t hash, const string& kmer) {
+        BuildDNode * data = new BuildDNode();
+        data->hash = hash;
+        data->kmer = kmer;
+        auto event = make_shared<Event>(MSG_ADD_DNODE, data);
+        this->notify(event);
+    }
+
+    void notify_build_unode(HashVector& tags,
+                            const string& sequence,
+                            junction_t left_junc,
+                            junction_t right_junc) {
+        BuildUNode * data = new BuildUNode();
+        data->tags = tags;
+        data->sequence = sequence;
+        data->left = left_junc;
+        data->right = right_junc;
+        auto event = make_shared<Event>(MSG_ADD_UNODE, data);
+        this->notify(event);
+    }
+
+    void notify_delete_unode(id_t node_id) {
+        DeleteUNode * data = new DeleteUNode();
+        data->node_id = node_id;
+        auto event = make_shared<Event>(MSG_DELETE_UNODE, data);
+        this->notify(event);
+    }
+
     bool insert_sequence(const string& sequence,
                          vector<uint32_t>& decision_positions,
                          HashVector& decision_hashes,
@@ -219,7 +250,7 @@ public:
         HashVector tags;
         WKMinimizer<ShifterType> minimizer(_minimizer_window_size,
                                            this->_K);
-        cdbg.notify_build_unode(tags, segment_seq, left_junc, right_junc);
+        notify_build_unode(tags, segment_seq, left_junc, right_junc);
     }
 
     void _update_from_dnodes(const string& sequence,
@@ -291,7 +322,7 @@ public:
                 updated_junctions.insert(left_junc);
                 updated_junctions.insert(right_junc);
 
-                cdbg.notify_build_unode(tags, segment_seq, left_junc, right_junc);
+                notify_build_unode(tags, segment_seq, left_junc, right_junc);
             }
 
             for (kmer_t right_neighbor : root_neighbors.second) {
@@ -338,7 +369,7 @@ public:
                 updated_junctions.insert(left_junc);
                 updated_junctions.insert(right_junc);
 
-                cdbg.notify_build_unode(tags, segment_seq, left_junc, right_junc);
+                notify_build_unode(tags, segment_seq, left_junc, right_junc);
             }
 
             updated_dnodes.insert(root_kmer.hash);
@@ -437,7 +468,7 @@ public:
             if (get_decision_neighbors(flank_shifter,
                                        kmer,
                                        decision_neighbors)) {
-                cdbg.notify_build_dnode(flank_shifter.get(), kmer);
+                notify_build_dnode(flank_shifter.get(), kmer);
                 disturbed_dnodes.push_back(kmer_t(flank_shifter.get(), kmer));
                 disturbed_neighbors.push_back(decision_neighbors);
             }
@@ -455,7 +486,7 @@ public:
                 pdebug("Found d-node " << h << ", " << kmer <<
                        " ldegree " << decision_neighbors.first.size() <<
                        " rdegree " << decision_neighbors.second.size());
-                cdbg.notify_build_dnode(h, kmer);
+                notify_build_dnode(h, kmer);
                 disturbed_dnodes.push_back(kmer_t(h, kmer));
                 disturbed_neighbors.push_back(decision_neighbors);
             }
@@ -473,7 +504,7 @@ public:
             if (get_decision_neighbors(iter.shifter,
                                        kmer,
                                        decision_neighbors)) {
-                cdbg.notify_build_dnode(iter.shifter.get(), kmer);
+                notify_build_dnode(iter.shifter.get(), kmer);
                 disturbed_dnodes.push_back(kmer_t(iter.shifter.get(), kmer));
                 disturbed_neighbors.push_back(decision_neighbors);
             }

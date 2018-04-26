@@ -303,6 +303,7 @@ cdef class StreamingCompactor:
             self._sc_this = \
                 make_unique[_StreamingCompactor[DefaultDBG]](self._graph)
             self.cdbg = cDBG._wrap(&(deref(self._sc_this).cdbg))
+            self.Notifier = EventNotifier._wrap(<_EventNotifier*>self._sc_this.get())
 
     def is_decision_kmer(self, str kmer):
         cdef string _kmer = _bstring(kmer)

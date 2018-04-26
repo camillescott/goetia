@@ -192,17 +192,17 @@ public:
     }
 
     void notify(shared_ptr<Event> event) {
-        pdebug("Notifying " << registered_listeners.size()
-                  << " listeners of event of type " << event->msg_type);
+        //pdebug("Notifying " << registered_listeners.size()
+        //       << " listeners of event of type " << event->msg_type);
         for (auto listener : registered_listeners) {
             if (listener != nullptr) {
-                pdebug("Notify " << listener->THREAD_NAME);
                 listener->notify(event);
             }
         }
     }
 
     void register_listener(EventListener* listener) {
+        pdebug("Register " << listener->THREAD_NAME);
         registered_listeners.insert(listener);
     }
 
