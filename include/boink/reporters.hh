@@ -83,7 +83,7 @@ public:
                            << report->n_tags << ","
                            << report->n_updates << ","
                            << report->n_unique << ","
-                           << report->estimated_fp << ","
+                           << report->estimated_fp 
                            << std::endl;
         }
     }

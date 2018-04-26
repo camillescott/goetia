@@ -20,6 +20,83 @@
 
 namespace boink {
 
+using std::pair;
+using std::vector;
+
+
+typedef uint64_t hash_t;
+typedef std::pair<hash_t, hash_t> full_hash_t;
+
+struct shift_t {
+    hash_t hash;
+    char symbol;
+
+    shift_t() : 
+        hash(0),
+        symbol('A') {
+    
+    }
+
+    shift_t(hash_t hash, char symbol) : 
+        hash(hash),
+        symbol(symbol) {
+    
+    }
+};
+
+
+struct kmer_t {
+    const std::string kmer;
+    const hash_t hash;
+
+    kmer_t(const hash_t hash, const std::string kmer) :
+        hash(hash),
+        kmer(kmer) {
+    }
+
+    bool operator==(const kmer_t& other) const {
+        return other.hash == this->hash;
+    }
+
+};
+
+typedef vector<hash_t> HashVector;
+
+typedef uint64_t id_t;
+typedef pair<hash_t, hash_t> junction_t;
+
+
+// hash_combine and pair_hash courtesy SO:
+// https://stackoverflow.com/questions/9729390/how-to-use-
+// unordered-set-with-custom-types/9729747#9729747
+template <class T>
+inline void hash_combine(std::size_t & seed, const T & v)
+{
+    std::hash<T> hasher;
+    seed ^= hasher(v) + 0x9e3779b97f4a7c15 + (seed << 6) + (seed >> 2);
+}
+
+
+struct junction_hash
+{
+    inline std::size_t operator()(const junction_t & v) const
+    {
+         std::size_t seed = 0;
+         hash_combine(seed, v.first);
+         hash_combine(seed, v.second);
+         return seed;
+    }
+};
+
+template<typename _Ty1, typename _Ty2>
+std::ostream& operator<<(std::ostream& _os, const std::pair<_Ty1, _Ty2>& _p) {
+    _os << "(" << _p.first << ", " << _p.second << ")";
+    return _os;
+}
+
+
+
+
 class BoinkException : public std::exception {
 public:
     explicit BoinkException(const std::string& msg = "Generic boink exception")

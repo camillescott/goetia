@@ -12,25 +12,30 @@
 
 #include <algorithm>
 #include <cstdint>
-#include <functional>
 #include <memory>
+#include <mutex>
 #include <limits>
-#include <list>
 #include <iostream>
 #include <sstream>
-#include <unordered_set>
 #include <unordered_map>
 
 #include "oxli/alphabets.hh"
+
+#include "boink/boink.hh"
 #include "boink/assembly.hh"
 #include "boink/hashing.hh"
 #include "boink/dbg.hh"
 #include "boink/minimizers.hh"
 
+#include "boink/events.hh"
+#include "boink/event_types.hh"
+
 # ifdef DEBUG_CDBG
-#   define pdebug(x) do { std::cerr << std::endl << "@ " << __FILE__ <<\
+#   define pdebug(x) do { std::ostringstream stream; \
+                          stream << std::endl << "@ " << __FILE__ <<\
                           ":" << __FUNCTION__ << ":" <<\
                           __LINE__  << std::endl << x << std::endl;\
+                          std::cerr << stream.str(); \
                           } while (0)
 # else
 #   define pdebug(x) do {} while (0)
@@ -49,45 +54,12 @@ using std::vector;
 using std::pair;
 
 using namespace oxli;
-
-typedef uint64_t id_t;
-typedef pair<hash_t, hash_t> junction_t;
-
-
-// hash_combine and pair_hash courtesy SO:
-// https://stackoverflow.com/questions/9729390/how-to-use-
-// unordered-set-with-custom-types/9729747#9729747
-template <class T>
-inline void hash_combine(std::size_t & seed, const T & v)
-{
-    std::hash<T> hasher;
-    seed ^= hasher(v) + 0x9e3779b97f4a7c15 + (seed << 6) + (seed >> 2);
-}
-
-
-struct junction_hash
-{
-    inline std::size_t operator()(const junction_t & v) const
-    {
-         std::size_t seed = 0;
-         hash_combine(seed, v.first);
-         hash_combine(seed, v.second);
-         return seed;
-    }
-};
-
-template<typename _Ty1, typename _Ty2>
-std::ostream& operator<<(std::ostream& _os, const std::pair<_Ty1, _Ty2>& _p) {
-    _os << "(" << _p.first << ", " << _p.second << ")";
-    return _os;
-}
-
+using namespace boink::events;
+using namespace boink::event_types;
 
 #define NULL_ID             ULLONG_MAX
 #define UNITIG_START_ID     0
 #define NULL_JUNCTION       make_pair(0,0)
-
-typedef vector<hash_t> HashVector;
 
 
 enum node_meta_t {
@@ -348,7 +320,8 @@ typedef CompactNode * CompactNodePtr;
 typedef DecisionNode * DecisionNodePtr;
 typedef UnitigNode * UnitigNodePtr;
 
-class cDBG : public KmerClient {
+class cDBG : public KmerClient,
+             public EventListener {
 
 public:
 
@@ -362,7 +335,11 @@ public:
 protected:
 
     dnode_map_t decision_nodes;
+    std::mutex dnode_mutex;
+
     unode_map_t unitig_nodes;
+    std::mutex unode_mutex;
+
     std::unordered_map<junction_t, id_t, junction_hash> unitig_junction_map;
     std::unordered_map<hash_t, id_t> unitig_tag_map;
 
@@ -372,23 +349,56 @@ protected:
 
 public:
 
-    enum Graph_Ops_t {
-        ADD_DNODE,
-        ADD_UNODE,
-        DELETE_DNODE,
-        DELETE_UNODE,
-        ADD_EDGE,
-        INCR_DNODE_COUNT
-    };
-
     node_meta_counter meta_counter;
 
-    cDBG(uint16_t K) :
-        KmerClient(K),
-        _n_updates(0),
-        _unitig_id_counter(UNITIG_START_ID),
-        _n_unitig_nodes(0) {
+    cDBG(uint16_t K)
+        : KmerClient(K),
+          EventListener("cDBG"),
+          _n_updates(0),
+          _unitig_id_counter(UNITIG_START_ID),
+          _n_unitig_nodes(0)
+    {
+        this->msg_type_whitelist.insert(boink::event_types::MSG_ADD_DNODE);
+        this->msg_type_whitelist.insert(boink::event_types::MSG_ADD_UNODE);
+        this->msg_type_whitelist.insert(boink::event_types::MSG_DELETE_UNODE);
+        this->msg_type_whitelist.insert(boink::event_types::MSG_INCR_DNODE_COUNT);
+    }
 
+    std::unique_lock<std::mutex> lock_dnodes() {
+        return std::unique_lock<std::mutex>(dnode_mutex);
+    }
+
+    std::unique_lock<std::mutex> lock_unodes() {
+        return std::unique_lock<std::mutex>(unode_mutex);
+    }
+
+    virtual void handle_msg(shared_ptr<Event> event) {
+        switch(event->msg_type) {
+            case boink::event_types::MSG_ADD_DNODE:
+                {
+                    BuildDNode* data = static_cast<BuildDNode*>(event->msg);
+                    auto lock = lock_dnodes();
+                    build_dnode(data->hash, data->kmer);
+                }
+                return;
+            case boink::event_types::MSG_ADD_UNODE:
+                {
+                    BuildUNode* data = static_cast<BuildUNode*>(event->msg);
+                    auto lock = lock_unodes();
+                    build_unode(data->tags, data->sequence,
+                                data->left, data->right);
+                }
+                return;
+            case boink::event_types::MSG_DELETE_UNODE:
+                {
+                    DeleteUNode * data = static_cast<DeleteUNode*>(event->msg);
+                    auto lock = lock_unodes();
+                    delete_unode(get_unode_from_id(data->node_id));
+                }
+                return;
+            case boink::event_types::MSG_INCR_DNODE_COUNT:
+                return;
+        }
     }
 
     dnode_map_t::const_iterator dnodes_begin() const {
@@ -423,6 +433,14 @@ public:
         return unitig_tag_map.size();
     }
 
+    void notify_build_dnode(hash_t hash, const string& kmer) {
+        BuildDNode * data = new BuildDNode();
+        data->hash = hash;
+        data->kmer = kmer;
+        auto event = make_shared<Event>(MSG_ADD_DNODE, data);
+        this->notify(event);
+    }
+
     DecisionNode* build_dnode(hash_t hash, const string& kmer) {
         DecisionNode * dnode = get_dnode(hash);
         if (dnode == nullptr) {
@@ -455,6 +473,19 @@ public:
         }
         
         return result;
+    }
+
+    void notify_build_unode(HashVector& tags,
+                            const string& sequence,
+                            junction_t left_junc,
+                            junction_t right_junc) {
+        BuildUNode * data = new BuildUNode();
+        data->tags = tags;
+        data->sequence = sequence;
+        data->left = left_junc;
+        data->right = right_junc;
+        auto event = make_shared<Event>(MSG_ADD_UNODE, data);
+        this->notify(event);
     }
 
     UnitigNode * build_unode(HashVector& tags,
@@ -588,6 +619,13 @@ public:
             return search->second.get();
         }
         return nullptr;
+    }
+
+    void notify_delete_unode(id_t node_id) {
+        DeleteUNode * data = new DeleteUNode();
+        data->node_id = node_id;
+        auto event = make_shared<Event>(MSG_DELETE_UNODE, data);
+        this->notify(event);
     }
 
     void delete_unode(UnitigNode * unode) {

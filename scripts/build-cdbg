@@ -48,8 +48,9 @@ def main():
         else:
             processor.process(sample)
 
-    for fmt in args.save_cdbg_format:
-        compactor.cdbg.save(args.save_cdbg_prefix + '.' + fmt, fmt)
+    if args.save_cdbg_format is not None:
+        for fmt in args.save_cdbg_format:
+            compactor.cdbg.save(args.save_cdbg_prefix + '.' + fmt, fmt)
 
     if args.save_dbg:
         graph.save(args.savegraph)

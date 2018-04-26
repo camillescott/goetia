@@ -126,7 +126,7 @@ cdef extern from "boink/compactor.hh" namespace "boink" nogil:
                                  vector[hash_t]&,
                                  vector[NeighborBundle]&) except +ValueError
         void find_disturbed_dnodes(const string&,
-                                   vector[_DecisionNode*]&,
+                                   vector[kmer_t]&,
                                    vector[NeighborBundle]&) except +ValueError
 
         bool insert_sequence(const string&,

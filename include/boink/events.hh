@@ -25,7 +25,8 @@
 #include <set>
 #include <chrono>
 
-#include "boink/event_types.hh"
+#include "boink.hh"
+#include "event_types.hh"
 
 
 # ifdef DEBUG_EVENTS
@@ -39,6 +40,9 @@
 #   define pdebug(x) do {} while (0)
 # endif
 
+using namespace boink;
+using namespace boink::event_types;
+
 namespace boink {
 namespace events {
 
@@ -46,7 +50,7 @@ using std::shared_ptr;
 using std::make_shared;
 using std::unique_ptr;
 using std::make_unique;
-using namespace boink::event_types;
+
 
 class ScopedThread {
 

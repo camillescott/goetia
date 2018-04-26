@@ -10,7 +10,7 @@
 #ifndef HASHING_HH
 #define HASHING_HH
 
-#include "boink.hh"
+#include "boink/boink.hh"
 #include "oxli/alphabets.hh"
 #include "oxli/kmer_hash.hh"
 
@@ -27,43 +27,6 @@
 
 
 namespace boink {
-
-typedef uint64_t hash_t;
-typedef std::pair<hash_t, hash_t> full_hash_t;
-
-struct shift_t {
-    hash_t hash;
-    char symbol;
-
-    shift_t() : 
-        hash(0),
-        symbol('A') {
-    
-    }
-
-    shift_t(hash_t hash, char symbol) : 
-        hash(hash),
-        symbol(symbol) {
-    
-    }
-};
-
-
-struct kmer_t {
-    const std::string kmer;
-    const hash_t hash;
-
-    kmer_t(const hash_t hash, const std::string kmer) :
-        hash(hash),
-        kmer(kmer) {
-    }
-
-    bool operator==(const kmer_t& other) const {
-        return other.hash == this->hash;
-    }
-
-};
-
 
 class KmerClient {
 protected:

@@ -10,6 +10,12 @@
 #ifndef EVENT_TYPES_HH
 #define EVENT_TYPES_HH
 
+#include <string>
+
+#include "boink/boink.hh"
+
+using std::string;
+
 namespace boink {
 namespace event_types {
 
@@ -68,6 +74,30 @@ struct StreamingCompactorReport {
     uint64_t n_tags;
     uint64_t n_unique;
     double   estimated_fp;
+};
+
+
+struct BuildDNode {
+    hash_t hash;
+    string kmer;
+};
+
+
+struct BuildUNode {
+    HashVector tags;
+    string sequence;
+    junction_t left;
+    junction_t right;
+};
+
+
+struct DeleteUNode {
+    id_t node_id;
+};
+
+
+struct IncrDNode {
+    hash_t dnode;
 };
 
 
