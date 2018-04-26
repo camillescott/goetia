@@ -11,6 +11,7 @@ from libcpp.string cimport string
 
 from boink.dbg cimport *
 from boink.cdbg cimport *
+from boink.events cimport EventNotifier, _EventNotifier, _EventListener
 from boink.utils cimport _bstring
 
 cdef extern from "boink/processors.hh" namespace "boink" nogil:
@@ -38,10 +39,8 @@ cdef extern from "boink/processors.hh" namespace "boink" nogil:
                                string &,
                                uint32_t)
 
-    cdef cppclass _StreamingCompactorProcessor "boink::StreamingCompactorProcessor"[GraphType] (_FileProcessor[_StreamingCompactorProcessor[GraphType]]):
+    cdef cppclass _StreamingCompactorProcessor "boink::StreamingCompactorProcessor"[GraphType](_FileProcessor[_StreamingCompactorProcessor[GraphType]], _EventNotifier):
         _StreamingCompactorProcessor(_StreamingCompactor*,
-                                     string &,
-                                     string &,
                                      uint32_t)
 
     cdef cppclass _MinimizerProcessor "boink::MinimizerProcessor" [ShifterType] (_FileProcessor[_MinimizerProcessor[ShifterType]]):
@@ -50,6 +49,7 @@ cdef extern from "boink/processors.hh" namespace "boink" nogil:
 
 cdef class FileProcessor:
     pass
+
 
 cdef class FileConsumer(FileProcessor):
     cdef unique_ptr[_FileConsumer[DefaultDBG]] _fc_this
@@ -62,6 +62,7 @@ cdef class DecisionNodeProcessor(FileProcessor):
 cdef class StreamingCompactorProcessor(FileProcessor):
     cdef readonly str output_filename
     cdef unique_ptr[_StreamingCompactorProcessor[DefaultDBG]] _scp_this
+    cdef public EventNotifier Notifier
 
 cdef class MinimizerProcessor(FileProcessor):
     cdef unique_ptr[_MinimizerProcessor[_DefaultShifter]] _mp_this

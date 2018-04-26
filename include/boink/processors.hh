@@ -1,4 +1,4 @@
-/* consumer.hh -- dBG consumers
+/* processors.hh -- 
  *
  * Copyright (C) 2018 Camille Scott
  * All rights reserved.
@@ -11,13 +11,19 @@
 #define CONSUMER_HH
 
 #include <memory>
+#include <fstream>
 #include <iostream>
 
 #include "oxli/read_parsers.hh"
 #include "boink/parsing.hh"
+#include "boink/events.hh"
+#include "boink/event_types.hh"
 
 using namespace oxli;
 using namespace oxli:: read_parsers;
+
+using namespace boink::events;
+using namespace boink::event_types;
 
 #define DEFAULT_OUTPUT_INTERVAL 10000
 
@@ -241,17 +247,13 @@ template <class GraphType,
           class ParserType = FastxReader>
 class StreamingCompactorProcessor : 
     public FileProcessor<StreamingCompactorProcessor<GraphType, ParserType>,
-                         ParserType> { // template class names like modern art
+                         ParserType>,
+    public boink::events::EventNotifier { // template class names like modern art
 
 protected:
 
     StreamingCompactor<GraphType> * compactor;
     GraphType * graph;
-    std::string _output_filename;
-    std::ofstream _output_stream;
-    uint32_t _adjmat_interval;
-    uint32_t _adjmat_counter;
-    std::string _adjmat_prefix;
 
     typedef FileProcessor<StreamingCompactorProcessor<GraphType, ParserType>,
                           ParserType> Base;
@@ -259,29 +261,15 @@ protected:
 public:
 
     using Base::process_sequence;
-
+    using EventNotifier::register_listener;
+    
     StreamingCompactorProcessor(StreamingCompactor<GraphType> * compactor,
-                                std::string& output_filename,
-                                std::string& adjmat_prefix,
-                                uint32_t output_interval,
-                                uint32_t adjmat_interval=5)
+                                uint32_t output_interval)
         : Base(output_interval),
+          boink::events::EventNotifier(),
           compactor(compactor),
-          graph(compactor->dbg),
-          _output_filename(output_filename),
-          _output_stream(_output_filename.c_str()),
-          _adjmat_interval(adjmat_interval),
-          _adjmat_counter(0),
-          _adjmat_prefix(adjmat_prefix) {
-
-        _output_stream << compactor->cdbg.meta_counter.header() 
-                       << ",n_dnodes,n_unodes,n_tags"
-                       << ",n_updates,n_kmers,est_fp" << std::endl;
-
-    }
-
-    ~StreamingCompactorProcessor() {
-        _output_stream.close();
+          graph(compactor->dbg)
+    {
     }
 
     void process_sequence(const Read& read) {
@@ -298,31 +286,13 @@ public:
         std::cerr << "\tcurrently " << compactor->cdbg.n_decision_nodes()
                   << " d-nodes, " << compactor->cdbg.n_unitig_nodes()
                   << " u-nodes." << std::endl;
-        _output_stream << this->n_reads() << ","
-                       << compactor->cdbg.meta_counter
-                       << "," << compactor->cdbg.n_decision_nodes()
-                       << "," << compactor->cdbg.n_unitig_nodes()
-                       << "," << compactor->cdbg.n_tags()
-                       << "," << compactor->cdbg.n_updates()
-                       << "," << compactor->dbg->n_unique()
-                       << "," << compactor->dbg->estimated_fp()
-                       << std::endl;
-        if (_adjmat_prefix != "") {
-            write_adjmat();
-        }
+        StreamingCompactorReport* report = compactor->get_report();
+        report->read_n = this->n_reads();
+        shared_ptr<Event> event = make_shared<Event>(MSG_WRITE_CDBG_STATS,
+                                                     static_cast<void*>(report));
+        this->notify(event);
     }
 
-    void write_adjmat() {
-        __sync_add_and_fetch( &_adjmat_counter, 1);
-
-        if (_adjmat_counter == (_adjmat_interval * this->_output_interval)) {
-            _adjmat_counter = 0;
-            std::string filename = _adjmat_prefix
-                                   + std::to_string(this->_n_reads) 
-                                   + ".adj.txt";
-            compactor->cdbg.write_adj_matrix(filename);
-        }
-    }
 };
 
 

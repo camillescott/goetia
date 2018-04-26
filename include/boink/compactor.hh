@@ -17,6 +17,7 @@ namespace boink {
 #include "boink/dbg.hh"
 #include "boink/cdbg.hh"
 #include "boink/minimizers.hh"
+#include "boink/event_types.hh"
 
 
 # ifdef DEBUG_CPTR
@@ -31,6 +32,8 @@ namespace boink {
 #define complement(ch) ((ch) == 'A' ? 'T' : \
                         (ch) == 'T' ? 'A' : \
                         (ch) == 'C' ? 'G' : 'C')
+
+using boink::event_types::StreamingCompactorReport;
 
 
 template <class GraphType>
@@ -63,6 +66,23 @@ public:
         dbg(dbg),
         cdbg(dbg->K()) {
 
+    }
+    
+    StreamingCompactorReport* get_report() {
+        StreamingCompactorReport * report = new StreamingCompactorReport();
+        report->n_full = cdbg.meta_counter.full_count;
+        report->n_tips = cdbg.meta_counter.tip_count;
+        report->n_islands = cdbg.meta_counter.island_count;
+        report->n_unknown = cdbg.meta_counter.unknown_count;
+        report->n_trivial = cdbg.meta_counter.trivial_count;
+        report->n_dnodes = cdbg.n_decision_nodes();
+        report->n_unodes = cdbg.n_unitig_nodes();
+        report->n_tags = cdbg.n_tags();
+        report->n_updates = cdbg.n_updates();
+        report->n_unique = dbg->n_unique();
+        report->estimated_fp = dbg->estimated_fp();
+
+        return report;
     }
 
     string compactify(const string& seed) {

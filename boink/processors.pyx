@@ -53,21 +53,11 @@ cdef class DecisionNodeProcessor(FileProcessor):
 cdef class StreamingCompactorProcessor(FileProcessor):
 
     def __cinit__(self, StreamingCompactor compactor,
-                        str output_filename,
-                        str adjmat_prefix,
                         uint32_t output_interval):
-        self.output_filename = output_filename
-        cdef string _output_filename = _bstring(output_filename)
 
-        cdef string _adjmat_prefix
-        if adjmat_prefix is not None:
-            _adjmat_prefix = _bstring(adjmat_prefix)
-        else:
-            _adjmat_prefix = b''
         self._scp_this = make_unique[_StreamingCompactorProcessor[DefaultDBG]](compactor._sc_this.get(),
-                                                                               _output_filename,
-                                                                               _adjmat_prefix,
                                                                                output_interval)
+        self.Notifier = EventNotifier._wrap(<_EventNotifier*>self._scp_this.get())
 
     def process(self, str input_filename, str right_filename=None):
         if right_filename is None:

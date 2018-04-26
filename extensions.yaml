@@ -33,6 +33,8 @@ extensions:
     - name: parsing
       types:
         - ParserType
+    - name: events
+    - name: reporters
 
 headers:
     - dbg.hh
@@ -44,6 +46,9 @@ headers:
     - minimizers.hh
     - boink.hh
     - parsing.hh
+    - reporters.hh
+    - events.hh
+    - event_types.hh
 
 types:
     - name: StorageType

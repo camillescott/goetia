@@ -205,4 +205,5 @@ AssemblerMixin<dBGType> make_assembler(dBGType * graph) {
 
 }
 
+#undef pdebug
 #endif

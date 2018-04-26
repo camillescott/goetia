@@ -68,23 +68,28 @@ DEP_MAP = resolve_dependencies(PYX_FILES,
 
 # Start libboink compile vars
 
-PROFILING   = get_var('PROFILING', False)
-PROFILER    = 'gprof'
-COLOR       = True
+PROFILING    = get_var('PROFILING', False)
+PROFILER     = 'gprof'
+COLOR        = True
 
-DEBUG       = get_var('DEBUG', False)
-DEBUG_CDBG  = get_var('DEBUG_CDBG', False)
-DEBUG_CPTR  = get_var('DEBUG_CPTR', False)
-DEBUG_ASMLY = get_var('DEBUG_ASMY', False)
-DEBUG_ALL   = get_var('DEBUG_ALL', False)
+DEBUG_CDBG   = get_var('DEBUG_CDBG', False)
+DEBUG_CPTR   = get_var('DEBUG_CPTR', False)
+DEBUG_ASMLY  = get_var('DEBUG_ASMY', False)
+DEBUG_EVENTS = get_var('DEBUG_EVENTS', False)
+DEBUG_ALL    = get_var('DEBUG_ALL', False)
+DEBUG        = get_var('DEBUG', DEBUG_CDBG or \
+                                DEBUG_CPTR or \
+                                DEBUG_ALL or \
+                                DEBUG_ASMLY or \
+                                DEBUG_EVENTS)
 
 if DEBUG_ALL:
-    DEBUG       = True
-    DEBUG_CDBG  = True
-    DEBUG_CPTR  = True
-    DEBUG_ASMLY = True
+    DEBUG        = True
+    DEBUG_CDBG   = True
+    DEBUG_CPTR   = True
+    DEBUG_ASMLY  = True
+    DEBUG_EVENTS = True
 
-print('Debug', DEBUG)
 DEBUG_FLAGS = ['-ggdb']
 
 CXX         = get_var('CXX', os.environ.get('CXX', 'cc'))
@@ -129,6 +134,8 @@ if DEBUG:
         CXXFLAGS += ['-DDEBUG_CDBG']
     if DEBUG_ASMLY:
         CXXFLAGS += ['-DDEBUG_ASMLY']
+    if DEBUG_EVENTS:
+        CXXFLAGS += ['-DDEBUG_EVENTS']
 
 if PROFILING:
     if PROFILER == 'gprof':

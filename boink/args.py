@@ -40,7 +40,8 @@ import textwrap
 from argparse import _VersionAction
 from collections import namedtuple
 
-from boink.metadata import __version__
+from boink.cdbg import cDBG
+from boink.metadata import __version__, CUR_TIME
 from boink.parsing import PAIRING_MODES
 
 
@@ -174,7 +175,7 @@ def add_save_cDBG_args(parser):
     parser.add_argument('--save-cdbg-prefix', default=default_prefix)
     parser.add_argument('--save-cdbg-stats', 
                         default=default_prefix + '.stats.csv')
-    parser.add_argumnet('--save-stats-interval', type=int, default=10000)
+    parser.add_argument('--save-stats-interval', type=int, default=10000)
     parser.add_argument('--save-cdbg-interval', type=int, default=100000)
 
     return parser

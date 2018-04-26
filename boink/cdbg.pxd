@@ -19,6 +19,7 @@ from boink.hashing cimport *
 
 from boink.dbg cimport *
 from boink.minimizers cimport _InteriorMinimizer
+from boink.events cimport _StreamingCompactorReport
 
 cdef extern from "boink/cdbg.hh":
     cdef uint64_t NULL_ID
@@ -135,6 +136,8 @@ cdef extern from "boink/compactor.hh" namespace "boink" nogil:
 
         void update_sequence(const string&) except +ValueError
         void update_cdbg(const string&) except +ValueError
+
+        _StreamingCompactorReport* get_report()
 
 
 cdef class CompactNode:
