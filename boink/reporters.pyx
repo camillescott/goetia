@@ -21,8 +21,9 @@ cdef class Reporter(EventListener):
                         *args, **kwargs):
         self.output_filename = output_filename
         if type(self) is Reporter:
-            self._reporter = make_unique[_Reporter](_bstring(output_filename))
-            self._listener = <_EventListener*>self._reporter.get()
+            self._reporter_owner = make_unique[_Reporter](_bstring(output_filename))
+            self._reporter_this = self._reporter_owner.get()
+            self._listener = <_EventListener*>self._reporter_owner.get()
 
 
 cdef class StreamingCompactorReporter(Reporter):
@@ -30,10 +31,11 @@ cdef class StreamingCompactorReporter(Reporter):
     def __cinit__(self, str output_filename, StreamingCompactor compactor,
                         *args, **kwargs):
         if type(self) is StreamingCompactorReporter:
-            self._sc_reporter = make_unique[_StreamingCompactorReporter[DefaultDBG]](\
+            self._sc_reporter_owner = make_unique[_StreamingCompactorReporter[DefaultDBG]](\
                     compactor._sc_this.get(), _bstring(output_filename))
-            #self._reporter.reset(self._sc_reporter.get())
-            self._listener = <_EventListener*>self._sc_reporter.get()
+            self._sc_reporter_this = self._sc_reporter_owner.get()
+            self._reporter_this    = self._sc_reporter_this
+            self._listener = <_EventListener*>self._sc_reporter_owner.get()
 
     def __dealloc__(self):
         print('Dealloc StreamingCompactorReporter', file=sys.stderr)
@@ -44,9 +46,10 @@ cdef class cDBGWriter(Reporter):
     def __cinit__(self, str output_filename, str graph_format, cDBG cdbg,
                         *args, **kwargs):
         if type(self) is cDBGWriter:
-            self._writer_reporter = make_unique[_cDBGWriter](cdbg._this,
+            self._writer_reporter_owner = make_unique[_cDBGWriter](cdbg._this,
                                                              convert_format(graph_format),
                                                              _bstring(output_filename))
-            #self._reporter.reset(self._writer_reporter.get())
-            self._listener = <_EventListener*>self._writer_reporter.get()
+            self._writer_reporter_this = self._writer_reporter_owner.get()
+            self._reporter_this = self._writer_reporter_this
+            self._listener = <_EventListener*>self._writer_reporter_owner.get()
         
