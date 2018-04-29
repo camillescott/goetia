@@ -19,6 +19,8 @@ namespace boink {
 #include "boink/minimizers.hh"
 #include "boink/event_types.hh"
 
+using namespace boink::event_types;
+
 
 # ifdef DEBUG_CPTR
 #   define pdebug(x) do { std::cerr << std::endl << "@ " << __FILE__ <<\
@@ -33,12 +35,23 @@ namespace boink {
                         (ch) == 'T' ? 'A' : \
                         (ch) == 'C' ? 'G' : 'C')
 
-using boink::event_types::StreamingCompactorReport;
-
+struct StreamingCompactorReport {
+    uint64_t n_full;
+    uint64_t n_tips;
+    uint64_t n_islands;
+    uint64_t n_unknown;
+    uint64_t n_trivial;
+    uint64_t n_dnodes;
+    uint64_t n_unodes;
+    uint64_t n_updates;
+    uint64_t n_tags;
+    uint64_t n_unique;
+    double   estimated_fp;
+};
 
 template <class GraphType>
 class StreamingCompactor : public AssemblerMixin<GraphType>,
-                                  public EventNotifier {
+                           public EventNotifier {
 
 protected:
 
@@ -160,10 +173,9 @@ public:
     }
 
     void notify_build_dnode(hash_t hash, const string& kmer) {
-        BuildDNode * data = new BuildDNode();
-        data->hash = hash;
-        data->kmer = kmer;
-        auto event = make_shared<Event>(MSG_ADD_DNODE, data);
+        auto event = make_shared<BuildDNodeEvent>();
+        event->hash = hash;
+        event->kmer = kmer;
         this->notify(event);
     }
 
@@ -171,19 +183,17 @@ public:
                             const string& sequence,
                             junction_t left_junc,
                             junction_t right_junc) {
-        BuildUNode * data = new BuildUNode();
-        data->tags = tags;
-        data->sequence = sequence;
-        data->left = left_junc;
-        data->right = right_junc;
-        auto event = make_shared<Event>(MSG_ADD_UNODE, data);
+        auto event = make_shared<BuildUNodeEvent>();
+        event->tags = tags;
+        event->sequence = sequence;
+        event->left = left_junc;
+        event->right = right_junc;
         this->notify(event);
     }
 
     void notify_delete_unode(id_t node_id) {
-        DeleteUNode * data = new DeleteUNode();
-        data->node_id = node_id;
-        auto event = make_shared<Event>(MSG_DELETE_UNODE, data);
+        auto event = make_shared<DeleteUNodeEvent>();
+        event->node_id = node_id;
         this->notify(event);
     }
 

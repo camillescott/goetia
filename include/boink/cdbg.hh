@@ -22,9 +22,7 @@
 #include "oxli/alphabets.hh"
 
 #include "boink/boink.hh"
-#include "boink/assembly.hh"
 #include "boink/hashing.hh"
-#include "boink/dbg.hh"
 #include "boink/minimizers.hh"
 
 #include "boink/events.hh"
@@ -61,6 +59,12 @@ using namespace boink::event_types;
 #define UNITIG_START_ID     0
 #define NULL_JUNCTION       make_pair(0,0)
 
+enum cDBGFormat {
+    GRAPHML,
+    EDGELIST,
+    ADJMAT,
+    FASTA
+};
 
 enum node_meta_t {
     FULL,
@@ -376,22 +380,22 @@ public:
         switch(event->msg_type) {
             case boink::event_types::MSG_ADD_DNODE:
                 {
-                    BuildDNode* data = static_cast<BuildDNode*>(event->msg);
+                    auto * data = static_cast<BuildDNodeEvent*>(event.get());
                     auto lock = lock_dnodes();
                     this->build_dnode(data->hash, data->kmer);
                 }
                 return;
             case boink::event_types::MSG_ADD_UNODE:
                 {
-                    BuildUNode* data = static_cast<BuildUNode*>(event->msg);
+                    auto * data = static_cast<BuildUNodeEvent*>(event.get());
                     auto lock = lock_unodes();
                     this->build_unode(data->tags, data->sequence,
-                                data->left, data->right);
+                                      data->left, data->right);
                 }
                 return;
             case boink::event_types::MSG_DELETE_UNODE:
                 {
-                    DeleteUNode * data = static_cast<DeleteUNode*>(event->msg);
+                    auto * data = static_cast<DeleteUNodeEvent*>(event.get());
                     auto lock = lock_unodes();
                     this->delete_unode(get_unode_from_id(data->node_id));
                 }
@@ -620,9 +624,40 @@ public:
         }
     }
 
+    void write(const std::string& filename, cDBGFormat format) {
+        std::ofstream out;
+        out.open(filename);
+        write(out, format);
+        out.close();
+    }
+
+    void write(std::ofstream& out, cDBGFormat format) {
+        switch (format) {
+            case GRAPHML:
+                write_graphml(out);
+                break;
+            case EDGELIST:
+                write_edge_list(out);
+                break;
+            case ADJMAT:
+                write_adj_matrix(out);
+                break;
+            default:
+                throw BoinkException("Invalid cDBG format.");
+        };
+    }
+
     void write_edge_list(const string& filename) {
         std::ofstream out;
         out.open(filename);
+        write_edge_list(out);
+        out.close();
+    }
+
+    void write_edge_list(std::ofstream& out) {
+
+        auto lock1 = lock_unodes();
+        auto lock2 = lock_dnodes();
 
         for (auto it = unitig_nodes.begin(); it != unitig_nodes.end(); ++it) {
             
@@ -633,6 +668,12 @@ public:
                        string graph_name="cDBG") {
         std::ofstream out;
         out.open(filename);
+        write_graphml(out, graph_name);
+        out.close();
+    }
+
+    void write_graphml(std::ofstream& out,
+                       const string graph_name="cDBG") {
 
         out << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                "<graphml xmlns=\"http://graphml.graphdrawing.org/xmlns\""
@@ -644,6 +685,9 @@ public:
             << "\" edgedefault=\"directed\" "
             << "parse.maxindegree=\"4\" parse.maxoutdegree=\"4\">"
             << std::endl; // open <graph>
+
+        auto lock1 = lock_unodes();
+        auto lock2 = lock_dnodes();
 
         id_t edge_counter = 0;
         for (auto it = decision_nodes.begin(); it != decision_nodes.end(); ++it) {
@@ -677,6 +721,14 @@ public:
     void write_adj_matrix(const string& filename) {
         std::ofstream out;
         out.open(filename);
+        write_adj_matrix(out);
+        out.close();
+    }
+
+    void write_adj_matrix(std::ofstream& out) {
+
+        auto lock1 = lock_unodes();
+        auto lock2 = lock_dnodes();
 
         std::cerr << "Gather node IDs." << std::endl;
         std::vector<id_t> dnode_ids(decision_nodes.size());
@@ -746,7 +798,6 @@ public:
 
             out << std::endl;
         }
-        out.close();
 
         std::cerr << "Wrote " << i << "x" << i << " adjacency matrix." << std::endl;
     }

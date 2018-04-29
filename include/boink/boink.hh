@@ -20,6 +20,15 @@
 
 namespace boink {
 
+#define _cerr(x) do { std::ostringstream stream; \
+                      stream << x << std::endl; \
+                      std::cerr << stream.str(); \
+                    } while(0)
+#define _cout(x) do { std::ostringstream stream; \
+                      stream << x << std::endl; \
+                      std::cout << stream.str(); \
+                    } while(0)
+
 using std::pair;
 using std::vector;
 
@@ -46,8 +55,8 @@ struct shift_t {
 
 
 struct kmer_t {
-    const std::string kmer;
     const hash_t hash;
+    const std::string kmer;
 
     kmer_t(const hash_t hash, const std::string kmer) :
         hash(hash),

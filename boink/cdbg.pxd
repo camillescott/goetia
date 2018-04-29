@@ -38,6 +38,12 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
         ISLAND
         TRIVIAL
 
+    ctypedef enum cDBGFormat:
+        GRAPHML,
+        EDGELIST,
+        ADJMAT,
+        FASTA
+
     cdef const char * node_meta_repr(node_meta_t)
 
     cdef cppclass _CompactNode "boink::CompactNode":
@@ -104,7 +110,8 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
         _UnitigNode * get_unode_from_id(id_t)
         _DecisionNode * get_left_dnode(_UnitigNode*)
         _DecisionNode * get_right_dnode(_UnitigNode*)
-
+    
+        void write(const string&, cDBGFormat) except +OSError
         void write_adj_matrix(const string&) except +OSError
         void write_graphml(const string&) except +OSError
 
@@ -139,6 +146,8 @@ cdef extern from "boink/compactor.hh" namespace "boink" nogil:
         void update_cdbg(const string&) except +ValueError
 
         _StreamingCompactorReport* get_report()
+
+cdef cDBGFormat convert_format(str graph_format) except *
 
 
 cdef class CompactNode:

@@ -67,7 +67,6 @@ public:
     }
 
     ~ScopedThread() {
-        pdebug("Shutting down thread.");
         t.join();
     }
 
@@ -83,18 +82,22 @@ public:
 class EventListener  {
 protected:
 
-    std::unique_ptr<ScopedThread> m_thread;
-    std::deque<shared_ptr<Event>> m_queue;
     std::mutex m_mutex;
     std::condition_variable m_cv;
+    std::unique_ptr<ScopedThread> m_thread;
+    std::deque<shared_ptr<Event>> m_queue;
     std::set<event_t> msg_type_whitelist;
+    bool _shutdown;
 
 public:
 
     const std::string THREAD_NAME;
 
     EventListener(const std::string& thread_name)
-        : THREAD_NAME(thread_name)
+        : m_mutex(),
+          m_cv(),
+          THREAD_NAME("EventListener::" + thread_name),
+          _shutdown(false)
     {
         msg_type_whitelist.insert(MSG_EXIT_THREAD);
         m_thread = make_unique<ScopedThread>
@@ -103,13 +106,24 @@ public:
 
     virtual ~EventListener() {
         // puts the poison pill on the queue
-        exit_thread();
+        if (!_shutdown) {
+            exit_thread();
+        }
         // thread joined through RAII
     }
 
     void exit_thread() {
 		auto _exit_event = make_shared<Event>(MSG_EXIT_THREAD);
-		notify(_exit_event);
+        {
+            std::unique_lock<std::mutex> lock(m_mutex);
+            m_queue.push_back(_exit_event);
+        }
+        m_cv.notify_all();
+
+        {
+            std::unique_lock<std::mutex> lk(m_mutex);
+            m_cv.wait(lk, [this]{ return _shutdown; });
+        }
 	}
 
     /// Get the ID of this thread instance
@@ -128,8 +142,10 @@ public:
     void notify(shared_ptr<Event> event) {
         //std::this_thread::sleep_for(std::chrono::milliseconds(250));
         if (msg_type_whitelist.count(event->msg_type)) {
-            std::unique_lock<std::mutex> lk(m_mutex);
-            m_queue.push_back(event);
+            {
+                std::unique_lock<std::mutex> lk(m_mutex);
+                m_queue.push_back(event);
+            }
             m_cv.notify_one();
         } else {
             pdebug("Filtered event of type " << event->msg_type);
@@ -142,16 +158,15 @@ protected:
     EventListener& operator=(const EventListener&);
 
 	void process() {
-        pdebug( "EventListener::" << THREAD_NAME << " listening "
-                  << "at thread ID " << get_current_thread_id());
+        _cerr(THREAD_NAME << " listening "
+              << "at thread ID " << get_current_thread_id());
 
 		while (1) {
 			shared_ptr<Event> msg;
 			{
 				// Wait for a message to be added to the queue
 				std::unique_lock<std::mutex> lk(m_mutex);
-				while (m_queue.empty())
-					m_cv.wait(lk);
+				m_cv.wait(lk, [this]{ return !m_queue.empty(); });
 
 				if (m_queue.empty())
 					continue;
@@ -161,12 +176,11 @@ protected:
 			}
 
 			if (msg->msg_type == MSG_EXIT_THREAD) {
-				std::unique_lock<std::mutex> lk(m_mutex);
-                m_queue.clear();
-                pdebug("Exit EventListener::" << THREAD_NAME 
-                       << " listener at thread ID " << get_current_thread_id());
+                _shutdown = true;
+                m_cv.notify_all();
+                _cerr("Exit " << THREAD_NAME 
+                      << " listener at thread ID " << get_current_thread_id());
                 return;
-
 	        }
 
             handle_msg(msg);
@@ -191,6 +205,11 @@ public:
     {
     }
 
+    ~EventNotifier()
+    {
+        clear_listeners();
+    }
+
     void notify(shared_ptr<Event> event) {
         //pdebug("Notifying " << registered_listeners.size()
         //       << " listeners of event of type " << event->msg_type);
@@ -202,7 +221,7 @@ public:
     }
 
     void register_listener(EventListener* listener) {
-        pdebug("Register " << listener->THREAD_NAME);
+        _cerr("Register " << listener->THREAD_NAME << " at " << this);
         registered_listeners.insert(listener);
     }
 
@@ -216,6 +235,7 @@ public:
     }
 
     void clear_listeners() {
+        _cerr("Clear listeners from " << this);
         registered_listeners.clear();
     }
 

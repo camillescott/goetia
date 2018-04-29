@@ -15,6 +15,9 @@
 #include <memory>
 #include <string>
 
+#include "boink/boink.hh"
+#include "boink/cdbg.hh"
+#include "boink/compactor.hh"
 #include "boink/events.hh"
 #include "boink/event_types.hh"
 
@@ -25,7 +28,7 @@ using std::shared_ptr;
 
 using boink::events::EventListener;
 using boink::event_types::Event;
-using boink::event_types::StreamingCompactorReport;
+using boink::event_types::TimeIntervalEvent;
 
 class Reporter : public EventListener {
 
@@ -55,14 +58,21 @@ public:
 };
 
 
+template <class GraphType>
 class StreamingCompactorReporter: public Reporter {
+
+protected:
+
+    StreamingCompactor<GraphType> * compactor;
 
 public:
 
-    StreamingCompactorReporter(const std::string& output_filename)
-        : Reporter(output_filename, "StreamingCompactorReporter") {
-        
-        this->msg_type_whitelist.insert(boink::event_types::MSG_WRITE_CDBG_STATS);
+    StreamingCompactorReporter(StreamingCompactor<GraphType> * compactor,
+                               const std::string& output_filename)
+        : Reporter(output_filename, "StreamingCompactorReporter"),
+          compactor(compactor)
+    {    
+        this->msg_type_whitelist.insert(boink::event_types::MSG_TIME_INTERVAL);
 
         _output_stream << "read_n,n_full,n_tips,n_islands,n_unknown"
                           ",n_trivial,n_dnodes,n_unodes,n_tags,"
@@ -70,28 +80,57 @@ public:
     }
 
     virtual void handle_msg(shared_ptr<Event> event) {
-        if (event->msg_type == boink::event_types::MSG_WRITE_CDBG_STATS) {
-            StreamingCompactorReport * report = static_cast<StreamingCompactorReport*>(event->msg);
-            _output_stream << report->read_n << ","
-                           << report->n_full << ","
-                           << report->n_tips << ","
-                           << report->n_islands << ","
-                           << report->n_unknown << ","
-                           << report->n_trivial << ","
-                           << report->n_dnodes << ","
-                           << report->n_unodes << ","
-                           << report->n_tags << ","
-                           << report->n_updates << ","
-                           << report->n_unique << ","
-                           << report->estimated_fp 
-                           << std::endl;
+        if (event->msg_type == boink::event_types::MSG_TIME_INTERVAL) {
+            auto _event = static_cast<TimeIntervalEvent*>(event.get());
+            if (_event->level == TimeIntervalEvent::FINE) {
+                auto report = compactor->get_report();
+                _output_stream << _event->t << ","
+                               << report->n_full << ","
+                               << report->n_tips << ","
+                               << report->n_islands << ","
+                               << report->n_unknown << ","
+                               << report->n_trivial << ","
+                               << report->n_dnodes << ","
+                               << report->n_unodes << ","
+                               << report->n_tags << ","
+                               << report->n_updates << ","
+                               << report->n_unique << ","
+                               << report->estimated_fp 
+                               << std::endl;
+            }
+        }
+    }
+};
+
+
+class cDBGWriter : public Reporter {
+protected:
+
+    cDBG * cdbg;
+    cDBGFormat format;
+
+public:
+
+    cDBGWriter(cDBG * cdbg,
+               cDBGFormat format,
+               const string& output_filename)
+        : Reporter(output_filename, "cDBGWriter"),
+          cdbg(cdbg),
+          format(format)
+    {
+        this->msg_type_whitelist.insert(boink::event_types::MSG_TIME_INTERVAL);
+    }
+
+    virtual void handle_msg(shared_ptr<Event> event) {
+        if (event->msg_type == boink::event_types::MSG_TIME_INTERVAL) {
+            auto _event = static_cast<TimeIntervalEvent*>(event.get());
+            if (_event->level == TimeIntervalEvent::MEDIUM) {
+                cdbg->write(this->_output_stream, format);
+            }
         }
     }
 
-
-
 };
-
 
 }
 }

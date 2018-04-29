@@ -29,21 +29,50 @@ using namespace boink::event_types;
 
 namespace boink {
 
-template <class Derived,
-          class ParserType = FastxReader>
-class FileProcessor {
+class IntervalCounter {
 
-protected:
-
-    uint64_t _n_reads;
-    uint32_t _output_interval;
-    uint32_t _output_counter;
+    uint64_t interval;
+    uint64_t counter;
 
 public:
 
-    FileProcessor(uint32_t output_interval=DEFAULT_OUTPUT_INTERVAL)
-        : _output_interval(output_interval),
-          _output_counter(0),
+    IntervalCounter(uint64_t interval)
+        : interval(interval),
+          counter(0)
+    {
+    }
+
+    bool poll(uint64_t incr=1) {
+        counter += incr;
+        if (counter == interval) {
+            counter = 0;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+};
+
+
+template <class Derived,
+          class ParserType = FastxReader>
+class FileProcessor : public boink::events::EventNotifier {
+
+protected:
+
+    std::array<IntervalCounter, 3> counters;
+    uint64_t _n_reads;
+
+public:
+
+    using EventNotifier::register_listener;
+
+    FileProcessor(uint64_t output_interval=DEFAULT_OUTPUT_INTERVAL)
+        :  boink::events::EventNotifier(),
+           counters ({{ output_interval, 
+                       output_interval * 10,
+                       output_interval * 100 }}),
           _n_reads(0) {
 
     }
@@ -71,16 +100,27 @@ public:
             bundle = reader.next();
             derived().process_sequence(bundle);
 
+            int _bundle_count = bundle.has_left + bundle.has_right;
             __sync_add_and_fetch( &_n_reads,
-                                  bundle.has_left + bundle.has_right );
-            __sync_add_and_fetch( &_output_counter,
-                                  bundle.has_left + bundle.has_right);
+                                  _bundle_count );
 
-            if (_output_counter == _output_interval) {
-                _output_counter = 0;
-                std::cerr << "processed " << _n_reads << " reads." << std::endl;
-                derived().report();
-            }  
+            if (counters[0].poll(_bundle_count)) {
+                 std::cerr << "processed " << _n_reads << " sequences." << std::endl;               
+                 derived().report();
+                 auto event = make_shared<TimeIntervalEvent>();
+                 event->level = TimeIntervalEvent::FINE;
+                 event->t = _n_reads;
+            }
+            if (counters[1].poll(_bundle_count)) {
+                 auto event = make_shared<TimeIntervalEvent>();
+                 event->level = TimeIntervalEvent::MEDIUM;
+                 event->t = _n_reads;
+            }
+            if (counters[2].poll(_bundle_count)) {
+                 auto event = make_shared<TimeIntervalEvent>();
+                 event->level = TimeIntervalEvent::COARSE;
+                 event->t = _n_reads;
+            }
         }
 
         return _n_reads;
@@ -101,13 +141,24 @@ public:
             derived().process_sequence(read);
 
             __sync_add_and_fetch( &_n_reads, 1 );
-            __sync_add_and_fetch( &_output_counter, 1 );
-
-            if (_output_counter == _output_interval) {
-                _output_counter = 0;
-                std::cerr << "processed " << _n_reads << " reads." << std::endl;
-                derived().report();
-            }    
+  
+            if (counters[0].poll()) {
+                 std::cerr << "processed " << _n_reads << " sequences." << std::endl;               
+                 derived().report();
+                 auto event = make_shared<TimeIntervalEvent>();
+                 event->level = TimeIntervalEvent::FINE;
+                 event->t = _n_reads;
+            }
+            if (counters[1].poll()) {
+                 auto event = make_shared<TimeIntervalEvent>();
+                 event->level = TimeIntervalEvent::MEDIUM;
+                 event->t = _n_reads;
+            }
+            if (counters[2].poll()) {
+                 auto event = make_shared<TimeIntervalEvent>();
+                 event->level = TimeIntervalEvent::COARSE;
+                 event->t = _n_reads;
+            }
         }
         return _n_reads;
     }
@@ -247,8 +298,7 @@ template <class GraphType,
           class ParserType = FastxReader>
 class StreamingCompactorProcessor : 
     public FileProcessor<StreamingCompactorProcessor<GraphType, ParserType>,
-                         ParserType>,
-    public boink::events::EventNotifier { // template class names like modern art
+                         ParserType> { //template class names like modern art
 
 protected:
 
@@ -266,7 +316,6 @@ public:
     StreamingCompactorProcessor(StreamingCompactor<GraphType> * compactor,
                                 uint32_t output_interval)
         : Base(output_interval),
-          boink::events::EventNotifier(),
           compactor(compactor),
           graph(compactor->dbg)
     {
@@ -286,11 +335,6 @@ public:
         std::cerr << "\tcurrently " << compactor->cdbg.n_decision_nodes()
                   << " d-nodes, " << compactor->cdbg.n_unitig_nodes()
                   << " u-nodes." << std::endl;
-        StreamingCompactorReport* report = compactor->get_report();
-        report->read_n = this->n_reads();
-        shared_ptr<Event> event = make_shared<Event>(MSG_WRITE_CDBG_STATS,
-                                                     static_cast<void*>(report));
-        this->notify(event);
     }
 
 };

@@ -33,7 +33,8 @@ def main():
     compactor = StreamingCompactor(graph)
     processor = StreamingCompactorProcessor(compactor,
                                             args.save_stats_interval)
-    reporter = StreamingCompactorReporter(args.save_cdbg_stats)
+    reporter = StreamingCompactorReporter(args.save_cdbg_stats,
+                                          compactor)
     processor.Notifier.register_listener(reporter)
 
 
@@ -47,10 +48,6 @@ def main():
             processor.process(*sample)
         else:
             processor.process(sample)
-
-    if args.save_cdbg_format is not None:
-        for fmt in args.save_cdbg_format:
-            compactor.cdbg.save(args.save_cdbg_prefix + '.' + fmt, fmt)
 
     if args.save_dbg:
         graph.save(args.savegraph)

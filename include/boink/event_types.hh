@@ -25,8 +25,7 @@ enum event_t {
     MSG_TIMER,
 
     // Data events
-    MSG_WRITE_CDBG_STATS,
-    MSG_SAVE_CDBG,
+    MSG_TIME_INTERVAL,
 
     // cDBG events
     MSG_ADD_DNODE,
@@ -40,50 +39,43 @@ enum event_t {
 
 struct Event {
     Event(event_t msg_t)
-        : msg_type(msg_t),
-          msg(nullptr)
+        : msg_type(msg_t)
     {
     }
 
-    Event(event_t msg_t, void * msg)
-        : msg_type(msg_t),
-          msg(msg)
-    {
-    }
-
-    ~Event() {
-        delete msg;
-    }
-
-    event_t msg_type;
-    void * msg;
+    const event_t msg_type;
 };
 
 
+struct TimeIntervalEvent : public Event {
+    TimeIntervalEvent()
+        : Event(MSG_TIME_INTERVAL)
+    {}
 
-struct StreamingCompactorReport {
-    uint64_t read_n;
-    uint64_t n_full;
-    uint64_t n_tips;
-    uint64_t n_islands;
-    uint64_t n_unknown;
-    uint64_t n_trivial;
-    uint64_t n_dnodes;
-    uint64_t n_unodes;
-    uint64_t n_updates;
-    uint64_t n_tags;
-    uint64_t n_unique;
-    double   estimated_fp;
+    enum interval_level_t {
+        FINE,
+        MEDIUM,
+        COARSE
+    };
+
+    interval_level_t level;
+    uint64_t t;
 };
 
 
-struct BuildDNode {
+struct BuildDNodeEvent : public Event {
+    BuildDNodeEvent()
+        : Event(MSG_ADD_DNODE)
+    {}
     hash_t hash;
     string kmer;
 };
 
 
-struct BuildUNode {
+struct BuildUNodeEvent : public Event {
+    BuildUNodeEvent()
+        : Event(MSG_ADD_UNODE)
+    {}
     HashVector tags;
     string sequence;
     junction_t left;
@@ -91,15 +83,20 @@ struct BuildUNode {
 };
 
 
-struct DeleteUNode {
+struct DeleteUNodeEvent : public Event {
+    DeleteUNodeEvent()
+        : Event(MSG_DELETE_UNODE)
+    {}
     id_t node_id;
 };
 
 
-struct IncrDNode {
+struct IncrDNodeEvent : public Event {
+    IncrDNodeEvent()
+        : Event(MSG_INCR_DNODE_COUNT)
+    {}
     hash_t dnode;
 };
-
 
 }
 }

@@ -170,7 +170,7 @@ def build_dBG_args(descr=None, epilog=None, parser=None):
 
 def add_save_cDBG_args(parser):
     default_prefix = CUR_TIME + '.cdbg'
-    parser.add_argument('--save-cdbg-format', default=[None], nargs='+',
+    parser.add_argument('--save-cdbg-format', nargs='+',
                         choices=cDBG.SAVE_FORMATS)
     parser.add_argument('--save-cdbg-prefix', default=default_prefix)
     parser.add_argument('--save-cdbg-stats', 

@@ -141,6 +141,23 @@ cdef class UnitigNode(CompactNode):
         self._check_ptr()
         return deref(self._un_this).repr()
 
+cdef cDBGFormat convert_format(str file_format) except *:
+    if file_format in cDBG.SAVE_FORMATS:
+        if file_format == 'graphml':
+            return cDBGFormat.GRAPHML
+        elif file_format == 'adjmat':
+            return cDBGFormat.ADJMAT
+        elif file_format == 'fasta':
+            return cDBGFormat.FASTA
+        else:
+            raise NotImplementedError("Support for {0} not yet "
+                                      "implemented".format(file_format))
+    else:
+        formats = ', '.join(cDBG.SAVE_FORMATS)
+        raise ValueError("{0} not a valid save format. "
+                         "Format must be one of: {1}".format(file_format,
+                                                             formats))
+
 
 cdef class cDBG:
 
@@ -276,21 +293,9 @@ cdef class cDBG:
     def save(self, str filename, str file_format):
         if file_format is None:
             return
-        elif file_format in self.SAVE_FORMATS:
-            if file_format == 'graphml':
-                self.write_graphml(filename)
-            elif file_format == 'adjmat':
-                self.write_adjmat(filename)
-            elif file_format == 'fasta':
-                self.write_unitigs(filename)
-            else:
-                raise NotImplementedError("Support for {0} not yet "
-                                          "implemented".format(file_format))
         else:
-            formats = ', '.join(self.SAVE_FORMATS)
-            raise ValueError("{0} not a valid save format. "
-                             "Format must be one of: {1}".format(file_format,
-                                                                 formats))
+            deref(self._this).write(_bstring(filename),
+                                    convert_format(file_format))
 
 
 cdef class StreamingCompactor:
