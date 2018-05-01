@@ -21,9 +21,9 @@ cdef class Reporter(EventListener):
                         *args, **kwargs):
         self.output_filename = output_filename
         if type(self) is Reporter:
-            self._reporter_owner = make_unique[_Reporter](_bstring(output_filename))
-            self._reporter_this = self._reporter_owner.get()
-            self._listener = <_EventListener*>self._reporter_owner.get()
+            self._owner = make_unique[_Reporter](_bstring(output_filename))
+            self._this = self._owner.get()
+            self._listener = <_EventListener*>self._owner.get()
 
 
 cdef class StreamingCompactorReporter(Reporter):
@@ -31,14 +31,11 @@ cdef class StreamingCompactorReporter(Reporter):
     def __cinit__(self, str output_filename, StreamingCompactor compactor,
                         *args, **kwargs):
         if type(self) is StreamingCompactorReporter:
-            self._sc_reporter_owner = make_unique[_StreamingCompactorReporter[DefaultDBG]](\
+            self._s_owner = make_unique[_StreamingCompactorReporter[DefaultDBG]](\
                     compactor._sc_this.get(), _bstring(output_filename))
-            self._sc_reporter_this = self._sc_reporter_owner.get()
-            self._reporter_this    = self._sc_reporter_this
-            self._listener = <_EventListener*>self._sc_reporter_owner.get()
-
-    def __dealloc__(self):
-        print('Dealloc StreamingCompactorReporter', file=sys.stderr)
+            self._s_this = self._s_owner.get()
+            self._this = self._s_this
+            self._listener = <_EventListener*>self._s_owner.get()
 
 
 cdef class cDBGWriter(Reporter):
@@ -46,10 +43,10 @@ cdef class cDBGWriter(Reporter):
     def __cinit__(self, str output_filename, str graph_format, cDBG cdbg,
                         *args, **kwargs):
         if type(self) is cDBGWriter:
-            self._writer_reporter_owner = make_unique[_cDBGWriter](cdbg._this,
-                                                             convert_format(graph_format),
-                                                             _bstring(output_filename))
-            self._writer_reporter_this = self._writer_reporter_owner.get()
-            self._reporter_this = self._writer_reporter_this
-            self._listener = <_EventListener*>self._writer_reporter_owner.get()
+            self._s_owner = make_unique[_cDBGWriter](cdbg._this,
+                                                     convert_format(graph_format),
+                                                     _bstring(output_filename))
+            self._s_this = self._s_owner.get()
+            self._this = self._s_this
+            self._listener = <_EventListener*>self._s_owner.get()
         

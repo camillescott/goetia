@@ -27,15 +27,15 @@ cdef extern from "boink/reporters.hh" namespace "boink::reporters" nogil:
 
 cdef class Reporter(EventListener):
     cdef readonly object       output_filename
-    cdef unique_ptr[_Reporter] _reporter_owner
-    cdef _Reporter *           _reporter_this
+    cdef unique_ptr[_Reporter] _owner
+    cdef _Reporter *           _this
 
 
 cdef class StreamingCompactorReporter(Reporter):
-    cdef unique_ptr[_StreamingCompactorReporter[DefaultDBG]] _sc_reporter_owner
-    cdef _StreamingCompactorReporter[DefaultDBG] *           _sc_reporter_this
+    cdef unique_ptr[_StreamingCompactorReporter[DefaultDBG]] _s_owner
+    cdef _StreamingCompactorReporter[DefaultDBG] *           _s_this
 
 
 cdef class cDBGWriter(Reporter):
-    cdef unique_ptr[_cDBGWriter] _writer_reporter_owner
-    cdef _cDBGWriter *           _writer_reporter_this
+    cdef unique_ptr[_cDBGWriter] _s_owner
+    cdef _cDBGWriter *           _s_this
