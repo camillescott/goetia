@@ -30,7 +30,7 @@ using boink::events::EventListener;
 using boink::event_types::Event;
 using boink::event_types::TimeIntervalEvent;
 
-class Reporter : public EventListener {
+class SingleFileReporter : public EventListener {
 
 protected:
 
@@ -39,27 +39,79 @@ protected:
 
 public:
 
-    Reporter(const std::string& output_filename,
-             const std::string thread_name) 
+    SingleFileReporter(const std::string& output_filename,
+             const std::string& thread_name) 
         : EventListener(thread_name),
           _output_filename(output_filename),
           _output_stream(_output_filename.c_str())
     {
     }
 
-    Reporter(const std::string& output_filename)
-        : Reporter(output_filename, "BaseReporter")
+    SingleFileReporter(const std::string& output_filename)
+        : SingleFileReporter(output_filename, "SingleFileReporter")
     {
     }
 
-    virtual ~Reporter() {
+    virtual ~SingleFileReporter() {
         _output_stream.close();
     }
 };
 
 
+class MultiFileReporter : public EventListener {
+
+protected:
+
+    std::string _file_prefix;
+    std::vector<std::string> _filenames;
+    std::vector<std::ofstream> _streams;
+
+public:
+
+    MultiFileReporter(const std::string& prefix,
+                      const std::string& thread_name)
+        : EventListener(thread_name),
+          _file_prefix(prefix)
+    {
+    }
+
+    MultiFileReporter(const std::string& prefix)
+        : MultiFileReporter(prefix, "MultiFileReporter")
+    {
+    }
+
+    std::ofstream& current_stream() {
+        return _streams.back();
+    }
+
+    std::string& current_filename() {
+        return _filenames.back();
+    }
+
+    std::ofstream& next_stream(uint64_t start_time, 
+                               const std::string& suffix) {
+        std::ostringstream name;
+        name << _file_prefix << "." << start_time << "."
+             << suffix;
+        std::string filename = name.str();
+
+        if (_streams.size() > 0) {
+            current_stream().close();   
+        }
+        _streams.push_back(std::move(std::ofstream(filename.c_str())));
+        _filenames.push_back(filename);
+        return _streams.back();
+    }
+
+    virtual ~MultiFileReporter() {
+        current_stream().close();
+    }
+
+};
+
+
 template <class GraphType>
-class StreamingCompactorReporter: public Reporter {
+class StreamingCompactorReporter: public SingleFileReporter {
 
 protected:
 
@@ -69,7 +121,7 @@ public:
 
     StreamingCompactorReporter(StreamingCompactor<GraphType> * compactor,
                                const std::string& output_filename)
-        : Reporter(output_filename, "StreamingCompactorReporter"),
+        : SingleFileReporter(output_filename, "StreamingCompactorReporter"),
           compactor(compactor)
     {    
         this->msg_type_whitelist.insert(boink::event_types::MSG_TIME_INTERVAL);
@@ -82,7 +134,8 @@ public:
     virtual void handle_msg(shared_ptr<Event> event) {
         if (event->msg_type == boink::event_types::MSG_TIME_INTERVAL) {
             auto _event = static_cast<TimeIntervalEvent*>(event.get());
-            if (_event->level == TimeIntervalEvent::FINE) {
+            if (_event->level == TimeIntervalEvent::FINE ||
+                _event->level == TimeIntervalEvent::END) {
                 auto report = compactor->get_report();
                 _output_stream << _event->t << ","
                                << report->n_full << ","
@@ -103,7 +156,7 @@ public:
 };
 
 
-class cDBGWriter : public Reporter {
+class cDBGWriter : public MultiFileReporter {
 protected:
 
     cDBG * cdbg;
@@ -113,8 +166,9 @@ public:
 
     cDBGWriter(cDBG * cdbg,
                cDBGFormat format,
-               const string& output_filename)
-        : Reporter(output_filename, "cDBGWriter"),
+               const string& output_prefix)
+        : MultiFileReporter(output_prefix,
+                            "cDBGWriter[" + cdbg_format_repr(format) + "]"),
           cdbg(cdbg),
           format(format)
     {
@@ -124,8 +178,16 @@ public:
     virtual void handle_msg(shared_ptr<Event> event) {
         if (event->msg_type == boink::event_types::MSG_TIME_INTERVAL) {
             auto _event = static_cast<TimeIntervalEvent*>(event.get());
-            if (_event->level == TimeIntervalEvent::MEDIUM) {
-                cdbg->write(this->_output_stream, format);
+            if (_event->level == TimeIntervalEvent::MEDIUM ||
+                _event->level == TimeIntervalEvent::END) {
+
+                std::ofstream& stream = this->next_stream(_event->t,
+                                                          cdbg_format_repr(format));
+                std::string&   filename = this->current_filename();
+
+                _cerr(this->THREAD_NAME << ", t=" << _event->t <<
+                      ": write cDBG to " << filename);
+                cdbg->write(stream, format);
             }
         }
     }

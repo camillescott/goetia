@@ -88,6 +88,8 @@ protected:
     std::deque<shared_ptr<Event>> m_queue;
     std::set<event_t> msg_type_whitelist;
     bool _shutdown;
+    uint64_t MAX_EVENTS;
+    uint64_t MIN_EVENTS_RESTART;
 
 public:
 
@@ -96,8 +98,10 @@ public:
     EventListener(const std::string& thread_name)
         : m_mutex(),
           m_cv(),
-          THREAD_NAME("EventListener::" + thread_name),
-          _shutdown(false)
+          _shutdown(false),
+          MAX_EVENTS(50000),
+          MIN_EVENTS_RESTART(MAX_EVENTS * 0.9),
+          THREAD_NAME("EventListener::" + thread_name)
     {
         msg_type_whitelist.insert(MSG_EXIT_THREAD);
         m_thread = make_unique<ScopedThread>
@@ -144,6 +148,13 @@ public:
         if (msg_type_whitelist.count(event->msg_type)) {
             {
                 std::unique_lock<std::mutex> lk(m_mutex);
+                if (m_queue.size() > MAX_EVENTS) {
+                    _cerr(THREAD_NAME << " hit MAX_EVENTS ("
+                          << MAX_EVENTS << ") on queue; blocking "
+                          "until " << MIN_EVENTS_RESTART << " events.");
+                    wait_on_processing(MIN_EVENTS_RESTART);
+
+                }
                 m_queue.push_back(event);
             }
             m_cv.notify_one();
@@ -151,6 +162,16 @@ public:
             pdebug("Filtered event of type " << event->msg_type);
         }
 	}
+
+    void clear_events() {
+        std::unique_lock<std::mutex> lock(m_mutex);
+        m_queue.clear();
+    }
+
+    void wait_on_processing(uint64_t min_events_restart) {
+        std::unique_lock<std::mutex> lock(m_mutex);
+        m_cv.wait(lock, [&]{ return m_queue.size() <= min_events_restart; });
+    }
 
 protected:
 
@@ -173,13 +194,20 @@ protected:
 
 				msg = m_queue.front();
 				m_queue.pop_front();
+
+                if (m_queue.size() < MIN_EVENTS_RESTART) {
+                    m_cv.notify_one();
+                }
 			}
 
 			if (msg->msg_type == MSG_EXIT_THREAD) {
-                _shutdown = true;
-                m_cv.notify_all();
                 _cerr("Exit " << THREAD_NAME 
                       << " listener at thread ID " << get_current_thread_id());
+                {
+                    std::unique_lock<std::mutex> lk(m_mutex);
+                    _shutdown = true;
+                }
+                m_cv.notify_all();
                 return;
 	        }
 
@@ -235,7 +263,6 @@ public:
     }
 
     void clear_listeners() {
-        _cerr("Clear listeners from " << this);
         registered_listeners.clear();
     }
 

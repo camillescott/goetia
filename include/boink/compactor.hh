@@ -83,6 +83,15 @@ public:
     {
         register_listener(static_cast<EventListener*>(&cdbg));
     }
+
+    ~StreamingCompactor() {
+        _cerr("StreamingCompactor: waiting for cDBG to finish updating.");
+        cdbg.wait_on_processing(0);
+
+        // make sure nothing else has a lock on the cdbg
+        auto dlock = cdbg.lock_dnodes();
+        auto ulock = cdbg.lock_unodes();
+    }
     
     StreamingCompactorReport* get_report() {
         StreamingCompactorReport * report = new StreamingCompactorReport();

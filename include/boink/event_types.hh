@@ -55,7 +55,8 @@ struct TimeIntervalEvent : public Event {
     enum interval_level_t {
         FINE,
         MEDIUM,
-        COARSE
+        COARSE,
+        END
     };
 
     interval_level_t level;

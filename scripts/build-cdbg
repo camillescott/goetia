@@ -9,7 +9,7 @@ from boink.dbg import make_dBG
 from boink.cdbg import StreamingCompactor
 from boink.parsing import grouper
 from boink.processors import StreamingCompactorProcessor
-from boink.reporters import StreamingCompactorReporter
+from boink.reporters import StreamingCompactorReporter, cDBGWriter
 
 
 
@@ -36,6 +36,15 @@ def main():
     reporter = StreamingCompactorReporter(args.save_cdbg_stats,
                                           compactor)
     processor.Notifier.register_listener(reporter)
+
+    writers = []
+    if args.save_cdbg_format:
+        for cdbg_format in args.save_cdbg_format:
+            writer = cDBGWriter(args.save_cdbg_prefix + '.' + cdbg_format,
+                                cdbg_format,
+                                compactor.cdbg)
+            processor.Notifier.register_listener(writer)
+            writers.append(writer)
 
 
     if args.pairing_mode == 'split':

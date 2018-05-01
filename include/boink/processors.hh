@@ -15,6 +15,7 @@
 #include <iostream>
 
 #include "oxli/read_parsers.hh"
+#include "boink/boink.hh"
 #include "boink/parsing.hh"
 #include "boink/events.hh"
 #include "boink/event_types.hh"
@@ -67,6 +68,7 @@ protected:
 public:
 
     using EventNotifier::register_listener;
+    using EventNotifier::notify;
 
     FileProcessor(uint64_t output_interval=DEFAULT_OUTPUT_INTERVAL)
         :  boink::events::EventNotifier(),
@@ -110,19 +112,25 @@ public:
                  auto event = make_shared<TimeIntervalEvent>();
                  event->level = TimeIntervalEvent::FINE;
                  event->t = _n_reads;
+                 notify(event);
             }
             if (counters[1].poll(_bundle_count)) {
                  auto event = make_shared<TimeIntervalEvent>();
                  event->level = TimeIntervalEvent::MEDIUM;
                  event->t = _n_reads;
+                notify(event);
             }
             if (counters[2].poll(_bundle_count)) {
                  auto event = make_shared<TimeIntervalEvent>();
                  event->level = TimeIntervalEvent::COARSE;
                  event->t = _n_reads;
+                 notify(event);
             }
         }
-
+        auto event = make_shared<TimeIntervalEvent>();
+        event->level = TimeIntervalEvent::END;
+        event->t = _n_reads;
+        notify(event);
         return _n_reads;
     }
 
@@ -148,18 +156,25 @@ public:
                  auto event = make_shared<TimeIntervalEvent>();
                  event->level = TimeIntervalEvent::FINE;
                  event->t = _n_reads;
+                 notify(event);
             }
             if (counters[1].poll()) {
                  auto event = make_shared<TimeIntervalEvent>();
                  event->level = TimeIntervalEvent::MEDIUM;
                  event->t = _n_reads;
+                 notify(event);
             }
             if (counters[2].poll()) {
                  auto event = make_shared<TimeIntervalEvent>();
                  event->level = TimeIntervalEvent::COARSE;
                  event->t = _n_reads;
+                 notify(event);
             }
         }
+        auto event = make_shared<TimeIntervalEvent>();
+        event->level = TimeIntervalEvent::END;
+        event->t = _n_reads;
+        notify(event);
         return _n_reads;
     }
 

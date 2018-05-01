@@ -66,6 +66,23 @@ enum cDBGFormat {
     FASTA
 };
 
+
+inline const string cdbg_format_repr(cDBGFormat fmt) {
+    switch(fmt) {
+        case GRAPHML:
+            return "GRAPHML";
+        case EDGELIST:
+            return "EDGELIST";
+        case ADJMAT:
+            return "ADJMAT";
+        case FASTA:
+            return "FASTA";
+        default:
+            return "FORMAT";
+    }
+}
+
+
 enum node_meta_t {
     FULL,
     TIP,
@@ -676,8 +693,8 @@ public:
                        const string graph_name="cDBG") {
 
         out << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-               "<graphml xmlns=\"http://graphml.graphdrawing.org/xmlns\""
-               "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""
+               "<graphml xmlns=\"http://graphml.graphdrawing.org/xmlns\" "
+               "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
                "xsi:schemaLocation=\"http://graphml.graphdrawing.org/xmlns "
                "http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd\">"
             << std::endl; // the header, open <graphml>
@@ -694,7 +711,7 @@ public:
             out << "<node id=\"n" << it->first << "\"/>" << std::endl;
             for (auto junc : it->second->left_juncs) {
                 id_t in_neighbor = unitig_junction_map[junc];
-                out << "<id=\"e" << edge_counter 
+                out << "<edge id=\"e" << edge_counter 
                     << "\" source=\"n" << in_neighbor
                     << "\" target=\"n" << it->first << "\"/>"
                     << std::endl;
@@ -702,7 +719,7 @@ public:
             }
             for (auto junc : it->second->right_juncs) {
                 id_t out_neighbor = unitig_junction_map[junc];
-                out << "<id=\"e" << edge_counter 
+                out << "<edge id=\"e" << edge_counter 
                     << "\" source=\"n" << it->first
                     << "\" target=\"n" << out_neighbor << "\"/>"
                     << std::endl;

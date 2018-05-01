@@ -15,27 +15,36 @@ from boink.events cimport EventListener, _EventListener
 
 
 cdef extern from "boink/reporters.hh" namespace "boink::reporters" nogil:
-    cdef cppclass _Reporter "boink::reporters::Reporter" (_EventListener):
-        _Reporter(string&)
+    cdef cppclass _SingleFileReporter "boink::reporters::SingleFileReporter" (_EventListener):
+        _SingleFileReporter(string&)
 
-    cdef cppclass _StreamingCompactorReporter "boink::reporters::StreamingCompactorReporter" [GraphType] (_Reporter):
+    cdef cppclass _MultiFileReporter "boink::reporters::MultiFileReporter" (_EventListener):
+        _MultiFileReporter(string&)
+
+    cdef cppclass _StreamingCompactorReporter "boink::reporters::StreamingCompactorReporter" [GraphType] (_SingleFileReporter):
         _StreamingCompactorReporter(_StreamingCompactor[GraphType] *, string&)
 
-    cdef cppclass _cDBGWriter "boink::reporters::cDBGWriter" (_Reporter):
+    cdef cppclass _cDBGWriter "boink::reporters::cDBGWriter" (_MultiFileReporter):
         _cDBGWriter(_cDBG *, cDBGFormat, const string&)
 
 
-cdef class Reporter(EventListener):
-    cdef readonly object       output_filename
-    cdef unique_ptr[_Reporter] _owner
-    cdef _Reporter *           _this
+cdef class SingleFileReporter(EventListener):
+    cdef readonly object          output_filename
+    cdef unique_ptr[_SingleFileReporter]    _owner
+    cdef _SingleFileReporter *    _this
 
 
-cdef class StreamingCompactorReporter(Reporter):
+cdef class MultiFileReporter(EventListener):
+    cdef readonly object                prefix
+    cdef unique_ptr[_MultiFileReporter] _owner
+    cdef _MultiFileReporter *           _this
+
+
+cdef class StreamingCompactorReporter(SingleFileReporter):
     cdef unique_ptr[_StreamingCompactorReporter[DefaultDBG]] _s_owner
     cdef _StreamingCompactorReporter[DefaultDBG] *           _s_this
 
 
-cdef class cDBGWriter(Reporter):
+cdef class cDBGWriter(MultiFileReporter):
     cdef unique_ptr[_cDBGWriter] _s_owner
     cdef _cDBGWriter *           _s_this
