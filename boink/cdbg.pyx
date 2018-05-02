@@ -310,6 +310,9 @@ cdef class StreamingCompactor:
             self.cdbg = cDBG._wrap(&(deref(self._sc_this).cdbg))
             self.Notifier = EventNotifier._wrap(<_EventNotifier*>self._sc_this.get())
 
+    def wait_on_updates(self):
+        deref(self._sc_this).wait_on_updates()
+
     def is_decision_kmer(self, str kmer):
         cdef string _kmer = _bstring(kmer)
         return deref(self._sc_this).is_decision_kmer(_kmer)

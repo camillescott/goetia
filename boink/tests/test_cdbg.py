@@ -75,10 +75,12 @@ def test_update_fork(ksize, graph, compactor, right_fork):
     (core, branch), pos = right_fork()
     print('\n', core, ' ' * (pos + 1) + branch, sep='\n')
     compactor.update_sequence(branch)
+    compactor.wait_on_updates()
     assert compactor.cdbg.n_unodes == 1
     island = list(compactor.cdbg.unodes()).pop()
     assert island.meta == 'ISLAND'
     compactor.update_sequence(core)
+    compactor.wait_on_updates()
 
     dnode = list(compactor.get_cdbg_dnodes(core)).pop()
     assert dnode.left_degree == 1
@@ -102,6 +104,7 @@ def test_update_triple_fork(ksize, graph, compactor, right_triple_fork):
     compactor.update_sequence(top)
     compactor.update_sequence(bottom)
     compactor.update_sequence(core)
+    compactor.wait_on_updates()
 
     dnode = list(compactor.get_cdbg_dnodes(core)).pop()
     assert dnode.left_degree == 1
@@ -128,6 +131,7 @@ def test_double_update(ksize, graph, compactor, right_triple_fork,
     for loop in (1,2):
         compactor.update_sequence(top)
         compactor.update_sequence(bottom)
+        compactor.wait_on_updates()
         if loop == 1:
             print('CORE update', file=sys.stderr)
             compactor.update_sequence(core)
@@ -159,6 +163,7 @@ def test_component_merge(ksize, graph, compactor, right_triple_fork,
     compactor.update_sequence(top1)
     compactor.update_sequence(bottom1)
     compactor.update_sequence(core1)
+    compactor.wait_on_updates()
 
     dnode = list(compactor.get_cdbg_dnodes(core1)).pop()
     assert dnode.left_degree == 1
@@ -176,6 +181,7 @@ def test_component_merge(ksize, graph, compactor, right_triple_fork,
     compactor.update_sequence(bottom2)
     print('CORE1 + CORE2 update', file=sys.stderr)
     compactor.update_sequence(core1 + core2)
+    compactor.wait_on_updates()
 
     assert compactor.cdbg.n_dnodes == 2
     assert compactor.cdbg.n_unodes == 7
@@ -201,6 +207,7 @@ def test_update_snp_bubble(ksize, graph, compactor, snp_bubble):
 
     compactor.update_sequence(wildtype)
     compactor.update_sequence(snp)
+    compactor.wait_on_updates()
     
     assert compactor.cdbg.n_dnodes == 2
     assert compactor.cdbg.n_unodes == 4
@@ -244,12 +251,14 @@ def test_linear_merge(ksize, graph, compactor, linear_path):
     seq2 = linear_path()
 
     compactor.update_sequence(seq1)
+    compactor.wait_on_updates()
     unode = list(compactor.cdbg.unodes()).pop()
     assert len(unode) == len(seq1)
     assert unode.sequence == seq1
     assert compactor.cdbg.n_unodes == 1
 
     compactor.update_sequence(seq2)
+    compactor.wait_on_updates()
     assert compactor.cdbg.n_unodes == 2
 
     unode1, unode2 = list(compactor.cdbg.unodes())
@@ -259,6 +268,7 @@ def test_linear_merge(ksize, graph, compactor, linear_path):
     assert unode2.sequence == seq2
 
     compactor.update_sequence(seq1 + seq2)
+    compactor.wait_on_updates()
     assert compactor.cdbg.n_unodes == 1
     unode = list(compactor.cdbg.unodes()).pop()
     assert unode.sequence == seq1 + seq2
@@ -271,20 +281,56 @@ def test_tip_extend(ksize, graph, compactor, consumer, right_fork, linear_path):
     (core, branch), pos = right_fork()
     compactor.update_cdbg(branch)
     compactor.update_cdbg(core)
+    compactor.wait_on_updates()
     assert compactor.cdbg.n_dnodes == 1
     assert compactor.cdbg.n_unodes == 3
 
     seq = linear_path()
     print('Add ISLAND', seq, file=sys.stderr)
     compactor.update_cdbg(seq)
+    compactor.wait_on_updates()
     assert compactor.cdbg.n_dnodes == 1
     assert compactor.cdbg.n_unodes == 4
 
     print('MERGE island with', seq+core, file=sys.stderr)
     compactor.update_sequence(seq + core)
+    compactor.wait_on_updates()
     assert compactor.cdbg.n_dnodes == 1
     assert compactor.cdbg.n_unodes == 3
     
     dnode = next(compactor.cdbg.dnodes())
     extended = next(compactor.cdbg.left_neighbors(dnode))
     assert extended.sequence == seq + core[:pos+ksize]
+
+
+@using_ksize(9)
+@using_length(50)
+@pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
+def test_multi_update(ksize, graph, compactor, consumer,
+                      right_fork, linear_path, snp_bubble):
+    (wildtype, snp), L, R = snp_bubble()
+
+    compactor.update_cdbg(wildtype)
+    compactor.update_cdbg(snp)
+    compactor.wait_on_updates()
+    
+    assert compactor.cdbg.n_dnodes == 2
+    assert compactor.cdbg.n_unodes == 4
+
+    dnodes = list(compactor.get_cdbg_dnodes(wildtype))
+    left, right = dnodes
+    assert left.left_degree == 1
+    assert left.right_degree == 2
+    assert right.left_degree == 2
+    assert right.right_degree == 1
+
+    wildtype_extend = wildtype[-ksize:] + linear_path()
+
+    compactor.update_cdbg(wildtype_extend)
+    compactor.wait_on_updates()
+
+    assert compactor.cdbg.n_dnodes == 2
+    assert compactor.cdbg.n_unodes == 4
+
+    dnodes = list(compactor.get_cdbg_dnodes(wildtype_extend))
+    assert len(dnodes) == 0

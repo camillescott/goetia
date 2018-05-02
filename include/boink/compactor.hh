@@ -92,6 +92,10 @@ public:
         auto dlock = cdbg.lock_dnodes();
         auto ulock = cdbg.lock_unodes();
     }
+
+    void wait_on_updates() {
+        cdbg.wait_on_processing(0);
+    }
     
     StreamingCompactorReport* get_report() {
         StreamingCompactorReport * report = new StreamingCompactorReport();

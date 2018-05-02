@@ -88,6 +88,7 @@ protected:
     std::deque<shared_ptr<Event>> m_queue;
     std::set<event_t> msg_type_whitelist;
     bool _shutdown;
+    uint64_t _to_process;
     uint64_t MAX_EVENTS;
     uint64_t MIN_EVENTS_RESTART;
 
@@ -99,6 +100,7 @@ public:
         : m_mutex(),
           m_cv(),
           _shutdown(false),
+          _to_process(0),
           MAX_EVENTS(50000),
           MIN_EVENTS_RESTART(MAX_EVENTS * 0.9),
           THREAD_NAME("EventListener::" + thread_name)
@@ -148,13 +150,14 @@ public:
         if (msg_type_whitelist.count(event->msg_type)) {
             {
                 std::unique_lock<std::mutex> lk(m_mutex);
-                if (m_queue.size() > MAX_EVENTS) {
+                if (_to_process > MAX_EVENTS) {
                     _cerr(THREAD_NAME << " hit MAX_EVENTS ("
                           << MAX_EVENTS << ") on queue; blocking "
                           "until " << MIN_EVENTS_RESTART << " events.");
                     wait_on_processing(MIN_EVENTS_RESTART);
 
                 }
+                ++_to_process;
                 m_queue.push_back(event);
             }
             m_cv.notify_one();
@@ -170,7 +173,7 @@ public:
 
     void wait_on_processing(uint64_t min_events_restart) {
         std::unique_lock<std::mutex> lock(m_mutex);
-        m_cv.wait(lock, [&]{ return m_queue.size() <= min_events_restart; });
+        m_cv.wait(lock, [&]{ return _to_process <= min_events_restart; });
     }
 
 protected:
@@ -212,6 +215,12 @@ protected:
 	        }
 
             handle_msg(msg);
+
+            {
+                std::unique_lock<std::mutex> lk(m_mutex);
+                --_to_process;
+                m_cv.notify_all();
+            }
 		}
 	}
 

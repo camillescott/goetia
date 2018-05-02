@@ -126,6 +126,8 @@ cdef extern from "boink/compactor.hh" namespace "boink" nogil:
         #void compactify_right(Path&) 
         #void compactify_left(Path&)
 
+        void wait_on_updates()
+
         bool is_decision_kmer(uint8_t&)
         bool is_decision_kmer(const string&, uint8_t&) except +ValueError
         bool is_decision_kmer(const string&) except +ValueError

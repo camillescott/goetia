@@ -659,9 +659,32 @@ public:
             case ADJMAT:
                 write_adj_matrix(out);
                 break;
+            case FASTA:
+                write_fasta(out);
+                break;
             default:
                 throw BoinkException("Invalid cDBG format.");
         };
+    }
+
+    void write_fasta(const string& filename) {
+        std::ofstream out;
+        out.open(filename);
+        write_fasta(out);
+        out.close();
+    }
+
+    void write_fasta(std::ofstream& out) {
+        auto lock = lock_unodes();
+
+        for (auto it = unitig_nodes.begin(); it != unitig_nodes.end(); ++it) {
+            out << ">ID=" << it->first 
+                << " L=" << it->second->sequence.length()
+                << " type=" << node_meta_repr(it->second->meta)
+                << std::endl
+                << it->second->sequence
+                << std::endl;
+        }
     }
 
     void write_edge_list(const string& filename) {
@@ -672,13 +695,8 @@ public:
     }
 
     void write_edge_list(std::ofstream& out) {
-
         auto lock1 = lock_unodes();
         auto lock2 = lock_dnodes();
-
-        for (auto it = unitig_nodes.begin(); it != unitig_nodes.end(); ++it) {
-            
-        }
     }
 
     void write_graphml(const string& filename,
