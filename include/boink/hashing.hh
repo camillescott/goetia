@@ -129,11 +129,11 @@ public:
         return h;
     }
 
-    std::string get_cursor() {
+    std::string get_cursor() const {
         return std::string(symbol_deque.begin(), symbol_deque.end());
     }
 
-    void get_cursor(std::deque<char>& d) {
+    void get_cursor(std::deque<char>& d) const {
         d.insert(d.end(), symbol_deque.begin(), symbol_deque.end());
     }
 
@@ -189,14 +189,22 @@ public:
 
     //using BaseShifter::HashShifter;
 
-    RollingHashShifter(const std::string& start, uint16_t K) :
-        BaseShifter(start, K), hasher(K) {
-        
+    RollingHashShifter(const std::string& start, uint16_t K)
+        : BaseShifter(start, K), hasher(K)
+    {    
         init();
     }
 
     RollingHashShifter(uint16_t K) :
         BaseShifter(K), hasher(K) {}
+
+    RollingHashShifter(const RollingHashShifter& other)
+        : BaseShifter(other.K()),
+          hasher(other.K())
+    {
+        other.get_cursor(this->symbol_deque);
+        init();
+    }
 
     void init() {
         if (this->initialized) {
