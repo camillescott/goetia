@@ -1,6 +1,3 @@
 [submodule "include/utils"]
 	path = include/utils
 	url = https://github.com/TUM-I5/utils.git
-[submodule "include/gfakluge"]
-	path = include/gfakluge
-	url = https://github.com/edawson/gfakluge.git
