@@ -197,7 +197,7 @@ public:
     }
 
     string get_name() const {
-        return "NODE" + std::to_string(node_id);
+        return string("NODE") + std::to_string(node_id);
     }
 
 };
@@ -718,6 +718,9 @@ public:
     }
 
     void write_gfa1(std::ofstream& out) {
+        auto lock2 = lock_dnodes();
+        auto lock1 = lock_unodes();
+
         gfak::GFAKluge gfa;
         for (auto it = unitig_nodes.begin(); it != unitig_nodes.end(); ++it) {
             gfak::sequence_elem s;
@@ -726,7 +729,21 @@ public:
 
             gfak::opt_elem ln_elem;
             ln_elem.key = "LN";
-            ln_elem.val = it->second->sequence.length();
+            ln_elem.val = std::to_string(it->second->sequence.length());
+            ln_elem.type = "i";
+            s.opt_fields.push_back(ln_elem);
+
+            gfa.add_sequence(s);
+        }
+
+        for (auto it = decision_nodes.begin(); it != decision_nodes.end(); ++it) {
+            gfak::sequence_elem s;
+            s.sequence = it->second->sequence;
+            s.name = it->second->get_name();
+
+            gfak::opt_elem ln_elem;
+            ln_elem.key = "LN";
+            ln_elem.val = std::to_string(it->second->sequence.length());
             ln_elem.type = "i";
             s.opt_fields.push_back(ln_elem);
 
@@ -736,14 +753,15 @@ public:
         for (auto it = decision_nodes.begin(); it != decision_nodes.end(); ++it) {
             string root = it->second->get_name();
             for (auto junc : it->second->left_juncs) {
-                id_t in_id = unitig_junction_map[junc];
-                UnitigNode * in_node = unitig_nodes[in_id].get();
+                UnitigNode * in_node = get_unode(junc);
+                if (in_node == nullptr) continue;
+
                 gfak::link_elem l;
                 l.source_name = in_node->get_name();
                 l.sink_name = root;
                 l.source_orientation_forward = true;
                 l.sink_orientation_forward = true;
-                l.cigar = "M" + std::to_string(_K);
+                l.cigar = std::to_string(_K) + "M";
 
                 string link_name = "LINK" + junction_to_string(junc);
                 gfak::opt_elem id_elem;
@@ -755,14 +773,15 @@ public:
                 gfa.add_link(in_node->get_name(), l);
             }
             for (auto junc : it->second->right_juncs) {
-                id_t out_id = unitig_junction_map[junc];
-                UnitigNode * out_node = unitig_nodes[out_id].get();
+                UnitigNode * out_node = get_unode(junc);
+                if (out_node == nullptr) continue;
+
                 gfak::link_elem l;
                 l.source_name = root;
                 l.sink_name = out_node->get_name();
                 l.source_orientation_forward = true;
                 l.sink_orientation_forward = true;
-                l.cigar = "M" + std::to_string(_K);
+                l.cigar = std::to_string(_K) + "M";
 
                 string link_name = "LINK" + junction_to_string(junc);
                 gfak::opt_elem id_elem;
