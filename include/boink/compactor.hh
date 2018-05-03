@@ -10,7 +10,6 @@
 #ifndef COMPACTOR_HH
 #define COMPACTOR_HH
 
-namespace boink {
 
 #include "boink/assembly.hh"
 #include "boink/hashing.hh"
@@ -19,6 +18,8 @@ namespace boink {
 #include "boink/minimizers.hh"
 #include "boink/event_types.hh"
 
+
+namespace boink {
 using namespace boink::event_types;
 
 
