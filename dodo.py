@@ -111,7 +111,7 @@ CFLAGS      = ['-Wshadow', '-Wcast-align', '-Wstrict-prototypes']
 CFLAGS     += INCLUDES
 CFLAGS     += CPPFLAGS
 
-LDFLAGS     = ['-loxli']
+LDFLAGS     = ['-loxli', '-lgfakluge']
 
 CY_CFLAGS   = sysconfig.get_config_var('CFLAGS').split()
 try:

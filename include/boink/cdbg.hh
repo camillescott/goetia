@@ -20,6 +20,7 @@
 #include <unordered_map>
 
 #include "oxli/alphabets.hh"
+#include "gfakluge/src/gfakluge.hpp"
 
 #include "boink/boink.hh"
 #include "boink/hashing.hh"
@@ -531,6 +532,9 @@ public:
             return existing_right;
         }
 
+        // quick and dirty
+        delete_unode_from_tags(tags);
+
         // No valid existing Unitigs, make a new one
         id_t id = _unitig_id_counter;
         unique_ptr<UnitigNode> unode = make_unique<UnitigNode>(id,
@@ -641,6 +645,15 @@ public:
         }
     }
 
+    void delete_unode_from_tags(HashVector& tags) {
+        for (auto tag: tags) {
+            UnitigNode * unode = get_unode(tag);
+            if (unode != nullptr) {
+                delete_unode(unode);
+            }
+        }
+    }
+
     void write(const std::string& filename, cDBGFormat format) {
         std::ofstream out;
         out.open(filename);
@@ -678,6 +691,28 @@ public:
         auto lock = lock_unodes();
 
         for (auto it = unitig_nodes.begin(); it != unitig_nodes.end(); ++it) {
+            out << ">ID=" << it->first 
+                << " L=" << it->second->sequence.length()
+                << " type=" << node_meta_repr(it->second->meta)
+                << std::endl
+                << it->second->sequence
+                << std::endl;
+        }
+    }
+
+    void write_gfa1(const string& filename) {
+        std::ofstream out;
+        out.open(filename);
+        write_gfa1(out);
+        out.close();
+    }
+
+    void write_gfa1(std::ofstream& out) {
+        GFAKluge gfa;
+        for (auto it = unitig_nodes.begin(); it != unitig_nodes.end(); ++it) {
+            sequence_elem s;
+            s.sequence = it->second->sequence;
+            s.name = 
             out << ">ID=" << it->first 
                 << " L=" << it->second->sequence.length()
                 << " type=" << node_meta_repr(it->second->meta)
