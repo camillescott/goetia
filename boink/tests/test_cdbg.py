@@ -229,6 +229,7 @@ def test_update_trivial_dnodes(ksize, graph, compactor, tandem_quad_forks):
         compactor.update_sequence(branch)
     print('CORE update', file=sys.stderr)
     compactor.update_sequence(core)
+    compactor.wait_on_updates()
 
     dnodes = list(compactor.get_cdbg_dnodes(core))
     left, right = dnodes
@@ -303,8 +304,8 @@ def test_tip_extend(ksize, graph, compactor, consumer, right_fork, linear_path):
     assert extended.sequence == seq + core[:pos+ksize]
 
 
-@using_ksize(9)
-@using_length(50)
+@using_ksize(21)
+@using_length(70)
 @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
 def test_multi_update(ksize, graph, compactor, consumer,
                       right_fork, linear_path, snp_bubble):
@@ -334,3 +335,21 @@ def test_multi_update(ksize, graph, compactor, consumer,
 
     dnodes = list(compactor.get_cdbg_dnodes(wildtype_extend))
     assert len(dnodes) == 0
+
+    (core, branch), pos = right_fork()
+    compactor.update_cdbg(branch)
+    compactor.wait_on_updates()
+    assert compactor.cdbg.n_unodes == 7
+
+    compactor.update_cdbg(core)
+    compactor.wait_on_updates()
+    dnode = list(compactor.get_cdbg_dnodes(core)).pop()
+    assert dnode.left_degree == 1
+    assert dnode.right_degree == 2
+    assert compactor.cdbg.n_dnodes == 3
+
+    compactor.update_sequence(wildtype_extend + core)
+    compactor.wait_on_updates()
+
+    assert compactor.cdbg.n_dnodes == 3
+    assert compactor.cdbg.n_unodes == 6
