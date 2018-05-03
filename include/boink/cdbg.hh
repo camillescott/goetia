@@ -64,20 +64,23 @@ enum cDBGFormat {
     GRAPHML,
     EDGELIST,
     ADJMAT,
-    FASTA
+    FASTA,
+    GFA1
 };
 
 
 inline const string cdbg_format_repr(cDBGFormat fmt) {
     switch(fmt) {
         case GRAPHML:
-            return "GRAPHML";
+            return "graphml";
         case EDGELIST:
-            return "EDGELIST";
+            return "edgelist";
         case ADJMAT:
-            return "ADJMAT";
+            return "adjmat";
         case FASTA:
-            return "FASTA";
+            return "fasta";
+        case GFA1:
+            return "gfa1";
         default:
             return "FORMAT";
     }
@@ -191,6 +194,10 @@ public:
 
     friend bool operator== (const CompactNode& lhs, const CompactNode& rhs) {
         return lhs.node_id == rhs.node_id;
+    }
+
+    string get_name() const {
+        return "NODE" + std::to_string(node_id);
     }
 
 };
@@ -675,6 +682,9 @@ public:
             case FASTA:
                 write_fasta(out);
                 break;
+            case GFA1:
+                write_gfa1(out);
+                break;
             default:
                 throw BoinkException("Invalid cDBG format.");
         };
@@ -708,18 +718,64 @@ public:
     }
 
     void write_gfa1(std::ofstream& out) {
-        GFAKluge gfa;
+        gfak::GFAKluge gfa;
         for (auto it = unitig_nodes.begin(); it != unitig_nodes.end(); ++it) {
-            sequence_elem s;
+            gfak::sequence_elem s;
             s.sequence = it->second->sequence;
-            s.name = 
-            out << ">ID=" << it->first 
-                << " L=" << it->second->sequence.length()
-                << " type=" << node_meta_repr(it->second->meta)
-                << std::endl
-                << it->second->sequence
-                << std::endl;
+            s.name = it->second->get_name();
+
+            gfak::opt_elem ln_elem;
+            ln_elem.key = "LN";
+            ln_elem.val = it->second->sequence.length();
+            ln_elem.type = "i";
+            s.opt_fields.push_back(ln_elem);
+
+            gfa.add_sequence(s);
         }
+
+        for (auto it = decision_nodes.begin(); it != decision_nodes.end(); ++it) {
+            string root = it->second->get_name();
+            for (auto junc : it->second->left_juncs) {
+                id_t in_id = unitig_junction_map[junc];
+                UnitigNode * in_node = unitig_nodes[in_id].get();
+                gfak::link_elem l;
+                l.source_name = in_node->get_name();
+                l.sink_name = root;
+                l.source_orientation_forward = true;
+                l.sink_orientation_forward = true;
+                l.cigar = "M" + std::to_string(_K);
+
+                string link_name = "LINK" + junction_to_string(junc);
+                gfak::opt_elem id_elem;
+                id_elem.key = "ID";
+                id_elem.type = "Z";
+                id_elem.val = link_name;
+                l.opt_fields["ID"] = id_elem;
+
+                gfa.add_link(in_node->get_name(), l);
+            }
+            for (auto junc : it->second->right_juncs) {
+                id_t out_id = unitig_junction_map[junc];
+                UnitigNode * out_node = unitig_nodes[out_id].get();
+                gfak::link_elem l;
+                l.source_name = root;
+                l.sink_name = out_node->get_name();
+                l.source_orientation_forward = true;
+                l.sink_orientation_forward = true;
+                l.cigar = "M" + std::to_string(_K);
+
+                string link_name = "LINK" + junction_to_string(junc);
+                gfak::opt_elem id_elem;
+                id_elem.key = "ID";
+                id_elem.type = "Z";
+                id_elem.val = link_name;
+                l.opt_fields["ID"] = id_elem;
+                gfa.add_link(root, l);
+            }
+        }
+
+        out << gfa << std::endl;
+
     }
 
     void write_edge_list(const string& filename) {

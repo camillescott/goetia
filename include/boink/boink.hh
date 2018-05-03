@@ -97,6 +97,11 @@ struct junction_hash
     }
 };
 
+std::string junction_to_string(const junction_t& junc) {
+    return "(" + std::to_string(junc.first) + ","
+               + std::to_string(junc.second) + ")";
+}
+
 template<typename _Ty1, typename _Ty2>
 std::ostream& operator<<(std::ostream& _os, const std::pair<_Ty1, _Ty2>& _p) {
     _os << "(" << _p.first << ", " << _p.second << ")";

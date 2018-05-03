@@ -141,6 +141,7 @@ cdef class UnitigNode(CompactNode):
         self._check_ptr()
         return deref(self._un_this).repr()
 
+
 cdef cDBGFormat convert_format(str file_format) except *:
     if file_format in cDBG.SAVE_FORMATS:
         if file_format == 'graphml':
@@ -149,6 +150,8 @@ cdef cDBGFormat convert_format(str file_format) except *:
             return cDBGFormat.ADJMAT
         elif file_format == 'fasta':
             return cDBGFormat.FASTA
+        elif file_format == 'gfa1':
+            return cDBGFormat.GFA1
         else:
             raise NotImplementedError("Support for {0} not yet "
                                       "implemented".format(file_format))
@@ -273,22 +276,6 @@ cdef class cDBG:
     @property
     def n_tags(self):
         return deref(self._this).n_tags()
-
-    def write_graphml(self, str filename):
-        cdef string _filename = _bstring(filename)
-        deref(self._this).write_graphml(_filename)
-
-    def write_unitigs(self, str filename):
-        with open(filename, 'w') as fp:
-            for unode in self.unodes:
-                name = '>{id} length={length} n_tags={n_tags}'.format(unode.node_id,
-                                                                      len(unode),
-                                                                      unode.n_tags)
-                fp.write('{0}\n{1}\n'.format(name, unode.sequence))
-
-    def write_adjmat(self, str filename):
-        cdef string _filename = _bstring(filename)
-        deref(self._this).write_adj_matrix(_filename)
 
     def save(self, str filename, str file_format):
         if file_format is None:

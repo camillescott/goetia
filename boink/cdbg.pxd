@@ -42,7 +42,8 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
         GRAPHML,
         EDGELIST,
         ADJMAT,
-        FASTA
+        FASTA,
+        GFA1
 
     cdef const char * node_meta_repr(node_meta_t)
 
