@@ -10,6 +10,7 @@ import sys
 
 from doit import create_after, get_var
 from doit.task import clean_targets
+from doit.tools import run_once
 import yaml
 
 from build_utils import (check_for_openmp,
@@ -376,6 +377,13 @@ def task_cythonize():
                             cython_command(source)],
                 'clean': True}
 
+def task_create_build_dirs():
+    return {'title': title_with_actions,
+            'targets': [build_dir(), lib_dir()],
+            'actions': ['mkdir -p {0}'.format(build_dir()),
+                        'mkdir -p {0}'.format(lib_dir())],
+            'uptodate': [run_once]}
+
 
 def task_compile_cython_cpp():
     for mod in MOD_NAMES:
@@ -388,6 +396,7 @@ def task_compile_cython_cpp():
 
         yield { 'name': target,
                 'title': title_with_actions,
+                'task_dep': ['create_build_dirs'],
                 'file_dep': file_dep + [source],
                 'targets': [target],
                 'actions': [cy_cxx_command(source,
