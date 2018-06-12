@@ -99,6 +99,19 @@ public:
         return current;
     }
 
+    bool current(std::pair<T, int64_t>& result) {
+        if (minimizers.empty()) {
+            return false;
+        } else {
+            result = minimizers.back();
+            return true;
+        }
+    }
+
+    size_t size() const {
+        return minimizers.size();
+    }
+
     std::vector<value_type> get_minimizers() const {
         return minimizers;
     }

@@ -391,6 +391,8 @@ public:
         this->msg_type_whitelist.insert(boink::event_types::MSG_ADD_UNODE);
         this->msg_type_whitelist.insert(boink::event_types::MSG_DELETE_UNODE);
         this->msg_type_whitelist.insert(boink::event_types::MSG_INCR_DNODE_COUNT);
+        this->msg_type_whitelist.insert(boink::event_types::MSG_SPLIT_UNODE);
+        this->msg_type_whitelist.insert(boink::event_types::MSG_EXTEND_UNODE);
     }
 
     std::unique_lock<std::mutex> lock_dnodes() {
@@ -426,6 +428,11 @@ public:
                 }
                 return;
             case boink::event_types::MSG_INCR_DNODE_COUNT:
+                {
+                    auto * data = static_cast<IncrDNodeEvent*>(event.get());
+                    auto lock = lock_dnodes();
+                    this->get_dnode(data->dnode)->count++;
+                }
                 return;
             default:
                 return;
@@ -464,15 +471,15 @@ public:
         return unitig_tag_map.size();
     }
 
-    DecisionNode* build_dnode(hash_t hash, const string& kmer) {
+    void  build_dnode(hash_t hash, const string& kmer) {
         DecisionNode * dnode = get_dnode(hash);
         if (dnode == nullptr) {
             pdebug("Build d-node " << hash << ", " << kmer);
             unique_ptr<DecisionNode> dnode_ptr = make_unique<DecisionNode>(hash, kmer);
             decision_nodes.insert(make_pair(hash, std::move(dnode_ptr)));
-            dnode = get_dnode(hash);
+        } else {
+            dnode->count++;
         }
-        return dnode;
     }
 
     DecisionNode* get_dnode(hash_t hash) {
@@ -498,10 +505,10 @@ public:
         return result;
     }
 
-    UnitigNode * build_unode(HashVector& tags,
-                             const string& sequence,
-                             junction_t left_junc,
-                             junction_t right_junc) {
+    void build_unode(HashVector& tags,
+                     const string& sequence,
+                     junction_t left_junc,
+                     junction_t right_junc) {
 
         pdebug("Attempt u-node build on..."
                 << " left=(" << left_junc.first 
@@ -569,7 +576,6 @@ public:
         // Transfer the UnitigNode's ownership to the map;
         // get its new memory address and return it
         unitig_nodes.insert(make_pair(id, std::move(unode)));
-        return unitig_nodes[id].get();
     }
 
     void link_unode_to_dnodes(UnitigNode * unode) {

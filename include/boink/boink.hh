@@ -73,6 +73,10 @@ typedef vector<hash_t> HashVector;
 
 typedef uint64_t id_t;
 typedef pair<hash_t, hash_t> junction_t;
+enum direction_t {
+    LEFT,
+    RIGHT
+};
 
 
 // hash_combine and pair_hash courtesy SO:

@@ -126,7 +126,9 @@ public:
         return this->to_string(path);
     }
 
-    void compactify_right(Path& path, InteriorMinimizer<hash_t>& minimizer) {
+    void compactify_right(Path& path,
+                          InteriorMinimizer<hash_t>& minimizer,
+                          bool stop_on_minimizer=false) {
         this->seen.clear();
         this->seen.insert(this->get());
         minimizer.update(this->get());
@@ -138,6 +140,11 @@ public:
             path.push_back(next.symbol);
             this->seen.insert(next.hash);
             minimizer.update(next.hash);
+            if (stop_on_minimizer) {
+                if (minimizer.size() > 0) {
+                    break;
+                }
+            }
             if (degree_left() > 1) break;
         }
     }
@@ -156,7 +163,9 @@ public:
         }
     }
 
-    void compactify_left(Path& path, InteriorMinimizer<hash_t> minimizer) {
+    void compactify_left(Path& path,
+                         InteriorMinimizer<hash_t> minimizer,
+                         bool stop_on_minimizer=false) {
         this->seen.clear();
         this->seen.insert(this->get());
         minimizer.update(this->get());
@@ -168,6 +177,11 @@ public:
             path.push_front(next.symbol);
             this->seen.insert(next.hash);
             minimizer.update(next.hash);
+            if (stop_on_minimizer) {
+                if (minimizer.size() > 0) {
+                    break;
+                }
+            }
             if (degree_right() > 1) break;
         }
     }
@@ -211,6 +225,12 @@ public:
         this->notify(event);
     }
 
+    void notify_incr_dnode(hash_t dnode) {
+        auto event = make_shared<IncrDNodeEvent>();
+        event->dnode = dnode;
+        this->notify(event);
+    }
+
     bool insert_sequence(const string& sequence,
                          vector<uint32_t>& decision_positions,
                          HashVector& decision_hashes,
@@ -236,18 +256,44 @@ public:
     }
 
     void update_cdbg(const string& sequence) {
+        vector<uint32_t> dnode_counts;
         vector<kmer_t> disturbed_dnodes;
         vector<NeighborBundle> disturbed_neighbors;
+        InteriorMinimizer<hash_t> minimizers(_minimizer_window_size);
         find_disturbed_dnodes(sequence,
                               disturbed_dnodes,
-                              disturbed_neighbors);
+                              dnode_counts,
+                              disturbed_neighbors,
+                              minimizers);
         if (disturbed_dnodes.size() == 0) {
             _update_linear(sequence);
         } else {
             _update_from_dnodes(sequence,
                                 disturbed_dnodes,
-                                disturbed_neighbors);
+                                disturbed_neighbors,
+                                minimizers);
         }
+    }
+
+    void _update_unodes(const string& sequence,
+                        vector<kmer_t>& disturbed_dnodes,
+                        vector<uin32_t>& dnode_counts,
+                        InteriorMinimizer<hash_t>& minimizers) {
+
+        vector<UnitigNode*> unodes;
+        vector<InteriorMinimizer<hash_t>::value_type> unassigned_minimizers;
+        for (auto tag_pair : minimizers.get_minimizer_values()) {
+            UnitigNode * unode = cdbg.get_unode(tag_pair.second);
+            if (unode == nullptr) {
+                unassigned_tags.push_back(tag_pair);
+            } else if (unodes.empty() || unode != unodes.back() ) {
+                unodes.push_back(unode);
+            } 
+        }
+
+        
+
+
     }
 
     void _update_linear(const string& sequence) {
@@ -475,7 +521,9 @@ public:
 
     void find_disturbed_dnodes(const string& sequence,
                                vector<kmer_t>& disturbed_dnodes,
-                               vector<NeighborBundle>& disturbed_neighbors) {
+                               vector<int32_t>& dnode_counts,
+                               vector<NeighborBundle>& disturbed_neighbors,
+                               InteriorMinimizer<hash_t>& minimizers) {
         
         KmerIterator<typename GraphType::shifter_type> iter(sequence, this->_K);
 
@@ -492,6 +540,12 @@ public:
             if (get_decision_neighbors(flank_shifter,
                                        kmer,
                                        decision_neighbors)) {
+                DecisionNode * dnode;
+                if ((dnode = cdbg.get_dnode(h)) != nullptr) {
+                    dnode_counts.push_back(dnode->count);
+                } else {
+                    dnode_counts.push_back(1);
+                }
                 notify_build_dnode(flank_shifter.get(), kmer);
                 disturbed_dnodes.push_back(kmer_t(flank_shifter.get(), kmer));
                 disturbed_neighbors.push_back(decision_neighbors);
@@ -502,6 +556,7 @@ public:
         size_t pos = 0;
         while(!iter.done()) {
             hash_t h = iter.next();
+            minimizer.update(h);
             NeighborBundle decision_neighbors;
             string kmer = sequence.substr(pos, this->_K);
             if (get_decision_neighbors(iter.shifter,
@@ -510,6 +565,12 @@ public:
                 pdebug("Found d-node " << h << ", " << kmer <<
                        " ldegree " << decision_neighbors.first.size() <<
                        " rdegree " << decision_neighbors.second.size());
+                DecisionNode * dnode;
+                if ((dnode = cdbg.get_dnode(h)) != nullptr) {
+                    dnode_counts.push_back(dnode->count);
+                } else {
+                    dnode_counts.push_back(1);
+                }
                 notify_build_dnode(h, kmer);
                 disturbed_dnodes.push_back(kmer_t(h, kmer));
                 disturbed_neighbors.push_back(decision_neighbors);
@@ -528,6 +589,12 @@ public:
             if (get_decision_neighbors(iter.shifter,
                                        kmer,
                                        decision_neighbors)) {
+                DecisionNode * dnode;
+                if ((dnode = cdbg.get_dnode(h)) != nullptr) {
+                    dnode_counts.push_back(dnode->count);
+                } else {
+                    dnode_counts.push_back(1);
+                }
                 notify_build_dnode(iter.shifter.get(), kmer);
                 disturbed_dnodes.push_back(kmer_t(iter.shifter.get(), kmer));
                 disturbed_neighbors.push_back(decision_neighbors);
