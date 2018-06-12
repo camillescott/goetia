@@ -473,6 +473,40 @@ public:
         }
     }
 
+    void find_new_segments(const string& sequence,
+                           vector<vector<kmer_t>>& new_segments) {
+
+        KmerIterator<typename GraphType::shifter_type> iter(sequence, this->_K);
+
+        size_t pos = 0;
+        hash_t cur_hash, prev_hash;
+        vector<kmer_t> current_segment;
+        while(!iter.done()) {
+            prev_hash = cur_hash;
+            hash_t cur_hash = iter.next();
+            if(dbg->add(cur_hash)) {
+                string kmer_seq = sequence.substr(pos, this->_K);
+                kmer_t kmer(cur_hash, kmer_seq);
+
+                if(!current_segment.size() ||
+                   prev_hash != current_segment.back().hash) {
+
+                    new_segments.push_back(current_segment);
+                    current_segment.clear();
+                }
+                current_segment.push_back(kmer);
+            }
+
+            ++pos;
+        }
+    }
+
+    void update_from_segments(vector<vector<kmer_t>>& segments) {
+        for (auto segment : segments) {
+            
+        }
+    }
+
     void find_disturbed_dnodes(const string& sequence,
                                vector<kmer_t>& disturbed_dnodes,
                                vector<NeighborBundle>& disturbed_neighbors) {
