@@ -474,11 +474,16 @@ public:
     }
 
     void find_new_segments(const string& sequence,
-                           vector<vector<kmer_t>>& new_segments) {
+                           vector<vector<kmer_t>>& new_segments,
+                           vector<string>& new_segment_sequences,
+                           vector<kmer_t>&& decision_kmers,
+                           vector<NeighborBundle>& decision_neighbors
+                           ) {
 
         KmerIterator<typename GraphType::shifter_type> iter(sequence, this->_K);
 
         size_t pos = 0;
+        size_t segment_start_pos = 0;
         hash_t cur_hash, prev_hash;
         vector<kmer_t> current_segment;
         while(!iter.done()) {
@@ -492,12 +497,24 @@ public:
                    prev_hash != current_segment.back().hash) {
 
                     new_segments.push_back(current_segment);
+                    new_segment_sequences.push_back(sequence.substr(segment_start_pos,
+                                                                    pos - segment_start_pos));
                     current_segment.clear();
+                    segment_start_pos = pos;
+                }
+
+                NeighborBundle neighbors;
+                if (get_decision_neighbors(iter.shifter,
+                                           kmer_seq,
+                                           neighbors)) {
+                    decision_kmers.push_back(kmer);
+                    decision_neighbors.push_back(neighbors);
                 }
                 current_segment.push_back(kmer);
             }
 
             ++pos;
+            ++segment_start_pos;
         }
     }
 

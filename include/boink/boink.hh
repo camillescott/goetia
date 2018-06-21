@@ -69,6 +69,11 @@ struct kmer_t {
 
 };
 
+enum direction_t {
+    DIR_LEFT,
+    DIR_RIGHT
+};
+
 typedef vector<hash_t> HashVector;
 
 typedef uint64_t id_t;
