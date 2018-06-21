@@ -238,9 +238,9 @@ public:
     void update_cdbg(const string& sequence) {
         vector<kmer_t> disturbed_dnodes;
         vector<NeighborBundle> disturbed_neighbors;
-        find_disturbed_dnodes(sequence,
-                              disturbed_dnodes,
-                              disturbed_neighbors);
+        //find_disturbed_dnodes(sequence,
+        //                      disturbed_dnodes,
+        //                      disturbed_neighbors);
         if (disturbed_dnodes.size() == 0) {
             _update_linear(sequence);
         } else {
@@ -403,15 +403,6 @@ public:
                 << " total d-nodes  and " << cdbg.n_unitig_nodes() << " u-nodes");
     }
 
-    bool is_decision_kmer(uint8_t& degree) {
-        // oops better put notes here
-        uint8_t ldegree, rdegree;
-        ldegree = this->degree_left();
-        rdegree = this->degree_right();
-        degree = ldegree + rdegree;
-        return ldegree > 1 || rdegree > 1;
-    }
-
     bool is_decision_kmer(const string& node,
                           uint8_t& degree) {
         this->set_cursor(node);
@@ -421,6 +412,14 @@ public:
     bool is_decision_kmer(const string& node) {
         this->set_cursor(node);
         return this->degree_left() > 1 || this->degree_right() > 1;
+    }
+
+    bool is_decision_kmer(uint8_t& degree) {
+        uint8_t ldegree, rdegree;
+        ldegree = this->degree_left();
+        rdegree = this->degree_right();
+        degree = ldegree + rdegree;
+        return ldegree > 1 || rdegree > 1;
     }
 
     void find_decision_kmers(const string& sequence,
@@ -523,73 +522,7 @@ public:
             
         }
     }
-
-    void find_disturbed_dnodes(const string& sequence,
-                               vector<kmer_t>& disturbed_dnodes,
-                               vector<NeighborBundle>& disturbed_neighbors) {
-        
-        KmerIterator<typename GraphType::shifter_type> iter(sequence, this->_K);
-
-        // first we have to search for induced decision nodes in-incident to
-        // the first k-mer
-        vector<shift_t> left_neighbors = filter_nodes(iter.shifter.gather_left());
-        typename GraphType::shifter_type flank_shifter(iter.shifter);
-        const char suffix = sequence[this->_K-1];
-        for (shift_t left_neighbor : left_neighbors) {
-            flank_shifter.shift_left(left_neighbor.symbol);
-            NeighborBundle decision_neighbors;
-            string kmer = flank_shifter.get_cursor();
-
-            if (get_decision_neighbors(flank_shifter,
-                                       kmer,
-                                       decision_neighbors)) {
-                notify_build_dnode(flank_shifter.get(), kmer);
-                disturbed_dnodes.push_back(kmer_t(flank_shifter.get(), kmer));
-                disturbed_neighbors.push_back(decision_neighbors);
-            }
-            flank_shifter.shift_right(suffix);
-        }
-
-        size_t pos = 0;
-        while(!iter.done()) {
-            hash_t h = iter.next();
-            NeighborBundle decision_neighbors;
-            string kmer = sequence.substr(pos, this->_K);
-            if (get_decision_neighbors(iter.shifter,
-                                       kmer,
-                                       decision_neighbors)) {
-                pdebug("Found d-node " << h << ", " << kmer <<
-                       " ldegree " << decision_neighbors.first.size() <<
-                       " rdegree " << decision_neighbors.second.size());
-                notify_build_dnode(h, kmer);
-                disturbed_dnodes.push_back(kmer_t(h, kmer));
-                disturbed_neighbors.push_back(decision_neighbors);
-            }
-            ++pos;
-        }
-
-        // and get the right flanking nodes
-        vector<shift_t> right_neighbors = filter_nodes(iter.shifter.gather_right());
-        const char prefix = sequence[sequence.length() - this->_K];
-        for (shift_t right_neighbor : right_neighbors) {
-            iter.shifter.shift_right(right_neighbor.symbol);
-            NeighborBundle decision_neighbors;
-            string kmer = iter.shifter.get_cursor();
-
-            if (get_decision_neighbors(iter.shifter,
-                                       kmer,
-                                       decision_neighbors)) {
-                notify_build_dnode(iter.shifter.get(), kmer);
-                disturbed_dnodes.push_back(kmer_t(iter.shifter.get(), kmer));
-                disturbed_neighbors.push_back(decision_neighbors);
-            }
-            iter.shifter.shift_left(prefix);
-        }
-    }
 };
-
-
-
 
 }
 #undef pdebug
