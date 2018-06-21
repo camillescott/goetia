@@ -32,7 +32,9 @@ enum event_t {
     MSG_ADD_UNODE,
     MSG_DELETE_DNODE,
     MSG_DELETE_UNODE,
-    MSG_ADD_EDGE,
+    MSG_SPLIT_UNODE,
+    MSG_EXTEND_UNODE,
+    MSG_MERGE_UNODES,
     MSG_INCR_DNODE_COUNT
 };
 
@@ -97,6 +99,35 @@ struct IncrDNodeEvent : public Event {
         : Event(MSG_INCR_DNODE_COUNT)
     {}
     hash_t dnode;
+};
+
+
+struct ExtendUNodeEvent : public Event {
+    ExtendUNodeEvent()
+        : Event(MSG_EXTEND_UNODE)
+    {}
+    hash_t tip_hash;
+    string new_sequence;
+    direction_t from;
+};
+
+
+struct MergeUNodeEvent : public Event {
+    MergeUNodeEvent()
+        : Event(MSG_MERGE_UNODES)
+    {}
+    hash_t left_tip;
+    hash_t right_tip;
+    string new_sequence;
+};
+
+
+struct SplitUNodeEvent : public Event {
+    SplitUNodeEvent()
+        : Event(MSG_SPLIT_UNODE)
+    {}
+    id_t unode_id;
+    size_t split_at;
 };
 
 }

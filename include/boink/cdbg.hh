@@ -371,6 +371,7 @@ protected:
 
     std::unordered_map<junction_t, id_t, junction_hash> unitig_junction_map;
     std::unordered_map<hash_t, id_t> unitig_tag_map;
+    std::unordered_map<hash_t, id_t> unitig_tip_map;
 
     uint64_t _n_updates;
     uint64_t _unitig_id_counter;
@@ -389,6 +390,9 @@ public:
     {
         this->msg_type_whitelist.insert(boink::event_types::MSG_ADD_DNODE);
         this->msg_type_whitelist.insert(boink::event_types::MSG_ADD_UNODE);
+        this->msg_type_whitelist.insert(boink::event_types::MSG_SPLIT_UNODE);
+        this->msg_type_whitelist.insert(boink::event_types::MSG_EXTEND_UNODE);
+        this->msg_type_whitelist.insert(boink::event_types::MSG_MERGE_UNODES);
         this->msg_type_whitelist.insert(boink::event_types::MSG_DELETE_UNODE);
         this->msg_type_whitelist.insert(boink::event_types::MSG_INCR_DNODE_COUNT);
     }
