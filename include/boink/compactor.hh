@@ -211,22 +211,6 @@ public:
         this->notify(event);
     }
 
-    bool insert_sequence(const string& sequence,
-                         vector<uint32_t>& decision_positions,
-                         HashVector& decision_hashes,
-                         vector<NeighborBundle>& decision_neighbors) {
-
-        if (!dbg->add_sequence(sequence)) {
-            return false; // if there were no new k-mers, nothing to do
-        } else {
-            find_decision_kmers(sequence,
-                                decision_positions,
-                                decision_hashes,
-                                decision_neighbors);
-            return true;
-        }
-    }
-
     void update_sequence(const string& sequence) {
         if(!dbg->add_sequence(sequence)) {
             return;
