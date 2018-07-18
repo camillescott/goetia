@@ -60,9 +60,7 @@ protected:
 
 public:
 
-    GraphType * dbg;
-    cDBG cdbg;
-
+    using ShifterType = typename GraphType::shifter_type;
     using AssemblerType = AssemblerMixin<GraphType>;
     using AssemblerType::seen;
     using AssemblerType::get_left;
@@ -72,7 +70,8 @@ public:
     using AssemblerType::count_nodes;
     using AssemblerType::filter_nodes;
 
-    using ShifterType = typename GraphType::shifter_type;
+    GraphType * dbg;
+    cDBG cdbg;
 
     StreamingCompactor(GraphType * dbg,
                        uint64_t minimizer_window_size=8)
@@ -193,15 +192,19 @@ public:
         this->notify(event);
     }
 
-    void notify_build_unode(HashVector& tags,
-                            const string& sequence,
-                            junction_t left_junc,
-                            junction_t right_junc) {
+    void notify_build_unode(const string& sequence,
+                            HashVector& tags,
+                            bool has_left,
+                            hash_t left_end,
+                            bool has_right,
+                            hash_t right_end) {
         auto event = make_shared<BuildUNodeEvent>();
         event->tags = tags;
         event->sequence = sequence;
-        event->left = left_junc;
-        event->right = right_junc;
+        event->has_left = has_left;
+        event->left_end = left_end;
+        event->has_right = has_right;
+        event->right_end = right_end;
         this->notify(event);
     }
 
@@ -209,182 +212,6 @@ public:
         auto event = make_shared<DeleteUNodeEvent>();
         event->node_id = node_id;
         this->notify(event);
-    }
-
-    void update_sequence(const string& sequence) {
-        if(!dbg->add_sequence(sequence)) {
-            return;
-        } else {
-            update_cdbg(sequence);
-        }
-    }
-
-    void update_cdbg(const string& sequence) {
-        vector<kmer_t> disturbed_dnodes;
-        vector<NeighborBundle> disturbed_neighbors;
-        //find_disturbed_dnodes(sequence,
-        //                      disturbed_dnodes,
-        //                      disturbed_neighbors);
-        if (disturbed_dnodes.size() == 0) {
-            _update_linear(sequence);
-        } else {
-            _update_from_dnodes(sequence,
-                                disturbed_dnodes,
-                                disturbed_neighbors);
-        }
-    }
-
-    void _update_linear(const string& sequence) {
-        pdebug("Update linear");
-        this->set_cursor(sequence.substr(0, this->_K));
-        Path segment;
-        segment.insert(segment.end(), sequence.begin(), sequence.end());
-        this->compactify_left(segment);
-        hash_t stopped_at = this->get();
-        char after = *(segment.begin()+this->_K);
-        junction_t left_junc = make_pair(stopped_at,
-                                         this->shift_right(after));
-
-
-        this->set_cursor(sequence.substr(sequence.length()-this->_K,
-                                         this->_K));
-        this->compactify_right(segment);
-        stopped_at = this->get();
-        after = *(segment.end()-(this->_K)-1);
-        junction_t right_junc = make_pair(this->shift_left(after),
-                               stopped_at);
-
-        string segment_seq = this->to_string(segment);
-        HashVector tags;
-        WKMinimizer<ShifterType> minimizer(_minimizer_window_size,
-                                           this->_K);
-        notify_build_unode(tags, segment_seq, left_junc, right_junc);
-    }
-
-    void _update_from_dnodes(const string& sequence,
-                             vector<kmer_t>& disturbed_dnodes,
-                             vector<NeighborBundle>& disturbed_neighbors) {
-
-        std::set<hash_t> updated_dnodes;
-        std::set<junction_t> updated_junctions;
-        pdebug(disturbed_dnodes.size() << " on d-node queue, " <<
-               disturbed_neighbors.size() << " on neighbor queue");
-
-        while(!disturbed_dnodes.empty()) {
-            kmer_t root_kmer = disturbed_dnodes.back();
-            NeighborBundle root_neighbors = disturbed_neighbors.back();
-            disturbed_dnodes.pop_back();
-            disturbed_neighbors.pop_back();
-
-            pdebug("updating from " << root_kmer.kmer);
-
-            if (updated_dnodes.count(root_kmer.hash)) {
-                continue;
-            }
-
-            for (kmer_t left_neighbor : root_neighbors.first) {
-                junction_t right_junc = make_pair(left_neighbor.hash,
-                                                  root_kmer.hash);
-				pdebug("left neighbor: " << left_neighbor.kmer 
-                        << " junction: " << right_junc);
-                if (updated_junctions.count(right_junc)) {
-                    pdebug("Already updated from, continuing");
-                    continue;
-                }
-                
-                HashVector tags;
-                std::string segment_seq;
-                junction_t left_junc;
-                if (cdbg.get_dnode(left_neighbor.hash) != nullptr) {
-                    // trivial unode
-                    left_junc = right_junc;
-                    segment_seq = left_neighbor.kmer
-                                  + root_kmer.kmer.back();
-                    pdebug("Trivial u-node, junctions " << left_junc
-                           << ", " << right_junc << ", sequence="
-                           << segment_seq);
-                } else {
-                    this->set_cursor(left_neighbor.kmer);
-                    Path this_segment;
-                    this->get_cursor(this_segment);
-                    pdebug("Start assembly left at " << this->get_cursor());
-                    this_segment.push_back(root_kmer.kmer.back());
-
-                    InteriorMinimizer<hash_t> minimizer(_minimizer_window_size);
-                    this->compactify_left(this_segment, minimizer);
-                    
-                    hash_t stopped_at_hash = this->get();
-                    string stopped_at_kmer = this->get_cursor();
-                    std::string after = std::string(this_segment.begin()+1,
-                                                    this_segment.begin()+this->_K+1);
-                    left_junc = make_pair(stopped_at_hash,
-                                          this->shift_right(after.back()));
-                    segment_seq = this->to_string(this_segment);
-                    pdebug("Assembled left, stopped left of " << after
-                            << " at " << stopped_at_kmer << " " << stopped_at_hash
-                            << ", shifting right on " << after.back()
-                            << " with junction " << left_junc
-                            << ", sequence=" << segment_seq);
-                    tags = minimizer.get_minimizer_values();
-                }
-                updated_junctions.insert(left_junc);
-                updated_junctions.insert(right_junc);
-
-                notify_build_unode(tags, segment_seq, left_junc, right_junc);
-            }
-
-            for (kmer_t right_neighbor : root_neighbors.second) {
-                junction_t left_junc = make_pair(root_kmer.hash,
-                                                 right_neighbor.hash);
-				pdebug("right neighbor: " << right_neighbor.kmer 
-                        << " junction: " << left_junc);
-                if (updated_junctions.count(left_junc)) {
-                    pdebug("Already updated from, continuing");
-                    continue;
-                }
-
-                HashVector tags;
-                std::string segment_seq;
-                junction_t right_junc;
-                if (cdbg.get_dnode(right_neighbor.hash) != nullptr) {
-                    // trivial unode
-                    right_junc = left_junc;
-                    segment_seq = root_kmer.kmer.front()
-                                  + right_neighbor.kmer;
-                    pdebug("Trivial u-node, junctions " << left_junc
-                           << ", " << right_junc << ", sequence="
-                           << segment_seq);
-                } else {
-                    this->set_cursor(right_neighbor.kmer);
-                    Path this_segment;
-                    this->get_cursor(this_segment);
-                    this_segment.push_front(root_kmer.kmer.front());
-
-                    InteriorMinimizer<hash_t> minimizer(_minimizer_window_size);
-                    this->compactify_right(this_segment, minimizer);
-
-                    hash_t stopped_at = this->get();
-                    std::string after = std::string(this_segment.end()-(this->_K)-1,
-                                                    this_segment.end()-1);
-                    right_junc = make_pair(this->shift_left(after.front()),
-                                                      stopped_at);
-                    segment_seq = this->to_string(this_segment);
-                    pdebug("Assembled right, stopped right of " << after
-                            << " with junction " << right_junc
-                            << ", sequence=" << segment_seq);
-                    tags = minimizer.get_minimizer_values();
-                }
-                updated_junctions.insert(left_junc);
-                updated_junctions.insert(right_junc);
-
-                notify_build_unode(tags, segment_seq, left_junc, right_junc);
-            }
-
-            updated_dnodes.insert(root_kmer.hash);
-        }
-        pdebug("FINISHED _update_from_dnodes with " << updated_dnodes.size()
-                << " updated from; " << cdbg.n_decision_nodes() 
-                << " total d-nodes  and " << cdbg.n_unitig_nodes() << " u-nodes");
     }
 
     bool is_decision_kmer(const string& node,
@@ -429,6 +256,10 @@ public:
         }
     }
 
+    void update_sequence(const string& sequence) {
+
+    }
+
     bool get_decision_neighbors(typename GraphType::shifter_type& shifter,
                                 const string& root_kmer,
                                 NeighborBundle& result) {
@@ -457,54 +288,118 @@ public:
     }
 
     void find_new_segments(const string& sequence,
-                           vector<vector<kmer_t>>& new_segments,
+                           vector<vector<hash_t>>& new_segments,
                            vector<string>& new_segment_sequences,
-                           vector<kmer_t>&& decision_kmers,
-                           vector<NeighborBundle>& decision_neighbors
+                           deque<kmer_t>& decision_kmers,
+                           deque<NeighborBundle>& decision_neighbors
                            ) {
 
-        KmerIterator<typename GraphType::shifter_type> iter(sequence, this->_K);
-
+        vector<hash_t> kmer_hashes;
+        vector<bool> kmer_new;
+        dbg->add_sequence(sequence, kmer_hashes, kmer_new);
+        
         size_t pos = 0;
         size_t segment_start_pos = 0;
-        hash_t cur_hash, prev_hash;
-        vector<kmer_t> current_segment;
-        while(!iter.done()) {
-            prev_hash = cur_hash;
-            hash_t cur_hash = iter.next();
-            if(dbg->add(cur_hash)) {
+        hash_t prev_hash;
+        vector<hash_t> current_segment;
+        typename GraphType::shifter_type shifter(sequence, this->_K);
+        for (hash_t cur_hash : kmer_hashes) {
+            bool is_new = kmer_new[pos];
+
+            if(is_new) {
                 string kmer_seq = sequence.substr(pos, this->_K);
                 kmer_t kmer(cur_hash, kmer_seq);
 
-                if(!current_segment.size() ||
-                   prev_hash != current_segment.back().hash) {
-
-                    new_segments.push_back(current_segment);
-                    new_segment_sequences.push_back(sequence.substr(segment_start_pos,
-                                                                    pos - segment_start_pos));
-                    current_segment.clear();
-                    segment_start_pos = pos;
-                }
-
                 NeighborBundle neighbors;
-                if (get_decision_neighbors(iter.shifter,
+                if (get_decision_neighbors(shifter,
                                            kmer_seq,
                                            neighbors)) {
                     decision_kmers.push_back(kmer);
                     decision_neighbors.push_back(neighbors);
                 }
-                current_segment.push_back(kmer);
+
+                if(!current_segment.size() ||
+                   (neighbors.first.size() > 1 || neighbors.second.size() > 1) ||
+                   prev_hash != current_segment.back()) {
+
+                    new_segments.push_back(current_segment);
+                    new_segment_sequences.push_back(
+                        sequence.substr(segment_start_pos,
+                                        pos - segment_start_pos)
+                    );
+                    current_segment.clear();
+                    segment_start_pos = pos;
+                    shifter.set_cursor(kmer_seq);
+                } else {
+                    shifter.shift_right(kmer_seq.back());
+                }
+
+                current_segment.push_back(cur_hash);
             }
 
             ++pos;
             ++segment_start_pos;
+            prev_hash = cur_hash;
         }
     }
 
-    void update_from_segments(vector<vector<kmer_t>>& segments) {
-        for (auto segment : segments) {
-            
+    void update_from_segments(const string& sequence,
+                              vector<vector<hash_t>>& new_segment_kmers,
+                              vector<string>& new_segment_sequences,
+                              deque<kmer_t>&& decision_kmers,
+                              deque<NeighborBundle>& decision_neighbors
+                              ) {
+
+        size_t dnode_counter = 0;
+        for (auto segment_kmers : new_segment_kmers) {
+            // handle front k-mer
+            if (segment_kmers.front() !=
+                decision_kmers.front().hash) {
+
+                connect_segment_end(segment_kmers.front(), DIR_LEFT);
+            } else {
+                new_decision_kmer(decision_kmers.front(),
+                                  decision_neighbors.front());
+                decision_kmers.pop_front();
+                decision_neighbors.pop_front();
+            }
+
+            // handle middle k-mers
+            // only k-mers we do anything with are decision k-mers
+            if (segment_kmers.size() > 2) {
+                auto kmer_iter = segment_kmers.begin() + 1;
+                while(kmer_iter != segment_kmers.end() - 1) {
+                    auto kmer = *kmer_iter;
+
+                    if (kmer == decision_kmers.front().hash) {
+                        new_decision_kmer(decision_kmers.front(),
+                                          decision_neighbors.front());
+                        decision_kmers.pop_front();
+                        decision_neighbors.pop_front();
+                    }
+                }
+            }
+
+            // handle back k-mer
         }
+    }
+
+    void new_decision_kmer() {
+        /* Handle a new k-mer that is also
+         * a decision node.
+         */
+    }
+
+    void induce_decision_node() {
+        /* Handle an induced decision node (an existing
+         * k-mer converted to a d-node), which splits an
+         * existing unitig.
+         */
+    }
+
+    void connect_segment_end(kmer_t kmer,
+                              direction_t direction) {
+        
     }
 };
 

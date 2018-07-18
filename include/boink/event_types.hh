@@ -81,8 +81,10 @@ struct BuildUNodeEvent : public Event {
     {}
     HashVector tags;
     string sequence;
-    junction_t left;
-    junction_t right;
+    bool has_left;
+    hash_t left_end;
+    bool has_right;
+    hash_t right_end;
 };
 
 

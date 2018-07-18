@@ -47,6 +47,8 @@ cdef extern from "boink/hashing.hh" namespace "boink" nogil:
         const hash_t hash
         const string kmer
 
+    ctypedef pair[vector[kmer_t], vector[kmer_t]] NeighborBundle
+
     cdef cppclass _KmerClient "boink::KmerClient":
         _KmerClient(uint16_t)
         uint16_t K()

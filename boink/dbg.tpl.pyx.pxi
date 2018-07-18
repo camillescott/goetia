@@ -76,9 +76,12 @@ cdef class dBG__BitStorage__DefaultShifter(dBG_Base):
 
     def add_sequence_and_report(self, str sequence):
         cdef bytes _sequence = _bstring(sequence)
-        cdef vector[bool] report
-        deref(self._this).add_sequence(_sequence, report)
-        return report
+        cdef vector[hash_t] _hashes
+        cdef vector[bool] _report
+        deref(self._this).add_sequence(_sequence,
+                                       _hashes,
+                                       _report)
+        return _hashes, _report
 
     def add_sequence(self, str sequence):
         cdef bytes _sequence = _bstring(sequence)
@@ -176,9 +179,12 @@ cdef class dBG__ByteStorage__DefaultShifter(dBG_Base):
 
     def add_sequence_and_report(self, str sequence):
         cdef bytes _sequence = _bstring(sequence)
-        cdef vector[bool] report
-        deref(self._this).add_sequence(_sequence, report)
-        return report
+        cdef vector[hash_t] _hashes
+        cdef vector[bool] _report
+        deref(self._this).add_sequence(_sequence,
+                                       _hashes,
+                                       _report)
+        return _hashes, _report
 
     def add_sequence(self, str sequence):
         cdef bytes _sequence = _bstring(sequence)
@@ -276,9 +282,12 @@ cdef class dBG__NibbleStorage__DefaultShifter(dBG_Base):
 
     def add_sequence_and_report(self, str sequence):
         cdef bytes _sequence = _bstring(sequence)
-        cdef vector[bool] report
-        deref(self._this).add_sequence(_sequence, report)
-        return report
+        cdef vector[hash_t] _hashes
+        cdef vector[bool] _report
+        deref(self._this).add_sequence(_sequence,
+                                       _hashes,
+                                       _report)
+        return _hashes, _report
 
     def add_sequence(self, str sequence):
         cdef bytes _sequence = _bstring(sequence)

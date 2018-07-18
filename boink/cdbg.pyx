@@ -67,7 +67,7 @@ cdef class DecisionNode(CompactNode):
     @property
     def count(self):
         self._check_ptr()
-        return deref(self._dn_this).count
+        return deref(self._dn_this).count()
 
     @property
     def right_degree(self):
@@ -83,19 +83,6 @@ cdef class DecisionNode(CompactNode):
     def degree(self):
         self._check_ptr()
         return deref(self._dn_this).degree()
-
-    def left_junctions(self):
-        self._check_ptr()
-        cdef junction_t l_junc
-        for l_junc in deref(self._dn_this).left_juncs:
-            yield l_junc.first, l_junc.second
-
-
-    def right_junctions(self):
-        self._check_ptr()
-        cdef junction_t r_junc
-        for r_junc in deref(self._dn_this).right_juncs:
-            yield r_junc.first, r_junc.second
 
     def __str__(self):
         self._check_ptr()
@@ -116,20 +103,18 @@ cdef class UnitigNode(CompactNode):
             raise ValueError("_UnitigNode * is stale")
 
     @property
-    def left_junc(self):
+    def left_end(self):
         self._check_ptr()
-        return (deref(self._un_this).left_junc.first,
-                deref(self._un_this).left_junc.second)
+        return deref(self._un_this).left_end()
 
     @property
-    def right_junc(self):
+    def right_end(self):
         self._check_ptr()
-        return (deref(self._un_this).right_junc.first,
-                deref(self._un_this).right_junc.second)
+        return deref(self._un_this).right_end()
 
     @property
     def meta(self):
-        return _ustring(node_meta_repr(deref(self._un_this).meta))
+        return _ustring(node_meta_repr(deref(self._un_this).meta()))
 
     def tags(self):
         self._check_ptr()
@@ -146,8 +131,6 @@ cdef cDBGFormat convert_format(str file_format) except *:
     if file_format in cDBG.SAVE_FORMATS:
         if file_format == 'graphml':
             return cDBGFormat.GRAPHML
-        elif file_format == 'adjmat':
-            return cDBGFormat.ADJMAT
         elif file_format == 'fasta':
             return cDBGFormat.FASTA
         elif file_format == 'gfa1':
@@ -164,7 +147,7 @@ cdef cDBGFormat convert_format(str file_format) except *:
 
 cdef class cDBG:
 
-    SAVE_FORMATS = ['graphml', 'adjmat', 'edgelist',
+    SAVE_FORMATS = ['graphml', 'edgelist',
                     'gfa1', 'gfa2', 'fasta', 'gml']
 
     @staticmethod
@@ -190,53 +173,41 @@ cdef class cDBG:
             yield DecisionNode._wrap(dnode)
             princ(it)
 
-    def get_unode_by_hash(self, hash_t h):
-        cdef _UnitigNode * _node = deref(self._this).get_unode(h)
+    def query_unode_hash(self, hash_t h):
+        cdef _UnitigNode * _node = deref(self._this).query_unode_tag(h)
         if _node != NULL:
             return UnitigNode._wrap(_node)
         else:
             return None
 
-    def get_unode_by_id(self, id_t node_id):
+    def query_unode_id(self, id_t node_id):
         cdef _UnitigNode * _node = \
-            deref(self._this).get_unode_from_id(node_id)
+            deref(self._this).query_unode_id(node_id)
         if _node != NULL:
             return UnitigNode._wrap(_node)
         else:
             return None
 
-    def get_unode_by_junc(self, tuple junc):
-        cdef junction_t j = make_pair[hash_t, hash_t](<hash_t>junc[0],
-                                                      <hash_t>junc[1])
-        cdef _UnitigNode * _node = deref(self._this).get_unode(j)
+    def query_unode_end(self, hash_t h):
+        cdef _UnitigNode * _node = \
+            deref(self._this).query_unode_end(h)
         if _node != NULL:
             return UnitigNode._wrap(_node)
         else:
             return None
-
-    def get_dnode(self, hash_t h):
+    
+    def query_dnode(self, hash_t h):
         cdef _DecisionNode * _node = \
-            deref(self._this).get_dnode(h)
+            deref(self._this).query_dnode(h)
         if _node != NULL:
             return DecisionNode._wrap(_node)
         else:
             return None
 
-    def get_dnodes(self, str sequence):
+    def query_dnodes(self, str sequence):
         pass
 
-    def get_left_dnode(self, UnitigNode unode):
-        cdef _DecisionNode * dnode = deref(self._this).get_left_dnode(
-                                                unode._un_this
-                                                )
-        return None if dnode == NULL else DecisionNode._wrap(dnode)
-
-    def get_right_dnode(self, UnitigNode unode):
-        cdef _DecisionNode * dnode = deref(self._this).get_right_dnode(
-                                                unode._un_this
-                                                )
-        return None if dnode == NULL else DecisionNode._wrap(dnode)
-
+    '''
     def neighbors(self, CompactNode node):
         for neighbor in node.left_neighbors(node):
             yield neighbor
@@ -260,6 +231,7 @@ cdef class cDBG:
         if isinstance(node, DecisionNode):
             for junc in node.right_junctions():
                 yield self.get_unode_by_junc(junc)
+    '''
 
     @property
     def n_updates(self):
@@ -317,33 +289,17 @@ cdef class StreamingCompactor:
 
         return positions, hashes
 
-    def get_cdbg_dnodes(self, str sequence):
+    def find_new_segments(self, str sequence):
         cdef string _sequence = _bstring(sequence)
-        cdef vector[_DecisionNode*] dnodes = \
-            deref(self.cdbg._this).get_dnodes[_DefaultShifter](_sequence)
-        cdef _DecisionNode * dnode
-        for dnode in dnodes:
-            if dnode != NULL:
-                yield DecisionNode._wrap(dnode)
+        cdef vector[vector[hash_t]] _segment_kmers
+        cdef vector[string] _segment_seqs
+        cdef deque[kmer_t] _decision_kmers
+        cdef deque[NeighborBundle] _decision_neighbors
 
-    def insert_sequence(self, str sequence):
-        cdef string _sequence = _bstring(sequence)
-        cdef vector[uint32_t] positions
-        cdef vector[hash_t] hashes
-        cdef vector[NeighborBundle] neighbors
+        deref(self._sc_this).find_new_segments(_sequence,
+                                               _segment_kmers,
+                                               _segment_seqs,
+                                               _decision_kmers,
+                                               _decision_neighbors)
 
-        deref(self._sc_this).insert_sequence(_sequence,
-                                             positions,
-                                             hashes,
-                                             neighbors)
-
-        return positions, hashes
-
-    def update_sequence(self, str sequence):
-        cdef string _sequence = _bstring(sequence)
-        return deref(self._sc_this).update_sequence(_sequence)
-
-    def update_cdbg(self, str sequence):
-        cdef string _sequence = _bstring(sequence)
-        return deref(self._sc_this).update_cdbg(_sequence)
-
+        return _segment_seqs

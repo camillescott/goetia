@@ -58,26 +58,21 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
         bool operator==(const _CompactNode&, const _CompactNode&)
 
     cdef cppclass _DecisionNode "boink::DecisionNode" (_CompactNode):
-        vector[junction_t] left_juncs
-        vector[junction_t] right_juncs
-        uint32_t count
+        uint32_t count()
+        void incr_count()
 
         size_t degree() const
         size_t left_degree() const
         size_t right_degree() const
 
-        bool has_left_junc(junction_t) const
-        void add_left_junc(junction_t)
-        bool has_right_junc(junction_t) const
-        void add_right_junc(junction_t)
-
         string repr()
 
     cdef cppclass _UnitigNode "boink::UnitigNode" (_CompactNode):
-        junction_t left_junc
-        junction_t right_junc
         HashVector tags
-        node_meta_t meta
+        
+        hash_t left_end()
+        hash_t right_end()
+        node_meta_t meta()
 
         string repr()
 
@@ -103,14 +98,12 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
         dnode_iter_t dnodes_begin() const
         dnode_iter_t dnodes_end() const
 
-        _DecisionNode * get_dnode(hash_t)
-        vector[_DecisionNode*] get_dnodes[ShifterType](const string&) except +ValueError
+        _DecisionNode * query_dnode(hash_t)
+        vector[_DecisionNode*] query_dnodes[ShifterType](const string&) except +ValueError
 
-        _UnitigNode * get_unode(hash_t)
-        _UnitigNode * get_unode(junction_t)
-        _UnitigNode * get_unode_from_id(id_t)
-        _DecisionNode * get_left_dnode(_UnitigNode*)
-        _DecisionNode * get_right_dnode(_UnitigNode*)
+        _UnitigNode * query_unode_tag(hash_t)
+        _UnitigNode * query_unode_end(hash_t)
+        _UnitigNode * query_unode_id(id_t)
     
         void write(const string&, cDBGFormat) except +OSError
         void write_adj_matrix(const string&) except +OSError
@@ -132,21 +125,18 @@ cdef extern from "boink/compactor.hh" namespace "boink" nogil:
         bool is_decision_kmer(uint8_t&)
         bool is_decision_kmer(const string&, uint8_t&) except +ValueError
         bool is_decision_kmer(const string&) except +ValueError
+
         void find_decision_kmers(const string&,
                                  vector[uint32_t]&,
                                  vector[hash_t]&,
                                  vector[NeighborBundle]&) except +ValueError
-        void find_disturbed_dnodes(const string&,
-                                   vector[kmer_t]&,
-                                   vector[NeighborBundle]&) except +ValueError
 
-        bool insert_sequence(const string&,
-                             vector[uint32_t]&,
-                             vector[hash_t],
-                             vector[NeighborBundle]&) except +ValueError
-
-        void update_sequence(const string&) except +ValueError
-        void update_cdbg(const string&) except +ValueError
+        void find_new_segments(const string&, # sequence to add
+                               vector[vector[hash_t]]&, # segment k-mers
+                               vector[string]&, # segment seqs
+                               deque[kmer_t]&, # decision k-mers
+                               deque[NeighborBundle]& # decision neighbors
+                               ) except +ValueError
 
         _StreamingCompactorReport* get_report()
 

@@ -112,7 +112,8 @@ public:
     }
 
     uint64_t add_sequence(const string& sequence,
-                          std::vector<bool>& consumed) {
+                          std::vector<hash_t>& kmer_hashes,
+                          std::vector<bool>& is_new) {
         KmerIterator<HashShifter> iter(sequence, _K);
 
         uint64_t n_consumed = 0;
@@ -121,7 +122,8 @@ public:
         while(!iter.done()) {
             hash_t h = iter.next();
             kmer_consumed = add(h);
-            consumed.push_back(kmer_consumed);
+            kmer_hashes.push_back(h);
+            is_new.push_back(kmer_consumed);
             n_consumed += kmer_consumed;
             ++pos;
         }

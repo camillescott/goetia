@@ -19,7 +19,6 @@ cdef extern from "boink/assembly.hh" namespace "boink" nogil:
     ctypedef deque[char] Path
     ctypedef vector[string] StringVector
     ctypedef vector[kmer_t] KmerVector
-    ctypedef vector[KmerVector, KmerVector] NeighborBundle
 
     cdef cppclass _AssemblerMixin "boink::AssemblerMixin" [GraphType]:
 
