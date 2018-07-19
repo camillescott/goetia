@@ -87,6 +87,18 @@ std::ostream& operator<<(std::ostream& _os, const std::pair<_Ty1, _Ty2>& _p) {
     return _os;
 }
 
+template <typename T>
+std::ostream& operator<<(std::ostream& os, const vector<T>& v)
+{
+    os << "[";
+    for (int i = 0; i < v.size(); ++i) {
+        os << v[i];
+        if (i != v.size() - 1)
+            os << ", ";
+    }
+    os << "]\n";
+    return os;
+}
 
 class BoinkException : public std::exception {
 public:

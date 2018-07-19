@@ -19,6 +19,26 @@ def compactor(ksize, graph):
     return compactor
 
 
+@using_ksize(7)
+@using_length(100)
+@pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
+def test_fork_segments(ksize, graph, compactor, right_fork):
+    (core, branch), pos = right_fork()
+    print('INPUTS', core, core[:pos+1], ' ' * (pos + 1) + branch, sep='\n\n')
+
+    first_segments = compactor.find_new_segments(core)
+    second_segments = compactor.find_new_segments(core[:pos+1] + branch)
+
+    print('Core Segments')
+    for s in first_segments:
+        print('segment:' + s)
+    print('Branch Segments')
+    for s in second_segments:
+        print('segment:' + s)
+    assert False
+    
+
+
 @using_ksize(21)
 @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
 def test_insert_fork_noop(ksize, graph, compactor, right_fork):

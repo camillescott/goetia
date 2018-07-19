@@ -288,7 +288,7 @@ public:
     }
 
     void find_new_segments(const string& sequence,
-                           vector<vector<hash_t>>& new_segments,
+                           vector<vector<hash_t>>& new_segment_hashes,
                            vector<string>& new_segment_sequences,
                            deque<kmer_t>& decision_kmers,
                            deque<NeighborBundle>& decision_neighbors
@@ -301,13 +301,26 @@ public:
         size_t pos = 0;
         size_t segment_start_pos = 0;
         hash_t prev_hash;
+        bool prev_new = false;
+        bool end_segment = false, start_segment = false;
+        string kmer_seq;
         vector<hash_t> current_segment;
         typename GraphType::shifter_type shifter(sequence, this->_K);
         for (hash_t cur_hash : kmer_hashes) {
-            bool is_new = kmer_new[pos];
+            bool cur_new = kmer_new[pos];
 
-            if(is_new) {
-                string kmer_seq = sequence.substr(pos, this->_K);
+            if(cur_new != prev_new) {
+                if (cur_new) {
+                    pdebug("old -> new (set start)");
+                    start_segment = true;
+                } else {
+                    pdebug("new -> old (set end)");
+                    end_segment = true;
+                }
+            }
+
+            if(cur_new) {
+                kmer_seq = sequence.substr(pos, this->_K);
                 kmer_t kmer(cur_hash, kmer_seq);
 
                 NeighborBundle neighbors;
@@ -317,30 +330,52 @@ public:
                     decision_kmers.push_back(kmer);
                     decision_neighbors.push_back(neighbors);
                 }
-
-                if(!current_segment.size() ||
-                   (neighbors.first.size() > 1 || neighbors.second.size() > 1) ||
-                   prev_hash != current_segment.back()) {
-
-                    new_segments.push_back(current_segment);
-                    new_segment_sequences.push_back(
-                        sequence.substr(segment_start_pos,
-                                        pos - segment_start_pos)
-                    );
-                    current_segment.clear();
-                    segment_start_pos = pos;
-                    shifter.set_cursor(kmer_seq);
-                } else {
-                    shifter.shift_right(kmer_seq.back());
+                if(neighbors.first.size() > 1 || neighbors.second.size() > 1) {
+                    pdebug("new HDN, (set end, set start)");
+                    end_segment = true;
+                    start_segment = true;
                 }
-
+                shifter.shift_right(kmer_seq.back());
                 current_segment.push_back(cur_hash);
             }
 
+            if(end_segment) {
+                end_segment = false;
+                new_segment_hashes.push_back(current_segment);
+                new_segment_sequences.push_back(
+                        sequence.substr(segment_start_pos,
+                                        pos - segment_start_pos + this->_K - 1)
+                );
+                current_segment.clear();
+
+                pdebug("segment ended, start=" << segment_start_pos
+                       << " cur_pos=" << pos << ", seq=" << new_segment_sequences.back());
+            }
+
+            if(start_segment) {
+                pdebug("segment started at " << pos);
+                start_segment = false;
+                segment_start_pos = pos;
+                shifter.set_cursor(kmer_seq);
+            }
+
             ++pos;
-            ++segment_start_pos;
             prev_hash = cur_hash;
+            prev_new = cur_new;
         }
+
+        pdebug("current segment size=" << current_segment.size());
+        if (current_segment.size()) {
+            pdebug("sequence ended, segment start=" << segment_start_pos
+                    << " cur=" << pos);
+            new_segment_hashes.push_back(current_segment);
+            new_segment_sequences.push_back(
+                sequence.substr(segment_start_pos,
+                                pos - segment_start_pos + this->_K - 1)
+            );
+        }
+
+        pdebug("Segments: " << new_segment_sequences);
     }
 
     void update_from_segments(const string& sequence,
