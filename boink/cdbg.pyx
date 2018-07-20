@@ -207,32 +207,6 @@ cdef class cDBG:
     def query_dnodes(self, str sequence):
         pass
 
-    '''
-    def neighbors(self, CompactNode node):
-        for neighbor in node.left_neighbors(node):
-            yield neighbor
-        for neighbor in self.right_neighbor(node):
-            yield neighbor
-
-    def left_neighbors(self, CompactNode node):
-        if isinstance(node, UnitigNode):
-            neighbor = self.get_left_dnode(node)
-            if neighbor is not None:
-                yield neighbor
-        if isinstance(node, DecisionNode):
-            for junc in node.left_junctions():
-                yield self.get_unode_by_junc(junc)
-
-    def right_neighbors(self, CompactNode node):
-        if isinstance(node, UnitigNode):
-            neighbor = self.get_right_dnode(node)
-            if neighbor is not None:
-                yield neighbor
-        if isinstance(node, DecisionNode):
-            for junc in node.right_junctions():
-                yield self.get_unode_by_junc(junc)
-    '''
-
     @property
     def n_updates(self):
         return deref(self._this).n_updates()
@@ -302,4 +276,10 @@ cdef class StreamingCompactor:
                                                _decision_kmers,
                                                _decision_neighbors)
 
-        return _segment_seqs
+        decision_kmers = []
+        cdef int i = 0
+        for i in range(_decision_kmers.size()):
+            decision_kmers.append((_decision_kmers[i].hash,
+                                   _decision_kmers[i].kmer))
+
+        return _segment_seqs, decision_kmers

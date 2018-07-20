@@ -26,8 +26,8 @@ def test_fork_segments(ksize, graph, compactor, right_fork):
     (core, branch), pos = right_fork()
     print('INPUTS', core, core[:pos+1], ' ' * (pos + 1) + branch, sep='\n\n')
 
-    first_segments = compactor.find_new_segments(core)
-    second_segments = compactor.find_new_segments(core[:pos+1] + branch)
+    first_segments, first_d_kmers = compactor.find_new_segments(core)
+    second_segments, second_d_kmers = compactor.find_new_segments(core[:pos+1] + branch)
 
     print('Core Segments')
     for s in first_segments:
@@ -35,8 +35,42 @@ def test_fork_segments(ksize, graph, compactor, right_fork):
     print('Branch Segments')
     for s in second_segments:
         print('segment:' + s)
-    assert False
-    
+
+    assert len(first_segments) == len(second_segments) == 1
+    assert second_segments.pop() == branch
+    assert len(first_d_kmers) == 0
+    assert len(second_d_kmers) == 0
+
+@using_ksize(7)
+@using_length(100)
+@pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
+def test_fork_segments_reverse_order(ksize, graph, compactor, right_fork):
+    (core, branch), pos = right_fork()
+    print('INPUTS', core, core[:pos+1], ' ' * (pos + 1) + branch, sep='\n\n')
+
+    branch_segments, branch_d_kmers = compactor.find_new_segments(branch)
+    core_segments, core_d_kmers = compactor.find_new_segments(core)
+
+    print('Branch Segments')
+    for s in branch_segments:
+        print('segment:' + s)
+    print('Core Segments')
+    for s in core_segments:
+        print('segment:' + s)
+    print('Core d-kmers')
+    print(core_d_kmers)
+
+    assert len(branch_segments) == 1
+    assert branch_segments[0] == branch
+    assert len(core_segments) == 2
+    assert len(branch_d_kmers) == 0
+    assert len(core_d_kmers) == 1
+    # first segment of the core sequence should include a
+    # decision node induced in the new k-mer by the neighboring
+    # k-mer in branch
+    assert graph.left_degree(core_segments[0][-ksize:]) == 1
+    assert graph.right_degree(core_segments[0][-ksize:]) == 2
+    assert core_d_kmers[0][1] == core_segments[0][-ksize:]
 
 
 @using_ksize(21)

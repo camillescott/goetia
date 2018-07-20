@@ -309,20 +309,18 @@ public:
         for (hash_t cur_hash : kmer_hashes) {
             bool cur_new = kmer_new[pos];
 
-            if(cur_new != prev_new) {
-                if (cur_new) {
-                    pdebug("old -> new (set start)");
-                    start_segment = true;
-                } else {
-                    pdebug("new -> old (set end)");
-                    end_segment = true;
-                }
-            }
-
             if(cur_new) {
                 kmer_seq = sequence.substr(pos, this->_K);
                 kmer_t kmer(cur_hash, kmer_seq);
 
+                if(!prev_new) {
+                    pdebug("old -> new (set start)");
+                    start_segment = true;
+                    shifter.set_cursor(kmer_seq);
+                } else {
+                    shifter.shift_right(kmer_seq.back());
+                }
+                
                 NeighborBundle neighbors;
                 if (get_decision_neighbors(shifter,
                                            kmer_seq,
@@ -335,8 +333,10 @@ public:
                     end_segment = true;
                     start_segment = true;
                 }
-                shifter.shift_right(kmer_seq.back());
                 current_segment.push_back(cur_hash);
+            } else if (prev_new) {
+                pdebug("new -> old (set end)");
+                end_segment = true;
             }
 
             if(end_segment) {
@@ -344,7 +344,7 @@ public:
                 new_segment_hashes.push_back(current_segment);
                 new_segment_sequences.push_back(
                         sequence.substr(segment_start_pos,
-                                        pos - segment_start_pos + this->_K - 1)
+                                        pos - segment_start_pos + this->_K)
                 );
                 current_segment.clear();
 
@@ -356,7 +356,6 @@ public:
                 pdebug("segment started at " << pos);
                 start_segment = false;
                 segment_start_pos = pos;
-                shifter.set_cursor(kmer_seq);
             }
 
             ++pos;
@@ -370,8 +369,7 @@ public:
                     << " cur=" << pos);
             new_segment_hashes.push_back(current_segment);
             new_segment_sequences.push_back(
-                sequence.substr(segment_start_pos,
-                                pos - segment_start_pos + this->_K - 1)
+                sequence.substr(segment_start_pos)
             );
         }
 
