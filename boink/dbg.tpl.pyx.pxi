@@ -49,12 +49,6 @@ cdef class dBG__BitStorage__DefaultShifter(dBG_Base):
             handled = deref(self._this).hash(_bstring(kmer))
         return handled
 
-    def clone(self):
-        cdef dBG__BitStorage__DefaultShifter cloned = dBG__BitStorage__DefaultShifter(1,1,1)
-        cloned._this = deref(self._this).clone()
-        cloned._assembler.reset(new _AssemblerMixin[_dBG[_BitStorage,_DefaultShifter]](self._this.get()))
-        return cloned
-
     def add(self, object kmer):
         return deref(self._this).add(self._handle_kmer(kmer))
 
@@ -128,6 +122,15 @@ cdef class dBG__BitStorage__DefaultShifter(dBG_Base):
         cdef dBG__BitStorage__DefaultShifter obj = cls(1, 1, 1)
         deref(obj._this).load(_bstring(file_name))
         return obj
+
+    def clone(self):
+        cdef dBG__BitStorage__DefaultShifter cloned = dBG__BitStorage__DefaultShifter(1,1,1)
+        cloned._this = deref(self._this).clone()
+        cloned._assembler.reset(new _AssemblerMixin[_dBG[_BitStorage,_DefaultShifter]](self._this.get()))
+        return cloned
+
+    def reset(self):
+        deref(self._this).reset()
 cdef class dBG__ByteStorage__DefaultShifter(dBG_Base):
 
     def __cinit__(self, int K, uint64_t starting_size, int n_tables,
@@ -151,12 +154,6 @@ cdef class dBG__ByteStorage__DefaultShifter(dBG_Base):
         else:
             handled = deref(self._this).hash(_bstring(kmer))
         return handled
-
-    def clone(self):
-        cdef dBG__ByteStorage__DefaultShifter cloned = dBG__ByteStorage__DefaultShifter(1,1,1)
-        cloned._this = deref(self._this).clone()
-        cloned._assembler.reset(new _AssemblerMixin[_dBG[_ByteStorage,_DefaultShifter]](self._this.get()))
-        return cloned
 
     def add(self, object kmer):
         return deref(self._this).add(self._handle_kmer(kmer))
@@ -231,6 +228,15 @@ cdef class dBG__ByteStorage__DefaultShifter(dBG_Base):
         cdef dBG__ByteStorage__DefaultShifter obj = cls(1, 1, 1)
         deref(obj._this).load(_bstring(file_name))
         return obj
+
+    def clone(self):
+        cdef dBG__ByteStorage__DefaultShifter cloned = dBG__ByteStorage__DefaultShifter(1,1,1)
+        cloned._this = deref(self._this).clone()
+        cloned._assembler.reset(new _AssemblerMixin[_dBG[_ByteStorage,_DefaultShifter]](self._this.get()))
+        return cloned
+
+    def reset(self):
+        deref(self._this).reset()
 cdef class dBG__NibbleStorage__DefaultShifter(dBG_Base):
 
     def __cinit__(self, int K, uint64_t starting_size, int n_tables,
@@ -254,12 +260,6 @@ cdef class dBG__NibbleStorage__DefaultShifter(dBG_Base):
         else:
             handled = deref(self._this).hash(_bstring(kmer))
         return handled
-
-    def clone(self):
-        cdef dBG__NibbleStorage__DefaultShifter cloned = dBG__NibbleStorage__DefaultShifter(1,1,1)
-        cloned._this = deref(self._this).clone()
-        cloned._assembler.reset(new _AssemblerMixin[_dBG[_NibbleStorage,_DefaultShifter]](self._this.get()))
-        return cloned
 
     def add(self, object kmer):
         return deref(self._this).add(self._handle_kmer(kmer))
@@ -334,6 +334,15 @@ cdef class dBG__NibbleStorage__DefaultShifter(dBG_Base):
         cdef dBG__NibbleStorage__DefaultShifter obj = cls(1, 1, 1)
         deref(obj._this).load(_bstring(file_name))
         return obj
+
+    def clone(self):
+        cdef dBG__NibbleStorage__DefaultShifter cloned = dBG__NibbleStorage__DefaultShifter(1,1,1)
+        cloned._this = deref(self._this).clone()
+        cloned._assembler.reset(new _AssemblerMixin[_dBG[_NibbleStorage,_DefaultShifter]](self._this.get()))
+        return cloned
+
+    def reset(self):
+        deref(self._this).reset()
 
 cdef object _make_dbg(int K, uint64_t starting_size, int n_tables,
                       str storage='_BitStorage',

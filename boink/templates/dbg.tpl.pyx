@@ -50,12 +50,6 @@ cdef class dBG_{{type_bundle.suffix}}(dBG_Base):
             handled = deref(self._this).hash(_bstring(kmer))
         return handled
 
-    def clone(self):
-        cdef dBG_{{type_bundle.suffix}} cloned = dBG_{{type_bundle.suffix}}(1,1,1)
-        cloned._this = deref(self._this).clone()
-        cloned._assembler.reset(new _AssemblerMixin[_dBG[{{type_bundle.params}}]](self._this.get()))
-        return cloned
-
     def add(self, object kmer):
         return deref(self._this).add(self._handle_kmer(kmer))
 
@@ -129,6 +123,15 @@ cdef class dBG_{{type_bundle.suffix}}(dBG_Base):
         cdef dBG_{{type_bundle.suffix}} obj = cls(1, 1, 1)
         deref(obj._this).load(_bstring(file_name))
         return obj
+
+    def clone(self):
+        cdef dBG_{{type_bundle.suffix}} cloned = dBG_{{type_bundle.suffix}}(1,1,1)
+        cloned._this = deref(self._this).clone()
+        cloned._assembler.reset(new _AssemblerMixin[_dBG[{{type_bundle.params}}]](self._this.get()))
+        return cloned
+
+    def reset(self):
+        deref(self._this).reset()
 {% endfor %}
 
 cdef object _make_dbg(int K, uint64_t starting_size, int n_tables,

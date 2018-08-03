@@ -111,6 +111,14 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
 
 cdef extern from "boink/compactor.hh" namespace "boink" nogil:
 
+    cdef struct compact_segment:
+        hash_t left_anchor
+        hash_t right_anchor
+        bool has_left_decision
+        bool has_right_decision
+        string sequence
+        vector[hash_t] hashes
+
     cdef cppclass _StreamingCompactor "boink::StreamingCompactor" [GraphType] (_AssemblerMixin[GraphType], _EventNotifier):
         _cDBG cdbg
 
@@ -132,9 +140,7 @@ cdef extern from "boink/compactor.hh" namespace "boink" nogil:
                                  vector[NeighborBundle]&) except +ValueError
 
         void find_new_segments(const string&, # sequence to add
-                               vector[vector[hash_t]]&, # segment k-mers
-                               vector[string]&, # segment seqs
-                               deque[kmer_t]&, # decision k-mers
+                               deque[compact_segment]&,
                                deque[NeighborBundle]& # decision neighbors
                                ) except +ValueError
 

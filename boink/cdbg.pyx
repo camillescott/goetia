@@ -9,6 +9,8 @@ from cython.operator cimport dereference as deref
 from cython.operator cimport preincrement as princ
 from libcpp.memory cimport make_unique
 
+from collections import namedtuple
+
 from boink.utils cimport _bstring, _ustring, make_pair
 from khmer._oxli.sequence cimport Alphabets
 
@@ -230,6 +232,13 @@ cdef class cDBG:
             deref(self._this).write(_bstring(filename),
                                     convert_format(file_format))
 
+Segment = namedtuple('Segment', ['sequence',
+                                 'hashes',
+                                 'has_left_decision',
+                                 'has_right_decision',
+                                 'left_anchor',
+                                 'right_anchor'])
+
 
 cdef class StreamingCompactor:
 
@@ -265,21 +274,22 @@ cdef class StreamingCompactor:
 
     def find_new_segments(self, str sequence):
         cdef string _sequence = _bstring(sequence)
-        cdef vector[vector[hash_t]] _segment_kmers
-        cdef vector[string] _segment_seqs
-        cdef deque[kmer_t] _decision_kmers
+        cdef deque[compact_segment] _segments
         cdef deque[NeighborBundle] _decision_neighbors
 
         deref(self._sc_this).find_new_segments(_sequence,
-                                               _segment_kmers,
-                                               _segment_seqs,
-                                               _decision_kmers,
+                                               _segments,
                                                _decision_neighbors)
 
-        decision_kmers = []
+        segments = []
         cdef int i = 0
-        for i in range(_decision_kmers.size()):
-            decision_kmers.append((_decision_kmers[i].hash,
-                                   _decision_kmers[i].kmer))
+        for i in range(_segments.size()):
+            segment = Segment(sequence =           _segments[i].sequence,
+                              hashes =             _segments[i].hashes,
+                              has_left_decision =  _segments[i].has_left_decision,
+                              has_right_decision = _segments[i].has_right_decision,
+                              left_anchor =        _segments[i].left_anchor,
+                              right_anchor =       _segments[i].right_anchor)
+            segments.append(segment)
 
-        return _segment_seqs, decision_kmers
+        return segments

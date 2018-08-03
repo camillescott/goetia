@@ -44,6 +44,13 @@ def graph_type(request, ksize):
             else:
                 return self.add_sequence(item)
 
+        def reset(self):
+            super().reset()
+
+        def shallow_clone(self):
+            other = BoinkAdapter(self.ksize, self.size, self.n_tables)
+            return other
+
         def __repr__(self):
             return '<BoinkAdapter[{0}] K={1} X={2} N={3}>'.format(self.storage,
                                                                   self.ksize,
