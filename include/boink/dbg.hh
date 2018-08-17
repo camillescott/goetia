@@ -77,6 +77,10 @@ public:
         return hasher.hash(kmer);
     }
 
+    hash_t hash(const char * kmer) const {
+        return hasher.hash(kmer);
+    }
+
     bool add(const string& kmer) {
         return S.add(hash(kmer));
     }

@@ -59,6 +59,19 @@ public:
         return get();
     }
 
+    hash_t set_cursor(const char * sequence) {
+        // less safe! does not check length
+        if(!initialized) {
+            load(sequence);
+            derived().init();
+        } else {
+            for (uint16_t i = 0; i < this->_K; ++i) {
+                shift_right(sequence[i]);
+            }
+        }
+        return get();
+    }
+
     bool is_valid(const char c) const {
         for (auto symbol : symbols) {
             if (c == symbol) {
@@ -68,14 +81,6 @@ public:
         return false;
     }
 
-    void _validate(const char c) const {
-        if (!this->is_valid(c)) {
-            string msg("Invalid symbol: ");
-            msg += c;
-            throw BoinkException(msg.c_str());
-        }
-    }
-
     bool is_valid(const std::string& sequence) const {
         for (auto c : sequence) {
             if(!is_valid(c)) {
@@ -83,6 +88,23 @@ public:
             }
         }
         return true;
+    }
+
+    bool is_valid(const char * sequence) const {
+        for (uint16_t i = 0; i < this-_K; ++i) {
+            if(!is_valid(sequence[i])) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    void _validate(const char c) const {
+        if (!this->is_valid(c)) {
+            string msg("Invalid symbol: ");
+            msg += c;
+            throw BoinkException(msg.c_str());
+        }
     }
 
     void _validate(const std::string& sequence) const {
@@ -99,6 +121,11 @@ public:
     }
 
     hash_t hash(const std::string& sequence) const {
+        _validate(sequence);
+        return derived()._hash(sequence);
+    }
+
+    hash_t hash(const char * sequence) const {
         _validate(sequence);
         return derived()._hash(sequence);
     }
@@ -169,6 +196,13 @@ protected:
                             sequence.begin()+_K); 
     }
 
+    void load(const char * sequence) {
+        symbol_deque.clear();
+        for (uint16_t i = 0; i < this->_K; ++i) {
+            symbol_deque.push_back(sequence[i]);
+        }
+    }
+
 };
 
 template<class Derived, const std::string& Alphabet>
@@ -223,6 +257,14 @@ public:
 
     hash_t _hash(const std::string& sequence) const {
         return oxli::_hash_cyclic_forward(sequence, this->_K);
+    }
+
+    hash_t _hash(const char * sequence) const {
+        CyclicHash<uint16_t> hasher(this->_K);
+        for (uint16_t i = 0; i < this->_K; ++i) {
+            hasher.eat(sequence[i]);
+        }
+        return hasher.hashvalue;
     }
 
     hash_t update_left(const char c) {
