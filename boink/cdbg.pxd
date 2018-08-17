@@ -11,6 +11,7 @@ from libcpp.memory cimport unique_ptr
 from libcpp.pair cimport pair
 from libcpp.unordered_set cimport unordered_set as uset
 from libcpp.unordered_map cimport unordered_map as umap
+from libcpp.set cimport set
 from libcpp.vector cimport vector
 from libc.stdint cimport uint8_t, uint32_t, uint64_t
 
@@ -140,7 +141,9 @@ cdef extern from "boink/compactor.hh" namespace "boink" nogil:
                                  vector[NeighborBundle]&) except +ValueError
 
         void find_new_segments(const string&, # sequence to add
-                               deque[compact_segment]&,
+                               set[hash_t]&, # all new k-mers
+                               deque[compact_segment]&, # new segments
+                               set[hash_t]&, # new decision k-mers
                                deque[NeighborBundle]& # decision neighbors
                                ) except +ValueError
 

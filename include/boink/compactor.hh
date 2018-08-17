@@ -56,8 +56,8 @@ struct compact_segment {
     hash_t right_anchor;
     bool has_left_decision;
     bool has_right_decision;
-    string sequence;
-    vector<hash_t> hashes;
+    size_t start_pos;
+    size_t length;
 };
 
 template <class GraphType>
@@ -224,6 +224,8 @@ public:
         this->notify(event);
     }
 
+    
+
     bool is_decision_kmer(const string& node,
                           uint8_t& degree) {
         this->set_cursor(node);
@@ -270,6 +272,15 @@ public:
 
     }
 
+    bool get_decision_neighbors(const string& root_kmer,
+                                NeighborBundle& result) {
+        typename GraphType::shifter_type shifter;
+        shifter.set_cursor(root_kmer);
+        return get_decision_neighbors(shifter,
+                                      root_kmer,
+                                      result);
+    }
+
     bool get_decision_neighbors(typename GraphType::shifter_type& shifter,
                                 const string& root_kmer,
                                 NeighborBundle& result) {
@@ -306,8 +317,10 @@ public:
 
 
     compact_segment init_segment(hash_t left_anchor,
-                                 bool has_left_decision) {
+                                 bool has_left_decision,
+                                 size_t start_pos) {
         compact_segment segment;
+        segment.start_pos = start_pos;
         segment.left_anchor = left_anchor;
         segment.has_left_decision = has_left_decision;
         segment.has_right_decision = false;
@@ -315,48 +328,49 @@ public:
         return segment;
     }
 
-    void finish_segment(const string& sequence,
-                        compact_segment& segment,
-                        size_t start,
+    void finish_segment(compact_segment& segment,
                         size_t end,
                         hash_t right_anchor,
                         deque<compact_segment>& segments) {
-        segment.sequence = sequence.substr(start, end - start + this->_K);
+        
+        segment.length = end - segment.start_pos + this->_K;
         segment.right_anchor = right_anchor;
         segments.push_back(segment);
-        pdebug("segment ended, start=" << start
-               << " cur_pos=" << end << ", seq=" << segment.sequence);
+        pdebug("segment ended, start=" << segment.start_pos
+               << " cur_pos=" << end);
     }
     
     void find_new_segments(const string& sequence,
+                           set<hash_t>& new_kmers,
                            deque<compact_segment>& segments,
+                           set<hash_t>& new_decision_kmers,
                            deque<NeighborBundle>& decision_neighbors
                            ) {
 
 
-        vector<hash_t> kmer_hashes;
         vector<bool> kmer_new;
-        dbg->add_sequence(sequence, kmer_hashes, kmer_new);
+        vector<hash_t> hashes;
+        dbg->add_sequence(sequence, hashes, kmer_new);
         pdebug("k-mers new: " << kmer_new);
         
         size_t pos = 0;
         size_t segment_start_pos = 0;
-        hash_t prev_hash = kmer_hashes.front(), cur_hash;
+        hash_t prev_hash = hashes.front();
         bool cur_new = false, prev_new = false, is_decision = false;
         string kmer_seq;
 
         compact_segment current_segment;
         typename GraphType::shifter_type shifter(sequence, this->_K);
-        for (cur_hash : kmer_hashes) {
+        for (auto cur_hash : hashes) {
             cur_new = kmer_new[pos];
 
             if(cur_new) {
+                new_kmers.insert(cur_hash);
                 kmer_seq = sequence.substr(pos, this->_K);
 
                 if(!prev_new) {
                     pdebug("old -> new (pos=" << pos << ")");
-                    current_segment = init_segment(prev_hash, false);
-                    segment_start_pos = pos;
+                    current_segment = init_segment(prev_hash, false, pos);
                     shifter.set_cursor(kmer_seq);
                 } else {
                     shifter.shift_right(kmer_seq.back());
@@ -374,22 +388,23 @@ public:
                 if(is_decision) {
                     pdebug("new k-mer & decision" << shifter.get_cursor()
                            << ", " << kmer_seq);
+                    new_decision_kmers.insert(cur_hash);
                     current_segment.has_right_decision = true;
                     if (pos > 0) {
                         // don't want to produce a null segment if the decision node
                         // is the first in the sequence
-                        finish_segment(sequence, current_segment,
-                                       segment_start_pos, pos, cur_hash,
+                        finish_segment(current_segment,
+                                       pos,
+                                       cur_hash,
                                        segments);
                     }
-                    current_segment = init_segment(cur_hash, true);
-                    segment_start_pos = pos;
+                    current_segment = init_segment(cur_hash, true, pos);
                 }
-                current_segment.hashes.push_back(cur_hash);
             } else if (prev_new) {
                 pdebug("new -> old");
-                finish_segment(sequence, current_segment, 
-                               segment_start_pos, pos - 1, cur_hash,
+                finish_segment(current_segment, 
+                               pos - 1,
+                               cur_hash,
                                segments);
             } 
 
@@ -401,8 +416,9 @@ public:
         if (cur_new) {
             pdebug("sequence ended");
             current_segment.has_right_decision = is_decision;
-            finish_segment(sequence, current_segment,
-                           segment_start_pos, pos, cur_hash,
+            finish_segment(current_segment,
+                           pos,
+                           hashes.back(),
                            segments);
         }
 
@@ -410,62 +426,193 @@ public:
     }
 
     void update_from_segments(const string& sequence,
-                              vector<vector<hash_t>>& new_segment_kmers,
-                              vector<string>& new_segment_sequences,
-                              deque<kmer_t>&& decision_kmers,
+                              set<hash_t>& new_kmers,
+                              deque<compact_segment>& segments,
+                              set<hash_t> & new_decision_kmers,
                               deque<NeighborBundle>& decision_neighbors
                               ) {
 
-        size_t dnode_counter = 0;
-        for (auto segment_kmers : new_segment_kmers) {
-            // handle front k-mer
-            if (segment_kmers.front() !=
-                decision_kmers.front().hash) {
-
-                connect_segment_end(segment_kmers.front(), DIR_LEFT);
-            } else {
-                new_decision_kmer(decision_kmers.front(),
-                                  decision_neighbors.front());
-                decision_kmers.pop_front();
-                decision_neighbors.pop_front();
-            }
-
-            // handle middle k-mers
-            // only k-mers we do anything with are decision k-mers
-            if (segment_kmers.size() > 2) {
-                auto kmer_iter = segment_kmers.begin() + 1;
-                while(kmer_iter != segment_kmers.end() - 1) {
-                    auto kmer = *kmer_iter;
-
-                    if (kmer == decision_kmers.front().hash) {
-                        new_decision_kmer(decision_kmers.front(),
-                                          decision_neighbors.front());
-                        decision_kmers.pop_front();
-                        decision_neighbors.pop_front();
-                    }
-                }
-            }
-
-            // handle back k-mer
+        if (segments.size() == 0) {
+            return;
         }
+        
     }
 
-    void new_decision_kmer() {
+    void _process_segment(compact_segment& segment,
+                          const string& sequence, // sourcer sequence
+                          set<hash_t>& new_kmers,
+                          set<hash_t>& new_decision_kmers,
+                          deque<NeighborBundle>& decision_neighbors) {
+
+        // Pub: Algorithm 3: InsertSegment
+
+        if (segment.has_left_decision) {
+            kmer_t decision_kmer(segment.left_anchor,
+                                 sequence.substr(segment.start_pos, this->_K));
+            _new_decision_kmer(decision_kmer,
+                               decision_neighbors.front(),
+                               new_kmers);
+            _induce_decision_nodes(decision_kmer,
+                                   decision_neighbors.front(),
+                                   new_kmers);
+            decision_neighbors.pop_front();
+        } else {
+            
+        }
+
+        if (segment.has_right_decision) {
+            kmer_t decision_kmer(segment.right_anchor,
+                                 sequence.substr(segment.start_pos +
+                                                 segment.length -
+                                                 this->_K,
+                                                 this->_K));
+            _new_decision_kmer(decision_kmer,
+                               decision_neighbors.front(),
+                               new_kmers);
+            _induce_decision_nodes(decision_kmer,
+                                   decision_neighbors.front(),
+                                   new_kmers);
+            decision_neighbors.pop_front();
+
+        }
+
+        if (segment.has_left_decision && segment.has_right_decision) {
+            // completely new full Unitig
+            if (segment.length > this->_K + 1) {
+                // don't bother with trivial unitigs
+                string unitig = sequence.substr(segment.start_pos + 1,
+                                                segment.length - 1);
+                _induce_unode(unitig,
+                              segment.has_left_decision,
+                              dbg->hash(unitig.c_str()),
+                              segment.has_right_decision,
+                              dbg->hash(unitig.c_str() + 
+                                        unitig.size() - 
+                                        this->_K));
+            }
+
+            return;
+        }
+
+        if (segment.has_left_decision) {
+            string unitig = sequence.substr(segment.start_pos + 1);
+            segment.left_anchor = dbg->hash(unitig.c_str());
+
+            _connect_segment_end(segment, unitig, DIR_RIGHT);
+
+            return;
+        }
+
+        if (segment.has_right_decision) {
+            string unitig = sequence.substr(segment.start_pos, segment.length - 1);
+            segment.right_anchor = dbg->hash(unitig.c_str() +
+                                             segment.length -
+                                             this->_K);
+            _connect_segment_end(segment, unitig, DIR_LEFT);
+
+            return;
+        }
+
+        // remaining options: segment connects two tips or segment is island
+        
+        _splice_segment(segment, sequence);
+    }
+
+    void _new_decision_kmer(kmer_t kmer,
+                            NeighborBundle& neighbors,
+                            set<hash_t>& neighbor_mask) {
         /* Handle a new k-mer that is also
          * a decision node.
          */
+        cdbg.build_dnode_marker(kmer.hash);
+        notify_build_dnode(kmer.hash, kmer.kmer);
     }
 
-    void induce_decision_node() {
-        /* Handle an induced decision node (an existing
-         * k-mer converted to a d-node), which splits an
-         * existing unitig.
-         */
+    void _induce_decision_nodes(kmer_t kmer,
+                                NeighborBundle& neighbors,
+                                set<hash_t>& neighbor_mask) {
+
+        _induce_decision_nodes_left(kmer, neighbors, neighbor_mask);
+        _induce_decision_nodes_right(kmer, neighbors, neighbor_mask);
     }
 
-    void connect_segment_end(kmer_t kmer,
+    void _induce_decision_nodes_left(kmer_t kmer,
+                                     NeighborBundle& neighbors,
+                                     set<hash_t>& neighbor_mask) {
+
+        // decision k-mers which are also new k-mers
+        // cannot split existing unitigs. however, they can induce
+        // an existing k-mer to be a decision k-mer, which can split
+        // existing unitigs. so, we filter out neighbors of
+        // the new decision k-mer which already exist and are already known
+        // to the cDBG to be decision k-mers
+
+        vector<kmer_t> lneighbors;
+        std::copy_if(neighbors.first.begin(),
+                     neighbors.first.end(), 
+                     std::back_inserter(lneighbors),
+                     [&] (kmer_t neighbor) { return
+                         !(neighbor_mask.count(neighbor.hash) ||
+                          cdbg.query_dnode_marker(neighbor.hash));
+                     });
+
+        for (auto lneighbor : lneighbors) {
+            NeighborBundle neighbors;
+            if (get_decision_neighbors(lneighbor.kmer,
+                                       neighbors)) {
+                // induced decision k-mer
+                cdbg.build_dnode_marker(lneighbor.hash);
+                notify_build_dnode(lneighbor.hash, lneighbor.kmer);
+                _maybe_split_unode(lneighbor, neighbors); 
+            }
+            neighbors.first.clear();
+            neighbors.second.clear();
+        }
+    }
+
+    void _induce_decision_nodes_right(kmer_t kmer,
+                                      NeighborBundle& neighbors,
+                                      set<hash_t>& neighbor_mask) {
+
+        // see _induce_decision_nodes_left for information
+
+        vector<kmer_t> rneighbors;
+        std::copy_if(neighbors.second.begin(),
+                     neighbors.second.end(), 
+                     std::back_inserter(rneighbors),
+                     [&] (kmer_t neighbor) { return
+                         !(neighbor_mask.count(neighbor.hash) ||
+                          cdbg.query_dnode_marker(neighbor.hash));
+                     });
+
+        for (auto rneighbor : rneighbors) {
+            NeighborBundle neighbors;
+            if (get_decision_neighbors(rneighbor.kmer,
+                                       neighbors)) {
+                // induced decision k-mer
+                cdbg.build_dnode_marker(rneighbor.hash);
+                notify_build_dnode(rneighbor.hash, rneighbor.kmer);
+                _maybe_split_unode(rneighbor, neighbors); 
+            }
+            neighbors.first.clear();
+            neighbors.second.clear();
+        }
+    }
+
+    void _maybe_split_unode(kmer_t root,
+                            NeighborBundle& neighbors) {
+        
+    }
+                            
+    void _connect_segment_end(compact_segment& segment,
+                              const string& sequence,
                               direction_t direction) {
         
+    }
+
+    void _splice_segment(compact_segment& segment,
+                         const string& sequence) {
+
     }
 };
 
