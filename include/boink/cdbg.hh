@@ -513,6 +513,26 @@ public:
         return dnode;
     }
 
+    void build_dnode_marker(hash_t hash) {
+        // used to synchronously mark a d-node that
+        // will be completely constructed eventually
+        auto lock = lock_dnodes();
+        if (query_dnode(hash) == nullptr) {
+            decision_nodes.insert(make_pair(hash, nullptr));
+        }
+    }
+
+    bool query_dnode_marker(hash_t hash) {
+        // sync query for d-nodes that are either
+        // constructed already or marked for construction
+        // synchronously
+        auto search = decision_nodes.find(hash);
+        if (search != decision_nodes.end()) {
+            return true;
+        }
+        return false;       
+    }
+
     DecisionNode* query_dnode(hash_t hash) {
         auto search = decision_nodes.find(hash);
         if (search != decision_nodes.end()) {
@@ -575,6 +595,10 @@ public:
             return search->second;
         }
         return nullptr;
+    }
+
+    bool has_unode_end(hash_t end_kmer) {
+        return unitig_end_map.count(end_kmer) != 0;
     }
 
     UnitigNode * query_unode_tag(hash_t hash) {
