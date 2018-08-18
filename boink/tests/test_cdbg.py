@@ -49,8 +49,13 @@ def test_find_new_segments_fork_core_first(ksize, length, graph, compactor, righ
     assert core_segments[0].length == length
     assert core_segments[0].is_decision_kmer == False
 
+    for segment in branch_segments:
+        for kmer in kmers(segment.sequence, ksize):
+            assert graph.left_degree(kmer) < 2
+            assert graph.right_degree(kmer) < 2
 
-@using_ksize(7)
+
+@using_ksize(15)
 @using_length(100)
 @pytest.mark.check_fp
 @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
@@ -72,23 +77,20 @@ def test_find_new_segments_fork_branch_first(ksize, graph, compactor, right_fork
     assert len(branch_segments) == 1
     branch_segment = branch_segments.pop()
     assert branch_segment.sequence == branch
-    assert branch_segment.has_left_decision == False
-    assert branch_segment.has_right_decision == False
+    assert branch_segment.length == len(branch)
 
-    assert len(core_segments) == 2
-    assert core_segments[0].has_right_decision == True
-    assert core_segments[0].has_left_decision == False
-    assert core_segments[1].has_left_decision == True
-    assert core_segments[1].has_right_decision == False
-    # first segment of the core sequence should include a
-    # decision node induced in the new k-mer by the neighboring
-    # k-mer in branch
-    assert graph.left_degree(core_segments[0].sequence[-ksize:]) == 1
-    assert graph.right_degree(core_segments[0].sequence[-ksize:]) == 2
+    assert len(core_segments) == 3
+    assert core_segments[0].is_decision_kmer == False
+    assert core_segments[1].is_decision_kmer == True
+    assert core_segments[2].is_decision_kmer == False
+    
+    assert graph.left_degree(core_segments[1].sequence) == 1
+    assert graph.right_degree(core_segments[1].sequence) == 2
+    assert graph.left_degree(core[pos:pos+ksize]) == 1
+    assert graph.right_degree(core[pos:pos+ksize]) == 2
 
-    assert graph.left_degree(core_segments[1].sequence[:ksize]) == 1
-    assert graph.right_degree(core_segments[1].sequence[:ksize]) == 2
-
+    assert core[:pos+ksize-1] == core_segments[0].sequence
+    assert core[pos+1:] == core_segments[2].sequence
 
 
 @using_ksize(7)
