@@ -109,16 +109,11 @@ def test_find_new_segments_merge(ksize, length, graph, compactor, linear_path):
 
     assert len(left_segments) == 1
     assert left_segments[0].sequence == left
+    assert left_segments[0].left_anchor == graph.hash(left[:ksize])
+    assert left_segments[0].right_anchor == graph.hash(left[-ksize:])
 
     assert len(right_segments) == 1
     assert right_segments[0].sequence == right
-
-    for segment in left_segments:
-        assert len(segment.hashes) == len(segment.sequence) - ksize + 1
-
-    for segment in right_segments:
-        assert len(segment.hashes) == len(segment.sequence) - ksize + 1
-
 
 
     merged = left + right
@@ -127,12 +122,10 @@ def test_find_new_segments_merge(ksize, length, graph, compactor, linear_path):
     merged_segments = compactor.find_new_segments(merged)
     assert len(merged_segments) == 1
     merged_segment = merged_segments.pop()
-    for segment in merged_segments:
-        assert len(segment.hashes) == len(segment.sequence) - ksize + 1
 
     assert merged_segment.sequence == merged_new
-    assert merged_segment.left_anchor == graph.hash(left[-ksize:])
-    assert merged_segment.right_anchor == graph.hash(right[:ksize])
+    assert merged_segment.left_anchor == graph.hash(merged_new[:ksize])
+    assert merged_segment.right_anchor == graph.hash(merged_new[-ksize:])
 
 
 @using_ksize(21)
