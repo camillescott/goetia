@@ -448,7 +448,7 @@ public:
             }
             pdebug("sequence ended on new k-mer");
             finish_segment(current_segment,
-                           pos,
+                           pos - 1, // we incr'd pos...
                            right_anchor,
                            segments);
         }
