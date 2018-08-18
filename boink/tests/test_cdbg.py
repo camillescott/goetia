@@ -23,7 +23,7 @@ def compactor(ksize, graph):
 @using_length(100)
 @pytest.mark.check_fp
 @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
-def test_find_new_segments_fork_core_first(ksize, graph, compactor, right_fork):
+def test_find_new_segments_fork_core_first(ksize, length, graph, compactor, right_fork):
     (core, branch), pos = right_fork()
     print('INPUTS', core, core[:pos+1], ' ' * (pos + 1) + branch, sep='\n\n')
 
@@ -37,12 +37,18 @@ def test_find_new_segments_fork_core_first(ksize, graph, compactor, right_fork):
     for s in branch_segments:
         print('segment:', s)
 
-    assert len(core_segments) == len(branch_segments) == 1
-    assert branch_segments.pop().sequence == branch
-    
-    for segment in core_segments:
-        assert segment.has_left_decision == False
-        assert segment.has_right_decision == False
+    assert len(core_segments) == 1
+    assert len(branch_segments) == 1
+    assert branch_segments[0].sequence == branch
+    assert branch_segments[0].start == pos + 1
+    assert branch_segments[0].is_decision_kmer == False
+
+    assert core_segments[0].sequence == core
+    assert len(core_segments[0].sequence) == length
+    assert core_segments[0].start == 0
+    assert core_segments[0].length == length
+    assert core_segments[0].is_decision_kmer == False
+
 
 @using_ksize(7)
 @using_length(100)
