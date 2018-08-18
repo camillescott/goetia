@@ -115,10 +115,9 @@ cdef extern from "boink/compactor.hh" namespace "boink" nogil:
     cdef struct compact_segment:
         hash_t left_anchor
         hash_t right_anchor
-        bool has_left_decision
-        bool has_right_decision
-        string sequence
-        vector[hash_t] hashes
+        size_t start_pos
+        size_t length
+        bool is_decision_kmer
 
     cdef cppclass _StreamingCompactor "boink::StreamingCompactor" [GraphType] (_AssemblerMixin[GraphType], _EventNotifier):
         _cDBG cdbg

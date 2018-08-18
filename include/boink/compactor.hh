@@ -54,8 +54,7 @@ struct StreamingCompactorReport {
 struct compact_segment {
     hash_t left_anchor;
     hash_t right_anchor;
-    bool has_left_decision;
-    bool has_right_decision;
+    bool is_decision_kmer;
     size_t start_pos;
     size_t length;
 };
@@ -308,22 +307,12 @@ public:
         }
     }
 
-    //void find_new_segments(const string& sequence,
-    //                       vector<vector<hash_t>>& new_segment_hashes,
-    //                       vector<string>& new_segment_sequences,
-    //                       deque<kmer_t>& decision_kmers,
-    //                       deque<NeighborBundle>& decision_neighbors
-    //                       ) {
-
-
     compact_segment init_segment(hash_t left_anchor,
-                                 bool has_left_decision,
                                  size_t start_pos) {
         compact_segment segment;
         segment.start_pos = start_pos;
         segment.left_anchor = left_anchor;
-        segment.has_left_decision = has_left_decision;
-        segment.has_right_decision = false;
+        segment.is_decision_kmer = false;
 
         return segment;
     }
@@ -339,7 +328,17 @@ public:
         pdebug("segment ended, start=" << segment.start_pos
                << " cur_pos=" << end);
     }
-    
+
+    void finish_decision_segment(compact_segment& segment,
+                                deque<compact_segment>& segments) {
+        segment.length = this->_K;
+        segment.right_anchor = segment.left_anchor;
+        segment.is_decision_kmer = true;
+        segments.push_back(segment);
+
+        pdebug("Created decision segment, start=" << segment.start_pos);       
+    }
+
     void find_new_segments(const string& sequence,
                            set<hash_t>& new_kmers,
                            deque<compact_segment>& segments,
@@ -354,7 +353,6 @@ public:
         pdebug("k-mers new: " << kmer_new);
         
         size_t pos = 0;
-        size_t segment_start_pos = 0;
         hash_t prev_hash = hashes.front();
         bool cur_new = false, prev_new = false, is_decision = false;
         string kmer_seq;
@@ -368,10 +366,26 @@ public:
                 new_kmers.insert(cur_hash);
                 kmer_seq = sequence.substr(pos, this->_K);
 
-                if(!prev_new) {
-                    pdebug("old -> new (pos=" << pos << ")");
-                    current_segment = init_segment(prev_hash, false, pos);
+                if(!prev_new || new_decision_kmers.count(prev_hash)) {
+                    pdebug("old -> new, or prev d-kmer (pos=" << pos << ")");
                     shifter.set_cursor(kmer_seq);
+                    hash_t left_anchor;
+                    if (pos == 0) {
+                        vector<shift_t> lneighbors = filter_nodes(shifter.gather_left());
+                        if (lneighbors.size() == 1 &&
+                            cdbg.has_unode_end(lneighbors.front().hash)) {
+                            
+                            left_anchor = lneighbors.front().hash;
+                        } else {
+                            left_anchor = cur_hash;
+                        }
+                    } else if (cdbg.has_unode_end(prev_hash)) {
+                        left_anchor = prev_hash;
+                    } else {
+                        left_anchor = cur_hash;
+                    }
+                    current_segment = init_segment(left_anchor, pos);
+
                 } else {
                     shifter.shift_right(kmer_seq.back());
                 }
@@ -389,22 +403,30 @@ public:
                     pdebug("new k-mer & decision" << shifter.get_cursor()
                            << ", " << kmer_seq);
                     new_decision_kmers.insert(cur_hash);
-                    current_segment.has_right_decision = true;
-                    if (pos > 0) {
-                        // don't want to produce a null segment if the decision node
-                        // is the first in the sequence
+
+                    if (pos > 0 && prev_new && !new_decision_kmers.count(prev_hash)) {
                         finish_segment(current_segment,
-                                       pos,
-                                       cur_hash,
+                                       pos - 1,
+                                       prev_hash,
                                        segments);
                     }
-                    current_segment = init_segment(cur_hash, true, pos);
+
+                    auto decision_segment = init_segment(cur_hash,
+                                                         pos);
+                    finish_decision_segment(decision_segment,
+                                            segments);
                 }
             } else if (prev_new) {
                 pdebug("new -> old");
+                hash_t right_anchor;
+                if (cdbg.has_unode_end(cur_hash)) {
+                    right_anchor = cur_hash;
+                } else {
+                    right_anchor = prev_hash;
+                }
                 finish_segment(current_segment, 
                                pos - 1,
-                               cur_hash,
+                               right_anchor,
                                segments);
             } 
 
@@ -413,12 +435,21 @@ public:
             prev_new = cur_new;
         }
 
-        if (cur_new) {
-            pdebug("sequence ended");
-            current_segment.has_right_decision = is_decision;
+        // make sure we close current segment if necessary
+        if (cur_new && !new_decision_kmers.count(hashes.back())) {
+            hash_t right_anchor;
+
+            vector<shift_t> rneighbors = filter_nodes(shifter.gather_right());
+            if (rneighbors.size() == 1 &&
+                cdbg.has_unode_end(rneighbors.front().hash)) {
+                right_anchor = rneighbors.front().hash;
+            } else {
+                right_anchor = hashes.back();
+            }
+            pdebug("sequence ended on new k-mer");
             finish_segment(current_segment,
                            pos,
-                           hashes.back(),
+                           right_anchor,
                            segments);
         }
 
@@ -439,12 +470,13 @@ public:
     }
 
     void _process_segment(compact_segment& segment,
-                          const string& sequence, // sourcer sequence
+                          const string& sequence, // source sequence
                           set<hash_t>& new_kmers,
                           set<hash_t>& new_decision_kmers,
                           deque<NeighborBundle>& decision_neighbors) {
 
         // Pub: Algorithm 3: InsertSegment
+        /*
 
         if (segment.has_left_decision) {
             kmer_t decision_kmer(segment.left_anchor,
@@ -516,6 +548,7 @@ public:
         // remaining options: segment connects two tips or segment is island
         
         _splice_segment(segment, sequence);
+        */
     }
 
     void _new_decision_kmer(kmer_t kmer,
