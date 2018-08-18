@@ -128,6 +128,37 @@ def test_find_new_segments_merge(ksize, length, graph, compactor, linear_path):
     assert merged_segment.right_anchor == graph.hash(merged_new[-ksize:])
 
 
+@using_ksize(15)
+@using_length(100)
+@pytest.mark.check_fp
+@pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
+def test_find_new_segments_right_decision_on_end(ksize, graph, compactor, right_fork):
+    (core, branch), pos = right_fork()
+    # pos is start position of decision k-mer
+    print('INPUTS', core, core[:pos+1], ' ' * (pos + 1) + branch, sep='\n\n')
+    upper = branch
+    lower = core[pos+1:]
+    test = core[:pos+ksize]
+
+
+    upper_segments = compactor.find_new_segments(upper)
+    lower_segments = compactor.find_new_segments(lower)
+
+    assert len(upper_segments) == 1
+    assert upper_segments[0].sequence == upper
+    assert len(lower_segments) == 1
+    assert lower_segments[0].sequence == lower
+
+    test_segments = compactor.find_new_segments(test)
+
+    assert len(test_segments) == 2
+    assert test_segments[-1].is_decision_kmer
+    assert len(test_segments[-1].sequence) == ksize
+    assert len(test_segments[0].sequence) == pos + ksize - 1
+    assert test_segments[0].left_anchor == graph.hash(core[:ksize])
+    assert test_segments[0].right_anchor == graph.hash(core[pos-1:pos+ksize-1])
+
+
 @using_ksize(21)
 @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
 def test_insert_fork_noop(ksize, graph, compactor, right_fork):
