@@ -232,7 +232,8 @@ cdef class cDBG:
             deref(self._this).write(_bstring(filename),
                                     convert_format(file_format))
 
-Segment = namedtuple('Segment', ['is_decision_kmer',
+Segment = namedtuple('Segment', ['sequence',
+                                 'is_decision_kmer',
                                  'left_anchor',
                                  'right_anchor',
                                  'start',
@@ -287,7 +288,10 @@ cdef class StreamingCompactor:
         segments = []
         cdef int i = 0
         for i in range(_segments.size()):
-            segment = Segment(is_decision_kmer =   _segments[i].is_decision_kmer,
+            segment_seq = sequence[_segments[i].start_pos : \
+                                   _segments[i].start_pos + _segments[i].length]
+            segment = Segment(sequence =           segment_seq,
+                              is_decision_kmer =   _segments[i].is_decision_kmer,
                               left_anchor =        _segments[i].left_anchor,
                               right_anchor =       _segments[i].right_anchor,
                               start =              _segments[i].start_pos,
