@@ -11,6 +11,8 @@ import sys
 import pytest
 from boink.tests.utils import *
 
+from boink.cdbg import display_segment_list
+
 
 @pytest.fixture
 def compactor(ksize, graph):
@@ -19,173 +21,200 @@ def compactor(ksize, graph):
     return compactor
 
 
-@using_ksize(7)
-@using_length(100)
-@pytest.mark.check_fp
-@pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
-def test_find_new_segments_fork_core_first(ksize, length, graph, compactor, right_fork):
-    (core, branch), pos = right_fork()
-    print('INPUTS', core, core[:pos+1], ' ' * (pos + 1) + branch, sep='\n\n')
+class TestFindNewSegments:
 
-    core_segments = compactor.find_new_segments(core)
-    branch_segments = compactor.find_new_segments(core[:pos+1] + branch)
+    @using_ksize(15)
+    @using_length(100)
+    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
+    def test_fork_core_first(self, ksize, length, graph, compactor, right_fork,
+                                   check_fp):
+        (core, branch), pos = right_fork()
+        print('INPUTS', core, core[:pos+1], ' ' * (pos + 1) + branch, sep='\n\n')
 
-    print('Core Segments')
-    for s in core_segments:
-        print('segment:', s)
-    print('Branch Segments')
-    for s in branch_segments:
-        print('segment:', s)
+        core_segments = compactor.find_new_segments(core)
+        branch_segments = compactor.find_new_segments(core[:pos+1] + branch)
 
-    assert len(core_segments) == 1
-    assert len(branch_segments) == 1
-    assert branch_segments[0].sequence == branch
-    assert branch_segments[0].start == pos + 1
-    assert branch_segments[0].is_decision_kmer == False
+        # should be NULL - SEG - NULL
+        print('Core Segments')
+        display_segment_list(core_segments)
+        for s in core_segments:
+            print('segment:', s.sequence)
+        # again NULL - SEG - NULL
+        print('Branch Segments')
+        display_segment_list(branch_segments)
+        for s in branch_segments:
+            print('segment:', s.sequence)
 
-    assert core_segments[0].sequence == core
-    assert len(core_segments[0].sequence) == length
-    assert core_segments[0].start == 0
-    assert core_segments[0].length == length
-    assert core_segments[0].is_decision_kmer == False
+        assert branch_segments[0].is_null
+        assert len(core_segments) == 3
+        assert len(branch_segments) == 3
+        assert branch_segments[1].sequence == branch
+        assert branch_segments[1].start == pos + 1
+        assert branch_segments[1].is_decision_kmer == False
+        assert branch_segments[-1].is_null
 
-    for segment in branch_segments:
-        for kmer in kmers(segment.sequence, ksize):
-            assert graph.left_degree(kmer) < 2
-            assert graph.right_degree(kmer) < 2
+        assert core_segments[0].is_null
+        assert core_segments[1].sequence == core
+        assert len(core_segments[1].sequence) == length
+        assert core_segments[1].start == 0
+        assert core_segments[1].length == length
+        assert core_segments[1].is_decision_kmer == False
+        assert core_segments[-1].is_null
 
-
-@using_ksize(15)
-@using_length(100)
-@pytest.mark.check_fp
-@pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
-def test_find_new_segments_right_decision_split(ksize, graph, compactor, right_fork):
-    (core, branch), pos = right_fork()
-    print('INPUTS', core, core[:pos+1], ' ' * (pos + 1) + branch, sep='\n\n')
-
-    branch_segments = compactor.find_new_segments(branch)
-    core_segments = compactor.find_new_segments(core)
-
-    print('Branch Segments')
-    for s in branch_segments:
-        print('segment:' + s.sequence)
-
-    print('Core Segments')
-    for s in core_segments:
-        print('segment:' + s.sequence)
-
-    assert len(branch_segments) == 1
-    branch_segment = branch_segments.pop()
-    assert branch_segment.sequence == branch
-    assert branch_segment.length == len(branch)
-
-    assert len(core_segments) == 3
-    assert core_segments[0].is_decision_kmer == False
-    assert core_segments[1].is_decision_kmer == True
-    assert core_segments[2].is_decision_kmer == False
-    
-    assert graph.left_degree(core_segments[1].sequence) == 1
-    assert graph.right_degree(core_segments[1].sequence) == 2
-    assert graph.left_degree(core[pos:pos+ksize]) == 1
-    assert graph.right_degree(core[pos:pos+ksize]) == 2
-
-    assert core[:pos+ksize-1] == core_segments[0].sequence
-    assert core[pos+1:] == core_segments[2].sequence
+        for segment in branch_segments:
+            if not segment.is_null:
+                for kmer in kmers(segment.sequence, ksize):
+                    assert graph.left_degree(kmer) < 2
+                    assert graph.right_degree(kmer) < 2
 
 
-@using_ksize(7)
-@using_length(100)
-@pytest.mark.check_fp
-@pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
-def test_find_new_segments_merge(ksize, length, graph, compactor, linear_path):
-    sequence = linear_path()
-    left = sequence[:length//2]
-    right = sequence[length//2:]
-    print(left)
-    print(right)
 
-    left_segments = compactor.find_new_segments(left)
-    right_segments = compactor.find_new_segments(right)
+    @using_ksize(15)
+    @using_length(100)
+    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
+    def test_right_decision_split(self, ksize, graph, compactor, right_fork,
+                                  check_fp):
+        (core, branch), pos = right_fork()
+        print('INPUTS', core, core[:pos+1], ' ' * (pos + 1) + branch, sep='\n\n')
 
-    assert len(left_segments) == 1
-    assert left_segments[0].sequence == left
-    assert left_segments[0].left_anchor == graph.hash(left[:ksize])
-    assert left_segments[0].right_anchor == graph.hash(left[-ksize:])
+        branch_segments = compactor.find_new_segments(branch)
+        core_segments = compactor.find_new_segments(core)
 
-    assert len(right_segments) == 1
-    assert right_segments[0].sequence == right
+        print('Branch Segments')
+        display_segment_list(branch_segments)
+        for s in branch_segments:
+            print('segment:' + s.sequence)
 
+        print('Core Segments')
+        display_segment_list(core_segments)
+        for s in core_segments:
+            print('segment:' + s.sequence)
 
-    merged = left + right
-    merged_new = left[-ksize+1:] + right[:ksize-1]
-    assert sum(graph.get_counts(merged_new)) == 0
-    merged_segments = compactor.find_new_segments(merged)
-    assert len(merged_segments) == 1
-    merged_segment = merged_segments.pop()
+        assert len(branch_segments) == 3
+        assert branch_segments[0].is_null
+        assert branch_segments[-1].is_null
+        branch_segment = branch_segments[1]
+        assert branch_segment.sequence == branch
+        assert branch_segment.length == len(branch)
 
-    assert merged_segment.sequence == merged_new
-    assert merged_segment.left_anchor == graph.hash(merged_new[:ksize])
-    assert merged_segment.right_anchor == graph.hash(merged_new[-ksize:])
+        assert len(core_segments) == 5
+        assert core_segments[0].is_null
+        assert core_segments[1].is_decision_kmer == False
+        assert core_segments[2].is_decision_kmer == True
+        assert core_segments[3].is_decision_kmer == False
+        assert core_segments[-1].is_null
 
+        assert graph.left_degree(core_segments[2].sequence) == 1
+        assert graph.right_degree(core_segments[2].sequence) == 2
+        assert graph.left_degree(core[pos:pos+ksize]) == 1
+        assert graph.right_degree(core[pos:pos+ksize]) == 2
 
-@using_ksize(15)
-@using_length(100)
-@pytest.mark.check_fp
-@pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
-def test_find_new_segments_right_decision_on_end(ksize, graph, compactor, right_fork):
-    (core, branch), pos = right_fork()
-    # pos is start position of decision k-mer
-    print('INPUTS', core, core[:pos+1], ' ' * (pos + 1) + branch, sep='\n\n')
-    upper = branch
-    lower = core[pos+1:]
-    test = core[:pos+ksize]
-
-    upper_segments = compactor.find_new_segments(upper)
-    lower_segments = compactor.find_new_segments(lower)
-
-    assert len(upper_segments) == 1
-    assert upper_segments[0].sequence == upper
-    assert len(lower_segments) == 1
-    assert lower_segments[0].sequence == lower
-
-    test_segments = compactor.find_new_segments(test)
-
-    assert len(test_segments) == 2
-    assert test_segments[-1].is_decision_kmer
-    assert len(test_segments[-1].sequence) == ksize
-    assert len(test_segments[0].sequence) == pos + ksize - 1
-    assert test_segments[0].left_anchor == graph.hash(core[:ksize])
-    assert test_segments[0].right_anchor == graph.hash(core[pos-1:pos+ksize-1])
+        assert core[:pos+ksize-1] == core_segments[1].sequence
+        assert core[pos+1:] == core_segments[3].sequence
 
 
-@using_ksize(15)
-@using_length(100)
-@pytest.mark.check_fp
-@pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
-def test_find_new_segments_left_decision_on_end(ksize, length, graph, compactor, left_fork):
-    (core, branch), pos = left_fork()
-    # pos is start position of decision k-mer
-    print('INPUTS', core, core[:pos+1], ' ' * (pos + 1) + branch, sep='\n\n')
-    upper = branch
-    lower = core[:pos+ksize-1]
-    test = core[pos:]
+    @using_ksize(15)
+    @using_length(100)
+    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
+    def test_merge_no_decisions(self, ksize, length, graph, compactor, linear_path, check_fp):
+        sequence = linear_path()
+        left = sequence[:length//2]
+        right = sequence[length//2:]
+        print(left)
+        print(right)
 
-    upper_segments = compactor.find_new_segments(upper)
-    lower_segments = compactor.find_new_segments(lower)
+        left_segments = compactor.find_new_segments(left)
+        right_segments = compactor.find_new_segments(right)
 
-    assert len(upper_segments) == 1
-    assert upper_segments[0].sequence == upper
-    assert len(lower_segments) == 1
-    assert lower_segments[0].sequence == lower
+        assert len(left_segments) == 3
+        assert left_segments[0].is_null
+        assert left_segments[1].sequence == left
+        assert left_segments[1].left_anchor == graph.hash(left[:ksize])
+        assert left_segments[1].right_anchor == graph.hash(left[-ksize:])
+        assert left_segments[-1].is_null
 
-    test_segments = compactor.find_new_segments(test)
+        assert right_segments[0].is_null
+        assert len(right_segments) == 3
+        assert right_segments[1].sequence == right
+        assert right_segments[-1].is_null
 
-    assert len(test_segments) == 2
-    assert test_segments[0].is_decision_kmer
-    assert len(test_segments[0].sequence) == ksize
-    assert len(test_segments[-1].sequence) == len(test) - 1
-    assert test_segments[-1].left_anchor == graph.hash(core[pos+1:pos+ksize+1])
-    assert test_segments[-1].right_anchor == graph.hash(core[-ksize:])
+        merged = left + right
+        merged_new = left[-ksize+1:] + right[:ksize-1]
+        assert sum(graph.get_counts(merged_new)) == 0
+        merged_segments = compactor.find_new_segments(merged)
+        assert len(merged_segments) == 3
+        assert merged_segments[0].is_null
+        assert merged_segments[-1].is_null
+        merged_segment = merged_segments[1]
+
+        assert merged_segment.sequence == merged_new
+        assert merged_segment.left_anchor == graph.hash(merged_new[:ksize])
+        assert merged_segment.right_anchor == graph.hash(merged_new[-ksize:])
+
+
+    @using_ksize(15)
+    @using_length(100)
+    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
+    def test_right_decision_on_end(self, ksize, graph, compactor, right_fork,
+                                         check_fp):
+        (core, branch), pos = right_fork()
+        # pos is start position of decision k-mer
+        print('INPUTS', core, core[:pos+1], ' ' * (pos + 1) + branch, sep='\n\n')
+        upper = branch
+        lower = core[pos+1:]
+        test = core[:pos+ksize]
+
+        upper_segments = compactor.find_new_segments(upper)
+        lower_segments = compactor.find_new_segments(lower)
+
+        assert len(upper_segments) == 3
+        assert upper_segments[1].sequence == upper
+        assert len(lower_segments) == 3
+        assert lower_segments[1].sequence == lower
+
+        test_segments = compactor.find_new_segments(test)
+        display_segment_list(test_segments)
+
+        assert test_segments[0].is_null
+        assert len(test_segments) == 4
+        assert test_segments[2].is_decision_kmer
+        assert len(test_segments[2].sequence) == ksize
+        assert len(test_segments[1].sequence) == pos + ksize - 1
+        assert test_segments[1].left_anchor == graph.hash(core[:ksize])
+        assert test_segments[1].right_anchor == graph.hash(core[pos-1:pos+ksize-1])
+        assert test_segments[-1].is_null
+
+
+    @using_ksize(15)
+    @using_length(100)
+    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
+    def test_left_decision_on_end(self, ksize, length, graph, compactor, left_fork,
+                                        check_fp):
+        (core, branch), pos = left_fork()
+        # pos is start position of decision k-mer
+        print('INPUTS', core, core[:pos+1], ' ' * (pos + 1) + branch, sep='\n\n')
+        upper = branch
+        lower = core[:pos+ksize-1]
+        test = core[pos:]
+
+        upper_segments = compactor.find_new_segments(upper)
+        lower_segments = compactor.find_new_segments(lower)
+
+        assert len(upper_segments) == 3
+        assert upper_segments[1].sequence == upper
+        assert len(lower_segments) == 3
+        assert lower_segments[1].sequence == lower
+
+        test_segments = compactor.find_new_segments(test)
+        display_segment_list(test_segments)
+
+        assert len(test_segments) == 4
+        assert test_segments[1].is_decision_kmer
+        assert len(test_segments[1].sequence) == ksize
+        assert len(test_segments[2].sequence) == len(test) - 1
+        assert test_segments[2].left_anchor == graph.hash(core[pos+1:pos+ksize+1])
+        assert test_segments[2].right_anchor == graph.hash(core[-ksize:])
+
 
 
 @using_ksize(21)

@@ -12,6 +12,7 @@ import os
 
 from debruijnal_enhance_o_tron.fixtures.subgraphs import *
 from debruijnal_enhance_o_tron.fixtures.sequence import *
+from debruijnal_enhance_o_tron.fixtures.collectors import *
 
 from boink.dbg import get_dbg_type
 

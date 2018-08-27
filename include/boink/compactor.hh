@@ -57,6 +57,28 @@ struct compact_segment {
     bool is_decision_kmer;
     size_t start_pos;
     size_t length;
+
+    compact_segment()
+        : left_anchor(0),
+          right_anchor(0),
+          is_decision_kmer(false),
+          start_pos(0),
+          length(0) {}
+
+    compact_segment(hash_t left_anchor,
+                    hash_t right_anchor,
+                    bool is_decision_kmer,
+                    size_t start_pos,
+                    size_t length)
+        : left_anchor(left_anchor),
+          right_anchor(right_anchor),
+          is_decision_kmer(is_decision_kmer),
+          start_pos(start_pos),
+          length(length) {}
+
+    const bool is_null() const {
+        return (left_anchor == right_anchor) && !is_decision_kmer;
+    }
 };
 
 template <class GraphType>
@@ -359,6 +381,7 @@ public:
 
         compact_segment current_segment;
         typename GraphType::shifter_type shifter(sequence, this->_K);
+        segments.push_back(compact_segment()); // place a null segment
         for (auto cur_hash : hashes) {
             cur_new = kmer_new[pos];
 
@@ -428,6 +451,7 @@ public:
                                pos - 1,
                                right_anchor,
                                segments);
+                segments.push_back(compact_segment()); // null segment
             } 
 
             ++pos;
@@ -453,6 +477,10 @@ public:
                            segments);
         }
 
+        if (cur_new) {
+            segments.push_back(compact_segment()); // null segment
+        }
+
         //pdebug("Segments: " << new_segment_sequences);
     }
 
@@ -466,6 +494,10 @@ public:
         if (segments.size() == 0) {
             return;
         }
+
+        for (auto segment : segments) {
+
+        }
         
     }
 
@@ -476,8 +508,11 @@ public:
                           deque<NeighborBundle>& decision_neighbors) {
 
         // Pub: Algorithm 3: InsertSegment
-        /*
 
+        compact_segment& cur_segment;
+        compact_segment& prev_segment;
+
+        /*
         if (segment.has_left_decision) {
             kmer_t decision_kmer(segment.left_anchor,
                                  sequence.substr(segment.start_pos, this->_K));

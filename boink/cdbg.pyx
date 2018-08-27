@@ -237,7 +237,25 @@ Segment = namedtuple('Segment', ['sequence',
                                  'left_anchor',
                                  'right_anchor',
                                  'start',
-                                 'length'])
+                                 'length',
+                                 'is_null'])
+
+
+def display_segment_list(list segments):
+    output = ''
+    for i in range(len(segments)):
+        cur_segment = segments[i]
+        if cur_segment.is_null:
+            output += '[x]'
+        elif cur_segment.is_decision_kmer:
+            output += '[D {0}]'.format(cur_segment.left_anchor)
+        else:
+            output += '[S {0} {1} {2}]'.format(cur_segment.left_anchor,
+                                               cur_segment.right_anchor,
+                                               cur_segment.length)
+        if i != len(segments) - 1:
+            output += '-'
+    print(output)
 
 
 cdef class StreamingCompactor:
@@ -288,14 +306,24 @@ cdef class StreamingCompactor:
         segments = []
         cdef int i = 0
         for i in range(_segments.size()):
-            segment_seq = sequence[_segments[i].start_pos : \
-                                   _segments[i].start_pos + _segments[i].length]
-            segment = Segment(sequence =           segment_seq,
-                              is_decision_kmer =   _segments[i].is_decision_kmer,
-                              left_anchor =        _segments[i].left_anchor,
-                              right_anchor =       _segments[i].right_anchor,
-                              start =              _segments[i].start_pos,
-                              length =             _segments[i].length)
+            if _segments[i].is_null():
+                segment = Segment(sequence = '',
+                                  is_decision_kmer = False,
+                                  left_anchor = 0,
+                                  right_anchor = 0,
+                                  start = 0,
+                                  length = 0,
+                                  is_null = True)
+            else:
+                segment_seq = sequence[_segments[i].start_pos : \
+                                       _segments[i].start_pos + _segments[i].length]
+                segment = Segment(sequence =           segment_seq,
+                                  is_decision_kmer =   _segments[i].is_decision_kmer,
+                                  left_anchor =        _segments[i].left_anchor,
+                                  right_anchor =       _segments[i].right_anchor,
+                                  start =              _segments[i].start_pos,
+                                  length =             _segments[i].length,
+                                  is_null =            False)
             segments.append(segment)
 
         return segments

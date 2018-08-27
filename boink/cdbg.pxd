@@ -119,6 +119,9 @@ cdef extern from "boink/compactor.hh" namespace "boink" nogil:
         size_t length
         bool is_decision_kmer
 
+        compact_segment()
+        const bool is_null() 
+
     cdef cppclass _StreamingCompactor "boink::StreamingCompactor" [GraphType] (_AssemblerMixin[GraphType], _EventNotifier):
         _cDBG cdbg
 
