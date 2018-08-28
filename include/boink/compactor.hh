@@ -36,6 +36,8 @@ using namespace boink::event_types;
                         (ch) == 'T' ? 'A' : \
                         (ch) == 'C' ? 'G' : 'C')
 
+/* Packs up information on the current compaction state.
+ */
 struct StreamingCompactorReport {
     uint64_t n_full;
     uint64_t n_tips;
@@ -51,13 +53,36 @@ struct StreamingCompactorReport {
 };
 
 
+/* Represents a segment of new k-mers from a sequence, relative to the current
+ * state of the cDBG. Can either be: a null segment representing a portion
+ * of the sequence already in the graph; a decision k-mer; or a new unitig or
+ * portion of a unitig.
+ */
 struct compact_segment {
+    // anchors are:
+    //    1) if the segment is a unitig segment,
+    //       the left or rightmost k-mer in the segment if it has no
+    //       immediate existing unitig neighbor, or the unitig end it
+    //       connects to if it does have that neighbor
+    //    2) if the segment is a decision k-mer, the hash of that k-mer
+    //       is both left and right anchor
     hash_t left_anchor;
     hash_t right_anchor;
+    // has_left_unode and has_right_unode tell us if the immediate neighbors
+    // of the segment are existung unitig ends at the time of creation. this
+    // could be deduced using left_anchor and right_anchor along with the set
+    // of new k-mers, but this saves a lot of lookups
+    bool has_left_unode;
+    bool has_right_unode;
+    // whether this segment represents a decision k-mer
     bool is_decision_kmer;
+    // start position of the segment within the originating sequence
     size_t start_pos;
+    // length of the segment sequence (from beginning of first k-mer to
+    // end of last k-mer)
     size_t length;
 
+    // the default constructor creates a null segment
     compact_segment()
         : left_anchor(0),
           right_anchor(0),
@@ -76,10 +101,13 @@ struct compact_segment {
           start_pos(start_pos),
           length(length) {}
 
+    // return if the segment is default constructed / null
+    // used as a delimiter token between connected runs of segments
     const bool is_null() const {
         return (left_anchor == right_anchor) && !is_decision_kmer;
     }
 };
+
 
 template <class GraphType>
 class StreamingCompactor : public AssemblerMixin<GraphType>,
@@ -295,8 +323,7 @@ public:
 
     bool get_decision_neighbors(const string& root_kmer,
                                 NeighborBundle& result) {
-        typename GraphType::shifter_type shifter;
-        shifter.set_cursor(root_kmer);
+        typename GraphType::shifter_type shifter(root_kmer, this->_K);
         return get_decision_neighbors(shifter,
                                       root_kmer,
                                       result);
@@ -330,9 +357,11 @@ public:
     }
 
     compact_segment init_segment(hash_t left_anchor,
+                                 bool has_left_unode,
                                  size_t start_pos) {
         compact_segment segment;
         segment.start_pos = start_pos;
+        segment.has_left_unode = has_left_unode;
         segment.left_anchor = left_anchor;
         segment.is_decision_kmer = false;
 
@@ -342,10 +371,12 @@ public:
     void finish_segment(compact_segment& segment,
                         size_t end,
                         hash_t right_anchor,
+                        bool has_right_unode,
                         deque<compact_segment>& segments) {
         
         segment.length = end - segment.start_pos + this->_K;
         segment.right_anchor = right_anchor;
+        segment.has_right_unode = has_right_unode;
         segments.push_back(segment);
         pdebug("segment ended, start=" << segment.start_pos
                << " cur_pos=" << end);
@@ -357,6 +388,8 @@ public:
         segment.right_anchor = segment.left_anchor;
         segment.is_decision_kmer = true;
         segments.push_back(segment);
+        segment.has_right_unode = false;
+        segment.has_left_unode = false;
 
         pdebug("Created decision segment, start=" << segment.start_pos);       
     }
@@ -393,21 +426,24 @@ public:
                     pdebug("old -> new, or prev d-kmer (pos=" << pos << ")");
                     shifter.set_cursor(kmer_seq);
                     hash_t left_anchor;
+                    bool has_left_unode = false;
                     if (pos == 0) {
                         vector<shift_t> lneighbors = filter_nodes(shifter.gather_left());
                         if (lneighbors.size() == 1 &&
                             cdbg.has_unode_end(lneighbors.front().hash)) {
                             
                             left_anchor = lneighbors.front().hash;
+                            has_left_unode = true;
                         } else {
                             left_anchor = cur_hash;
                         }
                     } else if (cdbg.has_unode_end(prev_hash)) {
                         left_anchor = prev_hash;
+                        has_left_unode = true;
                     } else {
                         left_anchor = cur_hash;
                     }
-                    current_segment = init_segment(left_anchor, pos);
+                    current_segment = init_segment(left_anchor, has_left_unode, pos);
 
                 } else {
                     shifter.shift_right(kmer_seq.back());
@@ -431,10 +467,12 @@ public:
                         finish_segment(current_segment,
                                        pos - 1,
                                        prev_hash,
+                                       false,
                                        segments);
                     }
 
                     auto decision_segment = init_segment(cur_hash,
+                                                         false,
                                                          pos);
                     finish_decision_segment(decision_segment,
                                             segments);
@@ -442,14 +480,17 @@ public:
             } else if (prev_new) {
                 pdebug("new -> old");
                 hash_t right_anchor;
+                bool has_right_unode = false;
                 if (cdbg.has_unode_end(cur_hash)) {
                     right_anchor = cur_hash;
+                    has_right_unode = true;
                 } else {
                     right_anchor = prev_hash;
                 }
                 finish_segment(current_segment, 
                                pos - 1,
                                right_anchor,
+                               has_right_unode,
                                segments);
                 segments.push_back(compact_segment()); // null segment
             } 
@@ -462,11 +503,13 @@ public:
         // make sure we close current segment if necessary
         if (cur_new && !new_decision_kmers.count(hashes.back())) {
             hash_t right_anchor;
+            bool has_right_unode = false;
 
             vector<shift_t> rneighbors = filter_nodes(shifter.gather_right());
             if (rneighbors.size() == 1 &&
                 cdbg.has_unode_end(rneighbors.front().hash)) {
                 right_anchor = rneighbors.front().hash;
+                has_right_unode = true;
             } else {
                 right_anchor = hashes.back();
             }
@@ -474,6 +517,7 @@ public:
             finish_segment(current_segment,
                            pos - 1, // we incr'd pos...
                            right_anchor,
+                           has_right_unode,
                            segments);
         }
 
@@ -495,95 +539,60 @@ public:
             return;
         }
 
-        for (auto segment : segments) {
-
-        }
-        
-    }
-
-    void _process_segment(compact_segment& segment,
-                          const string& sequence, // source sequence
-                          set<hash_t>& new_kmers,
-                          set<hash_t>& new_decision_kmers,
-                          deque<NeighborBundle>& decision_neighbors) {
-
         // Pub: Algorithm 3: InsertSegment
 
-        compact_segment& cur_segment;
-        compact_segment& prev_segment;
+        compact_segment& u, v, w;
+        auto it = segments.begin();
+        u = *it;
+        v = *(++it);
+        w = *(++it); // there are always at least 3 segments
 
-        /*
-        if (segment.has_left_decision) {
-            kmer_t decision_kmer(segment.left_anchor,
-                                 sequence.substr(segment.start_pos, this->_K));
-            _new_decision_kmer(decision_kmer,
-                               decision_neighbors.front(),
-                               new_kmers);
-            _induce_decision_nodes(decision_kmer,
+        while (it != segments.end()) {
+            if (v.is_decision_kmer) {
+                kmer_t decision_kmer(v.left_anchor,
+                                     sequence.substr(v.start_pos, this->_K));
+                _new_decision_kmer(decision_kmer,
                                    decision_neighbors.front(),
                                    new_kmers);
-            decision_neighbors.pop_front();
-        } else {
-            
-        }
+                _induce_decision_nodes(decision_kmer,
+                                       decision_neighbors.front(),
+                                       new_kmers);
+                decision_neighbors.pop_front();
+            } else if (!v.is_null()) {
+                // v is a regular segment
+                // if u is null, then we need to check for left induced d-nodes
+                // or for a unitig connection
+                if (u.is_null()) {
+                    if (!v.has_left_unode) {
+                        kmer_t root(v.left_anchor,
+                                    sequence.substr(v.start_pos, this->_K));
+                        // TODO: future optimization. we know root is not a decision
+                        // k-mer, so in this case, unless v starts at pos = 0 in the sequence,
+                        // the only neighbor is the preceeding k-mer in the sequence
+                        _induce_decision_nodes_left(root, new_kmers);
+                    }
+                }
 
-        if (segment.has_right_decision) {
-            kmer_t decision_kmer(segment.right_anchor,
-                                 sequence.substr(segment.start_pos +
-                                                 segment.length -
-                                                 this->_K,
-                                                 this->_K));
-            _new_decision_kmer(decision_kmer,
-                               decision_neighbors.front(),
-                               new_kmers);
-            _induce_decision_nodes(decision_kmer,
-                                   decision_neighbors.front(),
-                                   new_kmers);
-            decision_neighbors.pop_front();
+                // v is regular segment: if w is null, check for right induced
+                // d-nodes or for a unitig connection
+                if (w.is_null()) {
+                    if (!v.has_right_unode) {
+                        kmer_t root(v.right_anchor,
+                                    sequence.substr(v.start_pos + v.length - this->_K, this->_K));
+                        // TODO: future optimization. we know root is not a decision
+                        // k-mer, so in this case, unless v starts at pos = 0 in the sequence,
+                        // the only neighbor is the preceeding k-mer in the sequence
+                        _induce_decision_nodes_right(root, new_kmers);
+                    }
+                }
 
-        }
-
-        if (segment.has_left_decision && segment.has_right_decision) {
-            // completely new full Unitig
-            if (segment.length > this->_K + 1) {
-                // don't bother with trivial unitigs
-                string unitig = sequence.substr(segment.start_pos + 1,
-                                                segment.length - 1);
-                _induce_unode(unitig,
-                              segment.has_left_decision,
-                              dbg->hash(unitig.c_str()),
-                              segment.has_right_decision,
-                              dbg->hash(unitig.c_str() + 
-                                        unitig.size() - 
-                                        this->_K));
+                _update_unode(u, sequence);
             }
 
-            return;
+            u = v;
+            v = w;
+            w = *(++it);
         }
-
-        if (segment.has_left_decision) {
-            string unitig = sequence.substr(segment.start_pos + 1);
-            segment.left_anchor = dbg->hash(unitig.c_str());
-
-            _connect_segment_end(segment, unitig, DIR_RIGHT);
-
-            return;
-        }
-
-        if (segment.has_right_decision) {
-            string unitig = sequence.substr(segment.start_pos, segment.length - 1);
-            segment.right_anchor = dbg->hash(unitig.c_str() +
-                                             segment.length -
-                                             this->_K);
-            _connect_segment_end(segment, unitig, DIR_LEFT);
-
-            return;
-        }
-
-        // remaining options: segment connects two tips or segment is island
-        
-        _splice_segment(segment, sequence);
-        */
     }
 
     void _new_decision_kmer(kmer_t kmer,
@@ -604,7 +613,19 @@ public:
         _induce_decision_nodes_right(kmer, neighbors, neighbor_mask);
     }
 
-    void _induce_decision_nodes_left(kmer_t kmer,
+    uint8_t _induce_decision_nodes_left(kmer_t kmer,
+                                     set<hash_t>& neighbor_mask) {
+        typename GraphType::shifter shifter(kmer, this->_K);
+        vector<kmer_t> lkmers = filter_nodes(shifter.gather_left());
+        if (lkmers.size()) {
+            return _induce_decision_nodes_left(kmer,
+                                               lkmers,
+                                               neighbor_mask);
+        }
+        return 0;
+    }
+
+    uint8_t _induce_decision_nodes_left(kmer_t kmer,
                                      NeighborBundle& neighbors,
                                      set<hash_t>& neighbor_mask) {
 
@@ -614,6 +635,7 @@ public:
         // existing unitigs. so, we filter out neighbors of
         // the new decision k-mer which already exist and are already known
         // to the cDBG to be decision k-mers
+                            
 
         vector<kmer_t> lneighbors;
         std::copy_if(neighbors.first.begin(),
@@ -631,14 +653,28 @@ public:
                 // induced decision k-mer
                 cdbg.build_dnode_marker(lneighbor.hash);
                 notify_build_dnode(lneighbor.hash, lneighbor.kmer);
-                _maybe_split_unode(lneighbor, neighbors); 
+                _split_unode(lneighbor, neighbors, neighbor_mask); 
             }
             neighbors.first.clear();
             neighbors.second.clear();
         }
+
+        return lneighbors.size();
     }
 
-    void _induce_decision_nodes_right(kmer_t kmer,
+    uint8_t _induce_decision_nodes_right(kmer_t kmer,
+                                     set<hash_t>& neighbor_mask) {
+        typename GraphType::shifter shifter(kmer, this->_K);
+        vector<kmer_t> rkmers = filter_nodes(shifter.gather_right());
+        if (rkmers.size()) {
+            return _induce_decision_nodes_right(kmer,
+                                                rkmers,
+                                                neighbor_mask);
+        }
+        return 0;
+    }
+
+    uint8_t _induce_decision_nodes_right(kmer_t kmer,
                                       NeighborBundle& neighbors,
                                       set<hash_t>& neighbor_mask) {
 
@@ -660,26 +696,24 @@ public:
                 // induced decision k-mer
                 cdbg.build_dnode_marker(rneighbor.hash);
                 notify_build_dnode(rneighbor.hash, rneighbor.kmer);
-                _maybe_split_unode(rneighbor, neighbors); 
+                _split_unode(rneighbor, neighbors, neighbor_mask); 
             }
             neighbors.first.clear();
             neighbors.second.clear();
         }
+
+        return rneighbors.size();
     }
 
-    void _maybe_split_unode(kmer_t root,
-                            NeighborBundle& neighbors) {
-        
-    }
-                            
-    void _connect_segment_end(compact_segment& segment,
-                              const string& sequence,
-                              direction_t direction) {
+    void _split_unode(kmer_t root,
+                      NeighborBundle& neighbors,
+                      set<hash_t>& mask) {
+
         
     }
 
-    void _splice_segment(compact_segment& segment,
-                         const string& sequence) {
+    void _update_unode(compact_segment& segment,
+                       const string& sequence) {
 
     }
 };
