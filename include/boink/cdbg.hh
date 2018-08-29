@@ -511,6 +511,7 @@ public:
         if (query_dnode(hash) == nullptr) {
             decision_nodes.insert(make_pair(hash, nullptr));
         }
+        pdebug("Built d-node marker: " << hash);
     }
 
     bool query_dnode_marker(hash_t hash) {

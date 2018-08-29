@@ -658,6 +658,8 @@ public:
             if (get_decision_neighbors(lneighbor.kmer,
                                        neighbors)) {
                 // induced decision k-mer
+
+                pdebug("Induced d-node: " << lneighbor.hash << ", " << lneighbor.kmer);
                 cdbg.build_dnode_marker(lneighbor.hash);
                 notify_build_dnode(lneighbor.hash, lneighbor.kmer);
                 _split_unode(lneighbor, neighbors, neighbor_mask); 
@@ -704,6 +706,7 @@ public:
             if (get_decision_neighbors(rneighbor.kmer,
                                        neighbors)) {
                 // induced decision k-mer
+                pdebug("Induced d-node: " << rneighbor.hash << ", " << rneighbor.kmer);
                 cdbg.build_dnode_marker(rneighbor.hash);
                 notify_build_dnode(rneighbor.hash, rneighbor.kmer);
                 _split_unode(rneighbor, neighbors, neighbor_mask); 
