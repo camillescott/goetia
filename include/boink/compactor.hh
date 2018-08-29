@@ -253,16 +253,12 @@ public:
 
     void notify_build_unode(const string& sequence,
                             HashVector& tags,
-                            bool has_left,
                             hash_t left_end,
-                            bool has_right,
                             hash_t right_end) {
         auto event = make_shared<BuildUNodeEvent>();
         event->tags = tags;
         event->sequence = sequence;
-        event->has_left = has_left;
         event->left_end = left_end;
-        event->has_right = has_right;
         event->right_end = right_end;
         this->notify(event);
     }
@@ -318,7 +314,22 @@ public:
     }
 
     void update_sequence(const string& sequence) {
+        set<hash_t> new_kmers;
+        deque<compact_segment> segments;
+        set<hash_t> new_decision_kmers;
+        deque<NeighborBundle> decision_neighbors;
 
+        find_new_segments(sequence,
+                          new_kmers,
+                          segments,
+                          new_decision_kmers,
+                          decision_neighbors);
+
+        update_from_segments(sequence,
+                             new_kmers,
+                             segments,
+                             new_decision_kmers,
+                             decision_neighbors);
     }
 
     bool get_decision_neighbors(const string& root_kmer,
