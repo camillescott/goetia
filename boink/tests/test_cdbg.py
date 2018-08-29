@@ -210,10 +210,67 @@ class TestFindNewSegments:
 
         assert len(test_segments) == 4
         assert test_segments[1].is_decision_kmer
+        assert test_segments[1].sequence == test[:ksize]
         assert len(test_segments[1].sequence) == ksize
         assert len(test_segments[2].sequence) == len(test) - 1
         assert test_segments[2].left_anchor == graph.hash(core[pos+1:pos+ksize+1])
         assert test_segments[2].right_anchor == graph.hash(core[-ksize:])
+
+
+class TestDecisionNodes(object):
+
+    @using_ksize(15)
+    @using_length(100)
+    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
+    def test_new_decision_from_fork(self, ksize, length, graph, compactor,
+                                          left_fork, check_fp):
+
+        (core, branch), pos = left_fork()
+        upper = branch
+        lower = core[:pos+ksize-1]
+        test = core[pos:]
+
+        compactor.update_sequence(upper)
+        compactor.update_sequence(lower)
+        assert compactor.cdbg.n_dnodes == 0
+
+        compactor.update_sequence(test)
+        assert compactor.cdbg.n_dnodes == 1
+        dnode_hash = graph.hash(test[:ksize])
+        print('dnode hash:', dnode_hash)
+        assert compactor.cdbg.query_dnode_marker(dnode_hash)
+
+    @using_ksize(15)
+    @using_length(100)
+    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
+    def test_left_end_induced_decision_from_fork(self, ksize, length, graph, compactor,
+                                             left_fork, check_fp):
+        (core, branch), pos = left_fork()
+
+        compactor.update_sequence(core)
+        assert compactor.cdbg.n_dnodes == 0
+
+        compactor.update_sequence(branch)
+        assert compactor.cdbg.n_dnodes == 1
+        dnode_hash = graph.hash(core[pos:pos+ksize])
+        print('dnode hash:', dnode_hash)
+        assert compactor.cdbg.query_dnode_marker(dnode_hash)
+
+    @using_ksize(15)
+    @using_length(100)
+    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
+    def test_right_end_induced_decision_from_fork(self, ksize, length, graph, compactor,
+                                                        right_fork, check_fp):
+        (core, branch), pos = right_fork()
+
+        compactor.update_sequence(core)
+        assert compactor.cdbg.n_dnodes == 0
+
+        compactor.update_sequence(branch)
+        assert compactor.cdbg.n_dnodes == 1
+        dnode_hash = graph.hash(core[pos:pos+ksize])
+        print('dnode hash:', dnode_hash)
+        assert compactor.cdbg.query_dnode_marker(dnode_hash)
 
 
 
