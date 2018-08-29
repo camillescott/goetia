@@ -128,6 +128,10 @@ public:
     using AssemblerType::degree_right;
     using AssemblerType::count_nodes;
     using AssemblerType::filter_nodes;
+    using AssemblerType::find_left_kmers;
+    using AssemblerType::find_right_kmers;
+    using AssemblerType::gather_left;
+    using AssemblerType::gather_right;
 
     GraphType * dbg;
     cDBG cdbg;
@@ -269,8 +273,6 @@ public:
         this->notify(event);
     }
 
-    
-
     bool is_decision_kmer(const string& node,
                           uint8_t& degree) {
         this->set_cursor(node);
@@ -295,7 +297,7 @@ public:
                              HashVector& decision_hashes,
                              vector<NeighborBundle>& decision_neighbors) {
 
-        KmerIterator<typename GraphType::shifter_type> iter(sequence, this->_K);
+        KmerIterator<AssemblerType> iter(sequence, this);
         size_t pos = 0;
         while(!iter.done()) {
             hash_t h = iter.next();
@@ -308,58 +310,34 @@ public:
                 decision_positions.push_back(pos);
                 decision_hashes.push_back(h);
             }
-
+        
             ++pos;
-        }
+       }
     }
 
-    void update_sequence(const string& sequence) {
-        set<hash_t> new_kmers;
-        deque<compact_segment> segments;
-        set<hash_t> new_decision_kmers;
-        deque<NeighborBundle> decision_neighbors;
-
-        find_new_segments(sequence,
-                          new_kmers,
-                          segments,
-                          new_decision_kmers,
-                          decision_neighbors);
-
-        update_from_segments(sequence,
-                             new_kmers,
-                             segments,
-                             new_decision_kmers,
-                             decision_neighbors);
-    }
-
-    bool get_decision_neighbors(const string& root_kmer,
+    bool get_decision_neighbors(const string& root,
                                 NeighborBundle& result) {
-        typename GraphType::shifter_type shifter(root_kmer, this->_K);
-        return get_decision_neighbors(shifter,
-                                      root_kmer,
-                                      result);
+        return get_decision_neighbors(this, root, result);
     }
 
-    bool get_decision_neighbors(typename GraphType::shifter_type& shifter,
-                                const string& root_kmer,
+    bool get_decision_neighbors(NeighborBundle& result) {
+        return get_decision_neighbors(this, result);
+    }
+
+    bool get_decision_neighbors(AssemblerType* shifter,
+                                const string& root,
+                                NeighborBundle& result) {
+        shifter->set_cursor(root);
+        return get_decision_neighbors(shifter, result);
+    }
+
+    bool get_decision_neighbors(AssemblerType* shifter,
                                 NeighborBundle& result) {
 
-        vector<shift_t> left_neighbors = filter_nodes(shifter.gather_left());
-        vector<shift_t> right_neighbors = filter_nodes(shifter.gather_right());
-
-        if (left_neighbors.size() > 1 || right_neighbors.size() > 1) {
-            KmerVector left_kmers, right_kmers;
-            for (auto neighbor : left_neighbors) {
-                left_kmers.push_back(kmer_t(neighbor.hash,
-                                            neighbor.symbol
-                                            + root_kmer.substr(0, this->_K-1)));
-            }
-            for (auto neighbor : right_neighbors) {
-                right_kmers.push_back(kmer_t(neighbor.hash,
-                                             root_kmer.substr(1, this->_K-1)
-                                             + neighbor.symbol));
-                                      
-            }
+        auto left_kmers = shifter->find_left_kmers();
+        auto right_kmers = shifter->find_right_kmers();
+        
+        if (left_kmers.size() > 1 || right_kmers.size() > 1) {
             result = std::make_pair(left_kmers, right_kmers);
             return true;
         } else {
@@ -424,7 +402,8 @@ public:
         string kmer_seq;
 
         compact_segment current_segment;
-        typename GraphType::shifter_type shifter(sequence, this->_K);
+        this->set_cursor(sequence);
+
         segments.push_back(compact_segment()); // place a null segment
         for (auto cur_hash : hashes) {
             cur_new = kmer_new[pos];
@@ -435,11 +414,11 @@ public:
 
                 if(!prev_new || new_decision_kmers.count(prev_hash)) {
                     pdebug("old -> new, or prev d-kmer (pos=" << pos << ")");
-                    shifter.set_cursor(kmer_seq);
+                    this->set_cursor(kmer_seq);
                     hash_t left_anchor;
                     bool has_left_unode = false;
                     if (pos == 0) {
-                        vector<shift_t> lneighbors = filter_nodes(shifter.gather_left());
+                        vector<shift_t> lneighbors = filter_nodes(gather_left());
                         if (lneighbors.size() == 1 &&
                             cdbg.has_unode_end(lneighbors.front().hash)) {
                             
@@ -457,20 +436,18 @@ public:
                     current_segment = init_segment(left_anchor, has_left_unode, pos);
 
                 } else {
-                    shifter.shift_right(kmer_seq.back());
+                    this->shift_right(kmer_seq.back());
                 }
                 
                 NeighborBundle neighbors;
                 neighbors.first.clear();
                 neighbors.second.clear();
-                if (get_decision_neighbors(shifter,
-                                           kmer_seq,
-                                           neighbors)) {
+                if ((is_decision = get_decision_neighbors(kmer_seq,
+                                                          neighbors)) == true) {
                     decision_neighbors.push_back(neighbors);
                 }
-                is_decision = neighbors.first.size() > 1 || neighbors.second.size() > 1;
                 if(is_decision) {
-                    pdebug("new k-mer & decision" << shifter.get_cursor()
+                    pdebug("new k-mer & decision" << this->get_cursor()
                            << ", " << kmer_seq);
                     new_decision_kmers.insert(cur_hash);
 
@@ -516,7 +493,7 @@ public:
             hash_t right_anchor;
             bool has_right_unode = false;
 
-            vector<shift_t> rneighbors = filter_nodes(shifter.gather_right());
+            vector<shift_t> rneighbors = filter_nodes(gather_right());
             if (rneighbors.size() == 1 &&
                 cdbg.has_unode_end(rneighbors.front().hash)) {
                 right_anchor = rneighbors.front().hash;
@@ -552,11 +529,8 @@ public:
 
         // Pub: Algorithm 3: InsertSegment
 
-        compact_segment& u, v, w;
         auto it = segments.begin();
-        u = *it;
-        v = *(++it);
-        w = *(++it); // there are always at least 3 segments
+        compact_segment& u = *it, v = *(++it), w = *(++it);
 
         while (it != segments.end()) {
             if (v.is_decision_kmer) {
@@ -606,6 +580,25 @@ public:
         }
     }
 
+    void update_sequence(const string& sequence) {
+        set<hash_t> new_kmers;
+        deque<compact_segment> segments;
+        set<hash_t> new_decision_kmers;
+        deque<NeighborBundle> decision_neighbors;
+
+        find_new_segments(sequence,
+                          new_kmers,
+                          segments,
+                          new_decision_kmers,
+                          decision_neighbors);
+
+        update_from_segments(sequence,
+                             new_kmers,
+                             segments,
+                             new_decision_kmers,
+                             decision_neighbors);
+    }
+
     void _new_decision_kmer(kmer_t kmer,
                             NeighborBundle& neighbors,
                             set<hash_t>& neighbor_mask) {
@@ -625,20 +618,23 @@ public:
     }
 
     uint8_t _induce_decision_nodes_left(kmer_t kmer,
-                                     set<hash_t>& neighbor_mask) {
-        typename GraphType::shifter shifter(kmer, this->_K);
-        vector<kmer_t> lkmers = filter_nodes(shifter.gather_left());
-        if (lkmers.size()) {
+                                        set<hash_t>& neighbor_mask) {
+
+        this->set_cursor(kmer.kmer);
+        NeighborBundle bundle;
+        bundle.first = find_left_kmers();
+
+        if (bundle.first.size()) {
             return _induce_decision_nodes_left(kmer,
-                                               lkmers,
+                                               bundle,
                                                neighbor_mask);
         }
         return 0;
     }
 
     uint8_t _induce_decision_nodes_left(kmer_t kmer,
-                                     NeighborBundle& neighbors,
-                                     set<hash_t>& neighbor_mask) {
+                                        NeighborBundle& neighbors,
+                                        set<hash_t>& neighbor_mask) {
 
         // decision k-mers which are also new k-mers
         // cannot split existing unitigs. however, they can induce
@@ -674,20 +670,23 @@ public:
     }
 
     uint8_t _induce_decision_nodes_right(kmer_t kmer,
-                                     set<hash_t>& neighbor_mask) {
-        typename GraphType::shifter shifter(kmer, this->_K);
-        vector<kmer_t> rkmers = filter_nodes(shifter.gather_right());
-        if (rkmers.size()) {
+                                         set<hash_t>& neighbor_mask) {
+
+        this->set_cursor(kmer.kmer);
+        NeighborBundle bundle;
+        bundle.second = find_right_kmers();
+        
+        if (bundle.second.size()) {
             return _induce_decision_nodes_right(kmer,
-                                                rkmers,
+                                                bundle,
                                                 neighbor_mask);
         }
         return 0;
     }
 
     uint8_t _induce_decision_nodes_right(kmer_t kmer,
-                                      NeighborBundle& neighbors,
-                                      set<hash_t>& neighbor_mask) {
+                                         NeighborBundle& neighbors,
+                                         set<hash_t>& neighbor_mask) {
 
         // see _induce_decision_nodes_left for information
 

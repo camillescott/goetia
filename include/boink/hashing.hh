@@ -310,27 +310,40 @@ class KmerIterator : public KmerClient {
     const std::string _seq;
     unsigned int index;
     unsigned int length;
-    bool _initialized;
+    bool _initialized, _shifter_owner;
 
 public:
 
-    ShifterType shifter;
+    ShifterType * shifter;
 
-    KmerIterator(const std::string seq, uint16_t K) :
+    KmerIterator(const std::string& seq, uint16_t K) :
         KmerClient(K), _seq(seq), 
-        index(0), _initialized(false), shifter(seq, K) {
+        index(0), _initialized(false), _shifter_owner(true) {
+
+        shifter = new ShifterType(seq, K);
 
         if (_seq.length() < _K) {
             throw BoinkException("Sequence must have length >= K");
         }
+    }
+
+    KmerIterator(const std::string& seq, ShifterType * shifter) :
+        KmerClient(shifter->K()), _seq(seq),
+        index(0), _initialized(false),
+        _shifter_owner(false), shifter(shifter) {
         
+        if(_seq.length() < _K) {
+            throw BoinkException("Sequence must have length >= K");
+        }
+
+        shifter->set_cursor(seq);
     }
 
     hash_t first() {
         _initialized = true;
 
         index += 1;
-        return shifter.get();
+        return shifter->get();
     }
 
     hash_t next() {
@@ -342,10 +355,10 @@ public:
             throw BoinkException("past end of iterator");
         }
 
-        shifter.shift_right(_seq[index + _K - 1]);
+        shifter->shift_right(_seq[index + _K - 1]);
         index += 1;
 
-        return shifter.get();
+        return shifter->get();
     }
 
     bool done() const {
