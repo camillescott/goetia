@@ -224,6 +224,8 @@ class TestDecisionNodes(object):
     @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
     def test_new_decision_from_fork(self, ksize, length, graph, compactor,
                                           left_fork, check_fp):
+        '''New decision node of form (begin)-[D]-[S]-(end)
+        '''
 
         (core, branch), pos = left_fork()
         upper = branch
@@ -245,6 +247,10 @@ class TestDecisionNodes(object):
     @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
     def test_left_end_induced_decision_from_fork(self, ksize, length, graph, compactor,
                                              left_fork, check_fp):
+        '''Decision node induced by segment end which is also end of sequence
+           of form (begin)-[x]-[D]-[S]-(end)
+        '''
+
         (core, branch), pos = left_fork()
 
         compactor.update_sequence(core)
@@ -261,7 +267,61 @@ class TestDecisionNodes(object):
     @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
     def test_right_end_induced_decision_from_fork(self, ksize, length, graph, compactor,
                                                         right_fork, check_fp):
+        '''Decision node induced by segment end which is also end of sequence
+           of form (begin)-[S]-[D]-[x]-(end)
+        '''
+
         (core, branch), pos = right_fork()
+        print(core, core[:pos+1] + branch, sep='\n')
+        print(core[pos:pos+ksize])
+
+        compactor.update_sequence(core)
+        assert compactor.cdbg.n_dnodes == 0
+
+        compactor.update_sequence(branch)
+        assert compactor.cdbg.n_dnodes == 1
+        dnode_hash = graph.hash(core[pos:pos+ksize])
+        print('dnode hash:', dnode_hash)
+        assert compactor.cdbg.query_dnode_marker(dnode_hash)
+
+    @using_ksize(15)
+    @using_length(100)
+    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
+    def test_left_mid_induced_decision_from_fork(self, ksize, length, graph, compactor,
+                                                       left_fork, check_fp):
+        ''' Decision node is induced by a non-decision segment end,
+            with flanking known sequence to its  right
+
+            (begin)-[S]-[D x]-(end)
+        '''
+        (core, branch), pos = left_fork()
+        branch = branch + core[pos+ksize-1:]
+        print(core, branch, sep='\n')
+        print(core[pos:pos+ksize])
+
+        compactor.update_sequence(core)
+        assert compactor.cdbg.n_dnodes == 0
+
+        compactor.update_sequence(branch)
+        assert compactor.cdbg.n_dnodes == 1
+        dnode_hash = graph.hash(core[pos:pos+ksize])
+        print('dnode hash:', dnode_hash)
+        assert compactor.cdbg.query_dnode_marker(dnode_hash)
+
+    @using_ksize(15)
+    @using_length(100)
+    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
+    def test_right_mid_induced_decision_from_fork(self, ksize, length, graph, compactor,
+                                                        right_fork, check_fp):
+        ''' Decision node is induced by a non-decision segment end,
+            with flanking known sequence to its  right
+
+            (begin)-[x D]-[S]-(end)
+        '''
+        (core, branch), pos = right_fork()
+        branch = core[:pos+1] + branch
+        print(core, branch, sep='\n')
+        print(core[pos:pos+ksize])
 
         compactor.update_sequence(core)
         assert compactor.cdbg.n_dnodes == 0
