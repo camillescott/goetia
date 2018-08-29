@@ -142,6 +142,8 @@ cdef extern from "boink/compactor.hh" namespace "boink" nogil:
                                  vector[hash_t]&,
                                  vector[NeighborBundle]&) except +ValueError
 
+        void update_sequence(const string&) except +ValueError
+
         void find_new_segments(const string&, # sequence to add
                                set[hash_t]&, # all new k-mers
                                deque[compact_segment]&, # new segments

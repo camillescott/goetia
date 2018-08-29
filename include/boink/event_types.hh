@@ -80,11 +80,9 @@ struct BuildUNodeEvent : public Event {
         : Event(MSG_ADD_UNODE)
     {}
     HashVector tags;
-    string sequence;
-    bool has_left;
     hash_t left_end;
-    bool has_right;
     hash_t right_end;
+    string sequence;
 };
 
 
@@ -128,7 +126,8 @@ struct SplitUNodeEvent : public Event {
     SplitUNodeEvent()
         : Event(MSG_SPLIT_UNODE)
     {}
-    id_t unode_id;
+
+    hash_t tag;
     size_t split_at;
 };
 

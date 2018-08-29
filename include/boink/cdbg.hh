@@ -281,7 +281,6 @@ class UnitigNode : public CompactNode {
 
 protected:
 
-    bool _left_decision, _right_decision;
     hash_t _left_end, _right_end;
 
 public:
@@ -289,26 +288,17 @@ public:
     HashVector tags;
 
     UnitigNode(id_t node_id,
-               bool left_decision,
                hash_t left_end,
-               bool right_decision,
                hash_t right_end,
                const string& sequence)
         : CompactNode(node_id, sequence),
-          _left_decision(left_decision),
           _left_end(left_end),
-          _right_decision(right_decision),
           _right_end(right_end) { 
     }
 
     const node_meta_t meta() const {
-        if (_left_decision != _right_decision) {
-            return TIP;
-        } else if (_left_decision) {
-            return FULL;
-        } else {
-            return ISLAND;
-        }
+        // TODO: this should be deduced by the cDBG object
+        return FULL;
     }
 
     const hash_t left_end() const {
@@ -439,9 +429,10 @@ public:
                 {
                     auto * data = static_cast<BuildUNodeEvent*>(event.get());
                     auto lock = lock_unodes();
-                    this->build_unode(data->sequence, data->tags,
-                                      data->has_left, data->left_end,
-                                      data->has_right, data->right_end);
+                    this->build_unode(data->sequence,
+                                      data->tags,
+                                      data->left_end,
+                                      data->right_end);
                 }
                 return;
             case boink::event_types::MSG_DELETE_UNODE:
@@ -557,16 +548,12 @@ public:
 
     UnitigNode * build_unode(const string& sequence,
                              HashVector& tags,
-                             bool left_decision,
                              hash_t left_end,
-                             bool right_decision,
                              hash_t right_end) {
 
         id_t id = _unitig_id_counter;
         unique_ptr<UnitigNode> unode = make_unique<UnitigNode>(id,
-                                                               left_decision,
                                                                left_end,
-                                                               right_decision,
                                                                right_end,
                                                                sequence);
         _unitig_id_counter++;

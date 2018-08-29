@@ -290,6 +290,10 @@ cdef class StreamingCompactor:
 
         return positions, hashes
 
+    def update_sequence(self, str sequence):
+        cdef string _sequence = _bstring(sequence)
+        deref(self._sc_this).update_sequence(sequence)
+
     def find_new_segments(self, str sequence):
         cdef string _sequence = _bstring(sequence)
         cdef set[hash_t] _new_kmers
