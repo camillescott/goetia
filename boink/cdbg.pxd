@@ -100,6 +100,7 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
         dnode_iter_t dnodes_end() const
 
         _DecisionNode * query_dnode(hash_t)
+        bool query_dnode_marker(hash_t)
         vector[_DecisionNode*] query_dnodes[ShifterType](const string&) except +ValueError
 
         _UnitigNode * query_unode_tag(hash_t)

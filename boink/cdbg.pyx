@@ -146,7 +146,6 @@ cdef cDBGFormat convert_format(str file_format) except *:
                          "Format must be one of: {1}".format(file_format,
                                                              formats))
 
-
 cdef class cDBG:
 
     SAVE_FORMATS = ['graphml', 'edgelist',
@@ -205,6 +204,9 @@ cdef class cDBG:
             return DecisionNode._wrap(_node)
         else:
             return None
+
+    def query_dnode_marker(self, hash_t h):
+        return deref(self._this).query_dnode_marker(h)
 
     def query_dnodes(self, str sequence):
         pass
@@ -292,7 +294,7 @@ cdef class StreamingCompactor:
 
     def update_sequence(self, str sequence):
         cdef string _sequence = _bstring(sequence)
-        deref(self._sc_this).update_sequence(sequence)
+        deref(self._sc_this).update_sequence(_sequence)
 
     def find_new_segments(self, str sequence):
         cdef string _sequence = _bstring(sequence)
