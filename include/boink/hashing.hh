@@ -91,7 +91,7 @@ public:
     }
 
     bool is_valid(const char * sequence) const {
-        for (uint16_t i = 0; i < this-_K; ++i) {
+        for (uint16_t i = 0; i < this->_K; ++i) {
             if(!is_valid(sequence[i])) {
                 return false;
             }
@@ -260,7 +260,7 @@ public:
     }
 
     hash_t _hash(const char * sequence) const {
-        CyclicHash<uint16_t> hasher(this->_K);
+        CyclicHash<hash_t> hasher(this->_K);
         for (uint16_t i = 0; i < this->_K; ++i) {
             hasher.eat(sequence[i]);
         }
