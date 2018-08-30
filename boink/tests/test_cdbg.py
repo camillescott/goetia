@@ -345,6 +345,37 @@ class TestDecisionNodes(object):
         assert compactor.cdbg.has_dnode(graph.hash(sequence[pos:pos+ksize]))
 
 
+class TestUnitigCreation(object):
+
+    @using_ksize(15)
+    @using_length(100)
+    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
+    def test_left_fork_unode_creation(self, ksize, length, graph, compactor,
+                                            left_fork, check_fp):
+        '''New decision node of form (begin)-[D]-[S]-(end)
+        '''
+
+        (core, branch), pos = left_fork()
+        upper = branch
+        lower = core[:pos+ksize-1]
+        test = core[pos:]
+
+        compactor.update_sequence(upper)
+        assert compactor.cdbg.n_unodes == 1
+        upper_unode = compactor.cdbg.query_unode_end(graph.hash(upper[:ksize]))
+        print('hashes', graph.hash(upper[:ksize]), graph.hash(upper[-ksize:]))
+        assert upper_unode.sequence == upper
+
+        compactor.update_sequence(lower)
+        assert compactor.cdbg.n_dnodes == 0
+        assert compactor.cdbg.n_unodes == 2
+
+        compactor.update_sequence(test)
+        assert compactor.cdbg.n_dnodes == 1
+        dnode_hash = graph.hash(test[:ksize])
+        print('dnode hash:', dnode_hash)
+        assert compactor.cdbg.has_dnode(dnode_hash)
+
 
 @using_ksize(21)
 @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
