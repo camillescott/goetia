@@ -160,6 +160,7 @@ def title_with_actions(task):
     """return task name task actions"""
     if task.actions:
         title = "\n".join([str(action) for action in task.actions])
+        title += "\nDeps: " + ", ".join([str(dep) for dep in task.file_dep])
     # A task that contains no actions at all
     # is used as group task
     else:
