@@ -227,6 +227,10 @@ cdef class cDBG:
     def n_tags(self):
         return deref(self._this).n_tags()
 
+    @property
+    def n_unitig_ends(self):
+        return deref(self._this).n_unitig_ends()
+
     def save(self, str filename, str file_format):
         if file_format is None:
             return

@@ -93,6 +93,7 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
         uint64_t n_unitig_nodes() const
         uint64_t n_decision_nodes() const
         uint64_t n_tags() const
+        uint64_t n_unitig_ends() const
 
         unode_iter_t unodes_begin() const
         unode_iter_t unodes_end() const

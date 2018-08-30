@@ -453,6 +453,10 @@ public:
         return unitig_tag_map.size();
     }
 
+    uint64_t n_unitig_ends() const {
+        return unitig_end_map.size();
+    }
+
     DecisionNode* build_dnode(hash_t hash, const string& kmer) {
         /* Build a new DecisionNode; or, if the given k-mer hash
          * already has a DecisionNode, do nothing.
