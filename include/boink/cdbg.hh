@@ -565,28 +565,34 @@ public:
                       hash_t right_end,
                       HashVector& new_tags) {
 
-        auto lock = lock_unodes();
+        UnitigNode *left_unode, *right_unode;
+        string right_sequence;
+        hash_t new_right_end;
 
-        auto left_unode_it = unitig_end_map.find(left_end);
-        if (left_unode_it == unitig_end_map.end()) {
-            return;
+        {
+            auto lock = lock_unodes();
+
+            auto left_unode_it = unitig_end_map.find(left_end);
+            if (left_unode_it == unitig_end_map.end()) {
+                return;
+            }
+
+            auto right_unode_it = unitig_end_map.find(right_end);
+            if (right_unode_it == unitig_end_map.end()) {
+                return;
+            }
+
+            left_unode = left_unode_it->second;
+            right_unode = right_unode_it->second;
+
+            pdebug("Merge unodes " << *left_unode << " and " << *right_unode
+                   << " with delete and extend ops.");
+
+            right_sequence = new_sequence + right_unode->sequence;
+            std::copy(right_unode->tags.begin(), right_unode->tags.end(),
+                      std::back_inserter(new_tags));
+            new_right_end = right_unode->right_end();
         }
-
-        auto right_unode_it = unitig_end_map.find(right_end);
-        if (right_unode_it == unitig_end_map.end()) {
-            return;
-        }
-
-        auto left_unode = left_unode_it->second;
-        auto right_unode = right_unode_it->second;
-
-        pdebug("Merge unodes " << *left_unode << " and " << *right_unode
-               << " with delete and extend ops.");
-
-        auto right_sequence = new_sequence + right_unode->sequence;
-        std::copy(right_unode->tags.begin(), right_unode->tags.end(),
-                  std::back_inserter(new_tags));
-        hash_t new_right_end = right_unode->right_end();
         delete_unode(right_unode);
 
         extend_unode(DIR_RIGHT,
