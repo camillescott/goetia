@@ -511,6 +511,7 @@ public:
                                                                sequence);
         _unitig_id_counter++;
         _n_unitig_nodes++;
+        _n_updates++;
 
         // Transfer the UnitigNode's ownership to the map;
         // get its new memory address and return it
@@ -626,6 +627,7 @@ public:
             switch_unode_ends(unode->right_end(), new_right_end);
             unode->set_right_end(new_right_end);
             unode->sequence = unode->sequence.substr(0, split_at + this->_K - 1);
+            ++_n_updates;
         }
 
         HashVector tags; // TODO: WARNING: broken
