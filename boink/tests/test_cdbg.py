@@ -440,7 +440,7 @@ class TestUnitigSplit(object):
     @using_ksize(15)
     @using_length(100)
     @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
-    def test_left_mid_induced_decision_split(self, ksize, length, graph, compactor,
+    def test_left_induced_split(self, ksize, length, graph, compactor,
                                                    left_fork, check_fp):
         ''' Decision node is induced by a non-decision segment end,
             with flanking known sequence to its  right
@@ -448,7 +448,6 @@ class TestUnitigSplit(object):
             (begin)-[S]-[D x]-(end)
         '''
         (core, branch), pos = left_fork()
-        branch = branch + core[pos+ksize-1:]
         print(core, branch, sep='\n')
         print(core[pos:pos+ksize])
 
@@ -462,9 +461,9 @@ class TestUnitigSplit(object):
 
         branch_unode = compactor.cdbg.query_unode_end(graph.hash(branch[:ksize]))
         assert branch_unode is not None
-        assert branch_unode.sequence == branch[:pos+ksize]
+        assert branch_unode.sequence == branch
         assert branch_unode.left_end == graph.hash(branch[:ksize])
-        assert branch_unode.right_end == graph.hash(branch[pos:pos+ksize])
+        assert branch_unode.right_end == graph.hash(branch[-ksize:])
     
         assert core[pos:pos+ksize] not in branch_unode.sequence
         assert compactor.cdbg.query_dnode(graph.hash(core[pos:pos+ksize])) is not None
@@ -484,7 +483,7 @@ class TestUnitigSplit(object):
     @using_ksize(15)
     @using_length(100)
     @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
-    def test_right_mid_induced_decision_split(self, ksize, length, graph, compactor,
+    def test_right_induced_split(self, ksize, length, graph, compactor,
                                                     right_fork, check_fp):
         ''' Decision node is induced by a non-decision segment end,
             with flanking known sequence to its  right
@@ -492,7 +491,6 @@ class TestUnitigSplit(object):
             (begin)-[x D]-[S]-(end)
         '''
         (core, branch), pos = right_fork()
-        branch = core[:pos+1] + branch
         print(core, branch, sep='\n')
         print(core[pos:pos+ksize])
 
@@ -502,9 +500,27 @@ class TestUnitigSplit(object):
 
         compactor.update_sequence(branch)
         assert compactor.cdbg.n_dnodes == 1
-        dnode_hash = graph.hash(core[pos:pos+ksize])
-        print('dnode hash:', dnode_hash)
-        assert compactor.cdbg.has_dnode(dnode_hash)
+        assert compactor.cdbg.n_unodes == 3
+
+        branch_unode = compactor.cdbg.query_unode_end(graph.hash(branch[:ksize]))
+        assert branch_unode is not None
+        assert branch_unode.sequence == branch
+        assert branch_unode.left_end == graph.hash(branch[:ksize])
+        assert branch_unode.right_end == graph.hash(branch[-ksize:])
+    
+        assert core[pos:pos+ksize] not in branch_unode.sequence
+        assert compactor.cdbg.query_dnode(graph.hash(core[pos:pos+ksize])) is not None
+
+        core_left_unode = compactor.cdbg.query_unode_end(graph.hash(core[:ksize]))
+        assert core_left_unode is not None
+        assert core_left_unode.sequence == core[:pos+ksize-1]
+        assert core_left_unode.left_end == graph.hash(core[:ksize])
+        assert core_left_unode.right_end == graph.hash(core[pos-1:pos+ksize-1])
+
+        core_right_unode = compactor.cdbg.query_unode_end(graph.hash(core[-ksize:]))
+        assert core_right_unode.sequence == core[pos+1:]
+        assert core_right_unode.left_end == graph.hash(core[pos+1:pos+ksize+1])
+        assert core_right_unode.right_end == graph.hash(core[-ksize:])
 
 
 @using_ksize(21)
