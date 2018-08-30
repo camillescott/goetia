@@ -330,6 +330,20 @@ class TestDecisionNodes(object):
         print('dnode hash:', dnode_hash)
         assert compactor.cdbg.has_dnode(dnode_hash)
 
+    @using_ksize(15)
+    @using_length(100)
+    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
+    def test_new_decision_node_segment_flanked(self, ksize, length, graph, compactor,
+                                                     left_hairpin, check_fp):
+        ''' Test flanked new decision node using a hairpin fixture, of form
+            (begin)-[S]-[D]-[S]-[x]-(end) where [D] is the same k-mer as [x]
+        '''
+        sequence, pos = left_hairpin()
+        compactor.update_sequence(sequence)
+
+        assert compactor.cdbg.n_dnodes == 1
+        assert compactor.cdbg.has_dnode(graph.hash(sequence[pos:pos+ksize]))
+
 
 
 @using_ksize(21)
