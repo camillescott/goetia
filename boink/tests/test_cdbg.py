@@ -380,6 +380,31 @@ class TestUnitigCreation(object):
         test_unode = compactor.cdbg.query_unode_end(graph.hash(test[1:ksize+1]))
         assert test_unode.sequence == test[1:]
 
+    @using_ksize(15)
+    @using_length(100)
+    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
+    def test_merge(self, ksize, length, graph, compactor, linear_path, check_fp):
+        sequence = linear_path()
+        left = sequence[:length//2]
+        right = sequence[length//2:]
+        print(left)
+        print(right)
+
+        compactor.update_sequence(left);
+        assert compactor.cdbg.n_unodes == 1
+        assert compactor.cdbg.query_unode_end(graph.hash(left[:ksize])).sequence == left
+
+        compactor.update_sequence(right)
+        assert compactor.cdbg.n_unodes == 2
+        assert compactor.cdbg.query_unode_end(graph.hash(right[:ksize])).sequence == right
+
+        compactor.update_sequence(left + right)
+        assert compactor.cdbg.n_unodes == 1
+        assert compactor.cdbg.query_unode_end(graph.hash(left[:ksize])).sequence == left + right
+        assert compactor.cdbg.query_unode_end(graph.hash(left[-ksize:])) is None
+        assert compactor.cdbg.query_unode_end(graph.hash(right[:ksize])) is None
+
+
 
 @using_ksize(21)
 @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
