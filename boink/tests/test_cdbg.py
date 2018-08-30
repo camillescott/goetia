@@ -67,8 +67,6 @@ class TestFindNewSegments:
                     assert graph.left_degree(kmer) < 2
                     assert graph.right_degree(kmer) < 2
 
-
-
     @using_ksize(15)
     @using_length(100)
     @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
@@ -240,7 +238,7 @@ class TestDecisionNodes(object):
         assert compactor.cdbg.n_dnodes == 1
         dnode_hash = graph.hash(test[:ksize])
         print('dnode hash:', dnode_hash)
-        assert compactor.cdbg.query_dnode_marker(dnode_hash)
+        assert compactor.cdbg.has_dnode(dnode_hash)
 
     @using_ksize(15)
     @using_length(100)
@@ -260,7 +258,7 @@ class TestDecisionNodes(object):
         assert compactor.cdbg.n_dnodes == 1
         dnode_hash = graph.hash(core[pos:pos+ksize])
         print('dnode hash:', dnode_hash)
-        assert compactor.cdbg.query_dnode_marker(dnode_hash)
+        assert compactor.cdbg.has_dnode(dnode_hash)
 
     @using_ksize(15)
     @using_length(100)
@@ -282,7 +280,7 @@ class TestDecisionNodes(object):
         assert compactor.cdbg.n_dnodes == 1
         dnode_hash = graph.hash(core[pos:pos+ksize])
         print('dnode hash:', dnode_hash)
-        assert compactor.cdbg.query_dnode_marker(dnode_hash)
+        assert compactor.cdbg.has_dnode(dnode_hash)
 
     @using_ksize(15)
     @using_length(100)
@@ -306,7 +304,7 @@ class TestDecisionNodes(object):
         assert compactor.cdbg.n_dnodes == 1
         dnode_hash = graph.hash(core[pos:pos+ksize])
         print('dnode hash:', dnode_hash)
-        assert compactor.cdbg.query_dnode_marker(dnode_hash)
+        assert compactor.cdbg.has_dnode(dnode_hash)
 
     @using_ksize(15)
     @using_length(100)
@@ -330,7 +328,7 @@ class TestDecisionNodes(object):
         assert compactor.cdbg.n_dnodes == 1
         dnode_hash = graph.hash(core[pos:pos+ksize])
         print('dnode hash:', dnode_hash)
-        assert compactor.cdbg.query_dnode_marker(dnode_hash)
+        assert compactor.cdbg.has_dnode(dnode_hash)
 
 
 

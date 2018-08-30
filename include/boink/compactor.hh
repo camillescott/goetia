@@ -116,6 +116,7 @@ class StreamingCompactor : public AssemblerMixin<GraphType>,
 protected:
 
     uint64_t _minimizer_window_size;
+    bool _cdbg_external;
 
 public:
 
@@ -134,43 +135,48 @@ public:
     using AssemblerType::gather_right;
 
     GraphType * dbg;
-    cDBG cdbg;
+    cDBG * cdbg;
 
     StreamingCompactor(GraphType * dbg,
-                       uint64_t minimizer_window_size=8)
+                       uint64_t minimizer_window_size=8,
+                       cDBG * cdbg=nullptr)
         : AssemblerMixin<GraphType>(dbg),
           EventNotifier(),
           _minimizer_window_size(minimizer_window_size),
-          dbg(dbg),
-          cdbg(dbg->K())
+          dbg(dbg)
     {
-        register_listener(static_cast<EventListener*>(&cdbg));
+        if (cdbg == nullptr) {
+            this->cdbg = new cDBG(dbg->K());
+            _cdbg_external = false;
+        } else {
+            this->cdbg = cdbg;
+            _cdbg_external = true;
+        }
     }
 
     ~StreamingCompactor() {
-        _cerr("StreamingCompactor: waiting for cDBG to finish updating.");
-        cdbg.wait_on_processing(0);
+        //cdbg->wait_on_processing(0);
 
         // make sure nothing else has a lock on the cdbg
-        auto dlock = cdbg.lock_dnodes();
-        auto ulock = cdbg.lock_unodes();
-    }
+        auto dlock = cdbg->lock_dnodes();
+        auto ulock = cdbg->lock_unodes();
 
-    void wait_on_updates() {
-        cdbg.wait_on_processing(0);
+        if (!_cdbg_external) {
+            delete cdbg;
+        }
     }
     
     StreamingCompactorReport* get_report() {
         StreamingCompactorReport * report = new StreamingCompactorReport();
-        report->n_full = cdbg.meta_counter.full_count;
-        report->n_tips = cdbg.meta_counter.tip_count;
-        report->n_islands = cdbg.meta_counter.island_count;
-        report->n_unknown = cdbg.meta_counter.unknown_count;
-        report->n_trivial = cdbg.meta_counter.trivial_count;
-        report->n_dnodes = cdbg.n_decision_nodes();
-        report->n_unodes = cdbg.n_unitig_nodes();
-        report->n_tags = cdbg.n_tags();
-        report->n_updates = cdbg.n_updates();
+        report->n_full = cdbg->meta_counter.full_count;
+        report->n_tips = cdbg->meta_counter.tip_count;
+        report->n_islands = cdbg->meta_counter.island_count;
+        report->n_unknown = cdbg->meta_counter.unknown_count;
+        report->n_trivial = cdbg->meta_counter.trivial_count;
+        report->n_dnodes = cdbg->n_decision_nodes();
+        report->n_unodes = cdbg->n_unitig_nodes();
+        report->n_tags = cdbg->n_tags();
+        report->n_updates = cdbg->n_updates();
         report->n_unique = dbg->n_unique();
         report->estimated_fp = dbg->estimated_fp();
 
@@ -246,31 +252,6 @@ public:
             this->seen.insert(next.hash);
             if (degree_right() > 1) break;
         }
-    }
-
-    void notify_build_dnode(hash_t hash, const string& kmer) {
-        auto event = make_shared<BuildDNodeEvent>();
-        event->hash = hash;
-        event->kmer = kmer;
-        this->notify(event);
-    }
-
-    void notify_build_unode(const string& sequence,
-                            HashVector& tags,
-                            hash_t left_end,
-                            hash_t right_end) {
-        auto event = make_shared<BuildUNodeEvent>();
-        event->tags = tags;
-        event->sequence = sequence;
-        event->left_end = left_end;
-        event->right_end = right_end;
-        this->notify(event);
-    }
-
-    void notify_delete_unode(id_t node_id) {
-        auto event = make_shared<DeleteUNodeEvent>();
-        event->node_id = node_id;
-        this->notify(event);
     }
 
     bool is_decision_kmer(const string& node,
@@ -420,14 +401,14 @@ public:
                     if (pos == 0) {
                         vector<shift_t> lneighbors = filter_nodes(gather_left());
                         if (lneighbors.size() == 1 &&
-                            cdbg.has_unode_end(lneighbors.front().hash)) {
+                            cdbg->has_unode_end(lneighbors.front().hash)) {
                             
                             left_anchor = lneighbors.front().hash;
                             has_left_unode = true;
                         } else {
                             left_anchor = cur_hash;
                         }
-                    } else if (cdbg.has_unode_end(prev_hash)) {
+                    } else if (cdbg->has_unode_end(prev_hash)) {
                         left_anchor = prev_hash;
                         has_left_unode = true;
                     } else {
@@ -469,7 +450,7 @@ public:
                 pdebug("new -> old");
                 hash_t right_anchor;
                 bool has_right_unode = false;
-                if (cdbg.has_unode_end(cur_hash)) {
+                if (cdbg->has_unode_end(cur_hash)) {
                     right_anchor = cur_hash;
                     has_right_unode = true;
                 } else {
@@ -495,7 +476,7 @@ public:
 
             vector<shift_t> rneighbors = filter_nodes(gather_right());
             if (rneighbors.size() == 1 &&
-                cdbg.has_unode_end(rneighbors.front().hash)) {
+                cdbg->has_unode_end(rneighbors.front().hash)) {
                 right_anchor = rneighbors.front().hash;
                 has_right_unode = true;
             } else {
@@ -536,9 +517,7 @@ public:
             if (v.is_decision_kmer) {
                 kmer_t decision_kmer(v.left_anchor,
                                      sequence.substr(v.start_pos, this->_K));
-                _new_decision_kmer(decision_kmer,
-                                   decision_neighbors.front(),
-                                   new_kmers);
+                _build_dnode(decision_kmer);
                 _induce_decision_nodes(decision_kmer,
                                        decision_neighbors.front(),
                                        new_kmers);
@@ -599,16 +578,6 @@ public:
                              decision_neighbors);
     }
 
-    void _new_decision_kmer(kmer_t kmer,
-                            NeighborBundle& neighbors,
-                            set<hash_t>& neighbor_mask) {
-        /* Handle a new k-mer that is also
-         * a decision node.
-         */
-        cdbg.build_dnode_marker(kmer.hash);
-        notify_build_dnode(kmer.hash, kmer.kmer);
-    }
-
     void _induce_decision_nodes(kmer_t kmer,
                                 NeighborBundle& neighbors,
                                 set<hash_t>& neighbor_mask) {
@@ -650,7 +619,7 @@ public:
                      std::back_inserter(lneighbors),
                      [&] (kmer_t neighbor) { return
                          !(neighbor_mask.count(neighbor.hash) ||
-                          cdbg.query_dnode_marker(neighbor.hash));
+                          cdbg->has_dnode(neighbor.hash));
                      });
 
         for (auto lneighbor : lneighbors) {
@@ -660,8 +629,7 @@ public:
                 // induced decision k-mer
 
                 pdebug("Induced d-node: " << lneighbor.hash << ", " << lneighbor.kmer);
-                cdbg.build_dnode_marker(lneighbor.hash);
-                notify_build_dnode(lneighbor.hash, lneighbor.kmer);
+                _build_dnode(lneighbor);
                 _split_unode(lneighbor, neighbors, neighbor_mask); 
             }
             neighbors.first.clear();
@@ -698,7 +666,7 @@ public:
                      std::back_inserter(rneighbors),
                      [&] (kmer_t neighbor) { return
                          !(neighbor_mask.count(neighbor.hash) ||
-                          cdbg.query_dnode_marker(neighbor.hash));
+                          cdbg->has_dnode(neighbor.hash));
                      });
 
         for (auto rneighbor : rneighbors) {
@@ -707,8 +675,7 @@ public:
                                        neighbors)) {
                 // induced decision k-mer
                 pdebug("Induced d-node: " << rneighbor.hash << ", " << rneighbor.kmer);
-                cdbg.build_dnode_marker(rneighbor.hash);
-                notify_build_dnode(rneighbor.hash, rneighbor.kmer);
+                _build_dnode(rneighbor);
                 _split_unode(rneighbor, neighbors, neighbor_mask); 
             }
             neighbors.first.clear();
@@ -729,8 +696,86 @@ public:
                        const string& sequence) {
 
     }
+
+    virtual void _build_dnode(kmer_t kmer) {
+        cdbg->build_dnode(kmer.hash, kmer.kmer);
+    }
+
+    virtual void _build_unode(const string& sequence,
+                              HashVector& tags,
+                              hash_t left_end,
+                              hash_t right_end) {
+
+    }
 };
 
+template <class GraphType>
+class AsyncStreamingCompactor : public StreamingCompactor<GraphType>,
+                                public EventNotifier {
+
+public:
+
+    using ShifterType = typename GraphType::shifter_type;
+    using AssemblerType = AssemblerMixin<GraphType>;
+    using AssemblerType::seen;
+    using AssemblerType::get_left;
+    using AssemblerType::get_right;
+    using AssemblerType::degree_left;
+    using AssemblerType::degree_right;
+    using AssemblerType::count_nodes;
+    using AssemblerType::filter_nodes;
+    using AssemblerType::find_left_kmers;
+    using AssemblerType::find_right_kmers;
+    using AssemblerType::gather_left;
+    using AssemblerType::gather_right;
+
+    AsyncCDBG * acdbg;
+
+    AsyncStreamingCompactor(GraphType * dbg,
+                            uint64_t minimizer_window_size=8)
+        : EventNotifier()
+    {
+        register_listener(static_cast<EventListener*>(acdbg));
+        acdbg = new AsyncCDBG(dbg->K());
+        StreamingCompactor<GraphType>::StreamingCompactor(dbg, minimizer_window_size, acdbg);
+    }
+
+    ~AsyncStreamingCompactor() {
+        _cerr("AsyncStreamingCompactor: waiting for cDBG to finish updating.");
+        //cdbg->wait_on_processing(0);
+
+        delete acdbg;
+    }
+
+    void wait_on_updates() {
+        acdbg->wait_on_processing(0);
+    }
+
+    void notify_build_dnode(hash_t hash, const string& kmer) {
+        auto event = make_shared<BuildDNodeEvent>();
+        event->hash = hash;
+        event->kmer = kmer;
+        this->notify(event);
+    }
+
+    void notify_build_unode(const string& sequence,
+                            HashVector& tags,
+                            hash_t left_end,
+                            hash_t right_end) {
+        auto event = make_shared<BuildUNodeEvent>();
+        event->tags = tags;
+        event->sequence = sequence;
+        event->left_end = left_end;
+        event->right_end = right_end;
+        this->notify(event);
+    }
+
+    void notify_delete_unode(id_t node_id) {
+        auto event = make_shared<DeleteUNodeEvent>();
+        event->node_id = node_id;
+        this->notify(event);
+    }
+};
 }
 #undef pdebug
 #endif

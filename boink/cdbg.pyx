@@ -205,8 +205,8 @@ cdef class cDBG:
         else:
             return None
 
-    def query_dnode_marker(self, hash_t h):
-        return deref(self._this).query_dnode_marker(h)
+    def has_dnode(self, hash_t h):
+        return deref(self._this).has_dnode(h)
 
     def query_dnodes(self, str sequence):
         pass
@@ -269,11 +269,11 @@ cdef class StreamingCompactor:
         if type(self) is StreamingCompactor:
             self._sc_this = \
                 make_unique[_StreamingCompactor[DefaultDBG]](self._graph)
-            self.cdbg = cDBG._wrap(&(deref(self._sc_this).cdbg))
+            self.cdbg = cDBG._wrap(deref(self._sc_this).cdbg)
             self.Notifier = EventNotifier._wrap(<_EventNotifier*>self._sc_this.get())
 
-    def wait_on_updates(self):
-        deref(self._sc_this).wait_on_updates()
+    #def wait_on_updates(self):
+    #    deref(self._sc_this).wait_on_updates()
 
     def is_decision_kmer(self, str kmer):
         cdef string _kmer = _bstring(kmer)

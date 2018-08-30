@@ -82,8 +82,8 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
     ctypedef _CompactNode * CompactNodePtr
     ctypedef _DecisionNode * DecisionNodePtr
     ctypedef _UnitigNode * UnitigNodePtr
-
-    cdef cppclass _cDBG "boink::cDBG" (_KmerClient, _EventListener):
+    
+    cdef cppclass _cDBG "boink::cDBG" (_KmerClient):
         ctypedef umap[hash_t,unique_ptr[_DecisionNode]].const_iterator dnode_iter_t
         ctypedef umap[id_t,unique_ptr[_UnitigNode]].const_iterator unode_iter_t
 
@@ -100,7 +100,7 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
         dnode_iter_t dnodes_end() const
 
         _DecisionNode * query_dnode(hash_t)
-        bool query_dnode_marker(hash_t)
+        bool has_dnode(hash_t)
         vector[_DecisionNode*] query_dnodes[ShifterType](const string&) except +ValueError
 
         _UnitigNode * query_unode_tag(hash_t)
@@ -110,6 +110,10 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
         void write(const string&, cDBGFormat) except +OSError
         void write_adj_matrix(const string&) except +OSError
         void write_graphml(const string&) except +OSError
+
+    cdef cppclass _AsyncCDBG "boink::AsyncCDBG" (_cDBG, _EventListener):
+        _AsyncCDBG(uint16_t K)
+
 
 cdef extern from "boink/compactor.hh" namespace "boink" nogil:
 
@@ -124,7 +128,7 @@ cdef extern from "boink/compactor.hh" namespace "boink" nogil:
         const bool is_null() 
 
     cdef cppclass _StreamingCompactor "boink::StreamingCompactor" [GraphType] (_AssemblerMixin[GraphType], _EventNotifier):
-        _cDBG cdbg
+        _cDBG * cdbg
 
         _StreamingCompactor(GraphType *)
 

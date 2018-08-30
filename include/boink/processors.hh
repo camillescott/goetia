@@ -347,8 +347,8 @@ public:
     }
 
     void report() {
-        std::cerr << "\tcurrently " << compactor->cdbg.n_decision_nodes()
-                  << " d-nodes, " << compactor->cdbg.n_unitig_nodes()
+        std::cerr << "\tcurrently " << compactor->cdbg->n_decision_nodes()
+                  << " d-nodes, " << compactor->cdbg->n_unitig_nodes()
                   << " u-nodes." << std::endl;
     }
 
