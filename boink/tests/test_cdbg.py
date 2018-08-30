@@ -345,7 +345,7 @@ class TestDecisionNodes(object):
         assert compactor.cdbg.has_dnode(graph.hash(sequence[pos:pos+ksize]))
 
 
-class TestUnitigCreation(object):
+class TestUnitigBuildExtend(object):
 
     @using_ksize(15)
     @using_length(100)
@@ -433,6 +433,10 @@ class TestUnitigCreation(object):
         assert compactor.cdbg.query_unode_end(graph.hash(left[:ksize])).sequence == left + right
         assert compactor.cdbg.query_unode_end(graph.hash(left[-ksize:])) is None
         assert compactor.cdbg.query_unode_end(graph.hash(right[:ksize])) is None
+
+
+class TestUnitigSplit(object):
+    pass
 
 
 @using_ksize(21)

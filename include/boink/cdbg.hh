@@ -526,6 +526,42 @@ public:
         return unode_ptr;
     }
 
+    UnitigNode * switch_unode_ends(hash_t old_unode_end,
+                                   hash_t new_unode_end) {
+
+        auto unode_end_it = unitig_end_map.find(old_unode_end);
+        if (unode_end_it == unitig_end_map.end()) {
+            return nullptr;
+        }
+
+        UnitigNode * unode = unode_end_it->second;
+        unitig_end_map.erase(unode_end_it);
+        unitig_end_map.insert(make_pair(new_unode_end, unode));
+
+        return unode;
+    }
+
+    void clip_unode(direction_t clip_from,
+                    hash_t old_unode_end,
+                    hash_t new_unode_end) {
+        
+        auto lock = lock_unodes();
+
+        auto unode = switch_unode_ends(old_unode_end, new_unode_end);
+        if (unode == nullptr) {
+            return;
+        }
+
+        if (clip_from == DIR_LEFT) {
+            unode->sequence = unode->sequence.substr(1);
+        } else {
+            unode->sequence = unode->sequence.substr(0, unode->sequence.length() - 1);
+        }
+
+        ++_n_updates;
+        pdebug("Clip unode from " << clip_from);
+    }
+
     void extend_unode(direction_t ext_dir,
                       const string& new_sequence,
                       hash_t old_unode_end,
@@ -534,15 +570,11 @@ public:
 
         auto lock = lock_unodes();
 
-        auto unode_end_it = unitig_end_map.find(old_unode_end);
-        if (unode_end_it == unitig_end_map.end()) {
+        auto unode = switch_unode_ends(old_unode_end, new_unode_end);
+        if (unode == nullptr) {
             return;
         }
-
-        UnitigNode * unode = unode_end_it->second;
-        unitig_end_map.erase(unode_end_it);
-        unitig_end_map.insert(make_pair(new_unode_end, unode));
-
+        
         if (ext_dir == DIR_RIGHT) {
             unode->extend_right(new_unode_end, new_sequence);
         } else {
@@ -816,7 +848,7 @@ public:
         auto lock1 = lock_unodes();
         auto lock2 = lock_dnodes();
 
-        id_t edge_counter = 0;
+        //id_t edge_counter = 0;
         for (auto it = decision_nodes.begin(); it != decision_nodes.end(); ++it) {
             out << "<node id=\"n" << it->first << "\"/>" << std::endl;
             /*

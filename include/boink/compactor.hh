@@ -692,10 +692,39 @@ public:
     }
 
     virtual void _split_unode(kmer_t root,
-                      NeighborBundle& neighbors,
-                      set<hash_t>& mask) {
+                              NeighborBundle& neighbors,
+                              set<hash_t>& mask) {
+        UnitigNode * unode;
+        if ((unode = cdbg->query_unode_end(root.hash)) != nullptr) {
+            // special case: induced an end k-mer, just have to trim the u-node,
+            // no need to create a new one
+            hash_t new_end;
+            direction_t clip_from;
+            if (root.hash == unode->left_end()) {
+                new_end = this->hash(unode->sequence.c_str() + 1);
+                clip_from = DIR_LEFT;
+            } else {
+                new_end = this->hash(unode->sequence.c_str() + unode->sequence.size()
+                                     - this->_K - 1);
+                clip_from = DIR_RIGHT;
+            }
+            cdbg->clip_unode(clip_from,
+                             root.hash,
+                             new_end);
+            return;
+        }
 
-        
+        vector<kmer_t> lfiltered;
+        std::copy_if(neighbors.first.begin(),
+                     neighbors.first.end(),
+                     std::back_inserter(lfiltered),
+                     [&] (kmer_t neighbor) { return
+                        !mask.count(neighbor.hash);
+                     });
+        if (lfiltered.size()) {
+            
+            
+        }
     }
 
     virtual void _update_unode(compact_segment& segment,
@@ -741,14 +770,8 @@ public:
     virtual void _build_dnode(kmer_t kmer) {
         cdbg->build_dnode(kmer.hash, kmer.kmer);
     }
-
-    virtual void _build_unode(const string& sequence,
-                              HashVector& tags,
-                              hash_t left_end,
-                              hash_t right_end) {
-
-    }
 };
+
 
 template <class GraphType>
 class AsyncStreamingCompactor : public StreamingCompactor<GraphType>,
