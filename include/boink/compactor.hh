@@ -708,7 +708,7 @@ public:
         
         if (segment.has_left_unode && !segment.has_right_unode) {
             auto trimmed_seq = sequence.substr(segment.start_pos + this->_K - 1,
-                                               segment.length - this->_K - 1);
+                                               segment.length - this->_K + 1);
             cdbg->extend_unode(DIR_RIGHT,
                                trimmed_seq,
                                segment.left_anchor,
@@ -717,7 +717,7 @@ public:
 
         } else if (!segment.has_left_unode && segment.has_right_unode) {
             auto trimmed_seq = sequence.substr(segment.start_pos,
-                                               segment.length - this->_K - 1);
+                                               segment.length - this->_K + 1);
             cdbg->extend_unode(DIR_LEFT,
                                trimmed_seq,
                                segment.right_anchor,
