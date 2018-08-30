@@ -363,18 +363,22 @@ class TestUnitigCreation(object):
         compactor.update_sequence(upper)
         assert compactor.cdbg.n_unodes == 1
         upper_unode = compactor.cdbg.query_unode_end(graph.hash(upper[:ksize]))
-        print('hashes', graph.hash(upper[:ksize]), graph.hash(upper[-ksize:]))
         assert upper_unode.sequence == upper
 
         compactor.update_sequence(lower)
         assert compactor.cdbg.n_dnodes == 0
         assert compactor.cdbg.n_unodes == 2
+        lower_unode = compactor.cdbg.query_unode_end(graph.hash(lower[:ksize]))
+        assert lower_unode.sequence == lower
 
         compactor.update_sequence(test)
         assert compactor.cdbg.n_dnodes == 1
         dnode_hash = graph.hash(test[:ksize])
         print('dnode hash:', dnode_hash)
         assert compactor.cdbg.has_dnode(dnode_hash)
+
+        test_unode = compactor.cdbg.query_unode_end(graph.hash(test[1:ksize+1]))
+        assert test_unode.sequence == test[1:]
 
 
 @using_ksize(21)
