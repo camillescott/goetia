@@ -454,10 +454,13 @@ class TestUnitigSplit(object):
         compactor.update_sequence(core)
         assert compactor.cdbg.n_dnodes == 0
         assert compactor.cdbg.n_unodes == 1
+        assert compactor.cdbg.n_unitig_ends == 2
 
         compactor.update_sequence(branch)
         assert compactor.cdbg.n_dnodes == 1
         assert compactor.cdbg.n_unodes == 3
+        assert compactor.cdbg.n_unodes == 3
+        assert compactor.cdbg.n_unitig_ends == 6
 
         branch_unode = compactor.cdbg.query_unode_end(graph.hash(branch[:ksize]))
         assert branch_unode is not None
@@ -497,10 +500,12 @@ class TestUnitigSplit(object):
         compactor.update_sequence(core)
         assert compactor.cdbg.n_dnodes == 0
         assert compactor.cdbg.n_unodes == 1
+        assert compactor.cdbg.n_unitig_ends == 2
 
         compactor.update_sequence(branch)
         assert compactor.cdbg.n_dnodes == 1
         assert compactor.cdbg.n_unodes == 3
+        assert compactor.cdbg.n_unitig_ends == 6
 
         branch_unode = compactor.cdbg.query_unode_end(graph.hash(branch[:ksize]))
         assert branch_unode is not None
@@ -522,6 +527,15 @@ class TestUnitigSplit(object):
         assert core_right_unode.left_end == graph.hash(core[pos+1:pos+ksize+1])
         assert core_right_unode.right_end == graph.hash(core[-ksize:])
 
+    @using_ksize(15)
+    @using_length(100)
+    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
+    def test_tangle_unitig_clipping(self, ksize, length, graph, compactor,
+                                          tandem_quad_forks, check_fp):
+        (core, left_branches, right_branches), left_pos, right_pos = tandem_quad_forks()
+
+        compactor.update_sequence(core)
+        
 
 @using_ksize(21)
 @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
