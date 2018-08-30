@@ -205,11 +205,11 @@ public:
         
         shift_t next;
         while (get_right(next) // because get_right implicit checks rdegree
-               && !this->seen.count(next.hash)) {
+               && !this->seen.count(next.hash)
+               && degree_left() < 2) {
             path.push_back(next.symbol);
             this->seen.insert(next.hash);
             minimizer.update(next.hash);
-            if (degree_left() > 1) break;
         }
     }
 
@@ -220,10 +220,10 @@ public:
         
         shift_t next;
         while (get_right(next) // because get_right implicit checks rdegree
-               && !this->seen.count(next.hash)) {
+               && !this->seen.count(next.hash)
+               && degree_left() < 2) {
             path.push_back(next.symbol);
             this->seen.insert(next.hash);
-            if (degree_left() > 1) break;
         }
     }
 
@@ -235,11 +235,11 @@ public:
 
         shift_t next;
         while (get_left(next) // because get_left implicitly checks ldegree
-               && !this->seen.count(next.hash)) {
+               && !this->seen.count(next.hash)
+               && degree_right() < 2) {
             path.push_front(next.symbol);
             this->seen.insert(next.hash);
             minimizer.update(next.hash);
-            if (degree_right() > 1) break;
         }
     }
 
@@ -250,10 +250,10 @@ public:
 
         shift_t next;
         while (get_left(next) // because get_left implicitly checks ldegree
-               && !this->seen.count(next.hash)) {
+               && !this->seen.count(next.hash)
+               && degree_right() < 2) {
             path.push_front(next.symbol);
             this->seen.insert(next.hash);
-            if (degree_right() > 1) break;
         }
     }
 
@@ -722,8 +722,64 @@ public:
                         !mask.count(neighbor.hash);
                      });
         if (lfiltered.size()) {
-            
-            
+            // size should always be 1 here
+            pdebug("Found a valid left neighbor, search this way... ("
+                   << lfiltered.size() << " in filtered set, should always be 1.)");
+            auto start = lfiltered.back();
+            this->set_cursor(start.kmer);
+            Path path;
+            compactify_left(path);
+            hash_t left_end = this->get();
+            auto unode = cdbg->query_unode_end(left_end);
+            if (unode == nullptr) {
+                pdebug("compacted end result was nullptr, bad news");
+                return;
+            }
+            size_t split_point = path.size() + 1;
+            hash_t left_unode_new_right = start.hash;
+            pdebug("split point is " << split_point << " new_right is " << left_unode_new_right
+                   << " root was " << root.hash);
+            hash_t right_unode_new_left = this->hash(unode->sequence.c_str() + split_point + 1);
+
+            cdbg->split_unode(unode->node_id,
+                              split_point,
+                              left_unode_new_right,
+                              right_unode_new_left);
+
+            return;
+        }
+
+        vector<kmer_t> rfiltered;
+        std::copy_if(neighbors.second.begin(),
+                     neighbors.second.end(),
+                     std::back_inserter(rfiltered),
+                     [&] (kmer_t neighbor) { return
+                        !mask.count(neighbor.hash);
+                     });
+        if (rfiltered.size()) {
+            // size should always be 1 here
+            pdebug("Found a valid left neighbor, search this way... ("
+                   << rfiltered.size() << " in filtered set, should be 1.");
+            auto start = rfiltered.back();
+            this->set_cursor(start.kmer);
+            Path path;
+            compactify_right(path);
+            hash_t right_end = this->get();
+            auto unode = cdbg->query_unode_end(right_end);
+            if (unode == nullptr) {
+                pdebug("compacted end result was nullptr, bad news");
+                return;
+            }
+            size_t split_point = unode->sequence.size() - path.size() - 2;
+            hash_t new_right = this->hash(unode->sequence.c_str() + split_point - 1);
+            hash_t new_left = start.hash;
+
+            cdbg->split_unode(unode->node_id,
+                              split_point,
+                              new_right,
+                              new_left);
+
+            return;
         }
     }
 

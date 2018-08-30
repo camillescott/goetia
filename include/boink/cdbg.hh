@@ -305,6 +305,10 @@ public:
         return _left_end;
     }
 
+    void set_left_end(hash_t left_end) {
+        _left_end = left_end;
+    }
+
     void extend_right(hash_t right_end, const string& new_sequence) {
         sequence += new_sequence;
         _right_end = right_end;
@@ -317,6 +321,10 @@ public:
 
     const hash_t right_end() const {
         return _right_end;
+    }
+
+    void set_right_end(hash_t right_end) {
+        _right_end = right_end;
     }
 
     std::string repr() const {
@@ -538,6 +546,9 @@ public:
         unitig_end_map.erase(unode_end_it);
         unitig_end_map.insert(make_pair(new_unode_end, unode));
 
+        pdebug("Swap " << old_unode_end << " to " << new_unode_end
+               << " for " << unode->node_id);
+
         return unode;
     }
 
@@ -590,6 +601,39 @@ public:
         pdebug("Extend unode " << *unode << " in dir " << ext_dir
                << " by " << new_sequence.size() << " bases, new end is "
                << new_unode_end << ", add " << new_tags.size() << " tags.");
+    }
+
+    void split_unode(id_t node_id,
+                     size_t split_at,
+                     hash_t new_right_end,
+                     hash_t new_left_end) {
+        pdebug("Split u-node " << node_id << " at " << split_at);
+
+        UnitigNode * unode;
+        string right_unitig;
+        hash_t right_unode_right_end;
+        {
+            auto lock = lock_unodes();
+
+            unode = query_unode_id(node_id);
+            if (unode == nullptr) {
+                return;
+            }
+
+            right_unitig = unode->sequence.substr(split_at + 1);
+            right_unode_right_end = unode->right_end();
+
+            switch_unode_ends(unode->right_end(), new_right_end);
+            unode->set_right_end(new_right_end);
+            unode->sequence = unode->sequence.substr(0, split_at + this->_K - 1);
+        }
+
+        HashVector tags; // TODO: WARNING: broken
+        build_unode(right_unitig,
+                    tags,
+                    new_left_end,
+                    right_unode_right_end);
+
     }
 
     void merge_unodes(const string& new_sequence,
