@@ -305,6 +305,16 @@ public:
         return _left_end;
     }
 
+    void extend_right(hash_t right_end, const string& new_sequence) {
+        sequence += new_sequence;
+        _right_end = right_end;
+    }
+
+    void extend_left(hash_t left_end, const string& new_sequence) {
+        sequence = new_sequence + sequence;
+        _left_end = left_end;
+    }
+
     const hash_t right_end() const {
         return _right_end;
     }
@@ -323,7 +333,7 @@ public:
 std::ostream& operator<<(std::ostream& o, const UnitigNode& un) {
     o << "<UNode ID=" << un.node_id
       << " left_end=" << un.left_end()
-      << " right=" << un.right_end()
+      << " right_end=" << un.right_end()
       << " meta=" << node_meta_repr(un.meta())
       << ">";
     return o;
@@ -500,15 +510,92 @@ public:
         UnitigNode * unode_ptr = unitig_nodes[id].get();
 
         // Link up its new tags
-        unode->tags.insert(std::end(unode->tags), std::begin(tags), std::end(tags));
+        unode_ptr->tags.insert(std::end(unode_ptr->tags),
+                               std::begin(tags),
+                               std::end(tags));
         for (auto tag: tags) {
             unitig_tag_map.insert(make_pair(tag, unode_ptr));
         }
+        unitig_end_map.insert(make_pair(left_end, unode_ptr));
+        unitig_end_map.insert(make_pair(right_end, unode_ptr));
 
-        meta_counter.increment(unode->meta());
+        meta_counter.increment(unode_ptr->meta());
+
         pdebug("Built unode " << *unode_ptr);
 
         return unode_ptr;
+    }
+
+    void extend_unode(direction_t ext_dir,
+                      const string& new_sequence,
+                      hash_t old_unode_end,
+                      hash_t new_unode_end,
+                      HashVector& new_tags) {
+
+        auto lock = lock_unodes();
+
+        auto unode_end_it = unitig_end_map.find(old_unode_end);
+        if (unode_end_it == unitig_end_map.end()) {
+            return;
+        }
+
+        UnitigNode * unode = unode_end_it->second;
+        unitig_end_map.erase(unode_end_it);
+        unitig_end_map.insert(make_pair(new_unode_end, unode));
+
+        if (ext_dir == DIR_RIGHT) {
+            unode->extend_right(new_unode_end, new_sequence);
+        } else {
+            unode->extend_left(new_unode_end, new_sequence);
+        }
+
+        std::copy(new_tags.begin(), new_tags.end(), std::back_inserter(unode->tags));
+        for (auto tag: new_tags) {
+            unitig_tag_map.insert(make_pair(tag, unode));
+        }
+
+        ++_n_updates;
+        pdebug("Extend unode " << *unode << " in dir " << ext_dir
+               << " by " << new_sequence.size() << " bases, new end is "
+               << new_unode_end << ", add " << new_tags.size() << " tags.");
+    }
+
+    void merge_unodes(const string& new_sequence,
+                      hash_t left_end,
+                      hash_t right_end,
+                      HashVector& new_tags) {
+
+        auto lock = lock_unodes();
+
+        auto left_unode_it = unitig_end_map.find(left_end);
+        if (left_unode_it == unitig_end_map.end()) {
+            return;
+        }
+
+        auto right_unode_it = unitig_end_map.find(right_end);
+        if (right_unode_it == unitig_end_map.end()) {
+            return;
+        }
+
+        auto left_unode = left_unode_it->second;
+        auto right_unode = right_unode_it->second;
+
+        pdebug("Merge unodes " << *left_unode << " and " << *right_unode
+               << " with delete and extend ops.");
+
+        auto right_sequence = new_sequence + right_unode->sequence;
+        std::copy(right_unode->tags.begin(), right_unode->tags.end(),
+                  std::back_inserter(new_tags));
+        hash_t new_right_end = right_unode->right_end();
+        delete_unode(right_unode);
+
+        extend_unode(DIR_RIGHT,
+                     right_sequence,
+                     left_end,
+                     new_right_end,
+                     new_tags);
+
+        pdebug("Complete merge.");
     }
 
     UnitigNode * query_unode_end(hash_t end_kmer) {

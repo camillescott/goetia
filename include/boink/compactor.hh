@@ -82,6 +82,9 @@ struct compact_segment {
     // end of last k-mer)
     size_t length;
 
+    // tags associated with this segment
+    HashVector tags;
+
     // the default constructor creates a null segment
     compact_segment()
         : left_anchor(0),
@@ -349,7 +352,9 @@ public:
         segment.has_right_unode = has_right_unode;
         segments.push_back(segment);
         pdebug("segment ended, start=" << segment.start_pos
-               << " cur_pos=" << end);
+               << " cur_pos=" << end << " has_left: " <<
+               segment.has_left_unode << " has_right: "
+               << segment.has_right_unode);
     }
 
     void finish_decision_segment(compact_segment& segment,
@@ -505,15 +510,19 @@ public:
                               ) {
 
         if (segments.size() == 0) {
+            pdebug("No segments.");
             return;
         }
 
+        pdebug(segments.size() << " segments.");
+
         // Pub: Algorithm 3: InsertSegment
 
-        auto it = segments.begin();
-        compact_segment& u = *it, v = *(++it), w = *(++it);
-
-        while (it != segments.end()) {
+        size_t i = 2;
+        while (i < segments.size()) {
+            auto u = segments.at(i-2);
+            auto v = segments.at(i-1);
+            auto w = segments.at(i);
             if (v.is_decision_kmer) {
                 kmer_t decision_kmer(v.left_anchor,
                                      sequence.substr(v.start_pos, this->_K));
@@ -550,12 +559,9 @@ public:
                     }
                 }
 
-                _update_unode(u, sequence);
+                _update_unode(v, sequence);
             }
-
-            u = v;
-            v = w;
-            w = *(++it);
+            ++i;
         }
     }
 
@@ -685,16 +691,51 @@ public:
         return rneighbors.size();
     }
 
-    void _split_unode(kmer_t root,
+    virtual void _split_unode(kmer_t root,
                       NeighborBundle& neighbors,
                       set<hash_t>& mask) {
 
         
     }
 
-    void _update_unode(compact_segment& segment,
-                       const string& sequence) {
+    virtual void _update_unode(compact_segment& segment,
+                               const string& sequence) {
 
+        pdebug("Update Unode from segment.");
+        pdebug("Segment has left: " << std::to_string(segment.has_left_unode)
+               << "Segment has right: "
+               << std::to_string(segment.has_right_unode));
+        
+        if (segment.has_left_unode && !segment.has_right_unode) {
+            auto trimmed_seq = sequence.substr(segment.start_pos + this->_K - 1,
+                                               segment.length - this->_K - 1);
+            cdbg->extend_unode(DIR_RIGHT,
+                               trimmed_seq,
+                               segment.left_anchor,
+                               segment.right_anchor,
+                               segment.tags);
+
+        } else if (!segment.has_left_unode && segment.has_right_unode) {
+            auto trimmed_seq = sequence.substr(segment.start_pos,
+                                               segment.length - this->_K - 1);
+            cdbg->extend_unode(DIR_LEFT,
+                               trimmed_seq,
+                               segment.right_anchor,
+                               segment.left_anchor,
+                               segment.tags);
+        } else if (segment.has_left_unode && segment.has_right_unode) {
+            auto trimmed_seq = sequence.substr(segment.start_pos + this->_K - 1,
+                                               segment.length - (this->_K * 2 - 2));
+            cdbg->merge_unodes(trimmed_seq,
+                               segment.left_anchor,
+                               segment.right_anchor,
+                               segment.tags);
+        } else {
+            cdbg->build_unode(sequence.substr(segment.start_pos, segment.length),
+                              segment.tags,
+                              segment.left_anchor,
+                              segment.right_anchor);
+        }
     }
 
     virtual void _build_dnode(kmer_t kmer) {
