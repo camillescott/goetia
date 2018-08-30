@@ -383,6 +383,36 @@ class TestUnitigCreation(object):
     @using_ksize(15)
     @using_length(100)
     @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
+    def test_extend_right(self, ksize, length, graph, compactor, linear_path, check_fp):
+        sequence = linear_path()
+        left = sequence[:length//2]
+
+        compactor.update_sequence(left);
+        assert compactor.cdbg.n_unodes == 1
+        assert compactor.cdbg.query_unode_end(graph.hash(left[:ksize])).sequence == left
+
+        compactor.update_sequence(sequence)
+        assert compactor.cdbg.n_unodes == 1
+        assert compactor.cdbg.query_unode_end(graph.hash(left[:ksize])).sequence == sequence
+
+    @using_ksize(15)
+    @using_length(100)
+    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
+    def test_extend_left(self, ksize, length, graph, compactor, linear_path, check_fp):
+        sequence = linear_path()
+        right = sequence[length//2:]
+
+        compactor.update_sequence(right);
+        assert compactor.cdbg.n_unodes == 1
+        assert compactor.cdbg.query_unode_end(graph.hash(right[:ksize])).sequence == right
+
+        compactor.update_sequence(sequence)
+        assert compactor.cdbg.n_unodes == 1
+        assert compactor.cdbg.query_unode_end(graph.hash(sequence[:ksize])).sequence == sequence
+
+    @using_ksize(15)
+    @using_length(100)
+    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
     def test_merge(self, ksize, length, graph, compactor, linear_path, check_fp):
         sequence = linear_path()
         left = sequence[:length//2]
