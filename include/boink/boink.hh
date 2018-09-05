@@ -54,6 +54,13 @@ struct shift_t {
 };
 
 
+std::ostream& operator<<(std::ostream& os, const shift_t& shift)
+{
+    os << "<shift_t symbol=" << shift.symbol << " hash=" << shift.hash << ">";
+    return os;
+}
+
+
 struct kmer_t {
     const hash_t hash;
     const std::string kmer;
@@ -68,6 +75,14 @@ struct kmer_t {
     }
 
 };
+
+
+std::ostream& operator<<(std::ostream& os, const kmer_t& kmer)
+{
+    os << "<kmer_t kmer=" << kmer.kmer << " hash=" << kmer.hash << ">";
+    return os;
+}
+
 
 
 enum direction_t {

@@ -161,13 +161,15 @@ public:
     }
 
     vector<kmer_t> find_left_kmers() {
+        auto root = this->get_cursor();
         auto filtered = filter_nodes(this->gather_left());
-        return build_left_kmers(filtered, this->get_cursor());
+        return build_left_kmers(filtered, root);
     }
 
     vector<kmer_t> find_right_kmers() {
+        auto root = this->get_cursor();
         auto filtered = filter_nodes(this->gather_right());
-        return build_right_kmers(filtered, this->get_cursor());
+        return build_right_kmers(filtered, root);
     }
 
     void assemble_left(const std::string& seed,

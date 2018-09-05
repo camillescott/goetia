@@ -533,9 +533,60 @@ class TestUnitigSplit(object):
     def test_tangle_unitig_clipping(self, ksize, length, graph, compactor,
                                           tandem_quad_forks, check_fp):
         (core, left_branches, right_branches), left_pos, right_pos = tandem_quad_forks()
-
+        left_dkmer = core[left_pos:left_pos+ksize]
+        right_dkmer = core[right_pos:right_pos+ksize]
+        print('left d-node:', left_dkmer, left_pos, graph.hash(left_dkmer))
+        print('right d-node:', right_dkmer, right_pos, graph.hash(right_dkmer))
         compactor.update_sequence(core)
         
+        n_ends = 2
+        n_unodes = 1
+        for branch_num, branch in enumerate(left_branches):
+            print('*** INSERT left branch', branch_num, file=sys.stderr)
+            compactor.update_sequence(branch)
+            if branch_num == 0:
+                n_ends += 4 # the first branch induces the dnode and splits core
+                n_unodes += 2
+            else:
+                n_ends += 2
+                n_unodes += 1
+            assert compactor.cdbg.n_dnodes == 1
+            assert compactor.cdbg.n_unitig_ends == n_ends
+            assert compactor.cdbg.n_unodes == n_unodes
+            unode = compactor.cdbg.query_unode_end(graph.hash(branch[:ksize]))
+            assert unode is not None
+            assert unode.sequence == branch
+            assert unode.right_end == graph.hash(branch[-ksize:])
+
+        left_unode = compactor.cdbg.query_unode_end(graph.hash(core[:ksize]))
+        assert left_unode is not None
+        assert left_unode.right_end == graph.hash(core[left_pos-1:left_pos-1+ksize])
+        assert left_unode.sequence == core[:left_pos-1+ksize]
+
+        for branch_num, branch in enumerate(right_branches):
+            print('*** INSERT right branch', branch_num, file=sys.stderr)
+            compactor.update_sequence(branch)
+            n_ends += 2 # first branch induces the second d-node but clips
+                        # the unitig rather than splitting it
+            n_unodes += 1
+
+            assert compactor.cdbg.n_dnodes == 2
+            assert compactor.cdbg.n_unitig_ends == n_ends
+            assert compactor.cdbg.n_unodes == n_unodes
+
+            left_end = graph.hash(branch[:ksize])
+            unode = compactor.cdbg.query_unode_end(left_end)
+            print('left_end for branch is', left_end, file=sys.stderr)
+
+            assert branch[:ksize] not in core
+            branch_hashes = list(graph.hashes(branch[:ksize+3]))
+            print(branch_hashes, file=sys.stderr)
+            print("branch is length ", len(branch))
+
+            assert unode is not None
+            assert unode.sequence == branch
+            assert unode.right_end == graph.hash(branch[-ksize:])
+
 
 @using_ksize(21)
 @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])

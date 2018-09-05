@@ -570,12 +570,15 @@ public:
 
         if (clip_from == DIR_LEFT) {
             unode->sequence = unode->sequence.substr(1);
+            unode->set_left_end(new_unode_end);
+            pdebug("Clip unode from left");
         } else {
             unode->sequence = unode->sequence.substr(0, unode->sequence.length() - 1);
+            unode->set_right_end(new_unode_end);
+            pdebug("Clip unode from right");
         }
 
         ++_n_updates;
-        pdebug("Clip unode from " << clip_from);
     }
 
     void extend_unode(direction_t ext_dir,

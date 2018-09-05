@@ -112,6 +112,21 @@ struct compact_segment {
 };
 
 
+std::ostream& operator<<(std::ostream& os, const compact_segment& segment)
+{
+    os << "<compact_segment left_anchor=" << segment.left_anchor 
+       << " right_anchor=" << segment.right_anchor
+       << " has_left_unode=" << segment.has_left_unode
+       << " has_right_unode=" << segment.has_right_unode
+       << " start=" << segment.start_pos
+       << " length=" << segment.length
+       << ">";
+    return os;
+}
+
+
+
+
 template <class GraphType>
 class StreamingCompactor : public AssemblerMixin<GraphType>,
                            public EventNotifier {
@@ -536,27 +551,55 @@ public:
                 // if u is null, then we need to check for left induced d-nodes
                 // or for a unitig connection
                 if (u.is_null()) {
-                    if (!v.has_left_unode) {
-                        kmer_t root(v.left_anchor,
-                                    sequence.substr(v.start_pos, this->_K));
-                        // TODO: future optimization. we know root is not a decision
-                        // k-mer, so in this case, unless v starts at pos = 0 in the sequence,
-                        // the only neighbor is the preceeding k-mer in the sequence
-                        _induce_decision_nodes_left(root, new_kmers);
+
+                    if (v.has_left_unode) {
+                        if (cdbg->query_unode_end(v.left_anchor)->left_end() ==
+                            v.left_anchor) {
+
+                            pdebug("Edge case segment: " << v);
+                            
+                            hash_t prev = v.left_anchor;
+                            v.has_left_unode = false;
+                            v.left_anchor = this->hash(sequence.c_str() + v.start_pos);
+                            pdebug("Fixed edge case segment: " << v);
+                        }
                     }
+
+                    kmer_t root(v.left_anchor,
+                                sequence.substr(v.start_pos, this->_K));
+                    // TODO: future optimization. we know root is not a decision
+                    // k-mer, so in this case, unless v starts at pos = 0 in the sequence,
+                    // the only neighbor is the preceeding k-mer in the sequence
+                    _induce_decision_nodes_left(root, new_kmers);
+   
                 }
 
                 // v is regular segment: if w is null, check for right induced
                 // d-nodes or for a unitig connection
                 if (w.is_null()) {
-                    if (!v.has_right_unode) {
-                        kmer_t root(v.right_anchor,
-                                    sequence.substr(v.start_pos + v.length - this->_K, this->_K));
-                        // TODO: future optimization. we know root is not a decision
-                        // k-mer, so in this case, unless v starts at pos = 0 in the sequence,
-                        // the only neighbor is the preceeding k-mer in the sequence
-                        _induce_decision_nodes_right(root, new_kmers);
+
+                    if (v.has_right_unode) {
+                        if (cdbg->query_unode_end(v.right_anchor)->right_end()
+                            == v.right_anchor) {
+                      
+                            hash_t prev = v.right_anchor;
+                            v.has_right_unode = false;
+                            v.right_anchor = this->hash(sequence.c_str()
+                                                        + v.start_pos
+                                                        + v.length
+                                                        - this->_K);
+                            pdebug("Edge case: unode end right anchor is induced d-node"
+                                   ", new anchor is " << v.right_anchor <<
+                                   ", old was " << prev);
+                        }
                     }
+
+                    kmer_t root(v.right_anchor,
+                               sequence.substr(v.start_pos + v.length - this->_K, this->_K));
+                    // TODO: future optimization. we know root is not a decision
+                    // k-mer, so in this case, unless v starts at pos = 0 in the sequence,
+                    // the only neighbor is the preceeding k-mer in the sequence
+                    _induce_decision_nodes_right(root, new_kmers);
                 }
 
                 _update_unode(v, sequence);
@@ -595,6 +638,7 @@ public:
     uint8_t _induce_decision_nodes_left(kmer_t kmer,
                                         set<hash_t>& neighbor_mask) {
 
+        pdebug("Prepare to attempt left induction on " << kmer);
         this->set_cursor(kmer.kmer);
         NeighborBundle bundle;
         bundle.first = find_left_kmers();
@@ -617,7 +661,8 @@ public:
         // existing unitigs. so, we filter out neighbors of
         // the new decision k-mer which already exist and are already known
         // to the cDBG to be decision k-mers
-                            
+
+        pdebug("Attempt left d-node induction from " << kmer);
 
         vector<kmer_t> lneighbors;
         std::copy_if(neighbors.first.begin(),
@@ -627,6 +672,9 @@ public:
                          !(neighbor_mask.count(neighbor.hash) ||
                           cdbg->has_dnode(neighbor.hash));
                      });
+
+        pdebug("Found " << lneighbors.size() << " potential inductees, "
+                << lneighbors);
 
         for (auto lneighbor : lneighbors) {
             NeighborBundle neighbors;
@@ -666,6 +714,9 @@ public:
 
         // see _induce_decision_nodes_left for information
 
+        pdebug("Attempt right d-node induction from " << kmer.kmer
+                << ", " << kmer.hash);
+
         vector<kmer_t> rneighbors;
         std::copy_if(neighbors.second.begin(),
                      neighbors.second.end(), 
@@ -674,6 +725,8 @@ public:
                          !(neighbor_mask.count(neighbor.hash) ||
                           cdbg->has_dnode(neighbor.hash));
                      });
+
+        pdebug("Found " << rneighbors.size() << " potential inductees.");
 
         for (auto rneighbor : rneighbors) {
             NeighborBundle neighbors;
@@ -787,8 +840,8 @@ public:
                                const string& sequence) {
 
         pdebug("Update Unode from segment.");
-        pdebug("Segment has left: " << std::to_string(segment.has_left_unode)
-               << "Segment has right: "
+        pdebug("Segment has left unode: " << std::to_string(segment.has_left_unode)
+               << " Segment has right unode: "
                << std::to_string(segment.has_right_unode));
         
         if (segment.has_left_unode && !segment.has_right_unode) {
