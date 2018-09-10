@@ -29,6 +29,8 @@ class TestFindNewSegments:
     def test_fork_core_first(self, ksize, length, graph, compactor, right_fork,
                                    check_fp):
         (core, branch), pos = right_fork()
+        check_fp()
+
         print('INPUTS', core, core[:pos+1], ' ' * (pos + 1) + branch, sep='\n\n')
 
         core_segments = compactor.find_new_segments(core)
@@ -73,6 +75,8 @@ class TestFindNewSegments:
     def test_right_decision_split(self, ksize, graph, compactor, right_fork,
                                   check_fp):
         (core, branch), pos = right_fork()
+        check_fp()
+
         print('INPUTS', core, core[:pos+1], ' ' * (pos + 1) + branch, sep='\n\n')
 
         branch_segments = compactor.find_new_segments(branch)
@@ -120,6 +124,7 @@ class TestFindNewSegments:
         right = sequence[length//2:]
         print(left)
         print(right)
+        check_fp()
 
         left_segments = compactor.find_new_segments(left)
         right_segments = compactor.find_new_segments(right)
@@ -156,6 +161,8 @@ class TestFindNewSegments:
     def test_right_decision_on_end(self, ksize, graph, compactor, right_fork,
                                          check_fp):
         (core, branch), pos = right_fork()
+        check_fp()
+
         # pos is start position of decision k-mer
         print('INPUTS', core, core[:pos+1], ' ' * (pos + 1) + branch, sep='\n\n')
         upper = branch
@@ -189,6 +196,7 @@ class TestFindNewSegments:
     def test_left_decision_on_end(self, ksize, length, graph, compactor, left_fork,
                                         check_fp):
         (core, branch), pos = left_fork()
+        check_fp()
         # pos is start position of decision k-mer
         print('INPUTS', core, core[:pos+1], ' ' * (pos + 1) + branch, sep='\n\n')
         upper = branch
@@ -226,6 +234,8 @@ class TestDecisionNodes(object):
         '''
 
         (core, branch), pos = left_fork()
+        check_fp()
+
         upper = branch
         lower = core[:pos+ksize-1]
         test = core[pos:]
@@ -250,6 +260,7 @@ class TestDecisionNodes(object):
         '''
 
         (core, branch), pos = left_fork()
+        check_fp()
 
         compactor.update_sequence(core)
         assert compactor.cdbg.n_dnodes == 0
@@ -270,6 +281,8 @@ class TestDecisionNodes(object):
         '''
 
         (core, branch), pos = right_fork()
+        check_fp()
+
         print(core, core[:pos+1] + branch, sep='\n')
         print(core[pos:pos+ksize])
 
@@ -293,6 +306,8 @@ class TestDecisionNodes(object):
             (begin)-[S]-[D x]-(end)
         '''
         (core, branch), pos = left_fork()
+        check_fp()
+
         branch = branch + core[pos+ksize-1:]
         print(core, branch, sep='\n')
         print(core[pos:pos+ksize])
@@ -317,6 +332,8 @@ class TestDecisionNodes(object):
             (begin)-[x D]-[S]-(end)
         '''
         (core, branch), pos = right_fork()
+        check_fp()
+
         branch = core[:pos+1] + branch
         print(core, branch, sep='\n')
         print(core[pos:pos+ksize])
@@ -339,6 +356,8 @@ class TestDecisionNodes(object):
             (begin)-[S]-[D]-[S]-[x]-(end) where [D] is the same k-mer as [x]
         '''
         sequence, pos = left_hairpin()
+        check_fp()
+        print('d-kmer: ', sequence[pos:pos+ksize], graph.hash(sequence[pos:pos+ksize]))
         compactor.update_sequence(sequence)
 
         assert compactor.cdbg.n_dnodes == 1
@@ -436,6 +455,39 @@ class TestUnitigBuildExtend(object):
 
 
 class TestUnitigSplit(object):
+
+    @using_ksize(15)
+    @using_length(150)
+    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
+    def test_induced_decision_to_unitig_extend(self, ksize, length, graph, compactor,
+                                                     right_fork, check_fp):
+        (core, branch), pos = right_fork()
+        check_fp()
+
+        to_be_end_induced = core[ksize+2:pos+1] + branch
+        waist_left = core[:ksize+2]
+        waist_right = core[pos+ksize:]
+
+        compactor.update_sequence(to_be_end_induced)
+        assert compactor.cdbg.n_dnodes == 0
+        assert compactor.cdbg.n_unodes == 1
+
+        compactor.update_sequence(core)
+        assert compactor.cdbg.n_dnodes == 1
+        assert compactor.cdbg.n_unodes == 3
+        assert compactor.cdbg.n_unitig_ends == 6
+
+        assert compactor.cdbg.query_dnode(graph.hash(core[pos:pos+ksize])).sequence == \
+               core[pos:pos+ksize]
+
+        assert compactor.cdbg.query_unode_end(graph.hash(core[:ksize])).right_end == \
+               graph.hash(core[pos-1:pos+ksize-1])
+
+        assert compactor.cdbg.query_unode_end(graph.hash(branch[:ksize])).right_end == \
+               graph.hash(branch[-ksize:])
+        
+        assert compactor.cdbg.query_unode_end(graph.hash(core[pos+1:pos+ksize+1])).right_end == \
+               graph.hash(core[-ksize:])
     
     @using_ksize(15)
     @using_length(100)
@@ -530,7 +582,7 @@ class TestUnitigSplit(object):
     @using_ksize(15)
     @using_length(100)
     @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
-    def test_tangle_unitig_clipping(self, ksize, length, graph, compactor,
+    def test_tandem_decision_unitig_clipping(self, ksize, length, graph, compactor,
                                           tandem_quad_forks, check_fp):
         (core, left_branches, right_branches), left_pos, right_pos = tandem_quad_forks()
         left_dkmer = core[left_pos:left_pos+ksize]

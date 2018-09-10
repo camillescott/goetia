@@ -32,6 +32,23 @@ typedef std::deque<char> Path;
 typedef std::vector<std::string> StringVector;
 typedef std::vector<kmer_t> KmerVector;
 typedef std::pair<KmerVector, KmerVector> NeighborBundle;
+typedef std::pair<kmer_t, NeighborBundle> DecisionKmer;
+
+struct DecisionKmerHash {
+    // Just uses the hash of the kmer_t from the pair
+    inline std::size_t operator()(const DecisionKmer& n) const {
+        return n.first.hash;
+    }
+};
+
+struct  DecisionKmerComp {
+    bool operator()(const DecisionKmer& a, const DecisionKmer& b) {
+        return a.first.hash < b.first.hash;
+    }
+};
+
+typedef std::set<DecisionKmer, DecisionKmerComp> DecisionKmerSet;
+typedef std::unordered_set<DecisionKmer, DecisionKmerHash> DecisionKmerUSet;
 
 
 template<class GraphType>
@@ -76,25 +93,26 @@ public:
         return degree_left() + degree_right();
     }
 
-    bool get_left(shift_t& result) {
+    uint8_t get_left(shift_t& result) {
         std::vector<shift_t> neighbors = this->gather_left();
-        if (reduce_nodes(neighbors, result)) {
+        auto n_left = reduce_nodes(neighbors, result);
+
+        if (n_left == 1) {
             this->shift_left(result.symbol);
-            return true;
-        } else {
-            return false;
         }
+        return n_left;
     }
 
-    bool get_right(shift_t& result) {
+    uint8_t get_right(shift_t& result) {
         std::vector<shift_t> neighbors = this->gather_right();
-        if (reduce_nodes(neighbors, result)) {
+        auto n_right = reduce_nodes(neighbors, result);
+
+        if (n_right == 1) {
             this->shift_right(result.symbol);
-            return true;
-        } else {
-            return false;
         }
+        return n_right;
     }
+
 
     uint8_t count_nodes(const vector<shift_t>& nodes) {
         uint8_t n_found = 0;
@@ -106,7 +124,7 @@ public:
         return n_found;
     }
 
-    bool reduce_nodes(const vector<shift_t>& nodes,
+    uint8_t reduce_nodes(const vector<shift_t>& nodes,
                       shift_t& result) {
         uint8_t n_found = 0;
         for (auto node : nodes) {
@@ -115,16 +133,12 @@ public:
                 //pdebug("found " << neighbor.hash);
                 ++n_found;
                 if (n_found > 1) {
-                    return false;
+                    return n_found;
                 }
                 result = node;
             }
         }
-        if (n_found == 0) {
-            return false;
-        } else {
-            return true;
-        }
+        return n_found;
     }
 
     vector<shift_t> filter_nodes(const vector<shift_t>& nodes) {

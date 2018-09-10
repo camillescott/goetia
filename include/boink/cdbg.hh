@@ -92,6 +92,17 @@ enum node_meta_t {
 };
 
 
+enum update_meta_t {
+    BUILD_UNODE,
+    BUILD_DNODE,
+    DELETE_UNODE,
+    SPLIT_UNODE,
+    EXTEND_UNODE,
+    CLIP_UNODE,
+    MERGE_UNODES
+};
+
+
 inline const char * node_meta_repr(node_meta_t meta) {
     switch(meta) {
         case FULL:
@@ -568,7 +579,9 @@ public:
             return;
         }
 
-        if (clip_from == DIR_LEFT) {
+        if (unode->sequence.length() < this->_K) {
+            delete_unode(unode);
+        } else if (clip_from == DIR_LEFT) {
             unode->sequence = unode->sequence.substr(1);
             unode->set_left_end(new_unode_end);
             pdebug("Clip unode from left");
@@ -586,6 +599,8 @@ public:
                       hash_t old_unode_end,
                       hash_t new_unode_end,
                       HashVector& new_tags) {
+
+        pdebug("start extend unode");
 
         auto lock = lock_unodes();
 
@@ -624,13 +639,12 @@ public:
             auto lock = lock_unodes();
 
             unode = query_unode_id(node_id);
-            if (unode == nullptr) {
-                return;
-            }
-
+            assert(unode != nullptr);
+            
             right_unitig = unode->sequence.substr(split_at + 1);
-            right_unode_right_end = unode->right_end();
 
+            // set the left unode right end to the new right end
+            right_unode_right_end = unode->right_end();
             switch_unode_ends(unode->right_end(), new_right_end);
             unode->set_right_end(new_right_end);
             unode->sequence = unode->sequence.substr(0, split_at + this->_K - 1);
@@ -649,6 +663,8 @@ public:
                       hash_t left_end,
                       hash_t right_end,
                       HashVector& new_tags) {
+
+        pdebug("Merge unodes " << left_end << ", " << right_end);
 
         UnitigNode *left_unode, *right_unode;
         string right_sequence;

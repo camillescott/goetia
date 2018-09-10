@@ -121,6 +121,8 @@ cdef extern from "boink/compactor.hh" namespace "boink" nogil:
     cdef struct compact_segment:
         hash_t left_anchor
         hash_t right_anchor
+        hash_t left_flank
+        hash_t right_flank
         size_t start_pos
         size_t length
         bool is_decision_kmer
