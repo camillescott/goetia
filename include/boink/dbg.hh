@@ -181,6 +181,24 @@ public:
         return counts;
     }
 
+    void get_counts(const string& sequence,
+                        std::vector<count_t>& counts,
+                        std::vector<hash_t>& hashes,
+                        std::set<hash_t>& new_hashes) {
+
+        KmerIterator<HashShifter> iter(sequence, _K);
+
+        while(!iter.done()) {
+            hash_t h = iter.next();
+            count_t result = get(h);
+            counts.push_back(result);
+            hashes.push_back(h);
+            if (result == 0) {
+                new_hashes.insert(h);
+            }
+        }
+    }
+
     void save(string filename) {
         S.save(filename, _K);
     }
