@@ -2,6 +2,7 @@ import functools
 import itertools
 import os
 import shutil
+from shutil import rmtree
 import subprocess
 import sys
 import sysconfig
@@ -114,6 +115,18 @@ def build_dir():
 
 def lib_dir():
     return os.path.join("build", distutils_dir_name("lib"))
+
+def clean_folder(target):
+    '''Function for doit task's `clean` parameter to remove a folder.
+
+    Args:
+        target (str): The folder to remove.
+    '''
+
+    try:
+        rmtree(target)
+    except OSError:
+        pass
 
 '''
 *

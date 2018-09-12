@@ -14,6 +14,7 @@ from doit.tools import run_once
 import yaml
 
 from build_utils import (check_for_openmp,
+                         clean_folder,
                          distutils_dir_name,
                          build_dir,
                          lib_dir,
@@ -382,7 +383,9 @@ def task_create_build_dirs():
             'targets': [build_dir(), lib_dir()],
             'actions': ['mkdir -p {0}'.format(build_dir()),
                         'mkdir -p {0}'.format(lib_dir())],
-            'uptodate': [run_once]}
+            'uptodate': [run_once],
+            'clean': [(clean_folder, [build_dir()]),
+                      (clean_folder, [lib_dir()])]}
 
 
 def task_compile_cython_cpp():
