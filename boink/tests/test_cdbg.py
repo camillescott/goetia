@@ -467,6 +467,60 @@ class TestUnitigBuildExtend(object):
 class TestUnitigSplit(object):
 
     @using_ksize(15)
+    @using_length(50)
+    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
+    def test_clip_from_left(self, right_sea, ksize, length, graph, compactor,
+                                  check_fp):
+        top, bottom = right_sea()
+        check_fp()
+
+        compactor.update_sequence(top)
+        compactor.update_sequence(bottom)
+
+        assert compactor.cdbg.n_dnodes == 1
+        assert compactor.cdbg.n_unodes == 2
+        assert compactor.cdbg.n_unitig_ends == 4
+
+        assert compactor.cdbg.query_dnode(graph.hash(top[:ksize])).sequence == top[:ksize]
+        
+        top_unode = compactor.cdbg.query_unode_end(graph.hash(top[1:ksize+1]))
+        assert top_unode is not None
+        assert top_unode.sequence == top[1:]
+        assert top_unode.right_end == graph.hash(top[-ksize:])
+        
+        bottom_unode = compactor.cdbg.query_unode_end(graph.hash(bottom[1:ksize+1]))
+        assert bottom_unode is not None
+        assert bottom_unode.sequence == bottom[1:]
+        assert bottom_unode.right_end == graph.hash(bottom[-ksize:])
+
+    @using_ksize(15)
+    @using_length(50)
+    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
+    def test_clip_from_right(self, left_sea, ksize, length, graph, compactor,
+                                   check_fp):
+        top, bottom = left_sea()
+        check_fp()
+
+        compactor.update_sequence(top)
+        compactor.update_sequence(bottom)
+
+        assert compactor.cdbg.n_dnodes == 1
+        assert compactor.cdbg.n_unodes == 2
+        assert compactor.cdbg.n_unitig_ends == 4
+
+        assert compactor.cdbg.query_dnode(graph.hash(top[-ksize:])).sequence == top[-ksize:]
+        
+        top_unode = compactor.cdbg.query_unode_end(graph.hash(top[-(ksize+1):-1]))
+        assert top_unode is not None
+        assert top_unode.sequence == top[:-1]
+        assert top_unode.left_end == graph.hash(top[:ksize])
+        
+        bottom_unode = compactor.cdbg.query_unode_end(graph.hash(bottom[-(ksize+1):-1]))
+        assert bottom_unode is not None
+        assert bottom_unode.sequence == bottom[:-1]
+        assert bottom_unode.left_end == graph.hash(bottom[:ksize])
+
+    @using_ksize(15)
     @using_length(150)
     @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
     def test_induced_decision_to_unitig_extend(self, ksize, length, graph, compactor,
