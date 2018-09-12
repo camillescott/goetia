@@ -202,7 +202,14 @@ public:
         set<hash_t> new_decision_kmers;
         deque<NeighborBundle> decision_neighbors;
 
+        vector<count_t> counts;
+        vector<hash_t> hashes;
+        dbg->get_counts(sequence, counts, hashes, new_kmers);
+
+
         find_new_segments(sequence,
+                          hashes,
+                          counts,
                           new_kmers,
                           segments,
                           new_decision_kmers,
@@ -214,7 +221,7 @@ public:
                              new_decision_kmers,
                              decision_neighbors);
 
-        for (auto h : new_kmers) {
+        for (auto h : hashes) {
             dbg->add(h);
         }
     }
@@ -256,16 +263,13 @@ public:
     }
 
     void find_new_segments(const string& sequence,
+                           vector<hash_t>& hashes,
+                           vector<count_t>& counts,
                            set<hash_t>& new_kmers,
                            deque<compact_segment>& segments,
                            set<hash_t>& new_decision_kmers,
-                           deque<NeighborBundle>& decision_neighbors
-                           ) {
+                           deque<NeighborBundle>& decision_neighbors) {
 
-
-        vector<count_t> counts;
-        vector<hash_t> hashes;
-        dbg->get_counts(sequence, counts, hashes, new_kmers);
 
         std::ostringstream os;
         os << "k-mers: [";
