@@ -17,7 +17,7 @@ from debruijnal_enhance_o_tron.fixtures.collectors import *
 from boink.dbg import get_dbg_type
 
 
-@pytest.fixture(params=['_BitStorage', '_ByteStorage', '_NibbleStorage'])
+@pytest.fixture(params=['_BitStorage', '_ByteStorage', '_SparseppSetStorage'])
 def graph_type(request, ksize):
 
     _graph_type = get_dbg_type(storage=request.param)

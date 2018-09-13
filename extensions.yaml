@@ -57,6 +57,7 @@ types:
         - BitStorage
         - ByteStorage
         - NibbleStorage
+        - SparseppSetStorage
     - name: ShifterType
       composites: 
         - AlphabetType

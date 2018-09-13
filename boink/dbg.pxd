@@ -33,6 +33,11 @@ cdef extern from "oxli/storage.hh" nogil:
         pass
 
 
+cdef extern from "boink/storage.hh" nogil:
+    cdef cppclass _SparseppSetStorage "boink::SparseppSetStorage" (_Storage):
+        pass
+
+
 cdef extern from "boink/dbg.hh" namespace "boink" nogil:
     ctypedef pair[bool, bool] bit_pair_t
     ctypedef vector[bit_pair_t] bit_pair_vector_t

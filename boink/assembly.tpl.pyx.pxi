@@ -183,6 +183,60 @@ cdef class Assembler__NibbleStorage__DefaultShifter(Assembler_Base):
             deref(self._this).assemble_right(_bstring(seed), path)
 
         return deref(self._this).to_string(path)
+cdef class Assembler__SparseppSetStorage__DefaultShifter(Assembler_Base):
+
+    def __cinit__(self, dBG__SparseppSetStorage__DefaultShifter graph):
+        if type(self) is Assembler__SparseppSetStorage__DefaultShifter:
+            self._this = make_unique[_AssemblerMixin[_dBG[_SparseppSetStorage,_DefaultShifter]]](graph._this.get())
+            self._graph = graph._this.get()
+            self.Graph = graph
+        self.storage_type = graph.storage_type
+        self.shifter_type = graph.shifter_type
+
+    @property
+    def cursor(self):
+        return deref(self._this).get_cursor()
+
+    @cursor.setter
+    def cursor(self, str seed):
+        deref(self._this).set_cursor(_bstring(seed))
+
+    def clear_seen(self):
+        deref(self._this).clear_seen()
+
+    def degree_left(self):
+        return deref(self._this).degree_left()
+
+    def degree_right(self):
+        return deref(self._this).degree_right()
+
+    def degree(self):
+        return deref(self._this).degree()
+
+    def assemble(self, str seed):
+        cdef bytes _seed = _bstring(seed)
+        cdef Path path
+
+        deref(self._this).assemble(_seed, path)
+        return deref(self._this).to_string(path)
+
+    def assemble_left(self, object seed=None):
+        cdef Path path
+        if seed is None:
+            deref(self._this).assemble_left(path)
+        else:
+            deref(self._this).assemble_left(_bstring(seed), path)
+
+        return deref(self._this).to_string(path)
+        
+    def assemble_right(self, object seed=None):
+        cdef Path path
+        if seed is None:
+            deref(self._this).assemble_right(path)
+        else:
+            deref(self._this).assemble_right(_bstring(seed), path)
+
+        return deref(self._this).to_string(path)
 
 
 cdef object _make_assembler(dBG_Base graph):
@@ -195,6 +249,9 @@ cdef object _make_assembler(dBG_Base graph):
     if graph.storage_type == "_NibbleStorage" and \
        graph.shifter_type == "_DefaultShifter":
         return Assembler__NibbleStorage__DefaultShifter(graph)
+    if graph.storage_type == "_SparseppSetStorage" and \
+       graph.shifter_type == "_DefaultShifter":
+        return Assembler__SparseppSetStorage__DefaultShifter(graph)
 
     raise TypeError("Invalid dBG type.")
 

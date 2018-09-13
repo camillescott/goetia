@@ -14,6 +14,7 @@
 #include "assembly.hh"
 #include "oxli/storage.hh"
 #include "oxli/hashtable.hh"
+#include "storage.hh"
 
 #include <algorithm>
 #include <cmath>
@@ -27,9 +28,6 @@ using std::make_pair;
 
 typedef std::pair<bool, bool> bit_pair_t;
 typedef std::vector<bit_pair_t> bit_pair_vector_t;
-
-typedef uint8_t count_t;
-typedef std::pair<uint8_t, uint8_t> full_count_t;
 
 
 template <class StorageType,

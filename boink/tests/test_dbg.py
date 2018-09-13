@@ -25,7 +25,7 @@ def test_presence(graph, ksize, random_sequence):
 
         graph.add(kmer)
         # Node* types can only tell presence/absence
-        if 'Bit' in graph.storage:
+        if 'Bit' in graph.storage or 'SparseppSet' in graph.storage:
             assert graph.get(kmer) == 1
             assert graph.get(hashval) == 1
         else:
@@ -34,6 +34,7 @@ def test_presence(graph, ksize, random_sequence):
 
 
 @using_ksize([21,151])
+@pytest.mark.parametrize('graph_type', ['_BitStorage', '_ByteStorage'], indirect=['graph_type'])
 def test_n_occupied(graph, ksize):
     # basic get/add test
     kmer = 'G' * ksize
@@ -152,7 +153,8 @@ def test_get_bad_dna_kmer(graph, ksize):
 @using_ksize(5)
 def test_add_sequence_and_report(graph, ksize):
     x = "ATGCCGATGCA"
-    num_kmers = sum(graph.add_sequence_and_report(x))
+    _, report = graph.add_sequence_and_report(x)
+    num_kmers = sum(report)
     assert num_kmers == len(x) - ksize + 1   # num k-mers consumed
 
     for start in range(len(x) - 6 + 1):

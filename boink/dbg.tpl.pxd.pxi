@@ -29,6 +29,10 @@ cdef class dBG__NibbleStorage__DefaultShifter(dBG_Base):
     cdef unique_ptr[_dBG[_NibbleStorage,_DefaultShifter]] _this
     cdef unique_ptr[_AssemblerMixin[_dBG[_NibbleStorage,_DefaultShifter]]] _assembler
     cdef hash_t _handle_kmer(self, object) except 0
+cdef class dBG__SparseppSetStorage__DefaultShifter(dBG_Base):
+    cdef unique_ptr[_dBG[_SparseppSetStorage,_DefaultShifter]] _this
+    cdef unique_ptr[_AssemblerMixin[_dBG[_SparseppSetStorage,_DefaultShifter]]] _assembler
+    cdef hash_t _handle_kmer(self, object) except 0
 
 cdef object _make_dbg(int K, uint64_t starting_size, int n_tables, 
                       str storage=*, str shifter=*)

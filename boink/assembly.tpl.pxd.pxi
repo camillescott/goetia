@@ -29,6 +29,10 @@ cdef class Assembler__NibbleStorage__DefaultShifter(Assembler_Base):
     cdef unique_ptr[_AssemblerMixin[_dBG[_NibbleStorage,_DefaultShifter]]] _this
     cdef _dBG[_NibbleStorage,_DefaultShifter] * _graph
     cdef readonly dBG__NibbleStorage__DefaultShifter Graph
+cdef class Assembler__SparseppSetStorage__DefaultShifter(Assembler_Base):
+    cdef unique_ptr[_AssemblerMixin[_dBG[_SparseppSetStorage,_DefaultShifter]]] _this
+    cdef _dBG[_SparseppSetStorage,_DefaultShifter] * _graph
+    cdef readonly dBG__SparseppSetStorage__DefaultShifter Graph
 
 cdef object _make_assembler(dBG_Base graph)
 
