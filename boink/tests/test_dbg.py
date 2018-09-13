@@ -10,6 +10,7 @@ from boink.tests.utils import *
 
 
 @using_ksize([21, 51, 101])
+@presence_backends()
 def test_presence(graph, ksize, random_sequence):
     # basic get/add test
     for kmer in kmers(random_sequence(), ksize):
@@ -24,17 +25,32 @@ def test_presence(graph, ksize, random_sequence):
         assert graph.get(hashval) == 1
 
         graph.add(kmer)
-        # Node* types can only tell presence/absence
-        if 'Bit' in graph.storage or 'SparseppSet' in graph.storage:
-            assert graph.get(kmer) == 1
-            assert graph.get(hashval) == 1
-        else:
-            assert graph.get(kmer) == 2
-            assert graph.get(hashval) == 2
+        assert graph.get(kmer) == 1
+        assert graph.get(hashval) == 1
+
+
+@using_ksize([21, 51, 101])
+@counting_backends()
+def test_counting_presence(graph, ksize, random_sequence):
+    # basic get/add test
+    for kmer in kmers(random_sequence(), ksize):
+
+        hashval = graph.hash(kmer)
+
+        assert graph.get(kmer) == 0
+        assert graph.get(hashval) == 0
+
+        graph.add(kmer)
+        assert graph.get(kmer) == 1
+        assert graph.get(hashval) == 1
+
+        graph.add(kmer)
+        assert graph.get(kmer) == 2
+        assert graph.get(hashval) == 2
 
 
 @using_ksize([21,151])
-@pytest.mark.parametrize('graph_type', ['_BitStorage', '_ByteStorage'], indirect=['graph_type'])
+@oxli_backends()
 def test_n_occupied(graph, ksize):
     # basic get/add test
     kmer = 'G' * ksize
