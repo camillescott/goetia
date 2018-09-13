@@ -92,7 +92,7 @@ if DEBUG_ALL:
     DEBUG_ASMLY  = True
     DEBUG_EVENTS = True
 
-DEBUG_FLAGS = ['-ggdb']
+DEBUG_FLAGS = ['-gdwarf']
 
 CXX         = get_var('CXX', os.environ.get('CXX', 'cc'))
 INCLUDES    = ['-I', os.path.abspath('include/'), '-I.']

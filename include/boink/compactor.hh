@@ -276,7 +276,7 @@ public:
             os << std::to_string(counts[i]) << ":" << hashes[i] << ",";
         }
         os << "]";
-        pdebug(os.str());
+        pdebug("FIND SEGMENTS: " << sequence << std::endl << os.str());
         
         size_t pos = 0;
         hash_t prev_hash = hashes.front();
@@ -783,7 +783,7 @@ public:
     }
 
     uint8_t _add_neighbor_bundle(NeighborBundle& bundle) {
-        
+        return 0;    
     }
 };
 

@@ -280,8 +280,8 @@ public:
 std::ostream& operator<<(std::ostream& o, const DecisionNode& dn) {
 
     o << "<DNode ID/hash=" << dn.node_id << " k-mer=" << dn.sequence
-      << " Dl=" << std::to_string(dn.left_degree())
-      << " Dr=" << std::to_string(dn.right_degree())
+      //<< " Dl=" << std::to_string(dn.left_degree())
+      //<< " Dr=" << std::to_string(dn.right_degree())
       << " count=" << dn.count()
       << " dirty=" << dn.is_dirty() << ">";
     return o;
@@ -353,6 +353,7 @@ std::ostream& operator<<(std::ostream& o, const UnitigNode& un) {
     o << "<UNode ID=" << un.node_id
       << " left_end=" << un.left_end()
       << " right_end=" << un.right_end()
+      << " sequence=" << un.sequence
       << " meta=" << node_meta_repr(un.meta())
       << ">";
     return o;
@@ -475,10 +476,14 @@ public:
         auto lock = lock_dnodes();
         DecisionNode * dnode = query_dnode(hash);
         if (dnode == nullptr) {
-            pdebug("Build d-node " << hash << ", " << kmer);
+            pdebug("BUILD_DNODE: " << hash << ", " << kmer);
             unique_ptr<DecisionNode> dnode_ptr = make_unique<DecisionNode>(hash, kmer);
             decision_nodes.insert(make_pair(hash, std::move(dnode_ptr)));
             dnode = query_dnode(hash);
+            pdebug("BUILD_DNODE complete: " << *dnode);
+        } else {
+            pdebug("BUILD_DNODE: d-node for " << hash << " already exists.");
+            dnode->incr_count();
         }
         return dnode;
     }
@@ -533,6 +538,8 @@ public:
         unitig_nodes.insert(make_pair(id, std::move(unode)));
         UnitigNode * unode_ptr = unitig_nodes[id].get();
 
+        pdebug("BUILD_UNODE: " << *unode_ptr);
+
         // Link up its new tags
         unode_ptr->tags.insert(std::end(unode_ptr->tags),
                                std::begin(tags),
@@ -545,7 +552,7 @@ public:
 
         meta_counter.increment(unode_ptr->meta());
 
-        pdebug("Built unode " << *unode_ptr);
+        pdebug("BUILD_UNODE complete.");
 
         return unode_ptr;
     }
@@ -575,20 +582,21 @@ public:
         auto lock = lock_unodes();
 
         auto unode = switch_unode_ends(old_unode_end, new_unode_end);
-        if (unode == nullptr) {
-            return;
-        }
+        assert(unode != nullptr);
+        pdebug("CLIP: from " << (clip_from == DIR_LEFT ? string("LEFT") : string("RIGHT")) <<
+               " and swap " << old_unode_end << " to " << new_unode_end);
 
         if (unode->sequence.length() < this->_K - 1) {
             delete_unode(unode);
+            pdebug("CLIP complete: deleted null unode.");
         } else if (clip_from == DIR_LEFT) {
             unode->sequence = unode->sequence.substr(1);
             unode->set_left_end(new_unode_end);
-            pdebug("Clip unode from left");
+            pdebug("CLIP complete: " << *unode);
         } else {
             unode->sequence = unode->sequence.substr(0, unode->sequence.length() - 1);
             unode->set_right_end(new_unode_end);
-            pdebug("Clip unode from right");
+            pdebug("CLIP complete: " << *unode);
         }
 
         ++_n_updates;
@@ -600,14 +608,15 @@ public:
                       hash_t new_unode_end,
                       HashVector& new_tags) {
 
-        pdebug("start extend unode");
-
         auto lock = lock_unodes();
 
         auto unode = switch_unode_ends(old_unode_end, new_unode_end);
-        if (unode == nullptr) {
-            return;
-        }
+        assert(unode != nullptr); 
+
+        pdebug("EXTEND: from " << old_unode_end << " to " << new_unode_end
+               << (ext_dir == DIR_LEFT ? string(" to LEFT") : string(" to RIGHT"))
+               << " adding " << new_sequence << " to"
+               << std::endl << *unode);
         
         if (ext_dir == DIR_RIGHT) {
             unode->extend_right(new_unode_end, new_sequence);
@@ -621,16 +630,13 @@ public:
         }
 
         ++_n_updates;
-        pdebug("Extend unode " << *unode << " in dir " << ext_dir
-               << " by " << new_sequence.size() << " bases, new end is "
-               << new_unode_end << ", add " << new_tags.size() << " tags.");
+        pdebug("EXTEND complete: " << *unode);
     }
 
     void split_unode(id_t node_id,
                      size_t split_at,
                      hash_t new_right_end,
                      hash_t new_left_end) {
-        pdebug("Split u-node " << node_id << " at " << split_at);
 
         UnitigNode * unode;
         string right_unitig;
@@ -640,6 +646,10 @@ public:
 
             unode = query_unode_id(node_id);
             assert(unode != nullptr);
+            pdebug("SPLIT: " << new_right_end << " left of root, "
+                    << new_left_end << " right of root, at " << split_at
+                    << std::endl << *unode);
+
             
             right_unitig = unode->sequence.substr(split_at + 1);
 
@@ -652,10 +662,11 @@ public:
         }
 
         HashVector tags; // TODO: WARNING: broken
-        build_unode(right_unitig,
-                    tags,
-                    new_left_end,
-                    right_unode_right_end);
+        auto new_node = build_unode(right_unitig,
+                                    tags,
+                                    new_left_end,
+                                    right_unode_right_end);
+        pdebug("SPLIT complete: " << std::endl << *unode << std::endl << *new_node);
 
     }
 
@@ -663,8 +674,6 @@ public:
                       hash_t left_end,
                       hash_t right_end,
                       HashVector& new_tags) {
-
-        pdebug("Merge unodes " << left_end << ", " << right_end);
 
         UnitigNode *left_unode, *right_unode;
         string right_sequence;
@@ -686,8 +695,9 @@ public:
             left_unode = left_unode_it->second;
             right_unode = right_unode_it->second;
 
-            pdebug("Merge unodes " << *left_unode << " and " << *right_unode
-                   << " with delete and extend ops.");
+            pdebug("MERGE: " << left_end << " to " << right_end
+                   << " with " << new_sequence
+                   << std::endl << *left_unode << std::endl << *right_unode);
 
             right_sequence = new_sequence + right_unode->sequence;
             std::copy(right_unode->tags.begin(), right_unode->tags.end(),
@@ -702,7 +712,7 @@ public:
                      new_right_end,
                      new_tags);
 
-        pdebug("Complete merge.");
+        pdebug("MERGE complete: " << *left_unode);
     }
 
     UnitigNode * query_unode_end(hash_t end_kmer) {
