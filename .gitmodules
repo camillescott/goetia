@@ -4,3 +4,6 @@
 [submodule "include/gfakluge"]
 	path = include/gfakluge
 	url = git@github.com:camillescott/gfakluge.git
+[submodule "include/sparsepp"]
+	path = include/sparsepp
+	url = https://github.com/greg7mdp/sparsepp
