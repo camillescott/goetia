@@ -385,7 +385,8 @@ def task_create_build_dirs():
                         'mkdir -p {0}'.format(lib_dir())],
             'uptodate': [run_once],
             'clean': [(clean_folder, [build_dir()]),
-                      (clean_folder, [lib_dir()])]}
+                      (clean_folder, [lib_dir()]),
+                      (clean_folder, [os.path.join('build', 'lib')])]}
 
 
 def task_compile_cython_cpp():

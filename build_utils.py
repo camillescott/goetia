@@ -122,7 +122,7 @@ def clean_folder(target):
     Args:
         target (str): The folder to remove.
     '''
-
+    print('Remove folder', target)
     try:
         rmtree(target)
     except OSError:

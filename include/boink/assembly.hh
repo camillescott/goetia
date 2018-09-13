@@ -341,7 +341,7 @@ public:
         return this->to_string(path);
     }
 
-    void compactify_right(Path& path, hash_t& end_hash) {
+    void compactify_right(Path& path, hash_t& end_hash, set<hash_t>& mask) {
         end_hash = this->get();
         this->seen.clear();
         this->seen.insert(this->get());
@@ -365,7 +365,8 @@ public:
                 return;
             }
 
-            if (this->seen.count(next.hash)) {
+            if (this->seen.count(next.hash) ||
+                mask.count(next.hash)) {
                 end_hash = this->get();
                 return;
             }
@@ -377,7 +378,7 @@ public:
         }
     }
 
-    void compactify_left(Path& path, hash_t& end_hash) {
+    void compactify_left(Path& path, hash_t& end_hash, set<hash_t>& mask) {
         end_hash = this->get();
         this->seen.clear();
         this->seen.insert(this->get());
@@ -403,7 +404,8 @@ public:
                 return;
             }
 
-            if (this->seen.count(next.hash)) {
+            if (this->seen.count(next.hash) ||
+                mask.count(next.hash)) {
                 end_hash = this->get();
                 return;
             }

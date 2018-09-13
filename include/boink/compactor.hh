@@ -206,7 +206,6 @@ public:
         vector<hash_t> hashes;
         dbg->get_counts(sequence, counts, hashes, new_kmers);
 
-
         find_new_segments(sequence,
                           hashes,
                           counts,
@@ -274,7 +273,7 @@ public:
         std::ostringstream os;
         os << "k-mers: [";
         for (size_t i = 0; i < counts.size(); ++i) {
-            os << counts[i] << ":" << hashes[i] << ",";
+            os << std::to_string(counts[i]) << ":" << hashes[i] << ",";
         }
         os << "]";
         pdebug(os.str());
@@ -603,7 +602,8 @@ public:
             if (_try_split_unode(d_kmer.first,
                                  d_kmer.second, 
                                  new_kmers,
-                                 induced_decision_kmer_hashes)) {
+                                 induced_decision_kmer_hashes,
+                                 processed)) {
                 pdebug("Split successful on " << d_kmer.first);
                 processed.insert(d_kmer.first.hash);
             } else {
@@ -616,10 +616,20 @@ public:
         }
     }
 
-    virtual bool _try_split_unode(kmer_t root,
+    void _find_unode_to_split(kmer_t root,
                               NeighborBundle& neighbors,
                               set<hash_t>& new_kmers,
                               set<hash_t>& induced_decision_kmer_hashes) {
+        pdebug("Find split unitig");
+        
+    }
+
+
+    virtual bool _try_split_unode(kmer_t root,
+                              NeighborBundle& neighbors,
+                              set<hash_t>& new_kmers,
+                              set<hash_t>& induced_decision_kmer_hashes,
+                              set<hash_t>& processed) {
         pdebug("Attempt unitig split from " << root);
 
         UnitigNode * unode_to_split;
@@ -671,7 +681,7 @@ public:
             this->set_cursor(start.kmer);
             Path path;
             hash_t end_hash;
-            compactify_left(path, end_hash);
+            compactify_left(path, end_hash, processed);
 
             unode_to_split = cdbg->query_unode_end(end_hash);
             if (unode_to_split != nullptr) {
@@ -700,11 +710,13 @@ public:
             this->set_cursor(start.kmer);
             Path path;
             hash_t end_hash;
-            compactify_right(path, end_hash);
+            compactify_right(path, end_hash, processed);
 
             unode_to_split = cdbg->query_unode_end(end_hash);
             if (unode_to_split != nullptr) {
-                size_t split_point = unode_to_split->sequence.size() - path.size() - 2;
+                size_t split_point = unode_to_split->sequence.size()
+                                                     - path.size()
+                                                     - 1 - this->_K;
                 hash_t new_right = this->hash(unode_to_split->sequence.c_str() + 
                                               split_point - 1);
                 hash_t new_left = start.hash;
@@ -768,6 +780,10 @@ public:
 
     virtual void _build_dnode(kmer_t kmer) {
         cdbg->build_dnode(kmer.hash, kmer.kmer);
+    }
+
+    uint8_t _add_neighbor_bundle(NeighborBundle& bundle) {
+        
     }
 };
 

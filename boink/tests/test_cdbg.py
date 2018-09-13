@@ -703,6 +703,63 @@ class TestUnitigSplit(object):
             assert unode.sequence == branch
             assert unode.right_end == graph.hash(branch[-ksize:])
 
+    @using_ksize(15)
+    @using_length(100)
+    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
+    def test_induced_chain(self, ksize, length, graph, compactor,
+                                      snp_bubble, check_fp):
+
+        (wild, snp), L, R = snp_bubble()
+        check_fp()
+
+        compactor.update_sequence(wild)
+        assert compactor.cdbg.n_dnodes == 0
+        assert compactor.cdbg.n_unodes == 1
+
+        compactor.update_sequence(snp)
+        assert compactor.cdbg.n_dnodes == 2
+        assert compactor.cdbg.n_unodes == 4
+        assert compactor.cdbg.n_unitig_ends == 8
+
+        assert compactor.cdbg.query_dnode(graph.hash(wild[L:L+ksize])).sequence == \
+               wild[L:L+ksize]
+        assert compactor.cdbg.query_dnode(graph.hash(wild[R:R+ksize])).sequence == \
+               wild[R:R+ksize]       
+ 
+        left = compactor.cdbg.query_unode_end(graph.hash(wild[:ksize]))
+        assert left is not None
+        assert left.sequence == wild[:L+ksize-1]
+
+        right = compactor.cdbg.query_unode_end(graph.hash(wild[-ksize:]))
+        assert right is not None
+        assert right.sequence == wild[R+1:]
+
+        top = compactor.cdbg.query_unode_end(graph.hash(wild[L+1:L+1+ksize]))
+        assert top is not None
+        assert top.sequence == wild[L+1:R+ksize-1]
+
+        bottom = compactor.cdbg.query_unode_end(graph.hash(snp[L+1:L+1+ksize]))
+        assert bottom is not None
+        assert bottom.sequence == snp[L+1:R+ksize-1]
+
+
+    @using_ksize(15)
+    @using_length(100)
+    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
+    def test_induced_chain_hourglass(self, ksize, length, graph, compactor,
+                                           hourglass_tangle, check_fp):
+
+        (top, bottom), L = hourglass_tangle()
+        check_fp()
+
+        compactor.update_sequence(top)
+        assert compactor.cdbg.n_dnodes == 0
+        assert compactor.cdbg.n_unodes == 1
+
+        compactor.update_sequence(bottom)
+        assert compactor.cdbg.n_dnodes == 4
+        assert compactor.cdbg.n_unodes == 4
+
 
 @using_ksize(21)
 @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
@@ -715,129 +772,3 @@ def test_find_decision_kmers(ksize, graph, compactor, consumer, right_fork):
     assert hashes == [graph.hash(core[pos:pos+ksize])]
 
 
-@using_ksize(21)
-@pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
-def test_update_triple_fork(ksize, graph, compactor, right_triple_fork):
-    (core, top, bottom), pos = right_triple_fork()
-    print('\n', core, ' ' * (pos + 1) + top, sep='\n')
-    compactor.update_sequence(top)
-    compactor.update_sequence(bottom)
-    compactor.update_sequence(core)
-    compactor.wait_on_updates()
-
-    dnode = list(compactor.get_cdbg_dnodes(core)).pop()
-    assert dnode.left_degree == 1
-    left_unode = list(compactor.cdbg.left_neighbors(dnode)).pop()
-    print(left_unode.sequence)
-    assert dnode.sequence == left_unode.sequence[-ksize:]
-
-    assert dnode.right_degree == 3
-    for unode in compactor.cdbg.right_neighbors(dnode):
-        assert dnode.sequence == unode.sequence[:ksize]
-
-    assert compactor.cdbg.n_dnodes == 1
-    assert compactor.cdbg.n_unodes == 4
-
-
-@using_ksize(21)
-@pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
-def test_double_update(ksize, graph, compactor, right_triple_fork,
-                        random_sequence):
-    (core, top, bottom), pos = right_triple_fork()
-    print('\n', core, ' ' * (pos + 1) + top, sep='\n')
-
-
-    for loop in (1,2):
-        compactor.update_sequence(top)
-        compactor.update_sequence(bottom)
-        compactor.wait_on_updates()
-        if loop == 1:
-            print('CORE update', file=sys.stderr)
-            compactor.update_sequence(core)
-        if loop == 2:
-            print('CORE2 update', file=sys.stderr)
-            core = random_sequence() + core
-
-        dnode = list(compactor.get_cdbg_dnodes(core)).pop()
-        assert dnode.left_degree == 1
-        left_unode = list(compactor.cdbg.left_neighbors(dnode)).pop()
-        print(left_unode.sequence)
-        assert dnode.sequence == left_unode.sequence[-ksize:]
-
-        assert dnode.right_degree == 3
-        for unode in compactor.cdbg.right_neighbors(dnode):
-            assert dnode.sequence == unode.sequence[:ksize]
-
-        assert compactor.cdbg.n_dnodes == 1
-        assert compactor.cdbg.n_unodes == 4
-
-
-@using_ksize(21)
-@pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
-def test_update_snp_bubble(ksize, graph, compactor, snp_bubble):
-    (wildtype, snp), L, R = snp_bubble()
-
-    compactor.update_sequence(wildtype)
-    compactor.update_sequence(snp)
-    compactor.wait_on_updates()
-    
-    assert compactor.cdbg.n_dnodes == 2
-    assert compactor.cdbg.n_unodes == 4
-
-    dnodes = list(compactor.get_cdbg_dnodes(wildtype))
-    left, right = dnodes
-    assert left.left_degree == 1
-    assert left.right_degree == 2
-    assert right.left_degree == 2
-    assert right.right_degree == 1
-
-
-@using_ksize(21)
-@using_length(70)
-@pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
-def test_multi_update(ksize, graph, compactor, consumer,
-                      right_fork, linear_path, snp_bubble):
-    (wildtype, snp), L, R = snp_bubble()
-
-    compactor.update_cdbg(wildtype)
-    compactor.update_cdbg(snp)
-    compactor.wait_on_updates()
-    
-    assert compactor.cdbg.n_dnodes == 2
-    assert compactor.cdbg.n_unodes == 4
-
-    dnodes = list(compactor.get_cdbg_dnodes(wildtype))
-    left, right = dnodes
-    assert left.left_degree == 1
-    assert left.right_degree == 2
-    assert right.left_degree == 2
-    assert right.right_degree == 1
-
-    wildtype_extend = wildtype[-ksize:] + linear_path()
-
-    compactor.update_cdbg(wildtype_extend)
-    compactor.wait_on_updates()
-
-    assert compactor.cdbg.n_dnodes == 2
-    assert compactor.cdbg.n_unodes == 4
-
-    dnodes = list(compactor.get_cdbg_dnodes(wildtype_extend))
-    assert len(dnodes) == 0
-
-    (core, branch), pos = right_fork()
-    compactor.update_cdbg(branch)
-    compactor.wait_on_updates()
-    assert compactor.cdbg.n_unodes == 7
-
-    compactor.update_cdbg(core)
-    compactor.wait_on_updates()
-    dnode = list(compactor.get_cdbg_dnodes(core)).pop()
-    assert dnode.left_degree == 1
-    assert dnode.right_degree == 2
-    assert compactor.cdbg.n_dnodes == 3
-
-    compactor.update_sequence(wildtype_extend + core)
-    compactor.wait_on_updates()
-
-    assert compactor.cdbg.n_dnodes == 3
-    assert compactor.cdbg.n_unodes == 6
