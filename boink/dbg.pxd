@@ -11,6 +11,7 @@ from libc.stdint cimport uint8_t, uint16_t, uint64_t
 
 from libcpp cimport bool
 from libcpp.memory cimport unique_ptr
+from libcpp.set cimport set
 from libcpp.vector cimport vector
 from libcpp.utility cimport pair
 from libcpp.string cimport string
@@ -58,6 +59,10 @@ cdef extern from "boink/dbg.hh" namespace "boink" nogil:
                               vector[bool]&) except +ValueError
         uint64_t add_sequence(string&) except +ValueError
         vector[count_t] get_counts(string&) except +ValueError
+        void get_counts(string&,
+                        vector[count_t]&,
+                        vector[hash_t]&,
+                        set[hash_t]&) except +ValueError
 
         uint64_t n_unique()
         uint64_t n_occupied()

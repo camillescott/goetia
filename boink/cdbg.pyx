@@ -302,12 +302,17 @@ cdef class StreamingCompactor:
 
     def find_new_segments(self, str sequence):
         cdef string _sequence = _bstring(sequence)
+        cdef vector[hash_t] _hashes
+        cdef vector[count_t] _counts
         cdef set[hash_t] _new_kmers
+        deref(self._graph).get_counts(_sequence, _counts, _hashes, _new_kmers)
+
         cdef deque[compact_segment] _segments
         cdef set[hash_t] _new_decision_kmers
         cdef deque[NeighborBundle] _decision_neighbors
-
         deref(self._sc_this).find_new_segments(_sequence,
+                                               _hashes,
+                                               _counts,
                                                _new_kmers,
                                                _segments,
                                                _new_decision_kmers,

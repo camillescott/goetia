@@ -153,6 +153,8 @@ cdef extern from "boink/compactor.hh" namespace "boink" nogil:
         void update_sequence(const string&) except +ValueError
 
         void find_new_segments(const string&, # sequence to add
+                               vector[hash_t]&, # hashes
+                               vector[count_t]&, # counts
                                set[hash_t]&, # all new k-mers
                                deque[compact_segment]&, # new segments
                                set[hash_t]&, # new decision k-mers
