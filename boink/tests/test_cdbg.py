@@ -760,15 +760,3 @@ class TestUnitigSplit(object):
         assert compactor.cdbg.n_dnodes == 4
         assert compactor.cdbg.n_unodes == 4
 
-
-@using_ksize(21)
-@pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
-def test_find_decision_kmers(ksize, graph, compactor, consumer, right_fork):
-    (core, branch), pos = right_fork()
-    print(core, ' ' * (pos + 1) + branch, sep='\n')
-
-    positions, hashes = compactor.find_decision_kmers(core)
-    assert positions == [pos]
-    assert hashes == [graph.hash(core[pos:pos+ksize])]
-
-
