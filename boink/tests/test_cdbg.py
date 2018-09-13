@@ -419,10 +419,12 @@ class TestUnitigBuildExtend(object):
         compactor.update_sequence(left);
         assert compactor.cdbg.n_unodes == 1
         assert compactor.cdbg.query_unode_end(graph.hash(left[:ksize])).sequence == left
+        assert compactor.cdbg.n_unitig_ends == 2
 
         compactor.update_sequence(sequence)
         assert compactor.cdbg.n_unodes == 1
         assert compactor.cdbg.query_unode_end(graph.hash(left[:ksize])).sequence == sequence
+        assert compactor.cdbg.n_unitig_ends == 2
 
     @using_ksize(15)
     @using_length(100)
@@ -434,10 +436,12 @@ class TestUnitigBuildExtend(object):
         compactor.update_sequence(right);
         assert compactor.cdbg.n_unodes == 1
         assert compactor.cdbg.query_unode_end(graph.hash(right[:ksize])).sequence == right
+        assert compactor.cdbg.n_unitig_ends == 2
 
         compactor.update_sequence(sequence)
         assert compactor.cdbg.n_unodes == 1
         assert compactor.cdbg.query_unode_end(graph.hash(sequence[:ksize])).sequence == sequence
+        assert compactor.cdbg.n_unitig_ends == 2
 
     @using_ksize(15)
     @using_length(100)
@@ -759,4 +763,57 @@ class TestUnitigSplit(object):
         compactor.update_sequence(bottom)
         assert compactor.cdbg.n_dnodes == 4
         assert compactor.cdbg.n_unodes == 4
+        assert compactor.cdbg.n_unitig_ends == 8
+
+        ltop = compactor.cdbg.query_unode_end(graph.hash(top[:ksize]))
+        assert len(ltop) == L + ksize -1
+        assert ltop.right_end == graph.hash(top[L-1:L-1+ksize])
+
+        rtop = compactor.cdbg.query_unode_end(graph.hash(top[-ksize:]))
+        assert len(rtop) == length - L - 2
+        assert rtop.left_end == graph.hash(top[L+2:L+2+ksize])
+
+        lbottom = compactor.cdbg.query_unode_end(graph.hash(bottom[:ksize]))
+        assert len(lbottom) == L + ksize - 1
+        assert lbottom.right_end == graph.hash(bottom[L-1:L-1+ksize])
+
+        rbottom = compactor.cdbg.query_unode_end(graph.hash(bottom[-ksize:]))
+        assert len(rbottom) == length - L - 2
+        assert rbottom.left_end == graph.hash(bottom[L+2:L+2+ksize])
+
+    @using_ksize(15)
+    @using_length(100)
+    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
+    def test_induced_bowtie_split(self, ksize, length, graph, compactor,
+                                        bowtie_tangle, check_fp):
+
+        (top, bottom), L = bowtie_tangle()
+        check_fp()
+
+        compactor.update_sequence(top)
+        assert compactor.cdbg.n_dnodes == 0
+        assert compactor.cdbg.n_unodes == 1
+
+        compactor.update_sequence(bottom)
+        assert compactor.cdbg.n_dnodes == 1
+        assert compactor.cdbg.n_unodes == 4
+        assert compactor.cdbg.n_unitig_ends == 8
+
+        ltop = compactor.cdbg.query_unode_end(graph.hash(top[:ksize]))
+        assert len(ltop) == L + ksize
+        assert ltop.right_end == graph.hash(top[L:L+ksize])
+
+        rtop = compactor.cdbg.query_unode_end(graph.hash(top[-ksize:]))
+        assert len(rtop) == length - L - 2
+        assert rtop.left_end == graph.hash(top[L+2:L+2+ksize])
+
+        lbottom = compactor.cdbg.query_unode_end(graph.hash(bottom[:ksize]))
+        assert len(lbottom) == L + ksize
+        assert lbottom.right_end == graph.hash(bottom[L:L+ksize])
+
+        rbottom = compactor.cdbg.query_unode_end(graph.hash(bottom[-ksize:]))
+        assert len(rbottom) == length - L - 2
+        assert rbottom.left_end == graph.hash(bottom[L+2:L+2+ksize])
+
+
 

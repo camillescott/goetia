@@ -579,7 +579,7 @@ public:
             return;
         }
 
-        if (unode->sequence.length() < this->_K) {
+        if (unode->sequence.length() < this->_K - 1) {
             delete_unode(unode);
         } else if (clip_from == DIR_LEFT) {
             unode->sequence = unode->sequence.substr(1);

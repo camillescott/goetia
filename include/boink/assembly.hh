@@ -93,6 +93,20 @@ public:
         return degree_left() + degree_right();
     }
 
+    uint8_t degree_left(std::set<hash_t>& extras) {
+        auto neighbors = this->gather_left();
+        return count_nodes(neighbors, extras);
+    }
+
+    uint8_t degree_right(std::set<hash_t>& extras) {
+        auto neighbors = this->gather_right();
+        return count_nodes(neighbors, extras);
+    }
+
+    uint8_t degree(std::set<hash_t>& extras) {
+        return degree_left(extras) + degree_right(extras);
+    }
+
     uint8_t get_left(shift_t& result) {
         std::vector<shift_t> neighbors = this->gather_left();
         auto n_left = reduce_nodes(neighbors, result);
@@ -118,6 +132,18 @@ public:
         uint8_t n_found = 0;
         for (auto node: nodes) {
             if(this->graph->get(node.hash)) {
+                ++n_found;
+            }
+        }
+        return n_found;
+    }
+
+    uint8_t count_nodes(const vector<shift_t>& nodes,
+                        set<hash_t>& extras) {
+        uint8_t n_found = 0;
+        for (auto node: nodes) {
+            if(this->graph->get(node.hash) ||
+               extras.count(node.hash)) {
                 ++n_found;
             }
         }
@@ -354,7 +380,8 @@ public:
                 return;
             }
 
-            n_right = this->reduce_nodes(this->gather_right(), next);
+            n_right = this->reduce_nodes(this->gather_right(),
+                                         next);
             if (n_right > 1) {
                 path.pop_back();
                 return;
@@ -392,7 +419,8 @@ public:
                 return;
             }
 
-            n_left = this->reduce_nodes(this->gather_left(), next);
+            n_left = this->reduce_nodes(this->gather_left(),
+                                        next);
             if (n_left > 1) {
                 pdebug("Stop: forward d-node");
                 path.pop_front();
