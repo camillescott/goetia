@@ -116,53 +116,6 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
         _AsyncCDBG(uint16_t K)
 
 
-cdef extern from "boink/compactor.hh" namespace "boink" nogil:
-
-    cdef struct compact_segment:
-        hash_t left_anchor
-        hash_t right_anchor
-        hash_t left_flank
-        hash_t right_flank
-        size_t start_pos
-        size_t length
-        bool is_decision_kmer
-
-        compact_segment()
-        const bool is_null() 
-
-    cdef cppclass _StreamingCompactor "boink::StreamingCompactor" [GraphType] (_AssemblerMixin[GraphType], _EventNotifier):
-        _cDBG * cdbg
-
-        _StreamingCompactor(GraphType *)
-
-        #string compactify(const string&) except +ValueError
-        #void compactify_right(Path&) 
-        #void compactify_left(Path&)
-
-        void wait_on_updates()
-
-        bool is_decision_kmer(uint8_t&)
-        bool is_decision_kmer(const string&, uint8_t&) except +ValueError
-        bool is_decision_kmer(const string&) except +ValueError
-
-        void find_decision_kmers(const string&,
-                                 vector[uint32_t]&,
-                                 vector[hash_t]&,
-                                 vector[NeighborBundle]&) except +ValueError
-
-        void update_sequence(const string&) except +ValueError
-
-        void find_new_segments(const string&, # sequence to add
-                               vector[hash_t]&, # hashes
-                               vector[count_t]&, # counts
-                               set[hash_t]&, # all new k-mers
-                               deque[compact_segment]&, # new segments
-                               set[hash_t]&, # new decision k-mers
-                               deque[NeighborBundle]& # decision neighbors
-                               ) except +ValueError
-
-        _StreamingCompactorReport* get_report()
-
 cdef cDBGFormat convert_format(str graph_format) except *
 
 
@@ -192,12 +145,4 @@ cdef class cDBG:
 
     @staticmethod
     cdef cDBG _wrap(_cDBG *)
-
-
-cdef class StreamingCompactor:
-    cdef DefaultDBG * _graph
-    # TODO jinja template StreamingCompactor template args
-    cdef unique_ptr[_StreamingCompactor[DefaultDBG]] _sc_this
-    cdef public cDBG cdbg
-    cdef public EventNotifier Notifier
 

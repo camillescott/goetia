@@ -18,56 +18,7 @@ cdef class FileProcessor:
     def __cinit__(self, *args, **kwargs):
         pass
 
-
-cdef class FileConsumer(FileProcessor):
-
-    def __cinit__(self, dBG__BitStorage__DefaultShifter graph,
-                        uint32_t output_interval):
-        self._fc_this = make_unique[_FileConsumer[DefaultDBG]](graph._this.get(),
-                                                               output_interval)
-
-    def process(self, str input_filename):
-        deref(self._fc_this).process(_bstring(input_filename))
-
-        return (deref(self._fc_this).n_reads(),
-                deref(self._fc_this).n_consumed())
-
-
-
-cdef class DecisionNodeProcessor(FileProcessor):
-
-    def __cinit__(self, StreamingCompactor compactor, str output_filename,
-                        uint32_t output_interval):
-        self.output_filename = output_filename
-        cdef string _output_filename = _bstring(output_filename)
-        self._dnp_this = make_unique[_DecisionNodeProcessor[DefaultDBG]](compactor._sc_this.get(),
-                                                                         _output_filename,
-                                                                         output_interval)
-
-    def process(self, str input_filename):
-        deref(self._dnp_this).process(_bstring(input_filename))
-
-        return deref(self._dnp_this).n_reads()
-
-
-cdef class StreamingCompactorProcessor(FileProcessor):
-
-    def __cinit__(self, StreamingCompactor compactor,
-                        uint32_t output_interval):
-
-        self._scp_this = make_unique[_StreamingCompactorProcessor[DefaultDBG]](compactor._sc_this.get(),
-                                                                               output_interval)
-        self.Notifier = EventNotifier._wrap(<_EventNotifier*>self._scp_this.get())
-
-    def process(self, str input_filename, str right_filename=None):
-        if right_filename is None:
-            deref(self._scp_this).process(_bstring(input_filename))
-        else:
-            deref(self._scp_this).process(_bstring(input_filename),
-                                          _bstring(right_filename))
-
-        return deref(self._scp_this).n_reads()
-
+include "processors.tpl.pyx.pxi"
 
 cdef class MinimizerProcessor(FileProcessor):
 
@@ -86,4 +37,13 @@ cdef class MinimizerProcessor(FileProcessor):
         return deref(self._mp_this).n_reads()
 
 
+def make_file_consumer(dBG_Base graph, int output_interval):
+    return _make_file_consumer(graph, output_interval)
 
+
+def make_decision_node_processor(StreamingCompactor_Base compactor, str output_filename, int output_interval):
+    return _make_decision_node_processor(compactor, output_filename, output_interval)
+
+
+def make_streaming_compactor_processor(StreamingCompactor_Base compactor, int output_interval):
+    return _make_streaming_compactor_processor(compactor, output_interval)

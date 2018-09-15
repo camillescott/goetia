@@ -11,6 +11,7 @@ from libcpp.string cimport string
 
 from boink.dbg cimport *
 from boink.cdbg cimport *
+from boink.compactor cimport *
 from boink.events cimport EventNotifier, _EventNotifier, _EventListener
 from boink.utils cimport _bstring
 
@@ -50,19 +51,8 @@ cdef extern from "boink/processors.hh" namespace "boink" nogil:
 cdef class FileProcessor:
     cdef public EventNotifier Notifier
 
-
-cdef class FileConsumer(FileProcessor):
-    cdef unique_ptr[_FileConsumer[DefaultDBG]] _fc_this
-
-
-cdef class DecisionNodeProcessor(FileProcessor):
-    cdef readonly str output_filename
-    cdef unique_ptr[_DecisionNodeProcessor[DefaultDBG]] _dnp_this
-
-cdef class StreamingCompactorProcessor(FileProcessor):
-    cdef readonly str output_filename
-    cdef unique_ptr[_StreamingCompactorProcessor[DefaultDBG]] _scp_this
-
-
 cdef class MinimizerProcessor(FileProcessor):
     cdef unique_ptr[_MinimizerProcessor[_DefaultShifter]] _mp_this
+
+
+include "processors.tpl.pxd.pxi"

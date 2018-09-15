@@ -6,10 +6,10 @@ import sys
 from boink.args import (build_dBG_args, add_pairing_args,
                         add_save_cDBG_args)
 from boink.dbg import make_dBG
-from boink.cdbg import StreamingCompactor
+from boink.compactor import make_streaming_compactor
 from boink.parsing import grouper
-from boink.processors import StreamingCompactorProcessor
-from boink.reporters import StreamingCompactorReporter, cDBGWriter
+from boink.processors import make_streaming_compactor_processor
+from boink.reporters import make_streaming_compactor_reporter, cDBGWriter
 
 
 
@@ -29,12 +29,13 @@ def main():
 
     graph = make_dBG(args.ksize,
                      args.max_tablesize,
-                     args.n_tables)
-    compactor = StreamingCompactor(graph)
-    processor = StreamingCompactorProcessor(compactor,
-                                            args.save_stats_interval)
-    reporter = StreamingCompactorReporter(args.save_cdbg_stats,
-                                          compactor)
+                     args.n_tables,
+                     storage='_' + args.storage_type)
+    compactor = make_streaming_compactor(graph)
+    processor = make_streaming_compactor_processor(compactor,
+                                                   args.save_stats_interval)
+    reporter = make_streaming_compactor_reporter(args.save_cdbg_stats,
+                                                 compactor)
     processor.Notifier.register_listener(reporter)
 
     writers = []

@@ -9,11 +9,8 @@ from cython.operator cimport dereference as deref
 from cython.operator cimport preincrement as princ
 from libcpp.memory cimport make_unique
 
-from collections import namedtuple
-
 from boink.utils cimport _bstring, _ustring, make_pair
 from khmer._oxli.sequence cimport Alphabets
-
 
 cdef class CompactNode:
 
@@ -238,107 +235,3 @@ cdef class cDBG:
             deref(self._this).write(_bstring(filename),
                                     convert_format(file_format))
 
-Segment = namedtuple('Segment', ['sequence',
-                                 'is_decision_kmer',
-                                 'left_anchor',
-                                 'right_anchor',
-                                 'start',
-                                 'length',
-                                 'is_null'])
-
-
-def display_segment_list(list segments):
-    output = ''
-    for i in range(len(segments)):
-        cur_segment = segments[i]
-        if cur_segment.is_null:
-            output += '[x]'
-        elif cur_segment.is_decision_kmer:
-            output += '[D {0}]'.format(cur_segment.left_anchor)
-        else:
-            output += '[S {0} {1} {2}]'.format(cur_segment.left_anchor,
-                                               cur_segment.right_anchor,
-                                               cur_segment.length)
-        if i != len(segments) - 1:
-            output += '-'
-    print(output)
-
-
-cdef class StreamingCompactor:
-
-    def __cinit__(self, dBG__BitStorage__DefaultShifter graph):
-        self._graph = graph._this.get()
-        
-        # TODO properly template this
-        if type(self) is StreamingCompactor:
-            self._sc_this = \
-                make_unique[_StreamingCompactor[DefaultDBG]](self._graph)
-            self.cdbg = cDBG._wrap(deref(self._sc_this).cdbg)
-            self.Notifier = EventNotifier._wrap(<_EventNotifier*>self._sc_this.get())
-
-    #def wait_on_updates(self):
-    #    deref(self._sc_this).wait_on_updates()
-
-    def is_decision_kmer(self, str kmer):
-        cdef string _kmer = _bstring(kmer)
-        return deref(self._sc_this).is_decision_kmer(_kmer)
-
-    def find_decision_kmers(self, str sequence):
-        cdef string _sequence = _bstring(sequence)
-        cdef vector[uint32_t] positions
-        cdef vector[hash_t] hashes
-        cdef vector[NeighborBundle] neighbors
-
-        deref(self._sc_this).find_decision_kmers(_sequence,
-                                                 positions,
-                                                 hashes,
-                                                 neighbors)
-
-        return positions, hashes
-
-    def update_sequence(self, str sequence):
-        cdef string _sequence = _bstring(sequence)
-        deref(self._sc_this).update_sequence(_sequence)
-
-    def find_new_segments(self, str sequence):
-        cdef string _sequence = _bstring(sequence)
-        cdef vector[hash_t] _hashes
-        cdef vector[count_t] _counts
-        cdef set[hash_t] _new_kmers
-        deref(self._graph).get_counts(_sequence, _counts, _hashes, _new_kmers)
-
-        cdef deque[compact_segment] _segments
-        cdef set[hash_t] _new_decision_kmers
-        cdef deque[NeighborBundle] _decision_neighbors
-        deref(self._sc_this).find_new_segments(_sequence,
-                                               _hashes,
-                                               _counts,
-                                               _new_kmers,
-                                               _segments,
-                                               _new_decision_kmers,
-                                               _decision_neighbors)
-
-        segments = []
-        cdef int i = 0
-        for i in range(_segments.size()):
-            if _segments[i].is_null():
-                segment = Segment(sequence = '',
-                                  is_decision_kmer = False,
-                                  left_anchor = 0,
-                                  right_anchor = 0,
-                                  start = 0,
-                                  length = 0,
-                                  is_null = True)
-            else:
-                segment_seq = sequence[_segments[i].start_pos : \
-                                       _segments[i].start_pos + _segments[i].length]
-                segment = Segment(sequence =           segment_seq,
-                                  is_decision_kmer =   _segments[i].is_decision_kmer,
-                                  left_anchor =        _segments[i].left_anchor,
-                                  right_anchor =       _segments[i].right_anchor,
-                                  start =              _segments[i].start_pos,
-                                  length =             _segments[i].length,
-                                  is_null =            False)
-            segments.append(segment)
-
-        return segments

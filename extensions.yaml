@@ -16,6 +16,13 @@ extensions:
       templates:
         - dbg.tpl.pxd
         - dbg.tpl.pyx
+    - name: compactor
+      types:
+        - StorageType
+        - ShifterType
+      templates:
+        - compactor.tpl.pxd
+        - compactor.tpl.pyx
     - name: hashing
       types:
         - AlphabetType
@@ -28,6 +35,9 @@ extensions:
       types:
         - GraphType
         - ParserType
+      templates:
+        - processors.tpl.pxd
+        - processors.tpl.pyx
     - name: stats
     - name: utils
     - name: parsing
@@ -35,6 +45,12 @@ extensions:
         - ParserType
     - name: events
     - name: reporters
+      types:
+        - StorageType
+        - ShifterType
+      templates:
+        - reporters.tpl.pxd
+        - reporters.tpl.pyx
 
 headers:
     - dbg.hh

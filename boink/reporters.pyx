@@ -10,7 +10,7 @@ import sys
 from cython.operator cimport dereference as deref
 from libcpp.memory cimport unique_ptr, make_unique
 
-from boink.cdbg cimport cDBG, StreamingCompactor, convert_format
+from boink.cdbg cimport cDBG, convert_format
 from boink.utils cimport _bstring
 from boink.events cimport _EventListener
 
@@ -37,18 +37,6 @@ cdef class MultiFileReporter(EventListener):
             self._listener = <_EventListener*>self._owner.get()
 
 
-cdef class StreamingCompactorReporter(SingleFileReporter):
-
-    def __cinit__(self, str output_filename, StreamingCompactor compactor,
-                        *args, **kwargs):
-        if type(self) is StreamingCompactorReporter:
-            self._s_owner = make_unique[_StreamingCompactorReporter[DefaultDBG]](\
-                    compactor._sc_this.get(), _bstring(output_filename))
-            self._s_this = self._s_owner.get()
-            self._this = self._s_this
-            self._listener = <_EventListener*>self._s_owner.get()
-
-
 cdef class cDBGWriter(MultiFileReporter):
 
     def __cinit__(self, str output_prefix, str graph_format, cDBG cdbg,
@@ -60,4 +48,8 @@ cdef class cDBGWriter(MultiFileReporter):
             self._s_this = self._s_owner.get()
             self._this = self._s_this
             self._listener = <_EventListener*>self._s_owner.get()
-        
+
+include "reporters.tpl.pyx.pxi"
+
+def make_streaming_compactor_reporter(str output_filename, StreamingCompactor_Base compactor):
+    return _make_streaming_compactor_reporter(output_filename, compactor)

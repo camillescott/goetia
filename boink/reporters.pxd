@@ -10,7 +10,8 @@ from libcpp.memory cimport shared_ptr, unique_ptr
 from libcpp.string cimport string
 
 from boink.dbg cimport DefaultDBG
-from boink.cdbg cimport cDBGFormat, _cDBG, _StreamingCompactor
+from boink.cdbg cimport cDBGFormat, _cDBG 
+from boink.compactor cimport *
 from boink.events cimport EventListener, _EventListener
 
 
@@ -40,11 +41,8 @@ cdef class MultiFileReporter(EventListener):
     cdef _MultiFileReporter *           _this
 
 
-cdef class StreamingCompactorReporter(SingleFileReporter):
-    cdef unique_ptr[_StreamingCompactorReporter[DefaultDBG]] _s_owner
-    cdef _StreamingCompactorReporter[DefaultDBG] *           _s_this
-
-
 cdef class cDBGWriter(MultiFileReporter):
     cdef unique_ptr[_cDBGWriter] _s_owner
     cdef _cDBGWriter *           _s_this
+
+include "reporters.tpl.pxd.pxi"

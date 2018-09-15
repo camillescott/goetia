@@ -50,6 +50,10 @@ DEFAULT_N_TABLES = 4
 DEFAULT_MAX_TABLESIZE = 1e8
 DEFAULT_N_THREADS = 1
 
+DBG_TYPES = ['BitStorage',
+             'ByteStorage',
+             'NibbleStorage',
+             'SparseppSetStorage']
 
 def memory_setting(label):
     """
@@ -140,6 +144,8 @@ def build_dBG_args(descr=None, epilog=None, parser=None):
 
     help = ('number of tables to use in k-mer countgraph' if expert_help
             else argparse.SUPPRESS)
+    parser.add_argument('--storage-type', default='_BitStorage',
+                        choices=DBG_TYPES)
     parser.add_argument('--n_tables', '-N', type=int,
                         default=DEFAULT_N_TABLES,
                         help=help)
