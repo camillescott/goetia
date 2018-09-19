@@ -144,7 +144,7 @@ def build_dBG_args(descr=None, epilog=None, parser=None):
 
     help = ('number of tables to use in k-mer countgraph' if expert_help
             else argparse.SUPPRESS)
-    parser.add_argument('--storage-type', default='_BitStorage',
+    parser.add_argument('--storage-type', default='BitStorage',
                         choices=DBG_TYPES)
     parser.add_argument('--n_tables', '-N', type=int,
                         default=DEFAULT_N_TABLES,

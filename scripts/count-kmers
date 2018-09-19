@@ -5,15 +5,17 @@ import statistics
 import sys
 
 from khmer._oxli.parsing import FastxParser
-from boink.args import (build_dBG_args, add_pairing_args,
-                        add_save_cDBG_args)
+from boink.args import (build_dBG_args, add_pairing_args)
 from boink.dbg import make_dBG
+from boink.processors import make_file_consumer
 
 
 def parse_args():
     parser = build_dBG_args()
     parser.add_argument('-o', dest='output_filename', default='/dev/stdout')
     parser.add_argument('-i', dest='inputs', nargs='+', default=['/dev/stdin'])
+    parser.add_argument('--interval', dest='output_interval', default=10000,
+                        type=int)
 
     args = parser.parse_args()
     return args
@@ -23,12 +25,12 @@ def main():
     graph = make_dBG(args.ksize,
                      args.max_tablesize,
                      args.n_tables,
-                     storage='_ByteStorage')
-    
-    for filename in args.inputs:
-        for record in FastxParser(filename):
-            graph.add_sequence(record.sequence)
+                     storage='_' + args.storage_type)
 
+    processor = make_file_consumer(graph, args.output_interval)
+    for filename in args.inputs:
+        processor.process(filename)
+    
     with open(args.output_filename, 'w') as fp:
         fp.write('name\tmax\tmedian\tstart\tend\tinternal_max\n')
         for filename in args.inputs:

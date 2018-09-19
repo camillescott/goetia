@@ -11,13 +11,13 @@ import sys
 import pytest
 from boink.tests.utils import *
 
-from boink.cdbg import display_segment_list
+from boink.compactor import display_segment_list, make_streaming_compactor
 
 
 @pytest.fixture
-def compactor(ksize, graph):
-    from boink.cdbg import StreamingCompactor
-    compactor = StreamingCompactor(graph)
+def compactor(ksize, graph, graph_type):
+    _graph_type, AdapterType = graph_type
+    compactor = make_streaming_compactor(graph)
     return compactor
 
 
@@ -25,7 +25,6 @@ class TestFindNewSegments:
 
     @using_ksize(15)
     @using_length(100)
-    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
     def test_fork_core_first(self, ksize, length, graph, compactor, right_fork,
                                    check_fp):
         (core, branch), pos = right_fork()
@@ -73,7 +72,6 @@ class TestFindNewSegments:
 
     @using_ksize(15)
     @using_length(100)
-    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
     def test_right_decision_split(self, ksize, graph, compactor, right_fork,
                                   check_fp):
         (core, branch), pos = right_fork()
@@ -121,7 +119,6 @@ class TestFindNewSegments:
 
     @using_ksize(15)
     @using_length(100)
-    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
     def test_merge_no_decisions(self, ksize, length, graph, compactor, linear_path, check_fp):
         sequence = linear_path()
         left = sequence[:length//2]
@@ -163,7 +160,6 @@ class TestFindNewSegments:
 
     @using_ksize(15)
     @using_length(100)
-    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
     def test_right_decision_on_end(self, ksize, graph, compactor, right_fork,
                                          check_fp):
         (core, branch), pos = right_fork()
@@ -200,7 +196,6 @@ class TestFindNewSegments:
 
     @using_ksize(15)
     @using_length(100)
-    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
     def test_left_decision_on_end(self, ksize, length, graph, compactor, left_fork,
                                         check_fp):
         (core, branch), pos = left_fork()
@@ -237,7 +232,6 @@ class TestDecisionNodes(object):
 
     @using_ksize(15)
     @using_length(100)
-    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
     def test_new_decision_from_fork(self, ksize, length, graph, compactor,
                                           left_fork, check_fp):
         '''New decision node of form (begin)-[D]-[S]-(end)
@@ -262,7 +256,6 @@ class TestDecisionNodes(object):
 
     @using_ksize(15)
     @using_length(100)
-    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
     def test_left_end_induced_decision_from_fork(self, ksize, length, graph, compactor,
                                              left_fork, check_fp):
         '''Decision node induced by segment end which is also end of sequence
@@ -283,7 +276,6 @@ class TestDecisionNodes(object):
 
     @using_ksize(15)
     @using_length(100)
-    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
     def test_right_end_induced_decision_from_fork(self, ksize, length, graph, compactor,
                                                         right_fork, check_fp):
         '''Decision node induced by segment end which is also end of sequence
@@ -307,7 +299,6 @@ class TestDecisionNodes(object):
 
     @using_ksize(15)
     @using_length(100)
-    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
     def test_left_mid_induced_decision_from_fork(self, ksize, length, graph, compactor,
                                                        left_fork, check_fp):
         ''' Decision node is induced by a non-decision segment end,
@@ -333,7 +324,6 @@ class TestDecisionNodes(object):
 
     @using_ksize(15)
     @using_length(100)
-    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
     def test_right_mid_induced_decision_from_fork(self, ksize, length, graph, compactor,
                                                         right_fork, check_fp):
         ''' Decision node is induced by a non-decision segment end,
@@ -359,7 +349,6 @@ class TestDecisionNodes(object):
 
     @using_ksize(15)
     @using_length(100)
-    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
     def test_new_decision_node_segment_flanked(self, ksize, length, graph, compactor,
                                                      left_hairpin, check_fp):
         ''' Test flanked new decision node using a hairpin fixture, of form
@@ -378,7 +367,6 @@ class TestUnitigBuildExtend(object):
 
     @using_ksize(15)
     @using_length(100)
-    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
     def test_left_fork_unode_creation(self, ksize, length, graph, compactor,
                                             left_fork, check_fp):
         '''New decision node of form (begin)-[D]-[S]-(end)
@@ -411,7 +399,6 @@ class TestUnitigBuildExtend(object):
 
     @using_ksize(15)
     @using_length(100)
-    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
     def test_extend_right(self, ksize, length, graph, compactor, linear_path, check_fp):
         sequence = linear_path()
         left = sequence[:length//2]
@@ -428,7 +415,6 @@ class TestUnitigBuildExtend(object):
 
     @using_ksize(15)
     @using_length(100)
-    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
     def test_extend_left(self, ksize, length, graph, compactor, linear_path, check_fp):
         sequence = linear_path()
         right = sequence[length//2:]
@@ -445,7 +431,6 @@ class TestUnitigBuildExtend(object):
 
     @using_ksize(15)
     @using_length(100)
-    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
     def test_merge(self, ksize, length, graph, compactor, linear_path, check_fp):
         sequence = linear_path()
         left = sequence[:length//2]
@@ -472,7 +457,6 @@ class TestUnitigSplit(object):
 
     @using_ksize(15)
     @using_length(50)
-    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
     def test_clip_from_left(self, right_sea, ksize, length, graph, compactor,
                                   check_fp):
         top, bottom = right_sea()
@@ -499,7 +483,6 @@ class TestUnitigSplit(object):
 
     @using_ksize(15)
     @using_length(50)
-    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
     def test_clip_from_right(self, left_sea, ksize, length, graph, compactor,
                                    check_fp):
         top, bottom = left_sea()
@@ -526,7 +509,6 @@ class TestUnitigSplit(object):
 
     @using_ksize(15)
     @using_length(150)
-    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
     def test_induced_decision_to_unitig_extend(self, ksize, length, graph, compactor,
                                                      right_fork, check_fp):
         (core, branch), pos = right_fork()
@@ -559,7 +541,6 @@ class TestUnitigSplit(object):
     
     @using_ksize(15)
     @using_length(100)
-    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
     def test_left_induced_split(self, ksize, length, graph, compactor,
                                                    left_fork, check_fp):
         ''' Decision node is induced by a non-decision segment end,
@@ -605,7 +586,6 @@ class TestUnitigSplit(object):
 
     @using_ksize(15)
     @using_length(100)
-    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
     def test_right_induced_split(self, ksize, length, graph, compactor,
                                                     right_fork, check_fp):
         ''' Decision node is induced by a non-decision segment end,
@@ -649,7 +629,6 @@ class TestUnitigSplit(object):
 
     @using_ksize(15)
     @using_length(100)
-    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
     def test_tandem_decision_unitig_clipping(self, ksize, length, graph, compactor,
                                           tandem_quad_forks, check_fp):
         (core, left_branches, right_branches), left_pos, right_pos = tandem_quad_forks()
@@ -709,7 +688,6 @@ class TestUnitigSplit(object):
 
     @using_ksize(15)
     @using_length(100)
-    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
     def test_induced_chain(self, ksize, length, graph, compactor,
                                       snp_bubble, check_fp):
 
@@ -749,7 +727,6 @@ class TestUnitigSplit(object):
 
     @using_ksize(15)
     @using_length(100)
-    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
     def test_induced_chain_hourglass(self, ksize, length, graph, compactor,
                                            hourglass_tangle, check_fp):
 
@@ -783,7 +760,6 @@ class TestUnitigSplit(object):
 
     @using_ksize(15)
     @using_length(100)
-    @pytest.mark.parametrize('graph_type', ['_BitStorage'], indirect=['graph_type'])
     def test_induced_bowtie_split(self, ksize, length, graph, compactor,
                                         bowtie_tangle, check_fp):
 
@@ -816,4 +792,34 @@ class TestUnitigSplit(object):
         assert rbottom.left_end == graph.hash(bottom[L+2:L+2+ksize])
 
 
+class TestCircularUnitigs:
 
+    @using_ksize(15)
+    @using_length(20)
+    def test_contained_in_sequence(self, ksize, length, graph, compactor,
+                                   circular, check_fp):
+        sequence = circular()
+        check_fp()
+
+        compactor.update_sequence(sequence)
+        assert compactor.cdbg.n_unodes == 1
+
+        assert False
+
+    @using_ksize(15)
+    @using_length(40)
+    def test_completed_by_segment_overlap(self, ksize, length, graph, compactor,
+                                                circular, check_fp):
+        sequence = circular()
+        check_fp()
+
+        start = sequence[:length - 2]
+        
+        compactor.update_sequence(start)
+        compactor.update_sequence(sequence)
+
+        assert compactor.cdbg.n_unodes == 1
+        assert compactor.cdbg.n_unitig_ends == 2
+        unode = compactor.cdbg.query_unode_end(graph.hash(start[:ksize]))
+        assert unode.right_end == graph.hash(sequence[-ksize:])
+        assert unode.sequence == sequence[:length]
