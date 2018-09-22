@@ -102,8 +102,8 @@ std::ostream& operator<<(std::ostream& _os, const std::pair<_Ty1, _Ty2>& _p) {
     return _os;
 }
 
-template <typename T>
-std::ostream& operator<<(std::ostream& os, const vector<T>& v)
+template <template<typename, typename> class Container, class T, class A>
+std::ostream& operator<<(std::ostream& os, const Container<T,A>& v)
 {
     os << "[";
     for (size_t i = 0; i < v.size(); ++i) {

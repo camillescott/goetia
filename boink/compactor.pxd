@@ -23,7 +23,7 @@ from boink.events cimport (_StreamingCompactorReport, _EventNotifier,
 
 cdef extern from "boink/compactor.hh" namespace "boink" nogil:
 
-    cdef struct compact_segment:
+    cdef struct _compact_segment "boink::compact_segment":
         hash_t left_anchor
         hash_t right_anchor
         hash_t left_flank
@@ -46,10 +46,6 @@ cdef extern from "boink/compactor.hh" namespace "boink" nogil:
 
         void wait_on_updates()
 
-        bool is_decision_kmer(uint8_t&)
-        bool is_decision_kmer(const string&, uint8_t&) except +ValueError
-        bool is_decision_kmer(const string&) except +ValueError
-
         void find_decision_kmers(const string&,
                                  vector[uint32_t]&,
                                  vector[hash_t]&,
@@ -58,12 +54,7 @@ cdef extern from "boink/compactor.hh" namespace "boink" nogil:
         void update_sequence(const string&) except +ValueError
 
         void find_new_segments(const string&, # sequence to add
-                               vector[hash_t]&, # hashes
-                               vector[count_t]&, # counts
-                               set[hash_t]&, # all new k-mers
-                               deque[compact_segment]&, # new segments
-                               set[hash_t]&, # new decision k-mers
-                               deque[NeighborBundle]& # decision neighbors
+                               deque[_compact_segment]&, # new segments
                                ) except +ValueError
 
         _StreamingCompactorReport* get_report()

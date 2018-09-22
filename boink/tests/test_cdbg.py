@@ -227,6 +227,19 @@ class TestFindNewSegments:
         assert test_segments[2].left_anchor == graph.hash(core[pos+1:pos+ksize+1])
         assert test_segments[2].right_anchor == graph.hash(core[-ksize:])
 
+    @using_ksize(15)
+    @using_length(20)
+    def test_contained_loop(self, ksize, length, graph, compactor,
+                                  circular, check_fp):
+        sequence = circular()
+        check_fp()
+
+        segments = compactor.find_new_segments(sequence)
+        assert len(segments) == 3
+        assert segments[1].left_anchor == graph.hash(sequence[:ksize])
+        assert segments[1].right_anchor == graph.hash(sequence[length-1:length+ksize-1])
+
+
 
 class TestDecisionNodes(object):
 
@@ -803,8 +816,9 @@ class TestCircularUnitigs:
 
         compactor.update_sequence(sequence)
         assert compactor.cdbg.n_unodes == 1
-
-        assert False
+        unode = compactor.cdbg.query_unode_end(graph.hash(sequence[:ksize]))
+        assert unode.right_end == graph.hash(sequence[length-1:length+ksize-1])
+        assert unode.sequence == sequence[:length+ksize-1]
 
     @using_ksize(15)
     @using_length(40)
@@ -819,7 +833,8 @@ class TestCircularUnitigs:
         compactor.update_sequence(sequence)
 
         assert compactor.cdbg.n_unodes == 1
-        assert compactor.cdbg.n_unitig_ends == 2
+        assert compactor.cdbg.n_unitig_ends == 1
+
         unode = compactor.cdbg.query_unode_end(graph.hash(start[:ksize]))
-        assert unode.right_end == graph.hash(sequence[-ksize:])
+        assert unode.right_end == graph.hash(start[:ksize:])
         assert unode.sequence == sequence[:length]

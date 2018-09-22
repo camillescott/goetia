@@ -35,10 +35,6 @@ cdef class StreamingCompactor_{{type_bundle.suffix}}(StreamingCompactor_Base):
         self.storage_type = graph.storage_type
         self.shifter_type = graph.shifter_type
 
-    def is_decision_kmer(self, str kmer):
-        cdef string _kmer = _bstring(kmer)
-        return deref(self._this).is_decision_kmer(_kmer)
-
     def find_decision_kmers(self, str sequence):
         cdef string _sequence = _bstring(sequence)
         cdef vector[uint32_t] positions
@@ -46,9 +42,9 @@ cdef class StreamingCompactor_{{type_bundle.suffix}}(StreamingCompactor_Base):
         cdef vector[NeighborBundle] neighbors
 
         deref(self._this).find_decision_kmers(_sequence,
-                                                 positions,
-                                                 hashes,
-                                                 neighbors)
+                                               positions,
+                                               hashes,
+                                               neighbors)
 
         return positions, hashes
 
@@ -58,24 +54,13 @@ cdef class StreamingCompactor_{{type_bundle.suffix}}(StreamingCompactor_Base):
 
     def find_new_segments(self, str sequence):
         cdef string _sequence = _bstring(sequence)
-        cdef vector[hash_t] _hashes
-        cdef vector[count_t] _counts
-        cdef set[hash_t] _new_kmers
-        deref(self._graph).get_counts(_sequence, _counts, _hashes, _new_kmers)
 
-        cdef deque[compact_segment] _segments
-        cdef set[hash_t] _new_decision_kmers
-        cdef deque[NeighborBundle] _decision_neighbors
+        cdef deque[_compact_segment] _segments
         deref(self._this).find_new_segments(_sequence,
-                                               _hashes,
-                                               _counts,
-                                               _new_kmers,
-                                               _segments,
-                                               _new_decision_kmers,
-                                               _decision_neighbors)
+                                            _segments)
 
         segments = []
-        cdef int i = 0
+        cdef size_t i = 0
         for i in range(_segments.size()):
             if _segments[i].is_null():
                 segment = Segment(sequence = '',

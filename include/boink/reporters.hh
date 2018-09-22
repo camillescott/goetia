@@ -127,7 +127,7 @@ public:
         this->msg_type_whitelist.insert(boink::event_types::MSG_TIME_INTERVAL);
 
         _output_stream << "read_n,n_full,n_tips,n_islands,n_unknown"
-                          ",n_trivial,n_dnodes,n_unodes,n_tags,"
+                          ",n_circular,n_dnodes,n_unodes,n_tags,"
                           "n_updates,n_unique,estimated_fp" << std::endl;
     }
 
@@ -142,7 +142,7 @@ public:
                                << report->n_tips << ","
                                << report->n_islands << ","
                                << report->n_unknown << ","
-                               << report->n_trivial << ","
+                               << report->n_circular << ","
                                << report->n_dnodes << ","
                                << report->n_unodes << ","
                                << report->n_tags << ","

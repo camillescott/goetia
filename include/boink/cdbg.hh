@@ -88,7 +88,7 @@ enum node_meta_t {
     FULL,
     TIP,
     ISLAND,
-    TRIVIAL
+    CIRCULAR
 };
 
 
@@ -111,8 +111,8 @@ inline const char * node_meta_repr(node_meta_t meta) {
             return "TIP";
         case ISLAND:
             return "ISLAND";
-        case TRIVIAL:
-            return "TRIVIAL";
+        case CIRCULAR:
+            return "CIRCULAR";
         default:
             return "UNKNOWN";
     }
@@ -125,14 +125,14 @@ struct node_meta_counter {
     int64_t tip_count;
     int64_t island_count;
     int64_t unknown_count;
-    int64_t trivial_count;
+    int64_t circular_count;
 
     node_meta_counter() :
         full_count(0),
         tip_count(0),
         island_count(0),
         unknown_count(0),
-        trivial_count(0) {
+        circular_count(0) {
     }
 
     void mutate(node_meta_t meta, int64_t amt) {
@@ -146,8 +146,8 @@ struct node_meta_counter {
             case ISLAND:
                 island_count += amt;
                 break;
-            case TRIVIAL:
-                trivial_count += amt;
+            case CIRCULAR:
+                circular_count += amt;
                 break;
             default:
                 unknown_count += amt;
@@ -170,7 +170,7 @@ struct node_meta_counter {
     }
 
     string header() const {
-        return string("full,tip,island,trivial,unknown");
+        return string("full,tip,island,circular,unknown");
     }
 
     friend std::ostream& operator<<(std::ostream& o, const node_meta_counter& c);
@@ -179,7 +179,7 @@ struct node_meta_counter {
 
 std::ostream& operator<<(std::ostream& o, const node_meta_counter& c) {
     o << c.full_count << "," << c.tip_count << "," << c.island_count
-      << "," << c.trivial_count << "," << c.unknown_count;
+      << "," << c.circular_count << "," << c.unknown_count;
     return o;
 }
 
@@ -309,7 +309,11 @@ public:
 
     const node_meta_t meta() const {
         // TODO: this should be deduced by the cDBG object
-        return FULL;
+        if (_left_end == _right_end) {
+            return CIRCULAR;
+        } else {
+            return FULL;
+        }
     }
 
     const hash_t left_end() const {
@@ -586,7 +590,7 @@ public:
         pdebug("CLIP: from " << (clip_from == DIR_LEFT ? string("LEFT") : string("RIGHT")) <<
                " and swap " << old_unode_end << " to " << new_unode_end);
 
-        if (unode->sequence.length() < this->_K - 1) {
+        if (unode->sequence.length() < (this->_K - 1)) {
             delete_unode(unode);
             pdebug("CLIP complete: deleted null unode.");
         } else if (clip_from == DIR_LEFT) {
@@ -694,6 +698,17 @@ public:
 
             left_unode = left_unode_it->second;
             right_unode = right_unode_it->second;
+        }
+
+        if (left_unode->node_id == right_unode->node_id) {
+            pdebug("MERGE: CIRCULAR! Creating circular unitig.");
+            extend_unode(DIR_RIGHT,
+                         new_sequence,
+                         left_end, // this is left_unode's right_end
+                         left_unode->left_end(),
+                         new_tags);
+            
+        } else {
 
             pdebug("MERGE: " << left_end << " to " << right_end
                    << " with " << new_sequence
@@ -703,14 +718,14 @@ public:
             std::copy(right_unode->tags.begin(), right_unode->tags.end(),
                       std::back_inserter(new_tags));
             new_right_end = right_unode->right_end();
-        }
-        delete_unode(right_unode);
 
-        extend_unode(DIR_RIGHT,
-                     right_sequence,
-                     left_end,
-                     new_right_end,
-                     new_tags);
+            delete_unode(right_unode);
+            extend_unode(DIR_RIGHT,
+                         right_sequence,
+                         left_end,
+                         new_right_end,
+                         new_tags);
+        }
 
         pdebug("MERGE complete: " << *left_unode);
     }
