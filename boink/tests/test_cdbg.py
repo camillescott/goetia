@@ -809,6 +809,24 @@ class TestCircularUnitigs:
 
     @using_ksize(15)
     @using_length(20)
+    def test_suffix_loop_at_end(self, ksize, length, graph, compactor,
+                                      suffix_circular, check_fp):
+        sequence = suffix_circular()
+        check_fp()
+
+        compactor.update_sequence(sequence)
+        assert compactor.cdbg.n_unodes == 1
+        assert compactor.cdbg.n_unitig_ends == 1
+        assert compactor.cdbg.n_dnodes == 0
+
+        unode = compactor.cdbg.query_unode_end(graph.hash(sequence[:ksize]))
+        assert unode is not None
+        assert unode.right_end == graph.hash(sequence[:ksize])
+
+
+
+    @using_ksize(15)
+    @using_length(20)
     def test_contained_in_sequence(self, ksize, length, graph, compactor,
                                    circular, check_fp):
         sequence = circular()
@@ -816,8 +834,9 @@ class TestCircularUnitigs:
 
         compactor.update_sequence(sequence)
         assert compactor.cdbg.n_unodes == 1
+        assert compactor.cdbg.n_unitig_ends == 1
         unode = compactor.cdbg.query_unode_end(graph.hash(sequence[:ksize]))
-        assert unode.right_end == graph.hash(sequence[length-1:length+ksize-1])
+        assert unode.right_end == graph.hash(sequence[:ksize])
         assert unode.sequence == sequence[:length+ksize-1]
 
     @using_ksize(15)
@@ -838,3 +857,21 @@ class TestCircularUnitigs:
         unode = compactor.cdbg.query_unode_end(graph.hash(start[:ksize]))
         assert unode.right_end == graph.hash(start[:ksize:])
         assert unode.sequence == sequence[:length]
+
+    @using_ksize(15)
+    @using_length(40)
+    def test_split_circular(self, ksize, length, graph, compactor,
+                                  circular_key, check_fp):
+        (loop, tail), pos = circular_key()
+        check_fp()
+
+        compactor.update_sequence(loop)
+        loop_unode = compactor.cdbg.query_unode_end(graph.hash(loop[:ksize]))
+        assert loop_unode is not None
+        assert loop_unode.right_end == graph.hash(loop[:ksize])
+        assert loop_unode.sequence == loop
+
+        compactor.update_sequence(tail)
+        assert compactor.cdbg.n_dnodes == 1
+        assert compactor.cdbg.n_unodes == 2
+        assert compactor.cdbg.n_unitig_ends == 3

@@ -639,6 +639,7 @@ public:
 
     void split_unode(id_t node_id,
                      size_t split_at,
+                     string split_kmer,
                      hash_t new_right_end,
                      hash_t new_left_end) {
 
@@ -650,6 +651,24 @@ public:
 
             unode = query_unode_id(node_id);
             assert(unode != nullptr);
+            if (unode->meta() == CIRCULAR) {
+                pdebug("SPLIT: (CIRCULAR), flanking k-mers will become ends, " << 
+                       new_left_end << " will be left_end, " << new_right_end <<
+                       " will be right_end" << std::endl);
+                // TODO: Split at will need to calcuate split point based on 
+                // compactor having traversed around the untig
+
+                split_at = unode->sequence.find(split_kmer);
+                unode->sequence = unode->sequence.substr(split_at + 1) +
+                                  unode->sequence.substr((this->_K - 1), split_at);
+                switch_unode_ends(unode->left_end(), new_right_end);
+                switch_unode_ends(unode->right_end(), new_left_end);
+                unode->set_left_end(new_right_end);
+                unode->set_right_end(new_left_end);
+                ++_n_updates;
+                return;
+
+            }
             pdebug("SPLIT: " << new_right_end << " left of root, "
                     << new_left_end << " right of root, at " << split_at
                     << std::endl << *unode);

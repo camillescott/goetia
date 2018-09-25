@@ -100,7 +100,7 @@ struct compact_segment {
     // return if the segment is default constructed / null
     // used as a delimiter token between connected runs of segments
     const bool is_null() const {
-        return (left_anchor == right_anchor) && !is_decision_kmer;
+        return length == 0 && (left_anchor == right_anchor) && !is_decision_kmer;
     }
 };
 
@@ -485,9 +485,11 @@ public:
             auto v = segments.at(i-1);
             auto w = segments.at(i);
             if (v.is_null()) {
+                pdebug("Segment is null");
                 ++i;
                 continue;
             } else if (v.is_decision_kmer) {
+                pdebug("Segment is decision k-mer.");
                 kmer_t decision_kmer(v.left_anchor,
                                      sequence.substr(v.start_pos, this->_K));
                 _build_dnode(decision_kmer);
@@ -497,6 +499,7 @@ public:
                                              induced);
                 decision_neighbors.pop_front();
             } else {
+                pdebug("Segment is unitig substring.");
                 // v is a regular segment
                 // if u is null, then we need to check for left induced d-nodes
                 // or for a unitig connection
@@ -719,6 +722,17 @@ public:
         if ((unode_to_split = cdbg->query_unode_end(root.hash)) != nullptr) {
             // special case: induced an end k-mer, just have to trim the u-node,
             // no need to create a new one
+
+            if (unode_to_split->meta() == CIRCULAR) {
+                auto unitig = unode_to_split->sequence;
+                cdbg->split_unode(unode_to_split->node_id,
+                                  0,
+                                  root.kmer,
+                                  this->hash(unitig.substr(unitig.size() - this->_K)),
+                                  this->hash(unitig.c_str() +1));
+                return true;
+            }
+
             hash_t new_end;
             direction_t clip_from;
             if (root.hash == unode_to_split->left_end()) {
@@ -777,10 +791,15 @@ public:
 
                 cdbg->split_unode(unode_to_split->node_id,
                                   split_point,
+                                  root.kmer,
                                   left_unode_new_right,
                                   right_unode_new_left);
 
                 return true;
+            } else {
+                if (lfiltered.back().hash == rfiltered.back().hash) {
+                    // loop, find id
+                }
             }
         }
 
@@ -805,6 +824,7 @@ public:
 
                 cdbg->split_unode(unode_to_split->node_id,
                                   split_point,
+                                  root.kmer,
                                   new_right,
                                   new_left);
 
@@ -824,6 +844,17 @@ public:
                                const string& sequence) {
 
         pdebug("Update Unode from segment: " << segment);
+
+        if (segment.left_anchor == segment.right_flank
+            && segment.right_flank == segment.left_anchor) {
+            
+            pdebug("Special case: segment is a loop.");
+            cdbg->build_unode(sequence.substr(segment.start_pos, segment.length),
+                              segment.tags,
+                              segment.left_anchor,
+                              segment.left_anchor);
+            return;
+        }
 
         bool has_left_unode = cdbg->has_unode_end(segment.left_flank);
         bool has_right_unode = cdbg->has_unode_end(segment.right_flank);
