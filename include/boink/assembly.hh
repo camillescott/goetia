@@ -62,6 +62,7 @@ protected:
 
 public:
 
+    using graph_type = GraphType;
     GraphType * graph;
 
     AssemblerMixin(GraphType * graph, BaseShifter const& shifter) :

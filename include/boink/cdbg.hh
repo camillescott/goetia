@@ -184,20 +184,34 @@ std::ostream& operator<<(std::ostream& o, const node_meta_counter& c) {
 }
 
 
+template <class CompactorType>
 class CompactNode {
+
+    size_t _n_kmers;
+    CompactorType _cursor;
+
 public:
     const id_t node_id;
-    string sequence;
     
-    CompactNode(id_t node_id, const string& sequence) :
-        node_id(node_id), sequence(sequence) {}
+    CompactNode(id_t node_id,
+                const CompactorType& cursor,
+                size_t n_kmers) :
+        node_id(node_id),
+        _cursor(cursor),
+        _n_kmers(n_kmers)
+    {
+    }
 
     string revcomp() const {
         return _revcomp(sequence);
     }
 
-    size_t length() const {
-        return sequence.length();
+    string seed() const {
+        return _cursor.get_cursor();
+    }
+
+    size_t _n_kmers() const {
+        return _n_kmers;
     }
 
     friend bool operator== (const CompactNode& lhs, const CompactNode& rhs) {
@@ -211,32 +225,20 @@ public:
 };
 
 
-class DecisionNode: public CompactNode {
+template <class CompactorType>
+class DecisionNode: public CompactNode<CompactorType> {
 
 protected:
 
-    bool _dirty;
-    uint8_t _left_degree;
-    uint8_t _right_degree;
     uint32_t _count;
 
 public:
 
-    DecisionNode(id_t node_id, const string& sequence) :
-        CompactNode(node_id, sequence),
-        _dirty(true),
-        _left_degree(0),
-        _right_degree(0),
-        _count(1) {
-        
-    }
-
-    const bool is_dirty() const {
-        return _dirty;
-    }
-
-    void set_dirty(bool dirty) {
-        _dirty = dirty;
+    DecisionNode(id_t node_id,
+                 const CompactorType& cursor) :
+        CompactNode(node_id, cursor, 1),
+        _count(1)
+    {    
     }
 
     const uint32_t count() const {
@@ -245,26 +247,6 @@ public:
 
     void incr_count() {
         _count++;
-    }
-
-    const uint8_t degree() const {
-        return left_degree() + right_degree();
-    }
-
-    const uint8_t left_degree() const {
-        return _left_degree;
-    }
-
-    void incr_left_degree() {
-        _left_degree++;
-    }
-
-    const uint8_t right_degree() const {
-        return _right_degree;
-    }
-
-    void incr_right_degree() {
-        _right_degree++;
     }
 
     std::string repr() const {
@@ -280,15 +262,14 @@ public:
 std::ostream& operator<<(std::ostream& o, const DecisionNode& dn) {
 
     o << "<DNode ID/hash=" << dn.node_id << " k-mer=" << dn.sequence
-      //<< " Dl=" << std::to_string(dn.left_degree())
-      //<< " Dr=" << std::to_string(dn.right_degree())
       << " count=" << dn.count()
       << " dirty=" << dn.is_dirty() << ">";
     return o;
 }
 
 
-class UnitigNode : public CompactNode {
+template <class CompactorType>
+class UnitigNode : public CompactNode<CompactorType> {
 
 protected:
 
@@ -301,10 +282,12 @@ public:
     UnitigNode(id_t node_id,
                hash_t left_end,
                hash_t right_end,
-               const string& sequence)
-        : CompactNode(node_id, sequence),
+               const CompactorType& cursor,
+               size_t n_kmers)
+        : CompactNode(node_id, cursor, n_kmers),
           _left_end(left_end),
-          _right_end(right_end) { 
+          _right_end(right_end)
+    { 
     }
 
     const node_meta_t meta() const {
@@ -320,16 +303,13 @@ public:
         return _left_end;
     }
 
-    void set_left_end(hash_t left_end) {
-        _left_end = left_end;
-    }
-
     void extend_right(hash_t right_end, const string& new_sequence) {
         sequence += new_sequence;
         _right_end = right_end;
     }
 
-    void extend_left(hash_t left_end, const string& new_sequence) {
+    void extend_left(hash_t left_end,
+                     size_t n_new_kmers) {
         sequence = new_sequence + sequence;
         _left_end = left_end;
     }
@@ -338,8 +318,9 @@ public:
         return _right_end;
     }
 
-    void set_right_end(hash_t right_end) {
+    void set_right_end(hash_t right_end, size_t n_new_kmers) {
         _right_end = right_end;
+        _n_kmers += n_new_kmers;
     }
 
     std::string repr() const {
@@ -368,9 +349,13 @@ typedef CompactNode * CompactNodePtr;
 typedef DecisionNode * DecisionNodePtr;
 typedef UnitigNode * UnitigNodePtr;
 
+template <class CompactorType>
 class cDBG : public KmerClient {
 
 public:
+
+    using compactor_type = CompactorType;
+    using graph_type = typename CompactorType::graph_type;
 
     /* Map of k-mer hash --> DecisionNode. DecisionNodes take
      * their k-mer hash value as their Node ID.
@@ -473,7 +458,8 @@ public:
         return unitig_end_map.size();
     }
 
-    DecisionNode* build_dnode(hash_t hash, const string& kmer) {
+    DecisionNode* build_dnode(hash_t hash,
+                              const string& kmer) {
         /* Build a new DecisionNode; or, if the given k-mer hash
          * already has a DecisionNode, do nothing.
          */
@@ -508,11 +494,11 @@ public:
         return nullptr;
     }
 
-    template <class HashShifter>
-    vector<DecisionNode*> query_dnodes(KmerIterator<HashShifter>& hash_iter) {
+    vector<DecisionNode*> query_dnodes(const string& sequence) {
+        KmerIterator<CompactorType> kmers(sequence, this->_K);
         vector<DecisionNode*> result;
-        while(!hash_iter.done()) {
-            hash_t h = hash_iter.next();
+        while(!kmers.done()) {
+            hash_t h = kmers.next();
             DecisionNode * dnode;
             if ((dnode = query_dnode(h)) != nullptr) {
                 result.push_back(dnode);
@@ -522,7 +508,8 @@ public:
         return result;
     }
 
-    UnitigNode * build_unode(const string& sequence,
+    UnitigNode * build_unode(const string& seed,
+                             size_t n_kmers,
                              HashVector& tags,
                              hash_t left_end,
                              hash_t right_end) {
@@ -532,7 +519,8 @@ public:
         unique_ptr<UnitigNode> unode = make_unique<UnitigNode>(id,
                                                                left_end,
                                                                right_end,
-                                                               sequence);
+                                                               seed,
+                                                               n_kmers);
         _unitig_id_counter++;
         _n_unitig_nodes++;
         _n_updates++;
@@ -590,7 +578,7 @@ public:
         pdebug("CLIP: from " << (clip_from == DIR_LEFT ? string("LEFT") : string("RIGHT")) <<
                " and swap " << old_unode_end << " to " << new_unode_end);
 
-        if (unode->sequence.length() < (this->_K - 1)) {
+        if (unode->n_kmers()  == 1) {
             delete_unode(unode);
             pdebug("CLIP complete: deleted null unode.");
         } else if (clip_from == DIR_LEFT) {

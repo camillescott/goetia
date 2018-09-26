@@ -130,6 +130,7 @@ protected:
 public:
 
     using ShifterType = typename GraphType::shifter_type;
+    using graph_type = GraphType;
     using CompactorType = CompactorMixin<GraphType>;
     using CompactorType::filter_nodes;
     using CompactorType::find_left_kmers;
