@@ -9,6 +9,9 @@ extensions:
     - name: cdbg
       types:
         - GraphType
+      templates:
+        - cdbg.tpl.pxd
+        - cdbg.tpl.pyx
     - name: dbg
       types:
         - StorageType

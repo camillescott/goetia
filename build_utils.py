@@ -347,10 +347,19 @@ def generate_cpp_params(type_dict, cppclass='class'):
 
 def get_templates(mod_prefix):
     env = get_template_env()
-    
-    pxd_template = env.get_template('{0}.tpl.pxd'.format(mod_prefix))
+
+    try:
+        pxd_template = env.get_template('{0}.tpl.pxd'.format(mod_prefix))
+    except Exception as e:
+        raise RuntimeError("Error parsing {0}: {1}".format('{0}.tpl.pxd'.format(mod_prefix),
+                                                           e))
     pxd_dst_path = os.path.join('boink', pxd_template.name + '.pxi')
-    pyx_template = env.get_template('{0}.tpl.pyx'.format(mod_prefix))
+
+    try:
+        pyx_template = env.get_template('{0}.tpl.pyx'.format(mod_prefix))
+    except Exception as e:
+        raise RuntimeError("Error parsing {0}: {1}".format('{0}.tpl.pyx'.format(mod_prefix),
+                                                           e))
     pyx_dst_path = os.path.join('boink', pyx_template.name + '.pxi')
 
     return (pxd_template, pxd_dst_path,
@@ -361,13 +370,21 @@ def render(pxd_template, pxd_dst_path,
            pyx_template, pyx_dst_path, type_bundles):
     
     with open(pxd_dst_path, 'w') as fp:
-        rendered = pxd_template.render(dst_filename=pxd_dst_path,
-                                       tpl_filename=pxd_template.name,
-                                       type_bundles=type_bundles)
-        fp.write(rendered)
+        try:
+            rendered = pxd_template.render(dst_filename=pxd_dst_path,
+                                           tpl_filename=pxd_template.name,
+                                           type_bundles=type_bundles)
+            fp.write(rendered)
+        except Exception as e:
+            raise RuntimeError("Error rendering {0}: {1}".format(pxd_template.name,
+                                                                 e))
     with open(pyx_dst_path, 'w') as fp:
-        rendered = pyx_template.render(dst_filename=pyx_dst_path,
-                                       tpl_filename=pyx_template.name,
-                                       type_bundles=type_bundles)
-        fp.write(rendered)
-
+        try:
+            rendered = pyx_template.render(dst_filename=pyx_dst_path,
+                                           tpl_filename=pyx_template.name,
+                                           type_bundles=type_bundles)
+            fp.write(rendered)
+        except Exception as e:
+            raise RuntimeError("Error rendering {0}: {1}".format(pyx_template.name,
+                                                                 e))
+ 
