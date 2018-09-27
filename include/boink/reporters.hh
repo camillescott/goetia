@@ -156,15 +156,16 @@ public:
 };
 
 
+template <class GraphType>
 class cDBGWriter : public MultiFileReporter {
 protected:
 
-    cDBG * cdbg;
+    cDBG<GraphType> * cdbg;
     cDBGFormat format;
 
 public:
 
-    cDBGWriter(cDBG * cdbg,
+    cDBGWriter(cDBG<GraphType> * cdbg,
                cDBGFormat format,
                const string& output_prefix)
         : MultiFileReporter(output_prefix,

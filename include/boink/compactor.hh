@@ -131,6 +131,9 @@ public:
 
     using ShifterType = typename GraphType::shifter_type;
     using CompactorType = CompactorMixin<GraphType>;
+    using MinimizerType = WKMinimizer<ShifterType>;
+    using cDBGType = cDBG<GraphType>;
+
     using CompactorType::filter_nodes;
     using CompactorType::find_left_kmers;
     using CompactorType::find_right_kmers;
@@ -140,19 +143,24 @@ public:
     using CompactorType::compactify_right;
     using CompactorType::get_decision_neighbors;
 
+    typedef ShifterType shifter_type;
+    typedef GraphType graph_type;
+    typedef MinimizerType minimizer_type;
+    typedef cDBGType cdbg_type;
+
     GraphType * dbg;
-    cDBG * cdbg;
+    cDBG<GraphType> * cdbg;
 
     StreamingCompactor(GraphType * dbg,
                        uint64_t minimizer_window_size=8,
-                       cDBG * cdbg=nullptr)
+                       cDBG<GraphType> * cdbg=nullptr)
         : CompactorMixin<GraphType>(dbg),
           EventNotifier(),
           _minimizer_window_size(minimizer_window_size),
           dbg(dbg)
     {
         if (cdbg == nullptr) {
-            this->cdbg = new cDBG(dbg->K());
+            this->cdbg = new cDBG<GraphType>(dbg);
             _cdbg_external = false;
         } else {
             this->cdbg = cdbg;
@@ -900,7 +908,7 @@ public:
     }
 };
 
-
+/*
 template <class GraphType>
 class AsyncStreamingCompactor : public StreamingCompactor<GraphType>,
                                 public EventNotifier {
@@ -954,6 +962,7 @@ public:
         this->notify(event);
     }
 };
+*/
 }
 #undef pdebug
 #endif

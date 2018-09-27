@@ -24,23 +24,47 @@ cdef class StreamingCompactorReporter_Base(SingleFileReporter):
     cdef readonly object storage_type
     cdef readonly object shifter_type
 
+cdef class cDBGWriter_Base(MultiFileReporter):
+    cdef readonly object storage_type
+    cdef readonly object shifter_type
+
 cdef class StreamingCompactorReporter__BitStorage__DefaultShifter(StreamingCompactorReporter_Base):
     cdef unique_ptr[_StreamingCompactorReporter[_dBG[_BitStorage,_DefaultShifter]]] _s_owner
     cdef _StreamingCompactorReporter[_dBG[_BitStorage,_DefaultShifter]] *           _s_this
+
+cdef class cDBGWriter__BitStorage__DefaultShifter(cDBGWriter_Base):
+    cdef unique_ptr[_cDBGWriter[_dBG[_BitStorage,_DefaultShifter]]] _s_owner
+    cdef _cDBGWriter[_dBG[_BitStorage,_DefaultShifter]] *           _s_this
 
 cdef class StreamingCompactorReporter__ByteStorage__DefaultShifter(StreamingCompactorReporter_Base):
     cdef unique_ptr[_StreamingCompactorReporter[_dBG[_ByteStorage,_DefaultShifter]]] _s_owner
     cdef _StreamingCompactorReporter[_dBG[_ByteStorage,_DefaultShifter]] *           _s_this
 
+cdef class cDBGWriter__ByteStorage__DefaultShifter(cDBGWriter_Base):
+    cdef unique_ptr[_cDBGWriter[_dBG[_ByteStorage,_DefaultShifter]]] _s_owner
+    cdef _cDBGWriter[_dBG[_ByteStorage,_DefaultShifter]] *           _s_this
+
 cdef class StreamingCompactorReporter__NibbleStorage__DefaultShifter(StreamingCompactorReporter_Base):
     cdef unique_ptr[_StreamingCompactorReporter[_dBG[_NibbleStorage,_DefaultShifter]]] _s_owner
     cdef _StreamingCompactorReporter[_dBG[_NibbleStorage,_DefaultShifter]] *           _s_this
+
+cdef class cDBGWriter__NibbleStorage__DefaultShifter(cDBGWriter_Base):
+    cdef unique_ptr[_cDBGWriter[_dBG[_NibbleStorage,_DefaultShifter]]] _s_owner
+    cdef _cDBGWriter[_dBG[_NibbleStorage,_DefaultShifter]] *           _s_this
 
 cdef class StreamingCompactorReporter__SparseppSetStorage__DefaultShifter(StreamingCompactorReporter_Base):
     cdef unique_ptr[_StreamingCompactorReporter[_dBG[_SparseppSetStorage,_DefaultShifter]]] _s_owner
     cdef _StreamingCompactorReporter[_dBG[_SparseppSetStorage,_DefaultShifter]] *           _s_this
 
+cdef class cDBGWriter__SparseppSetStorage__DefaultShifter(cDBGWriter_Base):
+    cdef unique_ptr[_cDBGWriter[_dBG[_SparseppSetStorage,_DefaultShifter]]] _s_owner
+    cdef _cDBGWriter[_dBG[_SparseppSetStorage,_DefaultShifter]] *           _s_this
+
 
 cdef object _make_streaming_compactor_reporter(str output_filename,
                                                StreamingCompactor_Base compactor)
+
+cdef object _make_cdbgwriter_reporter(str output_prefix,
+                                      str graph_format,
+                                      cDBG_Base cdbg)
 

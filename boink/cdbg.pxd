@@ -83,7 +83,7 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
     ctypedef _DecisionNode * DecisionNodePtr
     ctypedef _UnitigNode * UnitigNodePtr
     
-    cdef cppclass _cDBG "boink::cDBG" (_KmerClient):
+    cdef cppclass _cDBG "boink::cDBG" [GraphType] (_KmerClient):
         ctypedef umap[hash_t,unique_ptr[_DecisionNode]].const_iterator dnode_iter_t
         ctypedef umap[id_t,unique_ptr[_UnitigNode]].const_iterator unode_iter_t
 
@@ -102,7 +102,7 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
 
         _DecisionNode * query_dnode(hash_t)
         bool has_dnode(hash_t)
-        vector[_DecisionNode*] query_dnodes[ShifterType](const string&) except +ValueError
+        vector[_DecisionNode*] query_dnodes(const string&) except +ValueError
 
         _UnitigNode * query_unode_tag(hash_t)
         _UnitigNode * query_unode_end(hash_t)
@@ -112,7 +112,7 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
         void write_adj_matrix(const string&) except +OSError
         void write_graphml(const string&) except +OSError
 
-    cdef cppclass _AsyncCDBG "boink::AsyncCDBG" (_cDBG, _EventListener):
+    cdef cppclass _AsyncCDBG "boink::AsyncCDBG" [GraphType] (_cDBG, _EventListener):
         _AsyncCDBG(uint16_t K)
 
 
@@ -139,10 +139,4 @@ cdef class UnitigNode(CompactNode):
     @staticmethod
     cdef UnitigNode _wrap(_UnitigNode *)
 
-
-cdef class cDBG:
-    cdef _cDBG * _this
-
-    @staticmethod
-    cdef cDBG _wrap(_cDBG *)
-
+include "cdbg.tpl.pxd.pxi"

@@ -22,7 +22,7 @@ cdef class StreamingCompactor_Base:
 cdef class StreamingCompactor_{{type_bundle.suffix}}(StreamingCompactor_Base):
     cdef unique_ptr[_StreamingCompactor[_dBG[{{type_bundle.params}}]]] _this
     cdef _dBG[{{type_bundle.params}}] * _graph
-    cdef public cDBG cdbg
+    cdef public cDBG_{{type_bundle.suffix}} cdbg
     cdef public EventNotifier Notifier
 {% endfor %}
 

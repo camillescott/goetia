@@ -21,22 +21,22 @@ cdef class StreamingCompactor_Base:
 cdef class StreamingCompactor__BitStorage__DefaultShifter(StreamingCompactor_Base):
     cdef unique_ptr[_StreamingCompactor[_dBG[_BitStorage,_DefaultShifter]]] _this
     cdef _dBG[_BitStorage,_DefaultShifter] * _graph
-    cdef public cDBG cdbg
+    cdef public cDBG__BitStorage__DefaultShifter cdbg
     cdef public EventNotifier Notifier
 cdef class StreamingCompactor__ByteStorage__DefaultShifter(StreamingCompactor_Base):
     cdef unique_ptr[_StreamingCompactor[_dBG[_ByteStorage,_DefaultShifter]]] _this
     cdef _dBG[_ByteStorage,_DefaultShifter] * _graph
-    cdef public cDBG cdbg
+    cdef public cDBG__ByteStorage__DefaultShifter cdbg
     cdef public EventNotifier Notifier
 cdef class StreamingCompactor__NibbleStorage__DefaultShifter(StreamingCompactor_Base):
     cdef unique_ptr[_StreamingCompactor[_dBG[_NibbleStorage,_DefaultShifter]]] _this
     cdef _dBG[_NibbleStorage,_DefaultShifter] * _graph
-    cdef public cDBG cdbg
+    cdef public cDBG__NibbleStorage__DefaultShifter cdbg
     cdef public EventNotifier Notifier
 cdef class StreamingCompactor__SparseppSetStorage__DefaultShifter(StreamingCompactor_Base):
     cdef unique_ptr[_StreamingCompactor[_dBG[_SparseppSetStorage,_DefaultShifter]]] _this
     cdef _dBG[_SparseppSetStorage,_DefaultShifter] * _graph
-    cdef public cDBG cdbg
+    cdef public cDBG__SparseppSetStorage__DefaultShifter cdbg
     cdef public EventNotifier Notifier
 
 cdef object _make_streaming_compactor(dBG_Base graph)

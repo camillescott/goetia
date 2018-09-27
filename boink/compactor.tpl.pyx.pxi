@@ -14,7 +14,6 @@ from libc.stdint cimport uint64_t
 from libcpp.memory cimport make_unique
 from libcpp.string cimport string
 
-from boink.dbg cimport *
 from boink.utils cimport *
 
 
@@ -25,14 +24,14 @@ cdef class StreamingCompactor__BitStorage__DefaultShifter(StreamingCompactor_Bas
 
     def __cinit__(self, dBG__BitStorage__DefaultShifter graph):
 
+        self.storage_type = graph.storage_type
+        self.shifter_type = graph.shifter_type
+
         if type(self) is StreamingCompactor__BitStorage__DefaultShifter:
             self._this = make_unique[_StreamingCompactor[_dBG[_BitStorage,_DefaultShifter]]](graph._this.get())
             self._graph = graph._this.get()
-            self.cdbg = cDBG._wrap(deref(self._this).cdbg)
+            self.cdbg = cDBG__BitStorage__DefaultShifter._wrap(deref(self._this).cdbg)
             self.Notifier = EventNotifier._wrap(<_EventNotifier*>self._this.get())
-        
-        self.storage_type = graph.storage_type
-        self.shifter_type = graph.shifter_type
 
     def find_decision_kmers(self, str sequence):
         cdef string _sequence = _bstring(sequence)
@@ -87,14 +86,14 @@ cdef class StreamingCompactor__ByteStorage__DefaultShifter(StreamingCompactor_Ba
 
     def __cinit__(self, dBG__ByteStorage__DefaultShifter graph):
 
+        self.storage_type = graph.storage_type
+        self.shifter_type = graph.shifter_type
+
         if type(self) is StreamingCompactor__ByteStorage__DefaultShifter:
             self._this = make_unique[_StreamingCompactor[_dBG[_ByteStorage,_DefaultShifter]]](graph._this.get())
             self._graph = graph._this.get()
-            self.cdbg = cDBG._wrap(deref(self._this).cdbg)
+            self.cdbg = cDBG__ByteStorage__DefaultShifter._wrap(deref(self._this).cdbg)
             self.Notifier = EventNotifier._wrap(<_EventNotifier*>self._this.get())
-        
-        self.storage_type = graph.storage_type
-        self.shifter_type = graph.shifter_type
 
     def find_decision_kmers(self, str sequence):
         cdef string _sequence = _bstring(sequence)
@@ -149,14 +148,14 @@ cdef class StreamingCompactor__NibbleStorage__DefaultShifter(StreamingCompactor_
 
     def __cinit__(self, dBG__NibbleStorage__DefaultShifter graph):
 
+        self.storage_type = graph.storage_type
+        self.shifter_type = graph.shifter_type
+
         if type(self) is StreamingCompactor__NibbleStorage__DefaultShifter:
             self._this = make_unique[_StreamingCompactor[_dBG[_NibbleStorage,_DefaultShifter]]](graph._this.get())
             self._graph = graph._this.get()
-            self.cdbg = cDBG._wrap(deref(self._this).cdbg)
+            self.cdbg = cDBG__NibbleStorage__DefaultShifter._wrap(deref(self._this).cdbg)
             self.Notifier = EventNotifier._wrap(<_EventNotifier*>self._this.get())
-        
-        self.storage_type = graph.storage_type
-        self.shifter_type = graph.shifter_type
 
     def find_decision_kmers(self, str sequence):
         cdef string _sequence = _bstring(sequence)
@@ -211,14 +210,14 @@ cdef class StreamingCompactor__SparseppSetStorage__DefaultShifter(StreamingCompa
 
     def __cinit__(self, dBG__SparseppSetStorage__DefaultShifter graph):
 
+        self.storage_type = graph.storage_type
+        self.shifter_type = graph.shifter_type
+
         if type(self) is StreamingCompactor__SparseppSetStorage__DefaultShifter:
             self._this = make_unique[_StreamingCompactor[_dBG[_SparseppSetStorage,_DefaultShifter]]](graph._this.get())
             self._graph = graph._this.get()
-            self.cdbg = cDBG._wrap(deref(self._this).cdbg)
+            self.cdbg = cDBG__SparseppSetStorage__DefaultShifter._wrap(deref(self._this).cdbg)
             self.Notifier = EventNotifier._wrap(<_EventNotifier*>self._this.get())
-        
-        self.storage_type = graph.storage_type
-        self.shifter_type = graph.shifter_type
 
     def find_decision_kmers(self, str sequence):
         cdef string _sequence = _bstring(sequence)

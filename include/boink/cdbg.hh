@@ -368,9 +368,22 @@ typedef CompactNode * CompactNodePtr;
 typedef DecisionNode * DecisionNodePtr;
 typedef UnitigNode * UnitigNodePtr;
 
+
+template <class GraphType>
 class cDBG : public KmerClient {
 
+protected:
+
+    using ShifterType = typename GraphType::shifter_type;
+    using CompactorType = CompactorMixin<GraphType>;
+    using MinimizerType = WKMinimizer<ShifterType>;
+
 public:
+
+    typedef GraphType graph_type;
+    typedef ShifterType shifter_type;
+    typedef CompactorType compactor_type;
+    typedef MinimizerType minimizer_type;
 
     /* Map of k-mer hash --> DecisionNode. DecisionNodes take
      * their k-mer hash value as their Node ID.
@@ -388,6 +401,8 @@ public:
     typedef unode_map_t::const_iterator unode_iter_t;
 
 protected:
+
+    GraphType * dbg;
 
     // The actual k-mer hash --> DNode map
     dnode_map_t decision_nodes;
@@ -414,8 +429,10 @@ public:
     // Container for cDBG metadata
     node_meta_counter meta_counter;
 
-    cDBG(uint16_t K)
-        : KmerClient(K),
+    cDBG(GraphType * dbg,
+         uint64_t minimizer_window_size=8)
+        : KmerClient(dbg->K()),
+          dbg(dbg),
           _n_updates(0),
           _unitig_id_counter(UNITIG_START_ID),
           _n_unitig_nodes(0) {}
@@ -508,11 +525,11 @@ public:
         return nullptr;
     }
 
-    template <class HashShifter>
-    vector<DecisionNode*> query_dnodes(KmerIterator<HashShifter>& hash_iter) {
+    vector<DecisionNode*> query_dnodes(const string& sequence) {
+        KmerIterator<ShifterType> kmers(sequence, this->_K);
         vector<DecisionNode*> result;
-        while(!hash_iter.done()) {
-            hash_t h = hash_iter.next();
+        while(!kmers.done()) {
+            hash_t h = kmers.next();
             DecisionNode * dnode;
             if ((dnode = query_dnode(h)) != nullptr) {
                 result.push_back(dnode);
@@ -996,19 +1013,23 @@ public:
 
 };
 
-class AsyncCDBG : public cDBG,
+/*
+template <class GraphType>
+class AsyncCDBG : public cDBG<GraphType>,
                   public EventListener {
 
 public:
 
+    using BaseType = cDBG<GraphType>;
+
     AsyncCDBG(uint16_t K)
-        : cDBG(K),
+        : BaseType(K),
           EventListener("cDBG")
     {
-        /* Event types that the cDBG EventListener should filter for.
-         * Other event types will be ignored by the EventListener
-         * superclass on notify().
-         */
+        // Event types that the cDBG EventListener should filter for.
+        // Other event types will be ignored by the EventListener
+        // superclass on notify().
+        //
         this->msg_type_whitelist.insert(boink::event_types::MSG_ADD_DNODE);
         this->msg_type_whitelist.insert(boink::event_types::MSG_ADD_UNODE);
         this->msg_type_whitelist.insert(boink::event_types::MSG_SPLIT_UNODE);
@@ -1019,25 +1040,25 @@ public:
     }
 
     virtual void handle_msg(shared_ptr<Event> event) {
-        /* Superclass override for handling the filtered messages.
-         * For now, unrecognized messages are a no-op.
-         * Follows the general pattern for the rest of boink:
-         *  static_cast the Event to its subclassed type, lock
-         *  underlying datastructures as appropriate, and handle
-         *  updates.
-         */
+        // Superclass override for handling the filtered messages.
+        // For now, unrecognized messages are a no-op.
+        // Follows the general pattern for the rest of boink:
+        //  static_cast the Event to its subclassed type, lock
+        //  underlying datastructures as appropriate, and handle
+        //  updates.
+        //
         switch(event->msg_type) {
             case boink::event_types::MSG_ADD_DNODE:
                 {
                     auto * data = static_cast<BuildDNodeEvent*>(event.get());
-                    auto lock = lock_dnodes();
+                    auto lock = this->lock_dnodes();
                     this->build_dnode(data->hash, data->kmer);
                 }
                 return;
             case boink::event_types::MSG_ADD_UNODE:
                 {
                     auto * data = static_cast<BuildUNodeEvent*>(event.get());
-                    auto lock = lock_unodes();
+                    auto lock = this->lock_unodes();
                     this->build_unode(data->sequence,
                                       data->tags,
                                       data->left_end,
@@ -1047,8 +1068,8 @@ public:
             case boink::event_types::MSG_DELETE_UNODE:
                 {
                     auto * data = static_cast<DeleteUNodeEvent*>(event.get());
-                    auto lock = lock_unodes();
-                    this->delete_unode(query_unode_id(data->node_id));
+                    auto lock = this->lock_unodes();
+                    this->delete_unode(this->query_unode_id(data->node_id));
                 }
                 return;
             case boink::event_types::MSG_INCR_DNODE_COUNT:
@@ -1061,9 +1082,9 @@ public:
     void build_dnode_marker(hash_t hash) {
         // used to synchronously mark a d-node that
         // will be completely constructed eventually
-        auto lock = lock_dnodes();
-        if (query_dnode(hash) == nullptr) {
-            decision_nodes.insert(make_pair(hash, nullptr));
+        auto lock = this->lock_dnodes();
+        if (this->query_dnode(hash) == nullptr) {
+            this->decision_nodes.insert(make_pair(hash, nullptr));
         }
         pdebug("Built d-node marker: " << hash);
     }
@@ -1072,13 +1093,14 @@ public:
         // sync query for d-nodes that are either
         // constructed already or marked for construction
         // synchronously
-        auto search = decision_nodes.find(hash);
-        if (search != decision_nodes.end()) {
+        auto search = this->decision_nodes.find(hash);
+        if (search != this->decision_nodes.end()) {
             return true;
         }
         return false;       
     }
 };
+*/
 
 }
 

@@ -56,11 +56,15 @@ class AssemblerMixin : public GraphType::shifter_type {
 
 protected:
 
-    using BaseShifter = typename GraphType::shifter_type;
-    using BaseShifter::_K;
     std::set<hash_t> seen;
 
 public:
+
+    using BaseShifter = typename GraphType::shifter_type;
+    using BaseShifter::_K;
+
+    typedef GraphType graph_type;
+    typedef BaseShifter shifter_type;
 
     GraphType * graph;
 
@@ -325,13 +329,10 @@ AssemblerMixin<dBGType> make_assembler(dBGType * graph) {
 template<class GraphType>
 class CompactorMixin : public AssemblerMixin<GraphType> {
 
-protected:
+public:
 
     using BaseShifter = typename GraphType::shifter_type;
     using BaseShifter::_K;
-
-public:
-
     using AssemblerType = AssemblerMixin<GraphType>;
     using AssemblerType::seen;
     using AssemblerType::get_left;
@@ -344,6 +345,9 @@ public:
     using AssemblerType::find_right_kmers;
     using AssemblerType::gather_left;
     using AssemblerType::gather_right;
+
+    typedef AssemblerType assembler_type;
+    typedef BaseShifter shifter_type;
 
     CompactorMixin(GraphType * graph, BaseShifter const& shifter) :
         AssemblerType(graph, shifter)

@@ -25,8 +25,8 @@ cdef extern from "boink/reporters.hh" namespace "boink::reporters" nogil:
     cdef cppclass _StreamingCompactorReporter "boink::reporters::StreamingCompactorReporter" [GraphType] (_SingleFileReporter):
         _StreamingCompactorReporter(_StreamingCompactor[GraphType] *, string&)
 
-    cdef cppclass _cDBGWriter "boink::reporters::cDBGWriter" (_MultiFileReporter):
-        _cDBGWriter(_cDBG *, cDBGFormat, const string&)
+    cdef cppclass _cDBGWriter "boink::reporters::cDBGWriter" [GraphType] (_MultiFileReporter):
+        _cDBGWriter(_cDBG[GraphType] *, cDBGFormat, const string&)
 
 
 cdef class SingleFileReporter(EventListener):
@@ -39,10 +39,5 @@ cdef class MultiFileReporter(EventListener):
     cdef readonly object                prefix
     cdef unique_ptr[_MultiFileReporter] _owner
     cdef _MultiFileReporter *           _this
-
-
-cdef class cDBGWriter(MultiFileReporter):
-    cdef unique_ptr[_cDBGWriter] _s_owner
-    cdef _cDBGWriter *           _s_this
 
 include "reporters.tpl.pxd.pxi"

@@ -36,7 +36,7 @@ cdef extern from "boink/compactor.hh" namespace "boink" nogil:
         const bool is_null() 
 
     cdef cppclass _StreamingCompactor "boink::StreamingCompactor" [GraphType] (_AssemblerMixin[GraphType], _EventNotifier):
-        _cDBG * cdbg
+        _cDBG[GraphType] * cdbg
 
         _StreamingCompactor(GraphType *)
 

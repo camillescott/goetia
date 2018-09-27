@@ -14,7 +14,6 @@ from libc.stdint cimport uint64_t
 from libcpp.memory cimport make_unique
 from libcpp.string cimport string
 
-from boink.dbg cimport *
 from boink.utils cimport *
 
 
@@ -26,14 +25,14 @@ cdef class StreamingCompactor_{{type_bundle.suffix}}(StreamingCompactor_Base):
 
     def __cinit__(self, dBG_{{type_bundle.suffix}} graph):
 
+        self.storage_type = graph.storage_type
+        self.shifter_type = graph.shifter_type
+
         if type(self) is StreamingCompactor_{{type_bundle.suffix}}:
             self._this = make_unique[_StreamingCompactor[_dBG[{{type_bundle.params}}]]](graph._this.get())
             self._graph = graph._this.get()
-            self.cdbg = cDBG._wrap(deref(self._this).cdbg)
+            self.cdbg = cDBG_{{type_bundle.suffix}}._wrap(deref(self._this).cdbg)
             self.Notifier = EventNotifier._wrap(<_EventNotifier*>self._this.get())
-        
-        self.storage_type = graph.storage_type
-        self.shifter_type = graph.shifter_type
 
     def find_decision_kmers(self, str sequence):
         cdef string _sequence = _bstring(sequence)

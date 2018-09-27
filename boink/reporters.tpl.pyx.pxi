@@ -39,6 +39,22 @@ cdef class StreamingCompactorReporter__BitStorage__DefaultShifter(StreamingCompa
         self.storage_type = compactor.storage_type
         self.shifter_type = compactor.shifter_type
 
+cdef class cDBGWriter__BitStorage__DefaultShifter(cDBGWriter_Base):
+
+    def __cinit__(self, str output_prefix, str graph_format, cDBG__BitStorage__DefaultShifter cdbg,
+                        *args, **kwargs):
+        
+        self.storage_type = cdbg.storage_type
+        self.shifter_type = cdbg.shifter_type
+
+        if type(self) is cDBGWriter__BitStorage__DefaultShifter:
+            self._s_owner = make_unique[_cDBGWriter[_dBG[_BitStorage,_DefaultShifter]]](cdbg._this,
+                                                     convert_format(graph_format),
+                                                     _bstring(output_prefix))
+            self._s_this = self._s_owner.get()
+            self._this = self._s_this
+            self._listener = <_EventListener*>self._s_owner.get()
+
 
 cdef class StreamingCompactorReporter__ByteStorage__DefaultShifter(StreamingCompactorReporter_Base):
     
@@ -53,6 +69,22 @@ cdef class StreamingCompactorReporter__ByteStorage__DefaultShifter(StreamingComp
 
         self.storage_type = compactor.storage_type
         self.shifter_type = compactor.shifter_type
+
+cdef class cDBGWriter__ByteStorage__DefaultShifter(cDBGWriter_Base):
+
+    def __cinit__(self, str output_prefix, str graph_format, cDBG__ByteStorage__DefaultShifter cdbg,
+                        *args, **kwargs):
+        
+        self.storage_type = cdbg.storage_type
+        self.shifter_type = cdbg.shifter_type
+
+        if type(self) is cDBGWriter__ByteStorage__DefaultShifter:
+            self._s_owner = make_unique[_cDBGWriter[_dBG[_ByteStorage,_DefaultShifter]]](cdbg._this,
+                                                     convert_format(graph_format),
+                                                     _bstring(output_prefix))
+            self._s_this = self._s_owner.get()
+            self._this = self._s_this
+            self._listener = <_EventListener*>self._s_owner.get()
 
 
 cdef class StreamingCompactorReporter__NibbleStorage__DefaultShifter(StreamingCompactorReporter_Base):
@@ -69,6 +101,22 @@ cdef class StreamingCompactorReporter__NibbleStorage__DefaultShifter(StreamingCo
         self.storage_type = compactor.storage_type
         self.shifter_type = compactor.shifter_type
 
+cdef class cDBGWriter__NibbleStorage__DefaultShifter(cDBGWriter_Base):
+
+    def __cinit__(self, str output_prefix, str graph_format, cDBG__NibbleStorage__DefaultShifter cdbg,
+                        *args, **kwargs):
+        
+        self.storage_type = cdbg.storage_type
+        self.shifter_type = cdbg.shifter_type
+
+        if type(self) is cDBGWriter__NibbleStorage__DefaultShifter:
+            self._s_owner = make_unique[_cDBGWriter[_dBG[_NibbleStorage,_DefaultShifter]]](cdbg._this,
+                                                     convert_format(graph_format),
+                                                     _bstring(output_prefix))
+            self._s_this = self._s_owner.get()
+            self._this = self._s_this
+            self._listener = <_EventListener*>self._s_owner.get()
+
 
 cdef class StreamingCompactorReporter__SparseppSetStorage__DefaultShifter(StreamingCompactorReporter_Base):
     
@@ -83,6 +131,22 @@ cdef class StreamingCompactorReporter__SparseppSetStorage__DefaultShifter(Stream
 
         self.storage_type = compactor.storage_type
         self.shifter_type = compactor.shifter_type
+
+cdef class cDBGWriter__SparseppSetStorage__DefaultShifter(cDBGWriter_Base):
+
+    def __cinit__(self, str output_prefix, str graph_format, cDBG__SparseppSetStorage__DefaultShifter cdbg,
+                        *args, **kwargs):
+        
+        self.storage_type = cdbg.storage_type
+        self.shifter_type = cdbg.shifter_type
+
+        if type(self) is cDBGWriter__SparseppSetStorage__DefaultShifter:
+            self._s_owner = make_unique[_cDBGWriter[_dBG[_SparseppSetStorage,_DefaultShifter]]](cdbg._this,
+                                                     convert_format(graph_format),
+                                                     _bstring(output_prefix))
+            self._s_this = self._s_owner.get()
+            self._this = self._s_this
+            self._listener = <_EventListener*>self._s_owner.get()
 
 
 cdef object _make_streaming_compactor_reporter(str output_filename,
@@ -102,3 +166,20 @@ cdef object _make_streaming_compactor_reporter(str output_filename,
 
     raise TypeError("Invalid dBG type.")
 
+cdef object _make_cdbgwriter_reporter(str output_prefix,
+                                      str graph_format,
+                                      cDBG_Base cdbg):
+    if cdbg.storage_type == "_BitStorage" and \
+       cdbg.shifter_type == "_DefaultShifter":
+        return cDBGWriter__BitStorage__DefaultShifter(output_prefix, graph_format, cdbg)
+    if cdbg.storage_type == "_ByteStorage" and \
+       cdbg.shifter_type == "_DefaultShifter":
+        return cDBGWriter__ByteStorage__DefaultShifter(output_prefix, graph_format, cdbg)
+    if cdbg.storage_type == "_NibbleStorage" and \
+       cdbg.shifter_type == "_DefaultShifter":
+        return cDBGWriter__NibbleStorage__DefaultShifter(output_prefix, graph_format, cdbg)
+    if cdbg.storage_type == "_SparseppSetStorage" and \
+       cdbg.shifter_type == "_DefaultShifter":
+        return cDBGWriter__SparseppSetStorage__DefaultShifter(output_prefix, graph_format, cdbg)
+
+    raise TypeError("Invalid dBG type.")
