@@ -431,6 +431,7 @@ def setupcmd(cmd):
 
 def task_install():
     file_dep = [os.path.join(PKG, mod_file) for mod_file in MOD_FILES.values()]
+    file_dep += list(glob.iglob(os.path.join(PKG, '**/*.py'), recursive=True))
     return {'title': title_with_actions,
             'actions': [setupcmd(['install'])],
             'file_dep': file_dep}
