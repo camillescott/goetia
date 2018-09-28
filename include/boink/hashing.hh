@@ -229,8 +229,11 @@ public:
         init();
     }
 
-    RollingHashShifter(uint16_t K) :
-        BaseShifter(K), hasher(K) {}
+    RollingHashShifter(uint16_t K)
+        : BaseShifter(K),
+          hasher(K)
+    {
+    }
 
     RollingHashShifter(const RollingHashShifter& other)
         : BaseShifter(other.K()),
