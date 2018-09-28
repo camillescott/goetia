@@ -119,24 +119,45 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
 cdef cDBGFormat convert_format(str graph_format) except *
 
 
-cdef class CompactNode:
+cdef class CompactNodeView:
     cdef _CompactNode * _cn_this
 
     @staticmethod
-    cdef CompactNode _wrap(_CompactNode *)
+    cdef CompactNodeView _wrap(_CompactNode *)
 
 
-cdef class DecisionNode(CompactNode):
+cdef class DecisionNodeView(CompactNodeView):
     cdef _DecisionNode * _dn_this
 
     @staticmethod
-    cdef DecisionNode _wrap(_DecisionNode *)
+    cdef DecisionNodeView _wrap(_DecisionNode *)
 
 
-cdef class UnitigNode(CompactNode):
+cdef class UnitigNodeView(CompactNodeView):
     cdef _UnitigNode * _un_this
 
     @staticmethod
-    cdef UnitigNode _wrap(_UnitigNode *)
+    cdef UnitigNodeView _wrap(_UnitigNode *)
+
+
+cdef class CompactNode:
+    cdef id_t node_id
+    cdef string sequence
+
+
+cdef class DecisionNode(CompactNode):
+    cdef uint32_t count
+
+    @staticmethod
+    cdef DecisionNode _create(DecisionNodeView view)
+
+
+cdef class UnitigNode(CompactNode):
+    cdef hash_t left_end
+    cdef hash_t right_end
+    cdef node_meta_t meta
+
+    @staticmethod
+    cdef UnitigNode _create(UnitigNodeView view)
 
 include "cdbg.tpl.pxd.pxi"

@@ -48,7 +48,7 @@ cdef class cDBG_{{type_bundle.suffix}}(cDBG_Base):
         cdef _UnitigNode * unode
         while(it != deref(self._this).unodes_end()):
             unode = deref(it).second.get()
-            yield UnitigNode._wrap(unode)
+            yield UnitigNodeView._wrap(unode)
             princ(it)
 
 
@@ -57,13 +57,13 @@ cdef class cDBG_{{type_bundle.suffix}}(cDBG_Base):
         cdef _DecisionNode * dnode
         while(it != deref(self._this).dnodes_end()):
             dnode = deref(it).second.get()
-            yield DecisionNode._wrap(dnode)
+            yield DecisionNodeView._wrap(dnode)
             princ(it)
 
     def query_unode_hash(self, hash_t h):
         cdef _UnitigNode * _node = deref(self._this).query_unode_tag(h)
         if _node != NULL:
-            return UnitigNode._wrap(_node)
+            return UnitigNodeView._wrap(_node)
         else:
             return None
 
@@ -71,7 +71,7 @@ cdef class cDBG_{{type_bundle.suffix}}(cDBG_Base):
         cdef _UnitigNode * _node = \
             deref(self._this).query_unode_id(node_id)
         if _node != NULL:
-            return UnitigNode._wrap(_node)
+            return UnitigNodeView._wrap(_node)
         else:
             return None
 
@@ -79,7 +79,7 @@ cdef class cDBG_{{type_bundle.suffix}}(cDBG_Base):
         cdef _UnitigNode * _node = \
             deref(self._this).query_unode_end(h)
         if _node != NULL:
-            return UnitigNode._wrap(_node)
+            return UnitigNodeView._wrap(_node)
         else:
             return None
     
@@ -87,7 +87,7 @@ cdef class cDBG_{{type_bundle.suffix}}(cDBG_Base):
         cdef _DecisionNode * _node = \
             deref(self._this).query_dnode(h)
         if _node != NULL:
-            return DecisionNode._wrap(_node)
+            return DecisionNodeView._wrap(_node)
         else:
             return None
 

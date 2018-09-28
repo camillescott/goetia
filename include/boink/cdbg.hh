@@ -672,14 +672,12 @@ public:
                 pdebug("SPLIT: (CIRCULAR), flanking k-mers will become ends, " << 
                        new_left_end << " will be left_end, " << new_right_end <<
                        " will be right_end" << std::endl);
-                // TODO: Split at will need to calcuate split point based on 
-                // compactor having traversed around the untig
 
                 split_at = unode->sequence.find(split_kmer);
                 unode->sequence = unode->sequence.substr(split_at + 1) +
                                   unode->sequence.substr((this->_K - 1), split_at);
                 switch_unode_ends(unode->left_end(), new_right_end);
-                switch_unode_ends(unode->right_end(), new_left_end);
+                unitig_end_map.insert(make_pair(new_left_end, unode));
                 unode->set_left_end(new_right_end);
                 unode->set_right_end(new_left_end);
                 ++_n_updates;

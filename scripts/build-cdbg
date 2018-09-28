@@ -9,7 +9,8 @@ from boink.dbg import make_dBG
 from boink.compactor import make_streaming_compactor
 from boink.parsing import grouper
 from boink.processors import make_streaming_compactor_processor
-from boink.reporters import make_streaming_compactor_reporter, cDBGWriter
+from boink.reporters import (make_streaming_compactor_reporter,
+                             make_cdbgwriter_reporter)
 
 
 
@@ -41,9 +42,9 @@ def main():
     writers = []
     if args.save_cdbg_format:
         for cdbg_format in args.save_cdbg_format:
-            writer = cDBGWriter(args.save_cdbg_prefix + '.' + cdbg_format,
-                                cdbg_format,
-                                compactor.cdbg)
+            writer = make_cdbgwriter_reporter(args.save_cdbg_prefix + '.' + cdbg_format,
+                                              cdbg_format,
+                                              compactor.cdbg)
             processor.Notifier.register_listener(writer)
             writers.append(writer)
 

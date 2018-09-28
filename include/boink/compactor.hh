@@ -703,7 +703,7 @@ public:
                 induced_decision_kmers.push_back(d_kmer);
             }
             
-            if (n_attempts > 100) {
+            if (n_attempts > 10) {
                 break;
             }
         }
@@ -805,9 +805,19 @@ public:
 
                 return true;
             } else {
-                if (lfiltered.back().hash == rfiltered.back().hash) {
-                    // loop, find id
+                pdebug("Unitig to split is a loop, traversed " << this->seen.size());
+                for (auto hash : this->seen) {
+                    unode_to_split = cdbg->query_unode_end(hash);
+                    if (unode_to_split != nullptr) break;
                 }
+                assert(unode_to_split != nullptr);
+                pdebug("u-node to split: " << *unode_to_split);
+                cdbg->split_unode(unode_to_split->node_id,
+                                  0,
+                                  root.kmer,
+                                  lfiltered.back().hash,
+                                  rfiltered.back().hash);
+                return true;
             }
         }
 
@@ -855,6 +865,8 @@ public:
 
         if (segment.left_anchor == segment.right_flank
             && segment.right_flank == segment.left_anchor) {
+
+            // TODO: What about single k-mer loop unitigs like "AAA...AAA" and so forth?
             
             pdebug("Special case: segment is a loop.");
             cdbg->build_unode(sequence.substr(segment.start_pos, segment.length),

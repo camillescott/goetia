@@ -823,8 +823,6 @@ class TestCircularUnitigs:
         assert unode is not None
         assert unode.right_end == graph.hash(sequence[:ksize])
 
-
-
     @using_ksize(15)
     @using_length(20)
     def test_contained_in_sequence(self, ksize, length, graph, compactor,
@@ -858,8 +856,8 @@ class TestCircularUnitigs:
         assert unode.right_end == graph.hash(start[:ksize:])
         assert unode.sequence == sequence[:length]
 
-    @using_ksize(15)
-    @using_length(40)
+    @using_ksize(7)
+    @using_length(20)
     def test_split_circular(self, ksize, length, graph, compactor,
                                   circular_key, check_fp):
         (loop, tail), pos = circular_key()
@@ -870,8 +868,21 @@ class TestCircularUnitigs:
         assert loop_unode is not None
         assert loop_unode.right_end == graph.hash(loop[:ksize])
         assert loop_unode.sequence == loop
+        loop_unode = loop_unode.clone()
 
         compactor.update_sequence(tail)
         assert compactor.cdbg.n_dnodes == 1
         assert compactor.cdbg.n_unodes == 2
         assert compactor.cdbg.n_unitig_ends == 3
+
+        cycled_loop_unode = compactor.cdbg.query_unode_end(graph.hash(loop[pos-1:pos-1+ksize]))
+        assert cycled_loop_unode is not None
+        assert cycled_loop_unode.right_end == graph.hash(loop[pos+1:pos+1+ksize])
+
+        print('\n', loop_unode, sep='')
+        print(cycled_loop_unode)
+
+        print('\n', loop, sep='')
+        print((' ' * pos) + loop[pos:pos+ksize])
+        print(loop_unode.sequence)
+        print((' ' * (pos+1)) + cycled_loop_unode.sequence)
