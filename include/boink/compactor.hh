@@ -348,6 +348,11 @@ public:
         }
         preprocess.push_back(compact_segment()); // null segment
 
+        if (preprocess.size() < 3) {
+            // no new sequence
+            return;
+        }
+
         // handle edge case for left_flank of first segment if it starts at pos 0
         if (preprocess[1].start_pos == 0) {
             vector<shift_t> lneighbors = filter_nodes(segment_shifters[0].gather_left(),
