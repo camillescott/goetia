@@ -40,7 +40,7 @@ import textwrap
 from argparse import _VersionAction
 from collections import namedtuple
 
-from boink.cdbg import cDBG
+from boink.cdbg import cDBG_Base
 from boink.metadata import __version__, CUR_TIME
 from boink.parsing import PAIRING_MODES
 
@@ -177,7 +177,7 @@ def build_dBG_args(descr=None, epilog=None, parser=None):
 def add_save_cDBG_args(parser):
     default_prefix = CUR_TIME + '.cdbg'
     parser.add_argument('--save-cdbg-format', nargs='+',
-                        choices=cDBG.SAVE_FORMATS)
+                        choices=cDBG_Base.SAVE_FORMATS)
     parser.add_argument('--save-cdbg-prefix', default=default_prefix)
     parser.add_argument('--save-cdbg-stats', 
                         default=default_prefix + '.stats.csv')
