@@ -239,6 +239,16 @@ class TestFindNewSegments:
         assert segments[1].left_anchor == graph.hash(sequence[:ksize])
         assert segments[1].right_anchor == graph.hash(sequence[length-1:length+ksize-1])
 
+    @using_ksize(15)
+    @using_length(50)
+    def test_zero_new_segments(self, ksize, length, graph, compactor, linear_path, check_fp):
+        sequence = linear_path()
+        check_fp()
+
+        compactor.update_sequence(sequence)
+        segments = compactor.find_new_segments(sequence)
+        assert len(segments) == 0
+
 
 
 class TestDecisionNodes(object):
