@@ -27,15 +27,15 @@ class TestFindNewSegments:
     @using_length(100)
     def test_fork_core_first(self, ksize, length, graph, compactor, right_fork,
                                    check_fp):
-        (core, branch), pos = right_fork()
+        (core, branch), pivot = right_fork()
         check_fp()
 
-        print('INPUTS', core, core[:pos+1], ' ' * (pos + 1) + branch, sep='\n\n')
+        print('INPUTS', core, core[:pivot+1], ' ' * (pivot + 1) + branch, sep='\n\n')
 
         core_segments = compactor.find_new_segments(core)
         graph.add_sequence(core)
-        branch_segments = compactor.find_new_segments(core[:pos+1] + branch)
-        graph.add_sequence(core[:pos+1] + branch)
+        branch_segments = compactor.find_new_segments(core[:pivot+1] + branch)
+        graph.add_sequence(core[:pivot+1] + branch)
 
         # should be NULL - SEG - NULL
         print('Core Segments')
@@ -52,7 +52,7 @@ class TestFindNewSegments:
         assert len(core_segments) == 3
         assert len(branch_segments) == 3
         assert branch_segments[1].sequence == branch
-        assert branch_segments[1].start == pos + 1
+        assert branch_segments[1].start == pivot + 1
         assert branch_segments[1].is_decision_kmer == False
         assert branch_segments[-1].is_null
 
@@ -74,10 +74,10 @@ class TestFindNewSegments:
     @using_length(100)
     def test_right_decision_split(self, ksize, graph, compactor, right_fork,
                                   check_fp):
-        (core, branch), pos = right_fork()
+        (core, branch), pivot = right_fork()
         check_fp()
 
-        print('INPUTS', core, core[:pos+1], ' ' * (pos + 1) + branch, sep='\n\n')
+        print('INPUTS', core, core[:pivot+1], ' ' * (pivot + 1) + branch, sep='\n\n')
 
         branch_segments = compactor.find_new_segments(branch)
         graph.add_sequence(branch)
@@ -110,11 +110,11 @@ class TestFindNewSegments:
 
         assert graph.left_degree(core_segments[2].sequence) == 1
         assert graph.right_degree(core_segments[2].sequence) == 2
-        assert graph.left_degree(core[pos:pos+ksize]) == 1
-        assert graph.right_degree(core[pos:pos+ksize]) == 2
+        assert graph.left_degree(core[pivot:pivot+ksize]) == 1
+        assert graph.right_degree(core[pivot:pivot+ksize]) == 2
 
-        assert core[:pos+ksize-1] == core_segments[1].sequence
-        assert core[pos+1:] == core_segments[3].sequence
+        assert core[:pivot+ksize-1] == core_segments[1].sequence
+        assert core[pivot+1:] == core_segments[3].sequence
 
 
     @using_ksize(15)
@@ -162,14 +162,14 @@ class TestFindNewSegments:
     @using_length(100)
     def test_right_decision_on_end(self, ksize, graph, compactor, right_fork,
                                          check_fp):
-        (core, branch), pos = right_fork()
+        (core, branch), pivot = right_fork()
         check_fp()
 
-        # pos is start position of decision k-mer
-        print('INPUTS', core, core[:pos+1], ' ' * (pos + 1) + branch, sep='\n\n')
+        # pivot is start position of decision k-mer
+        print('INPUTS', core, core[:pivot+1], ' ' * (pivot + 1) + branch, sep='\n\n')
         upper = branch
-        lower = core[pos+1:]
-        test = core[:pos+ksize]
+        lower = core[pivot+1:]
+        test = core[:pivot+ksize]
 
         upper_segments = compactor.find_new_segments(upper)
         graph.add_sequence(upper)
@@ -188,9 +188,9 @@ class TestFindNewSegments:
         assert len(test_segments) == 4
         assert test_segments[2].is_decision_kmer
         assert len(test_segments[2].sequence) == ksize
-        assert len(test_segments[1].sequence) == pos + ksize - 1
+        assert len(test_segments[1].sequence) == pivot + ksize - 1
         assert test_segments[1].left_anchor == graph.hash(core[:ksize])
-        assert test_segments[1].right_anchor == graph.hash(core[pos-1:pos+ksize-1])
+        assert test_segments[1].right_anchor == graph.hash(core[pivot-1:pivot+ksize-1])
         assert test_segments[-1].is_null
 
 
@@ -198,13 +198,13 @@ class TestFindNewSegments:
     @using_length(100)
     def test_left_decision_on_end(self, ksize, length, graph, compactor, left_fork,
                                         check_fp):
-        (core, branch), pos = left_fork()
+        (core, branch), pivot = left_fork()
         check_fp()
-        # pos is start position of decision k-mer
-        print('INPUTS', core, core[:pos+1], ' ' * (pos + 1) + branch, sep='\n\n')
+        # pivot is start position of decision k-mer
+        print('INPUTS', core, core[:pivot+1], ' ' * (pivot + 1) + branch, sep='\n\n')
         upper = branch
-        lower = core[:pos+ksize-1]
-        test = core[pos:]
+        lower = core[:pivot+ksize-1]
+        test = core[pivot:]
 
         upper_segments = compactor.find_new_segments(upper)
         graph.add_sequence(upper)
@@ -224,7 +224,7 @@ class TestFindNewSegments:
         assert test_segments[1].sequence == test[:ksize]
         assert len(test_segments[1].sequence) == ksize
         assert len(test_segments[2].sequence) == len(test) - 1
-        assert test_segments[2].left_anchor == graph.hash(core[pos+1:pos+ksize+1])
+        assert test_segments[2].left_anchor == graph.hash(core[pivot+1:pivot+ksize+1])
         assert test_segments[2].right_anchor == graph.hash(core[-ksize:])
 
     @using_ksize(15)
@@ -260,12 +260,12 @@ class TestDecisionNodes(object):
         '''New decision node of form (begin)-[D]-[S]-(end)
         '''
 
-        (core, branch), pos = left_fork()
+        (core, branch), pivot = left_fork()
         check_fp()
 
         upper = branch
-        lower = core[:pos+ksize-1]
-        test = core[pos:]
+        lower = core[:pivot+ksize-1]
+        test = core[pivot:]
 
         compactor.update_sequence(upper)
         compactor.update_sequence(lower)
@@ -285,7 +285,7 @@ class TestDecisionNodes(object):
            of form (begin)-[x]-[D]-[S]-(end)
         '''
 
-        (core, branch), pos = left_fork()
+        (core, branch), pivot = left_fork()
         check_fp()
 
         compactor.update_sequence(core)
@@ -293,7 +293,7 @@ class TestDecisionNodes(object):
 
         compactor.update_sequence(branch)
         assert compactor.cdbg.n_dnodes == 1
-        dnode_hash = graph.hash(core[pos:pos+ksize])
+        dnode_hash = graph.hash(core[pivot:pivot+ksize])
         print('dnode hash:', dnode_hash)
         assert compactor.cdbg.has_dnode(dnode_hash)
 
@@ -305,18 +305,18 @@ class TestDecisionNodes(object):
            of form (begin)-[S]-[D]-[x]-(end)
         '''
 
-        (core, branch), pos = right_fork()
+        (core, branch), pivot = right_fork()
         check_fp()
 
-        print(core, core[:pos+1] + branch, sep='\n')
-        print(core[pos:pos+ksize])
+        print(core, core[:pivot+1] + branch, sep='\n')
+        print(core[pivot:pivot+ksize])
 
         compactor.update_sequence(core)
         assert compactor.cdbg.n_dnodes == 0
 
         compactor.update_sequence(branch)
         assert compactor.cdbg.n_dnodes == 1
-        dnode_hash = graph.hash(core[pos:pos+ksize])
+        dnode_hash = graph.hash(core[pivot:pivot+ksize])
         print('dnode hash:', dnode_hash)
         assert compactor.cdbg.has_dnode(dnode_hash)
 
@@ -329,19 +329,19 @@ class TestDecisionNodes(object):
 
             (begin)-[S]-[D x]-(end)
         '''
-        (core, branch), pos = left_fork()
+        (core, branch), pivot = left_fork()
         check_fp()
 
-        branch = branch + core[pos+ksize-1:]
+        branch = branch + core[pivot+ksize-1:]
         print(core, branch, sep='\n')
-        print(core[pos:pos+ksize])
+        print(core[pivot:pivot+ksize])
 
         compactor.update_sequence(core)
         assert compactor.cdbg.n_dnodes == 0
 
         compactor.update_sequence(branch)
         assert compactor.cdbg.n_dnodes == 1
-        dnode_hash = graph.hash(core[pos:pos+ksize])
+        dnode_hash = graph.hash(core[pivot:pivot+ksize])
         print('dnode hash:', dnode_hash)
         assert compactor.cdbg.has_dnode(dnode_hash)
 
@@ -354,19 +354,19 @@ class TestDecisionNodes(object):
 
             (begin)-[x D]-[S]-(end)
         '''
-        (core, branch), pos = right_fork()
+        (core, branch), pivot = right_fork()
         check_fp()
 
-        branch = core[:pos+1] + branch
+        branch = core[:pivot+1] + branch
         print(core, branch, sep='\n')
-        print(core[pos:pos+ksize])
+        print(core[pivot:pivot+ksize])
 
         compactor.update_sequence(core)
         assert compactor.cdbg.n_dnodes == 0
 
         compactor.update_sequence(branch)
         assert compactor.cdbg.n_dnodes == 1
-        dnode_hash = graph.hash(core[pos:pos+ksize])
+        dnode_hash = graph.hash(core[pivot:pivot+ksize])
         print('dnode hash:', dnode_hash)
         assert compactor.cdbg.has_dnode(dnode_hash)
 
@@ -377,13 +377,13 @@ class TestDecisionNodes(object):
         ''' Test flanked new decision node using a hairpin fixture, of form
             (begin)-[S]-[D]-[S]-[x]-(end) where [D] is the same k-mer as [x]
         '''
-        sequence, pos = left_hairpin()
+        sequence, pivot = left_hairpin()
         check_fp()
-        print('d-kmer: ', sequence[pos:pos+ksize], graph.hash(sequence[pos:pos+ksize]))
+        print('d-kmer: ', sequence[pivot:pivot+ksize], graph.hash(sequence[pivot:pivot+ksize]))
         compactor.update_sequence(sequence)
 
         assert compactor.cdbg.n_dnodes == 1
-        assert compactor.cdbg.has_dnode(graph.hash(sequence[pos:pos+ksize]))
+        assert compactor.cdbg.has_dnode(graph.hash(sequence[pivot:pivot+ksize]))
 
 
 class TestUnitigBuildExtend(object):
@@ -395,10 +395,10 @@ class TestUnitigBuildExtend(object):
         '''New decision node of form (begin)-[D]-[S]-(end)
         '''
 
-        (core, branch), pos = left_fork()
+        (core, branch), pivot = left_fork()
         upper = branch
-        lower = core[:pos+ksize-1]
-        test = core[pos:]
+        lower = core[:pivot+ksize-1]
+        test = core[pivot:]
 
         compactor.update_sequence(upper)
         assert compactor.cdbg.n_unodes == 1
@@ -493,6 +493,7 @@ class TestUnitigSplit(object):
         assert compactor.cdbg.n_unitig_ends == 4
 
         assert compactor.cdbg.query_dnode(graph.hash(top[:ksize])).sequence == top[:ksize]
+        assert compactor.cdbg.query_unode_end(graph.hash(top[:ksize])) is None
         
         top_unode = compactor.cdbg.query_unode_end(graph.hash(top[1:ksize+1]))
         assert top_unode is not None
@@ -519,6 +520,7 @@ class TestUnitigSplit(object):
         assert compactor.cdbg.n_unitig_ends == 4
 
         assert compactor.cdbg.query_dnode(graph.hash(top[-ksize:])).sequence == top[-ksize:]
+        assert compactor.cdbg.query_unode_end(graph.hash(top[-ksize:])) is None
         
         top_unode = compactor.cdbg.query_unode_end(graph.hash(top[-(ksize+1):-1]))
         assert top_unode is not None
@@ -534,12 +536,12 @@ class TestUnitigSplit(object):
     @using_length(150)
     def test_induced_decision_to_unitig_extend(self, ksize, length, graph, compactor,
                                                      right_fork, check_fp):
-        (core, branch), pos = right_fork()
+        (core, branch), pivot = right_fork()
         check_fp()
 
-        to_be_end_induced = core[ksize+2:pos+1] + branch
+        to_be_end_induced = core[ksize+2:pivot+1] + branch
         waist_left = core[:ksize+2]
-        waist_right = core[pos+ksize:]
+        waist_right = core[pivot+ksize:]
 
         compactor.update_sequence(to_be_end_induced)
         assert compactor.cdbg.n_dnodes == 0
@@ -548,32 +550,32 @@ class TestUnitigSplit(object):
         compactor.update_sequence(core)
         assert compactor.cdbg.n_dnodes == 1
         assert compactor.cdbg.n_unodes == 3
-        assert compactor.cdbg.n_unitig_ends == 6
+        assert compactor.cdbg.n_unitig_ends in [5,6]
 
-        assert compactor.cdbg.query_dnode(graph.hash(core[pos:pos+ksize])).sequence == \
-               core[pos:pos+ksize]
+        assert compactor.cdbg.query_dnode(graph.hash(core[pivot:pivot+ksize])).sequence == \
+               core[pivot:pivot+ksize]
 
         assert compactor.cdbg.query_unode_end(graph.hash(core[:ksize])).right_end == \
-               graph.hash(core[pos-1:pos+ksize-1])
+               graph.hash(core[pivot-1:pivot+ksize-1])
 
         assert compactor.cdbg.query_unode_end(graph.hash(branch[:ksize])).right_end == \
                graph.hash(branch[-ksize:])
         
-        assert compactor.cdbg.query_unode_end(graph.hash(core[pos+1:pos+ksize+1])).right_end == \
+        assert compactor.cdbg.query_unode_end(graph.hash(core[pivot+1:pivot+ksize+1])).right_end == \
                graph.hash(core[-ksize:])
     
     @using_ksize(15)
     @using_length(100)
     def test_left_induced_split(self, ksize, length, graph, compactor,
-                                                   left_fork, check_fp):
+                                      left_fork, check_fp):
         ''' Decision node is induced by a non-decision segment end,
             with flanking known sequence to its  right
 
             (begin)-[S]-[D x]-(end)
         '''
-        (core, branch), pos = left_fork()
+        (core, branch), pivot = left_fork()
         print(core, branch, sep='\n')
-        print(core[pos:pos+ksize])
+        print(core[pivot:pivot+ksize])
 
         compactor.update_sequence(core)
         assert compactor.cdbg.n_dnodes == 0
@@ -584,7 +586,7 @@ class TestUnitigSplit(object):
         assert compactor.cdbg.n_dnodes == 1
         assert compactor.cdbg.n_unodes == 3
         assert compactor.cdbg.n_unodes == 3
-        assert compactor.cdbg.n_unitig_ends == 6
+        assert compactor.cdbg.n_unitig_ends in [5,6] # 5 with flank_left decision pivotition
 
         branch_unode = compactor.cdbg.query_unode_end(graph.hash(branch[:ksize]))
         assert branch_unode is not None
@@ -592,33 +594,33 @@ class TestUnitigSplit(object):
         assert branch_unode.left_end == graph.hash(branch[:ksize])
         assert branch_unode.right_end == graph.hash(branch[-ksize:])
     
-        assert core[pos:pos+ksize] not in branch_unode.sequence
-        assert compactor.cdbg.query_dnode(graph.hash(core[pos:pos+ksize])) is not None
+        assert core[pivot:pivot+ksize] not in branch_unode.sequence
+        assert compactor.cdbg.query_dnode(graph.hash(core[pivot:pivot+ksize])) is not None
 
         core_left_unode = compactor.cdbg.query_unode_end(graph.hash(core[:ksize]))
         assert core_left_unode is not None
-        assert core_left_unode.sequence == core[:pos+ksize-1]
+        assert core_left_unode.sequence == core[:pivot+ksize-1]
         assert core_left_unode.left_end == graph.hash(core[:ksize])
-        assert core_left_unode.right_end == graph.hash(core[pos-1:pos+ksize-1])
+        assert core_left_unode.right_end == graph.hash(core[pivot-1:pivot+ksize-1])
 
         core_right_unode = compactor.cdbg.query_unode_end(graph.hash(core[-ksize:]))
-        assert core_right_unode.sequence == core[pos+1:]
-        assert core_right_unode.left_end == graph.hash(core[pos+1:pos+ksize+1])
+        assert core_right_unode.sequence == core[pivot+1:]
+        assert core_right_unode.left_end == graph.hash(core[pivot+1:pivot+ksize+1])
         assert core_right_unode.right_end == graph.hash(core[-ksize:])
 
 
     @using_ksize(15)
     @using_length(100)
     def test_right_induced_split(self, ksize, length, graph, compactor,
-                                                    right_fork, check_fp):
+                                       right_fork, check_fp):
         ''' Decision node is induced by a non-decision segment end,
             with flanking known sequence to its  right
 
             (begin)-[x D]-[S]-(end)
         '''
-        (core, branch), pos = right_fork()
+        (core, branch), pivot = right_fork()
         print(core, branch, sep='\n')
-        print(core[pos:pos+ksize])
+        print(core[pivot:pivot+ksize])
 
         compactor.update_sequence(core)
         assert compactor.cdbg.n_dnodes == 0
@@ -628,7 +630,7 @@ class TestUnitigSplit(object):
         compactor.update_sequence(branch)
         assert compactor.cdbg.n_dnodes == 1
         assert compactor.cdbg.n_unodes == 3
-        assert compactor.cdbg.n_unitig_ends == 6
+        assert compactor.cdbg.n_unitig_ends in [5,6]
 
         branch_unode = compactor.cdbg.query_unode_end(graph.hash(branch[:ksize]))
         assert branch_unode is not None
@@ -636,29 +638,29 @@ class TestUnitigSplit(object):
         assert branch_unode.left_end == graph.hash(branch[:ksize])
         assert branch_unode.right_end == graph.hash(branch[-ksize:])
     
-        assert core[pos:pos+ksize] not in branch_unode.sequence
-        assert compactor.cdbg.query_dnode(graph.hash(core[pos:pos+ksize])) is not None
+        assert core[pivot:pivot+ksize] not in branch_unode.sequence
+        assert compactor.cdbg.query_dnode(graph.hash(core[pivot:pivot+ksize])) is not None
 
         core_left_unode = compactor.cdbg.query_unode_end(graph.hash(core[:ksize]))
         assert core_left_unode is not None
-        assert core_left_unode.sequence == core[:pos+ksize-1]
+        assert core_left_unode.sequence == core[:pivot+ksize-1]
         assert core_left_unode.left_end == graph.hash(core[:ksize])
-        assert core_left_unode.right_end == graph.hash(core[pos-1:pos+ksize-1])
+        assert core_left_unode.right_end == graph.hash(core[pivot-1:pivot+ksize-1])
 
         core_right_unode = compactor.cdbg.query_unode_end(graph.hash(core[-ksize:]))
-        assert core_right_unode.sequence == core[pos+1:]
-        assert core_right_unode.left_end == graph.hash(core[pos+1:pos+ksize+1])
+        assert core_right_unode.sequence == core[pivot+1:]
+        assert core_right_unode.left_end == graph.hash(core[pivot+1:pivot+ksize+1])
         assert core_right_unode.right_end == graph.hash(core[-ksize:])
 
     @using_ksize(15)
     @using_length(100)
     def test_tandem_decision_unitig_clipping(self, ksize, length, graph, compactor,
                                           tandem_quad_forks, check_fp):
-        (core, left_branches, right_branches), left_pos, right_pos = tandem_quad_forks()
-        left_dkmer = core[left_pos:left_pos+ksize]
-        right_dkmer = core[right_pos:right_pos+ksize]
-        print('left d-node:', left_dkmer, left_pos, graph.hash(left_dkmer))
-        print('right d-node:', right_dkmer, right_pos, graph.hash(right_dkmer))
+        (core, left_branches, right_branches), left_pivot, right_pivot = tandem_quad_forks()
+        left_dkmer = core[left_pivot:left_pivot+ksize]
+        right_dkmer = core[right_pivot:right_pivot+ksize]
+        print('left d-node:', left_dkmer, left_pivot, graph.hash(left_dkmer))
+        print('right d-node:', right_dkmer, right_pivot, graph.hash(right_dkmer))
         compactor.update_sequence(core)
         
         n_ends = 2
@@ -682,8 +684,8 @@ class TestUnitigSplit(object):
 
         left_unode = compactor.cdbg.query_unode_end(graph.hash(core[:ksize]))
         assert left_unode is not None
-        assert left_unode.right_end == graph.hash(core[left_pos-1:left_pos-1+ksize])
-        assert left_unode.sequence == core[:left_pos-1+ksize]
+        assert left_unode.right_end == graph.hash(core[left_pivot-1:left_pivot-1+ksize])
+        assert left_unode.sequence == core[:left_pivot-1+ksize]
 
         for branch_num, branch in enumerate(right_branches):
             print('*** INSERT right branch', branch_num, file=sys.stderr)
@@ -868,9 +870,10 @@ class TestCircularUnitigs:
 
     @using_ksize(7)
     @using_length(20)
+    @using_pivot(['flank_left', 'middle', 'flank_right'])
     def test_split_circular(self, ksize, length, graph, compactor,
                                   circular_key, check_fp):
-        (loop, tail), pos = circular_key()
+        (loop, tail), pivot = circular_key()
         check_fp()
 
         compactor.update_sequence(loop)
@@ -885,14 +888,62 @@ class TestCircularUnitigs:
         assert compactor.cdbg.n_unodes == 2
         assert compactor.cdbg.n_unitig_ends == 3
 
-        cycled_loop_unode = compactor.cdbg.query_unode_end(graph.hash(loop[pos-1:pos-1+ksize]))
+        cycled_loop_unode = compactor.cdbg.query_unode_end(graph.hash(loop[pivot-1:pivot-1+ksize]))
         assert cycled_loop_unode is not None
-        assert cycled_loop_unode.right_end == graph.hash(loop[pos+1:pos+1+ksize])
+        assert cycled_loop_unode.left_end == graph.hash(loop[pivot+1:pivot+1+ksize])
 
         print('\n', loop_unode, sep='')
         print(cycled_loop_unode)
 
         print('\n', loop, sep='')
-        print((' ' * pos) + loop[pos:pos+ksize])
+        print((' ' * pivot) + loop[pivot:pivot+ksize])
         print(loop_unode.sequence)
-        print((' ' * (pos+1)) + cycled_loop_unode.sequence)
+        print((' ' * (pivot+1)) + cycled_loop_unode.sequence)
+
+    @using_ksize(7)
+    @using_length(20)
+    @using_pivot(['left', 'right'])
+    def test_split_circular_on_end(self, ksize, length, graph, compactor,
+                                         circular_key, check_fp):
+        (loop, tail), pivot = circular_key()
+        check_fp()
+        print('length={0} pivot={1}'.format(length, pivot))
+        print(loop, ' ' * pivot + tail)
+        print(list(graph.hash(kmer) for kmer in kmers(loop, ksize)))
+
+        compactor.update_sequence(loop)
+        loop_unode = compactor.cdbg.query_unode_end(graph.hash(loop[:ksize]))
+        assert loop_unode is not None
+        assert loop_unode.right_end == graph.hash(loop[:ksize])
+        assert loop_unode.sequence == loop
+        loop_unode = loop_unode.clone()
+
+        compactor.update_sequence(tail)
+        assert compactor.cdbg.n_dnodes == 1
+        assert compactor.cdbg.n_unodes == 2
+        assert compactor.cdbg.n_unitig_ends == 3
+
+        dnode = compactor.cdbg.query_dnode(graph.hash(loop[pivot:pivot+ksize]))
+        assert dnode.sequence == loop[pivot:pivot+ksize]
+
+        if pivot == 0:
+            # dnode is first k-mer in loop
+            cycled_loop_unode = compactor.cdbg.query_unode_end(graph.hash(loop[pivot+1:pivot+1+ksize]))
+            print(cycled_loop_unode)
+            assert cycled_loop_unode is not None
+            assert cycled_loop_unode.right_end == graph.hash(loop[-ksize:])
+        else:
+            # dnode is last k-mer in loop
+            cycled_loop_unode = compactor.cdbg.query_unode_end(graph.hash(loop[pivot-1:pivot-1+ksize]))   
+            print(cycled_loop_unode)
+            print('pivot:', pivot)
+            assert cycled_loop_unode is not None
+            assert cycled_loop_unode.left_end == graph.hash(loop[:ksize])
+
+        print('\n', loop_unode, sep='')
+        print(cycled_loop_unode)
+
+        print('\n', loop, sep='')
+        print((' ' * pivot) + loop[pivot:pivot+ksize])
+        print(loop_unode.sequence)
+        print((' ' * (pivot+1)) + cycled_loop_unode.sequence)

@@ -128,6 +128,10 @@ if DEBUG:
         CY_CFLAGS.remove('-DNDEBUG')
         CY_CFLAGS.remove('-O3')
         CXXFLAGS.remove('-O3')
+        CY_CFLAGS.append('-O0')
+        CY_CFLAGS.append('-fkeep-inline-functions')
+        CXXFLAGS.append('-O0')
+        CXXFLAGS.append('-fkeep-inline-functions')
     except ValueError:
         pass
     if DEBUG_CPTR:

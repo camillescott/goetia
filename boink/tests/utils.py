@@ -13,7 +13,8 @@ from khmer import reverse_complement as revcomp
 
 from debruijnal_enhance_o_tron.sequence import *
 from debruijnal_enhance_o_tron.fixtures.sequence import (using_ksize,
-                                                         using_length)
+                                                         using_length,
+                                                         using_pivot)
 
 def counting_backends(*args):
     '''

@@ -339,10 +339,15 @@ public:
     void process_sequence(const Read& read) {
         try {
             compactor->update_sequence(read.cleaned_seq);
-        } catch (BoinkException &e) {
-            std::cerr << "WARNING: Bad sequence encountered: "
+        } catch (InvalidCharacterException &e) {
+            std::cerr << "WARNING: Bad sequence encountered at "
+                      << this->_n_reads << ": "
                       << read.cleaned_seq << ", exception was "
                       << e.what() << std::endl;
+            return;
+        } catch (std::exception &e) {
+            std::cerr << "ERROR: Exception thrown at " << this->_n_reads << std::endl;
+            throw e;
         }
     }
 

@@ -103,7 +103,7 @@ public:
         if (!this->is_valid(c)) {
             string msg("Invalid symbol: ");
             msg += c;
-            throw BoinkException(msg.c_str());
+            throw InvalidCharacterException(msg.c_str());
         }
     }
 
@@ -111,7 +111,7 @@ public:
         if (!is_valid(sequence)) {
             string msg("Invalid symbol in ");
             msg += sequence;
-            throw BoinkException(msg.c_str());
+            throw InvalidCharacterException(msg.c_str());
         }
     }
 
@@ -355,7 +355,7 @@ public:
         }
 
         if (done()) {
-            throw BoinkException("past end of iterator");
+            throw InvalidCharacterException("past end of iterator");
         }
 
         shifter->shift_right(_seq[index + _K - 1]);

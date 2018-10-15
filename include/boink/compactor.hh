@@ -43,7 +43,7 @@ struct StreamingCompactorReport {
     uint64_t n_full;
     uint64_t n_tips;
     uint64_t n_islands;
-    uint64_t n_unknown;
+    uint64_t n_trivial;
     uint64_t n_circular;
     uint64_t n_dnodes;
     uint64_t n_unodes;
@@ -185,7 +185,7 @@ public:
         report->n_full = cdbg->meta_counter.full_count;
         report->n_tips = cdbg->meta_counter.tip_count;
         report->n_islands = cdbg->meta_counter.island_count;
-        report->n_unknown = cdbg->meta_counter.unknown_count;
+        report->n_trivial = cdbg->meta_counter.trivial_count;
         report->n_circular = cdbg->meta_counter.circular_count;
         report->n_dnodes = cdbg->n_decision_nodes();
         report->n_unodes = cdbg->n_unitig_nodes();
@@ -230,6 +230,9 @@ public:
         segment.left_anchor = left_anchor;
         segment.left_flank = left_flank;
         segment.is_decision_kmer = false;
+        pdebug("Init segment: start=" << start_pos
+               << " left_flank=" << left_flank
+               << " left_anchor=" << left_anchor);
 
         return segment;
     }
@@ -287,7 +290,7 @@ public:
         KmerIterator<ShifterType> kmers(sequence, this->_K);
         hash_t prev_hash, cur_hash;
         size_t pos = 0;
-        bool cur_new = false, prev_new = false, cur_seen = false;
+        bool cur_new = false, prev_new = false, cur_seen = false, prev_seen = false;
 
         deque<compact_segment> preprocess;
 #ifdef DEBUG_CPTR
@@ -306,7 +309,7 @@ public:
 
             if(cur_new && !cur_seen) {
 
-                if(!prev_new) {
+                if(!prev_new || prev_seen) {
                     pdebug("old -> new (pos=" << pos << ")");
 
                     preprocess.push_back(current_segment);
@@ -317,7 +320,8 @@ public:
                                                                 *(kmers.shifter)));
                 }
                 new_kmers.insert(cur_hash);
-            } else if ((prev_new && !cur_new) || (cur_seen && !current_segment.is_null())) {
+            } else if (!current_segment.is_null() &&
+                        (!cur_new || cur_seen)) {
                 pdebug("new -> old, was_seen=" << cur_seen);
                 finish_segment(current_segment, 
                                pos - 1,
@@ -330,6 +334,7 @@ public:
             ++pos;
             prev_hash = cur_hash;
             prev_new = cur_new;
+            prev_seen = cur_seen;
         }
         // make sure we close current segment if necessary
         if (cur_new && !cur_seen) {
@@ -459,6 +464,7 @@ public:
                 last.length = segment.length - (last.start_pos - segment.start_pos);
                 if (last.length >= this->_K) segments.push_back(last);
             }
+
             ++shifter_iter;
         }
 
@@ -709,7 +715,7 @@ public:
             }
             
             if (n_attempts > 10) {
-                break;
+                throw BoinkException("Stuck in split attempt loop, failing.");
             }
         }
     }
@@ -815,14 +821,15 @@ public:
                     unode_to_split = cdbg->query_unode_end(hash);
                     if (unode_to_split != nullptr) break;
                 }
-                assert(unode_to_split != nullptr);
-                pdebug("u-node to split: " << *unode_to_split);
-                cdbg->split_unode(unode_to_split->node_id,
-                                  0,
-                                  root.kmer,
-                                  lfiltered.back().hash,
-                                  rfiltered.back().hash);
-                return true;
+                if (unode_to_split != nullptr) {
+                    pdebug("u-node to split: " << *unode_to_split);
+                    cdbg->split_unode(unode_to_split->node_id,
+                                      0,
+                                      root.kmer,
+                                      lfiltered.back().hash,
+                                      rfiltered.back().hash);
+                    return true;
+                }
             }
         }
 
@@ -852,6 +859,21 @@ public:
                                   new_left);
 
                 return true;
+            } else {
+                pdebug("Unitig to split is a loop, traversed " << this->seen.size());
+                for (auto hash : this->seen) {
+                    unode_to_split = cdbg->query_unode_end(hash);
+                    if (unode_to_split != nullptr) break;
+                }
+                if (unode_to_split != nullptr) {
+                    pdebug("u-node to split: " << *unode_to_split);
+                    cdbg->split_unode(unode_to_split->node_id,
+                                      0,
+                                      root.kmer,
+                                      lfiltered.back().hash,
+                                      rfiltered.back().hash);
+                    return true;
+                }
             }
         }
 
@@ -869,7 +891,8 @@ public:
         pdebug("Update Unode from segment: " << segment);
 
         if (segment.left_anchor == segment.right_flank
-            && segment.right_flank == segment.left_anchor) {
+            && segment.right_flank == segment.left_anchor
+            && segment.length > this->_K) {
 
             // TODO: What about single k-mer loop unitigs like "AAA...AAA" and so forth?
             

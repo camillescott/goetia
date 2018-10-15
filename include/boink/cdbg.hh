@@ -88,7 +88,8 @@ enum node_meta_t {
     FULL,
     TIP,
     ISLAND,
-    CIRCULAR
+    CIRCULAR,
+    TRIVIAL
 };
 
 
@@ -113,6 +114,8 @@ inline const char * node_meta_repr(node_meta_t meta) {
             return "ISLAND";
         case CIRCULAR:
             return "CIRCULAR";
+        case TRIVIAL:
+            return "TRIVIAL";
         default:
             return "UNKNOWN";
     }
@@ -124,14 +127,14 @@ struct node_meta_counter {
     int64_t full_count;
     int64_t tip_count;
     int64_t island_count;
-    int64_t unknown_count;
+    int64_t trivial_count;
     int64_t circular_count;
 
     node_meta_counter() :
         full_count(0),
         tip_count(0),
         island_count(0),
-        unknown_count(0),
+        trivial_count(0),
         circular_count(0) {
     }
 
@@ -149,8 +152,10 @@ struct node_meta_counter {
             case CIRCULAR:
                 circular_count += amt;
                 break;
+            case TRIVIAL:
+                trivial_count += amt;
+                break;
             default:
-                unknown_count += amt;
                 break;
         }
     }
@@ -170,7 +175,7 @@ struct node_meta_counter {
     }
 
     string header() const {
-        return string("full,tip,island,circular,unknown");
+        return string("full,tip,island,circular,trivial");
     }
 
     friend std::ostream& operator<<(std::ostream& o, const node_meta_counter& c);
@@ -179,7 +184,7 @@ struct node_meta_counter {
 
 std::ostream& operator<<(std::ostream& o, const node_meta_counter& c) {
     o << c.full_count << "," << c.tip_count << "," << c.island_count
-      << "," << c.circular_count << "," << c.unknown_count;
+      << "," << c.circular_count << "," << c.trivial_count;
     return o;
 }
 
@@ -293,6 +298,7 @@ class UnitigNode : public CompactNode {
 protected:
 
     hash_t _left_end, _right_end;
+    node_meta_t _meta;
 
 public:
 
@@ -308,12 +314,11 @@ public:
     }
 
     const node_meta_t meta() const {
-        // TODO: this should be deduced by the cDBG object
-        if (_left_end == _right_end) {
-            return CIRCULAR;
-        } else {
-            return FULL;
-        }
+        return _meta;
+    }
+
+    void set_node_meta(node_meta_t new_meta) {
+        _meta = new_meta;
     }
 
     const hash_t left_end() const {
@@ -358,6 +363,7 @@ std::ostream& operator<<(std::ostream& o, const UnitigNode& un) {
       << " left_end=" << un.left_end()
       << " right_end=" << un.right_end()
       << " sequence=" << un.sequence
+      << " length=" << un.sequence.length()
       << " meta=" << node_meta_repr(un.meta())
       << ">";
     return o;
@@ -517,6 +523,31 @@ public:
         return false;   
     }
 
+    std::vector<UnitigNode*> find_dnode_neighbors(DecisionNode* dnode) {
+        std::vector<UnitigNode*> unodes;
+        CompactorType compactor(dbg);
+        compactor.set_cursor(dnode->sequence);
+
+        auto left_shifts = compactor.gather_left();
+        auto right_shifts = compactor.gather_right();
+
+        for (auto shift : left_shifts) {
+            UnitigNode * unode;
+            if ((unode = query_unode_end(shift.hash)) != nullptr) {
+                unodes.push_back(unode);
+            }
+        }
+
+        for (auto shift : right_shifts) {
+            UnitigNode * unode;
+            if ((unode = query_unode_end(shift.hash)) != nullptr) {
+                unodes.push_back(unode);
+            }
+        }
+
+        return unodes;
+    }
+
     DecisionNode* query_dnode(hash_t hash) {
         auto search = decision_nodes.find(hash);
         if (search != decision_nodes.end()) {
@@ -571,11 +602,32 @@ public:
         unitig_end_map.insert(make_pair(left_end, unode_ptr));
         unitig_end_map.insert(make_pair(right_end, unode_ptr));
 
+        recompute_node_meta(unode_ptr);
         meta_counter.increment(unode_ptr->meta());
 
         pdebug("BUILD_UNODE complete.");
 
         return unode_ptr;
+    }
+
+    void recompute_node_meta(UnitigNode * unode) {
+        if (unode->sequence.size() == this->_K) {
+            unode->set_node_meta(TRIVIAL);
+        } else if (unode->left_end() == unode->right_end()) {
+            unode->set_node_meta(CIRCULAR);
+        } else {
+            auto neighbors = find_unode_neighbors(unode);
+            if (neighbors.first == neighbors.second) {
+                if (neighbors.first == nullptr) {
+                    unode->set_node_meta(ISLAND);
+                } else {
+                    unode->set_node_meta(FULL);
+                }
+            } else {
+                unode->set_node_meta(TIP);
+            }
+        }
+        meta_counter.increment(unode->meta());
     }
 
     UnitigNode * switch_unode_ends(hash_t old_unode_end,
@@ -607,16 +659,22 @@ public:
         pdebug("CLIP: from " << (clip_from == DIR_LEFT ? string("LEFT") : string("RIGHT")) <<
                " and swap " << old_unode_end << " to " << new_unode_end);
 
-        if (unode->sequence.length() < (this->_K - 1)) {
+        if (unode->sequence.length() == this->_K) {
             delete_unode(unode);
             pdebug("CLIP complete: deleted null unode.");
         } else if (clip_from == DIR_LEFT) {
             unode->sequence = unode->sequence.substr(1);
             unode->set_left_end(new_unode_end);
+
+            meta_counter.decrement(unode->meta());
+            recompute_node_meta(unode);
             pdebug("CLIP complete: " << *unode);
         } else {
             unode->sequence = unode->sequence.substr(0, unode->sequence.length() - 1);
             unode->set_right_end(new_unode_end);
+
+            meta_counter.decrement(unode->meta());
+            recompute_node_meta(unode);
             pdebug("CLIP complete: " << *unode);
         }
 
@@ -650,6 +708,8 @@ public:
             unitig_tag_map.insert(make_pair(tag, unode));
         }
 
+        meta_counter.decrement(unode->meta());
+        recompute_node_meta(unode);
         ++_n_updates;
         pdebug("EXTEND complete: " << *unode);
     }
@@ -674,13 +734,19 @@ public:
                        " will be right_end" << std::endl);
 
                 split_at = unode->sequence.find(split_kmer);
+                pdebug("Split k-mer found at " << split_at);
                 unode->sequence = unode->sequence.substr(split_at + 1) +
                                   unode->sequence.substr((this->_K - 1), split_at);
-                switch_unode_ends(unode->left_end(), new_right_end);
-                unitig_end_map.insert(make_pair(new_left_end, unode));
-                unode->set_left_end(new_right_end);
-                unode->set_right_end(new_left_end);
+                switch_unode_ends(unode->left_end(), new_left_end);
+                unitig_end_map.insert(make_pair(new_right_end, unode));
+
+                unode->set_left_end(new_left_end);
+                unode->set_right_end(new_right_end);
+                unode->set_node_meta(FULL);
+                meta_counter.decrement(CIRCULAR);
+                meta_counter.increment(FULL);
                 ++_n_updates;
+                pdebug("SPLIT complete (CIRCULAR): " << *unode);
                 return;
 
             }
@@ -696,6 +762,9 @@ public:
             switch_unode_ends(unode->right_end(), new_right_end);
             unode->set_right_end(new_right_end);
             unode->sequence = unode->sequence.substr(0, split_at + this->_K - 1);
+            
+            meta_counter.decrement(unode->meta());
+            recompute_node_meta(unode);
             ++_n_updates;
         }
 
@@ -736,12 +805,12 @@ public:
 
         if (left_unode->node_id == right_unode->node_id) {
             pdebug("MERGE: CIRCULAR! Creating circular unitig.");
+            meta_counter.decrement(right_unode->meta());
             extend_unode(DIR_RIGHT,
                          new_sequence,
                          left_end, // this is left_unode's right_end
                          left_unode->left_end(),
                          new_tags);
-            
         } else {
 
             pdebug("MERGE: " << left_end << " to " << right_end
@@ -759,6 +828,7 @@ public:
                          left_end,
                          new_right_end,
                          new_tags);
+
         }
 
         pdebug("MERGE complete: " << *left_unode);
@@ -790,6 +860,35 @@ public:
             return search->second.get();
         }
         return nullptr;
+    }
+
+    std::pair<DecisionNode*, DecisionNode*> find_unode_neighbors(UnitigNode * unode) {
+        DecisionNode * left, * right;
+        CompactorType compactor(dbg);
+
+        compactor.set_cursor(unode->sequence.c_str());
+        auto left_shifts = compactor.gather_left();
+
+        compactor.set_cursor(unode->sequence.c_str() + unode->sequence.size() - this->_K);
+        auto right_shifts = compactor.gather_right();
+
+        for (auto shift : left_shifts) {
+            DecisionNode * dnode;
+            if ((dnode = query_dnode(shift.hash)) != nullptr) {
+                left = dnode;
+                pdebug("Found left d-node: " << *dnode);
+            }
+        }
+
+        for (auto shift : right_shifts) {
+            DecisionNode * dnode;
+            if ((dnode = query_dnode(shift.hash)) != nullptr) {
+                right = dnode;
+                pdebug("Found right d-node: " << *dnode);
+            }
+        }
+
+        return std::make_pair(left, right);
     }
 
     void delete_unode(UnitigNode * unode) {

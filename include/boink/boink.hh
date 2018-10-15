@@ -130,6 +130,21 @@ protected:
     const std::string _msg;
 };
 
+class InvalidCharacterException : public std::exception {
+public:
+    explicit InvalidCharacterException(const std::string& msg = "Invalid character encountered")
+        : _msg(msg) { }
+
+    virtual ~InvalidCharacterException() throw() { }
+    virtual const char* what() const throw ()
+    {
+        return _msg.c_str();
+    }
+
+protected:
+    const std::string _msg;
+};
+
 } // namespace boink
 
 
