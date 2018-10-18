@@ -747,6 +747,12 @@ public:
             // special case: induced an end k-mer, just have to trim the u-node,
             // no need to create a new one
 
+            if (unode_to_split->meta() == TRIVIAL) {
+                pdebug("Induced a trivial u-node, delete it.");
+                cdbg->delete_unode(unode_to_split);
+                return true;
+            }
+
             if (unode_to_split->meta() == CIRCULAR) {
                 auto unitig = unode_to_split->sequence;
                 cdbg->split_unode(unode_to_split->node_id,

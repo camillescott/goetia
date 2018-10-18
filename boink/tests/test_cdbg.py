@@ -385,6 +385,24 @@ class TestDecisionNodes(object):
         assert compactor.cdbg.n_dnodes == 1
         assert compactor.cdbg.has_dnode(graph.hash(sequence[pivot:pivot+ksize]))
 
+    @using_ksize(15)
+    @using_length(100)
+    def test_trivial_unode_induced(self, ksize, length, graph, compactor,
+                                         left_hairpin, check_fp):
+        sequence, pivot = left_hairpin()
+        check_fp()
+
+        decision = sequence[pivot:pivot+ksize]
+        compactor.update_sequence(decision)
+        assert compactor.cdbg.n_unodes == 1
+        assert compactor.cdbg.n_unitig_ends == 1
+
+        compactor.update_sequence(sequence)
+        assert compactor.cdbg.has_dnode(graph.hash(decision))
+        assert compactor.cdbg.query_unode_end(graph.hash(decision)) is None
+        assert compactor.cdbg.n_unitig_ends == 4
+        assert compactor.cdbg.n_unodes == 2
+
 
 class TestUnitigBuildExtend(object):
 
@@ -519,7 +537,7 @@ class TestUnitigBuildExtend(object):
 
     @using_ksize(15)
     @using_length(100)
-    def test_trivial_merge(self, ksize, length, graph, compactor, linear_path, check_fp):
+    def test_trivial_merge_left(self, ksize, length, graph, compactor, linear_path, check_fp):
         sequence = linear_path()
         check_fp()
 
@@ -542,6 +560,39 @@ class TestUnitigBuildExtend(object):
         unode = compactor.cdbg.query_unode_end(graph.hash(right[:ksize]))
         assert unode.sequence == right
         assert unode.meta == 'ISLAND'
+
+        compactor.update_sequence(merger)
+        assert compactor.cdbg.n_unodes == 1
+        assert compactor.cdbg.n_unitig_ends == 2
+        unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
+        assert unode.sequence == sequence
+        assert unode.meta == 'ISLAND'
+
+    @using_ksize(15)
+    @using_length(100)
+    def test_trivial_merge_right(self, ksize, length, graph, compactor, linear_path, check_fp):
+        sequence = linear_path()
+        check_fp()
+
+        left = sequence[:-ksize]
+        right = sequence[-ksize:]
+        merger = left[-(ksize-1):] + right[:ksize-1]
+        print(left)
+        print(right)
+
+        compactor.update_sequence(left);
+        assert compactor.cdbg.n_unodes == 1
+        assert compactor.cdbg.n_unitig_ends == 2
+        unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
+        assert unode.sequence == left
+        assert unode.meta == 'ISLAND'
+
+        compactor.update_sequence(right)
+        assert compactor.cdbg.n_unodes == 2
+        assert compactor.cdbg.n_unitig_ends == 3
+        unode = compactor.cdbg.query_unode_end(graph.hash(right[:ksize]))
+        assert unode.sequence == right
+        assert unode.meta == 'TRIVIAL'
 
         compactor.update_sequence(merger)
         assert compactor.cdbg.n_unodes == 1
