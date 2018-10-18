@@ -440,6 +440,8 @@ class TestUnitigBuildExtend(object):
     @using_length(100)
     def test_extend_left(self, ksize, length, graph, compactor, linear_path, check_fp):
         sequence = linear_path()
+        check_fp()
+
         right = sequence[length//2:]
 
         compactor.update_sequence(right);
@@ -456,6 +458,8 @@ class TestUnitigBuildExtend(object):
     @using_length(100)
     def test_merge(self, ksize, length, graph, compactor, linear_path, check_fp):
         sequence = linear_path()
+        check_fp()
+
         left = sequence[:length//2]
         right = sequence[length//2:]
         print(left)
@@ -463,17 +467,113 @@ class TestUnitigBuildExtend(object):
 
         compactor.update_sequence(left);
         assert compactor.cdbg.n_unodes == 1
-        assert compactor.cdbg.query_unode_end(graph.hash(left[:ksize])).sequence == left
+        unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
+        assert unode.sequence == left
+        assert unode.meta == 'ISLAND'
 
         compactor.update_sequence(right)
         assert compactor.cdbg.n_unodes == 2
-        assert compactor.cdbg.query_unode_end(graph.hash(right[:ksize])).sequence == right
+        unode = compactor.cdbg.query_unode_end(graph.hash(right[:ksize]))
+        assert unode.sequence == right
+        assert unode.meta == 'ISLAND'
 
         compactor.update_sequence(left + right)
         assert compactor.cdbg.n_unodes == 1
-        assert compactor.cdbg.query_unode_end(graph.hash(left[:ksize])).sequence == left + right
+        unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
+        assert unode.sequence == left + right
+        assert unode.meta == 'ISLAND'
         assert compactor.cdbg.query_unode_end(graph.hash(left[-ksize:])) is None
         assert compactor.cdbg.query_unode_end(graph.hash(right[:ksize])) is None
+
+    @using_ksize(15)
+    @using_length(100)
+    def test_suffix_merge(self, ksize, length, graph, compactor, linear_path, check_fp):
+        sequence = linear_path()
+        check_fp()
+
+        left = sequence[:length//2]
+        right = sequence[length//2:]
+        merger = left[-(ksize-1):] + right[:ksize-1]
+        print(left)
+        print(right)
+
+        compactor.update_sequence(left);
+        assert compactor.cdbg.n_unodes == 1
+        unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
+        assert unode.sequence == left
+        assert unode.meta == 'ISLAND'
+
+        compactor.update_sequence(right)
+        assert compactor.cdbg.n_unodes == 2
+        unode = compactor.cdbg.query_unode_end(graph.hash(right[:ksize]))
+        assert unode.sequence == right
+        assert unode.meta == 'ISLAND'
+
+        compactor.update_sequence(merger)
+        assert compactor.cdbg.n_unodes == 1
+        unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
+        assert unode.sequence == sequence
+        assert unode.meta == 'ISLAND'
+        assert compactor.cdbg.query_unode_end(graph.hash(left[-ksize:])) is None
+        assert compactor.cdbg.query_unode_end(graph.hash(right[:ksize])) is None
+
+    @using_ksize(15)
+    @using_length(100)
+    def test_trivial_merge(self, ksize, length, graph, compactor, linear_path, check_fp):
+        sequence = linear_path()
+        check_fp()
+
+        left = sequence[:ksize]
+        right = sequence[ksize:]
+        merger = left[-(ksize-1):] + right[:ksize-1]
+        print(left)
+        print(right)
+
+        compactor.update_sequence(left);
+        assert compactor.cdbg.n_unodes == 1
+        assert compactor.cdbg.n_unitig_ends == 1
+        unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
+        assert unode.sequence == left
+        assert unode.meta == 'TRIVIAL'
+
+        compactor.update_sequence(right)
+        assert compactor.cdbg.n_unodes == 2
+        assert compactor.cdbg.n_unitig_ends == 3
+        unode = compactor.cdbg.query_unode_end(graph.hash(right[:ksize]))
+        assert unode.sequence == right
+        assert unode.meta == 'ISLAND'
+
+        compactor.update_sequence(merger)
+        assert compactor.cdbg.n_unodes == 1
+        assert compactor.cdbg.n_unitig_ends == 2
+        unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
+        assert unode.sequence == sequence
+        assert unode.meta == 'ISLAND'
+
+    @using_length(50)
+    @using_ksize(9)
+    def test_suffix_extend(self, ksize, length, internal_pivot,
+                                graph, compactor, linear_path, check_fp):
+        sequence = linear_path()
+        check_fp()
+
+        pivot = internal_pivot
+        left = sequence[:pivot+ksize]
+        right = sequence[pivot+1:]
+        print('\n', left, (' ' * (pivot + 1)) + right, sep='\n')
+
+        compactor.update_sequence(left);
+        assert compactor.cdbg.n_unodes == 1
+        unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
+        assert unode.sequence == left
+        assert unode.meta == 'ISLAND'
+
+        compactor.update_sequence(right)
+        assert compactor.cdbg.n_unodes == 1
+        unode = compactor.cdbg.query_unode_end(graph.hash(right[-ksize:]))
+        assert unode.sequence == sequence
+        assert unode.meta == 'ISLAND'
+        assert compactor.cdbg.query_unode_end(graph.hash(left[-ksize:])) is None
 
 
 class TestUnitigSplit(object):
@@ -499,11 +599,13 @@ class TestUnitigSplit(object):
         assert top_unode is not None
         assert top_unode.sequence == top[1:]
         assert top_unode.right_end == graph.hash(top[-ksize:])
+        assert top_unode.meta == 'TIP'
         
         bottom_unode = compactor.cdbg.query_unode_end(graph.hash(bottom[1:ksize+1]))
         assert bottom_unode is not None
         assert bottom_unode.sequence == bottom[1:]
         assert bottom_unode.right_end == graph.hash(bottom[-ksize:])
+        assert bottom_unode.meta == 'TIP'
 
     @using_ksize(15)
     @using_length(50)
@@ -526,11 +628,13 @@ class TestUnitigSplit(object):
         assert top_unode is not None
         assert top_unode.sequence == top[:-1]
         assert top_unode.left_end == graph.hash(top[:ksize])
+        assert top_unode.meta == 'TIP'
         
         bottom_unode = compactor.cdbg.query_unode_end(graph.hash(bottom[-(ksize+1):-1]))
         assert bottom_unode is not None
         assert bottom_unode.sequence == bottom[:-1]
         assert bottom_unode.left_end == graph.hash(bottom[:ksize])
+        assert bottom_unode.meta == 'TIP'
 
     @using_ksize(15)
     @using_length(150)
@@ -767,21 +871,30 @@ class TestUnitigSplit(object):
         assert compactor.cdbg.n_unodes == 4
         assert compactor.cdbg.n_unitig_ends == 8
 
+        assert compactor.cdbg.query_dnode(graph.hash(top[L:L+ksize])) is not None
+        assert compactor.cdbg.query_dnode(graph.hash(top[L+1:L+1+ksize])) is not None
+        assert compactor.cdbg.query_dnode(graph.hash(bottom[L:L+ksize])) is not None
+        assert compactor.cdbg.query_dnode(graph.hash(bottom[L+1:L+1+ksize])) is not None
+
         ltop = compactor.cdbg.query_unode_end(graph.hash(top[:ksize]))
         assert len(ltop) == L + ksize -1
         assert ltop.right_end == graph.hash(top[L-1:L-1+ksize])
+        assert ltop.sequence == top[:L-1+ksize]
 
         rtop = compactor.cdbg.query_unode_end(graph.hash(top[-ksize:]))
         assert len(rtop) == length - L - 2
         assert rtop.left_end == graph.hash(top[L+2:L+2+ksize])
+        assert rtop.sequence == top[L+2:]
 
         lbottom = compactor.cdbg.query_unode_end(graph.hash(bottom[:ksize]))
         assert len(lbottom) == L + ksize - 1
         assert lbottom.right_end == graph.hash(bottom[L-1:L-1+ksize])
+        assert lbottom.sequence == bottom[:L-1+ksize]
 
         rbottom = compactor.cdbg.query_unode_end(graph.hash(bottom[-ksize:]))
         assert len(rbottom) == length - L - 2
         assert rbottom.left_end == graph.hash(bottom[L+2:L+2+ksize])
+        assert rbottom.sequence == bottom[L+2:]
 
     @using_ksize(15)
     @using_length(100)
@@ -834,6 +947,7 @@ class TestCircularUnitigs:
         unode = compactor.cdbg.query_unode_end(graph.hash(sequence[:ksize]))
         assert unode is not None
         assert unode.right_end == graph.hash(sequence[:ksize])
+        assert unode.meta == 'CIRCULAR'
 
     @using_ksize(15)
     @using_length(20)
@@ -848,6 +962,7 @@ class TestCircularUnitigs:
         unode = compactor.cdbg.query_unode_end(graph.hash(sequence[:ksize]))
         assert unode.right_end == graph.hash(sequence[:ksize])
         assert unode.sequence == sequence[:length+ksize-1]
+        assert unode.meta == 'CIRCULAR'
 
     @using_ksize(15)
     @using_length(40)
@@ -865,8 +980,9 @@ class TestCircularUnitigs:
         assert compactor.cdbg.n_unitig_ends == 1
 
         unode = compactor.cdbg.query_unode_end(graph.hash(start[:ksize]))
-        assert unode.right_end == graph.hash(start[:ksize:])
+        assert unode.right_end == graph.hash(start[:ksize])
         assert unode.sequence == sequence[:length]
+        assert unode.meta == 'CIRCULAR'
 
     @using_ksize(7)
     @using_length(20)
@@ -881,6 +997,7 @@ class TestCircularUnitigs:
         assert loop_unode is not None
         assert loop_unode.right_end == graph.hash(loop[:ksize])
         assert loop_unode.sequence == loop
+        assert loop_unode.meta == 'CIRCULAR'
         loop_unode = loop_unode.clone()
 
         compactor.update_sequence(tail)
@@ -916,6 +1033,7 @@ class TestCircularUnitigs:
         assert loop_unode is not None
         assert loop_unode.right_end == graph.hash(loop[:ksize])
         assert loop_unode.sequence == loop
+        assert loop_unode.meta == 'CIRCULAR'
         loop_unode = loop_unode.clone()
 
         compactor.update_sequence(tail)
@@ -932,6 +1050,7 @@ class TestCircularUnitigs:
             print(cycled_loop_unode)
             assert cycled_loop_unode is not None
             assert cycled_loop_unode.right_end == graph.hash(loop[-ksize:])
+            assert cycled_loop_unode.meta == 'FULL'
         else:
             # dnode is last k-mer in loop
             cycled_loop_unode = compactor.cdbg.query_unode_end(graph.hash(loop[pivot-1:pivot-1+ksize]))   
@@ -939,6 +1058,7 @@ class TestCircularUnitigs:
             print('pivot:', pivot)
             assert cycled_loop_unode is not None
             assert cycled_loop_unode.left_end == graph.hash(loop[:ksize])
+            assert cycled_loop_unode.meta == 'FULL'
 
         print('\n', loop_unode, sep='')
         print(cycled_loop_unode)

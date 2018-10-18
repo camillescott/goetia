@@ -263,11 +263,11 @@ public:
     }
 
     hash_t _hash(const char * sequence) const {
-        CyclicHash<hash_t> hasher(this->_K);
+        CyclicHash<hash_t> tmp_hasher(this->_K);
         for (uint16_t i = 0; i < this->_K; ++i) {
-            hasher.eat(sequence[i]);
+            tmp_hasher.eat(sequence[i]);
         }
-        return hasher.hashvalue;
+        return tmp_hasher.hashvalue;
     }
 
     hash_t update_left(const char c) {

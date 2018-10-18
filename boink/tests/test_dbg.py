@@ -235,6 +235,18 @@ def test_get_kmer_hashes(graph):
     assert hashes[2] == graph.hash("GTGCGT")
 
 
+def test_hashing_2(graph, linear_path, ksize):
+    ''' Graph.hash uses a stand alone hasher for RollingHashShifters,
+    Graph.hashes uses a KmerIterator; check that they give the same
+    results.'''
+
+    S = linear_path()
+
+    for u, v in zip((graph.hash(kmer) for kmer in kmers(S, ksize)),
+                    graph.hashes(S)):
+        assert u == v
+
+
 '''
 def test_get_min_count(graph):
     graph = dbg_type(6)

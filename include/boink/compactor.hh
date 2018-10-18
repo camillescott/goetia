@@ -45,6 +45,7 @@ struct StreamingCompactorReport {
     uint64_t n_islands;
     uint64_t n_trivial;
     uint64_t n_circular;
+    uint64_t n_loops;
     uint64_t n_dnodes;
     uint64_t n_unodes;
     uint64_t n_updates;
@@ -187,6 +188,7 @@ public:
         report->n_islands = cdbg->meta_counter.island_count;
         report->n_trivial = cdbg->meta_counter.trivial_count;
         report->n_circular = cdbg->meta_counter.circular_count;
+        report->n_loops = cdbg->meta_counter.loop_count;
         report->n_dnodes = cdbg->n_decision_nodes();
         report->n_unodes = cdbg->n_unitig_nodes();
         report->n_tags = cdbg->n_tags();
@@ -524,6 +526,7 @@ public:
                 // or for a unitig connection
                 if (u.is_null()) {
 
+                    pdebug("Checking (u,v,w), u is null, left induce v...");
                     kmer_t root(v.left_anchor,
                                 sequence.substr(v.start_pos, this->_K));
                     // TODO: future optimization. we know root is not a decision
@@ -537,6 +540,7 @@ public:
                 // d-nodes or for a unitig connection
                 if (w.is_null()) {
 
+                    pdebug("Checking (u,v,w), w is null, right induce v...");
                     kmer_t root(v.right_anchor,
                                 sequence.substr(v.start_pos + v.length - this->_K, this->_K));
                     // TODO: future optimization. we know root is not a decision
@@ -629,6 +633,7 @@ public:
                                          set<hash_t>& new_kmers,
                                          deque<DecisionKmer>& induced) {
 
+        pdebug("Prepare to attempt right induction on " << kmer);
         this->set_cursor(kmer.kmer);
         NeighborBundle bundle;
         bundle.second = find_right_kmers();
@@ -807,6 +812,9 @@ public:
                        << " root was " << root.hash);
                 hash_t right_unode_new_left = this->hash(unode_to_split->sequence.c_str() + 
                                                          split_point + 1);
+                if (rfiltered.size()) {
+                    assert(right_unode_new_left == rfiltered.back().hash);
+                }
 
                 cdbg->split_unode(unode_to_split->node_id,
                                   split_point,
@@ -851,6 +859,9 @@ public:
                 hash_t new_right = this->hash(unode_to_split->sequence.c_str() + 
                                               split_point - 1);
                 hash_t new_left = start.hash;
+                if (lfiltered.size()) {
+                    assert(lfiltered.back().hash == new_right);
+                }
 
                 cdbg->split_unode(unode_to_split->node_id,
                                   split_point,

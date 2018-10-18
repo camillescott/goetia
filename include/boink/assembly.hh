@@ -432,12 +432,14 @@ public:
             }
 
             if (n_left == 0) {
+                pdebug("Stop: no neighbors.");
                 end_hash = this->get();
                 return;
             }
 
             if (this->seen.count(next.hash) ||
                 mask.count(next.hash)) {
+                pdebug("Stop: hit seen k-mer or masked k-mer.");
                 end_hash = this->get();
                 return;
             }

@@ -89,6 +89,7 @@ enum node_meta_t {
     TIP,
     ISLAND,
     CIRCULAR,
+    LOOP,
     TRIVIAL
 };
 
@@ -116,6 +117,8 @@ inline const char * node_meta_repr(node_meta_t meta) {
             return "CIRCULAR";
         case TRIVIAL:
             return "TRIVIAL";
+        case LOOP:
+            return "LOOP";
         default:
             return "UNKNOWN";
     }
@@ -129,13 +132,15 @@ struct node_meta_counter {
     int64_t island_count;
     int64_t trivial_count;
     int64_t circular_count;
+    int64_t loop_count;
 
     node_meta_counter() :
         full_count(0),
         tip_count(0),
         island_count(0),
         trivial_count(0),
-        circular_count(0) {
+        circular_count(0),
+        loop_count(0) {
     }
 
     void mutate(node_meta_t meta, int64_t amt) {
@@ -154,6 +159,9 @@ struct node_meta_counter {
                 break;
             case TRIVIAL:
                 trivial_count += amt;
+                break;
+            case LOOP:
+                loop_count += amt;
                 break;
             default:
                 break;
@@ -175,7 +183,7 @@ struct node_meta_counter {
     }
 
     string header() const {
-        return string("full,tip,island,circular,trivial");
+        return string("full,tip,island,circular,trivial,loop");
     }
 
     friend std::ostream& operator<<(std::ostream& o, const node_meta_counter& c);
@@ -184,7 +192,7 @@ struct node_meta_counter {
 
 std::ostream& operator<<(std::ostream& o, const node_meta_counter& c) {
     o << c.full_count << "," << c.tip_count << "," << c.island_count
-      << "," << c.circular_count << "," << c.trivial_count;
+      << "," << c.circular_count << "," << c.trivial_count << "," << c.loop_count;
     return o;
 }
 
@@ -590,8 +598,6 @@ public:
         unitig_nodes.insert(make_pair(id, std::move(unode)));
         UnitigNode * unode_ptr = unitig_nodes[id].get();
 
-        pdebug("BUILD_UNODE: " << *unode_ptr);
-
         // Link up its new tags
         unode_ptr->tags.insert(std::end(unode_ptr->tags),
                                std::begin(tags),
@@ -605,12 +611,13 @@ public:
         recompute_node_meta(unode_ptr);
         meta_counter.increment(unode_ptr->meta());
 
-        pdebug("BUILD_UNODE complete.");
+        pdebug("BUILD_UNODE complete: " << *unode_ptr);
 
         return unode_ptr;
     }
 
     void recompute_node_meta(UnitigNode * unode) {
+        pdebug("Recompute node meta for " << unode->node_id);
         if (unode->sequence.size() == this->_K) {
             unode->set_node_meta(TRIVIAL);
         } else if (unode->left_end() == unode->right_end()) {
@@ -621,12 +628,17 @@ public:
                 if (neighbors.first == nullptr) {
                     unode->set_node_meta(ISLAND);
                 } else {
-                    unode->set_node_meta(FULL);
+                    unode->set_node_meta(LOOP);
                 }
             } else {
-                unode->set_node_meta(TIP);
+                if (neighbors.first == nullptr || neighbors.second == nullptr) {
+                    unode->set_node_meta(TIP);
+                } else {
+                    unode->set_node_meta(FULL);
+                }
             }
         }
+        pdebug("New meta type is " << node_meta_repr(unode->meta()));
         meta_counter.increment(unode->meta());
     }
 
@@ -690,12 +702,23 @@ public:
         auto lock = lock_unodes();
 
         auto unode = switch_unode_ends(old_unode_end, new_unode_end);
+        if (unode->meta() == TRIVIAL) {
+            unitig_end_map.insert(make_pair(old_unode_end, unode));
+        }
+        auto id = unode->node_id;
+
         assert(unode != nullptr); 
 
         pdebug("EXTEND: from " << old_unode_end << " to " << new_unode_end
                << (ext_dir == DIR_LEFT ? string(" to LEFT") : string(" to RIGHT"))
                << " adding " << new_sequence << " to"
                << std::endl << *unode);
+#ifdef DEBUG_CDBG
+        auto counts = dbg->get_counts(unode->sequence);
+        for (auto c : counts) {
+            assert(c > 0);
+        }
+#endif
         
         if (ext_dir == DIR_RIGHT) {
             unode->extend_right(new_unode_end, new_sequence);
@@ -754,7 +777,7 @@ public:
                     << new_left_end << " right of root, at " << split_at
                     << std::endl << *unode);
 
-            
+            assert((split_at != 0) && (split_at != unode->sequence.size() - this->_K));
             right_unitig = unode->sequence.substr(split_at + 1);
 
             // set the left unode right end to the new right end
@@ -863,7 +886,7 @@ public:
     }
 
     std::pair<DecisionNode*, DecisionNode*> find_unode_neighbors(UnitigNode * unode) {
-        DecisionNode * left, * right;
+        DecisionNode * left = nullptr, * right = nullptr;
         CompactorType compactor(dbg);
 
         compactor.set_cursor(unode->sequence.c_str());
