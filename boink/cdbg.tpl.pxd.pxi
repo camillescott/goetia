@@ -15,21 +15,25 @@ cdef class cDBG_Base:
 
 cdef class cDBG__BitStorage__DefaultShifter(cDBG_Base):
     cdef _cDBG[_dBG[_BitStorage,_DefaultShifter]] * _this
+    cdef public EventNotifier Notifier
 
     @staticmethod
     cdef cDBG__BitStorage__DefaultShifter _wrap(_cDBG[_dBG[_BitStorage,_DefaultShifter]] *)
 cdef class cDBG__ByteStorage__DefaultShifter(cDBG_Base):
     cdef _cDBG[_dBG[_ByteStorage,_DefaultShifter]] * _this
+    cdef public EventNotifier Notifier
 
     @staticmethod
     cdef cDBG__ByteStorage__DefaultShifter _wrap(_cDBG[_dBG[_ByteStorage,_DefaultShifter]] *)
 cdef class cDBG__NibbleStorage__DefaultShifter(cDBG_Base):
     cdef _cDBG[_dBG[_NibbleStorage,_DefaultShifter]] * _this
+    cdef public EventNotifier Notifier
 
     @staticmethod
     cdef cDBG__NibbleStorage__DefaultShifter _wrap(_cDBG[_dBG[_NibbleStorage,_DefaultShifter]] *)
 cdef class cDBG__SparseppSetStorage__DefaultShifter(cDBG_Base):
     cdef _cDBG[_dBG[_SparseppSetStorage,_DefaultShifter]] * _this
+    cdef public EventNotifier Notifier
 
     @staticmethod
     cdef cDBG__SparseppSetStorage__DefaultShifter _wrap(_cDBG[_dBG[_SparseppSetStorage,_DefaultShifter]] *)

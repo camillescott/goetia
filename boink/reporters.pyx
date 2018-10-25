@@ -36,6 +36,17 @@ cdef class MultiFileReporter(EventListener):
             self._this = self._owner.get()
             self._listener = <_EventListener*>self._owner.get()
 
+
+cdef class cDBGHistoryReporter(SingleFileReporter):
+
+    def __cinit__(self, str output_filename, *args, **kwargs):
+        if type(self) is cDBGHistoryReporter:
+            self._h_owner = make_unique[_cDBGHistoryReporter](_bstring(output_filename));
+            self._h_this = self._h_owner.get()
+            self._this = self._h_this
+            self._listener = <_EventListener*>self._h_owner.get()
+
+
 include "reporters.tpl.pyx.pxi"
 
 def make_streaming_compactor_reporter(str output_filename, StreamingCompactor_Base compactor):

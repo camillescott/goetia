@@ -176,6 +176,7 @@ def build_dBG_args(descr=None, epilog=None, parser=None):
 
 def add_save_cDBG_args(parser):
     default_prefix = CUR_TIME + '.cdbg'
+    parser.default_prefix = default_prefix
     parser.add_argument('--save-cdbg-format', nargs='+',
                         choices=cDBG_Base.SAVE_FORMATS)
     parser.add_argument('--save-cdbg-prefix', default=default_prefix)
@@ -183,6 +184,10 @@ def add_save_cDBG_args(parser):
                         default=default_prefix + '.stats.csv')
     parser.add_argument('--save-stats-interval', type=int, default=10000)
     parser.add_argument('--save-cdbg-interval', type=int, default=100000)
+    parser.add_argument('--save-cdbg-history', action='store_true',
+                        default=False)
+    parser.add_argument('--cdbg-history-filename',
+                        default=default_prefix + '.history.graphml')
 
     return parser
 

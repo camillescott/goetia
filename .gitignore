@@ -113,3 +113,6 @@ src/boink/benchmark_oxli_consume
 
 
 .doit.db.*
+
+*.stats.csv
+*.history.graphml

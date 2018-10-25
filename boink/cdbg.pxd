@@ -83,7 +83,7 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
     ctypedef _DecisionNode * DecisionNodePtr
     ctypedef _UnitigNode * UnitigNodePtr
     
-    cdef cppclass _cDBG "boink::cDBG" [GraphType] (_KmerClient):
+    cdef cppclass _cDBG "boink::cDBG" [GraphType] (_KmerClient, _EventNotifier):
         ctypedef umap[hash_t,unique_ptr[_DecisionNode]].const_iterator dnode_iter_t
         ctypedef umap[id_t,unique_ptr[_UnitigNode]].const_iterator unode_iter_t
 

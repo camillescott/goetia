@@ -384,7 +384,8 @@ typedef UnitigNode * UnitigNodePtr;
 
 
 template <class GraphType>
-class cDBG : public KmerClient {
+class cDBG : public KmerClient,
+             public EventNotifier {
 
 protected:
 
@@ -446,6 +447,7 @@ public:
     cDBG(GraphType * dbg,
          uint64_t minimizer_window_size=8)
         : KmerClient(dbg->K()),
+          EventNotifier(),
           dbg(dbg),
           _n_updates(0),
           _unitig_id_counter(UNITIG_START_ID),
@@ -611,6 +613,7 @@ public:
         recompute_node_meta(unode_ptr);
         meta_counter.increment(unode_ptr->meta());
 
+        notify_dag_new(id, unode_ptr->sequence, unode_ptr->meta());
         pdebug("BUILD_UNODE complete: " << *unode_ptr);
 
         return unode_ptr;
@@ -680,6 +683,8 @@ public:
 
             meta_counter.decrement(unode->meta());
             recompute_node_meta(unode);
+
+            notify_dag_clip(unode->node_id, unode->sequence, unode->meta());
             pdebug("CLIP complete: " << *unode);
         } else {
             unode->sequence = unode->sequence.substr(0, unode->sequence.length() - 1);
@@ -687,6 +692,8 @@ public:
 
             meta_counter.decrement(unode->meta());
             recompute_node_meta(unode);
+
+            notify_dag_clip(unode->node_id, unode->sequence, unode->meta());
             pdebug("CLIP complete: " << *unode);
         }
 
@@ -714,10 +721,10 @@ public:
                << " adding " << new_sequence << " to"
                << std::endl << *unode);
 #ifdef DEBUG_CDBG
-        auto counts = dbg->get_counts(unode->sequence);
-        for (auto c : counts) {
-            assert(c > 0);
-        }
+        //auto counts = dbg->get_counts(unode->sequence);
+        //for (auto c : counts) {
+        //    assert(c > 0);
+        //}
 #endif
         
         if (ext_dir == DIR_RIGHT) {
@@ -734,6 +741,8 @@ public:
         meta_counter.decrement(unode->meta());
         recompute_node_meta(unode);
         ++_n_updates;
+
+        notify_dag_extend(unode->node_id, unode->sequence, unode->meta());
         pdebug("EXTEND complete: " << *unode);
     }
 
@@ -769,6 +778,8 @@ public:
                 meta_counter.decrement(CIRCULAR);
                 meta_counter.increment(FULL);
                 ++_n_updates;
+
+                notify_dag_split_circular(unode->node_id, unode->sequence, unode->meta());
                 pdebug("SPLIT complete (CIRCULAR): " << *unode);
                 return;
 
@@ -852,8 +863,13 @@ public:
                          new_right_end,
                          new_tags);
 
-        }
 
+        }
+        
+        notify_dag_merge(left_unode->node_id, rid,
+                         left_unode->node_id,
+                         left_unode->sequence,
+                         left_unode->meta());
         pdebug("MERGE complete: " << *left_unode);
     }
 
@@ -939,6 +955,63 @@ public:
                 delete_unode(unode);
             }
         }
+    }
+
+    void notify_dag_new(id_t id, string& sequence, node_meta_t meta) {
+        auto event = make_shared<DAGNewEvent>();
+        event->id = id;
+        event->sequence = sequence;
+        event->meta = meta;
+        this->notify(event);
+    }
+
+    void notify_dag_merge(id_t lparent, id_t rparent, id_t child,
+                          string& sequence, node_meta_t meta) {
+        auto event = make_shared<DAGMergeEvent>();
+        event->lparent = lparent;
+        event->rparent = rparent;
+        event->child = child;
+        event->meta = meta;
+        event->sequence = sequence;
+        this->notify(event);
+    }
+
+    void notify_dag_extend(id_t id, string& sequence, node_meta_t meta) {
+        auto event = make_shared<DAGExtendEvent>();
+        event->id = id;
+        event->sequence = sequence;
+        event->meta = meta;
+        this->notify(event);
+    }
+
+    void notify_dag_clip(id_t id, string& sequence, node_meta_t meta) {
+        auto event = make_shared<DAGClipEvent>();
+        event->id = id;
+        event->sequence = sequence;
+        event->meta = meta;
+        this->notify(event);
+    }
+
+    void notify_dag_split(id_t parent, id_t lchild, id_t rchild,
+                          string& lsequence, string& rsequence,
+                          node_meta_t lmeta, node_meta_t rmeta) {
+        auto event = make_shared<DAGSplitEvent>();
+        event->parent = parent;
+        event->lchild = lchild;
+        event->rchild = rchild;
+        event->lsequence = lsequence;
+        event->rsequence = rsequence;
+        event->lmeta = lmeta;
+        event->rmeta = rmeta;
+        this->notify(event);
+    }
+
+    void notify_dag_split_circular(id_t id, string& sequence, node_meta_t meta) {
+        auto event = make_shared<DAGSplitCircularEvent>();
+        event->id = id;
+        event->sequence = sequence;
+        event->meta = meta;
+        this->notify(event);
     }
 
     void write(const std::string& filename, cDBGFormat format) {
@@ -1084,6 +1157,7 @@ public:
     void write_graphml(std::ofstream& out,
                        const string graph_name="cDBG") {
 
+        /*
         out << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                "<graphml xmlns=\"http://graphml.graphdrawing.org/xmlns\" "
                "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
@@ -1094,13 +1168,14 @@ public:
             << "\" edgedefault=\"directed\" "
             << "parse.maxindegree=\"4\" parse.maxoutdegree=\"4\">"
             << std::endl; // open <graph>
+        */
 
         auto lock1 = lock_unodes();
         auto lock2 = lock_dnodes();
 
         //id_t edge_counter = 0;
         for (auto it = decision_nodes.begin(); it != decision_nodes.end(); ++it) {
-            out << "<node id=\"n" << it->first << "\"/>" << std::endl;
+            //out << "<node id=\"n" << it->first << "\"/>" << std::endl;
             /*
             for (auto junc : it->second->left_juncs) {
                 id_t in_neighbor = unitig_junction_map[junc];
@@ -1121,15 +1196,13 @@ public:
             */
         }
 
-        for (auto it = unitig_nodes.begin(); it != unitig_nodes.end(); ++it) {
-            out << "<node id=\"" << it->first << "\"/>" << std::endl;
-        }
+        //for (auto it = unitig_nodes.begin(); it != unitig_nodes.end(); ++it) {
+        //    out << "<node id=\"" << it->first << "\"/>" << std::endl;
+        //}
 
-        out << "</graph>" << std::endl;
-        out << "</graphml>" << std::endl;
+        //out << "</graph>" << std::endl;
+        //out << "</graphml>" << std::endl;
     }
-
-
 
 };
 

@@ -35,7 +35,14 @@ enum event_t {
     MSG_SPLIT_UNODE,
     MSG_EXTEND_UNODE,
     MSG_MERGE_UNODES,
-    MSG_INCR_DNODE_COUNT
+    MSG_INCR_DNODE_COUNT,
+    MSG_DAG_NEW,
+    MSG_DAG_SPLIT,
+    MSG_DAG_MERGE,
+    MSG_DAG_EXTEND,
+    MSG_DAG_CLIP,
+    MSG_DAG_SPLIT_CIRCULAR,
+    MSG_DAG_DELETE
 };
 
 
@@ -46,6 +53,81 @@ struct Event {
     }
 
     const event_t msg_type;
+};
+
+struct DAGNewEvent : public Event {
+    DAGNewEvent()
+        : Event(MSG_DAG_NEW)
+    {}
+
+    string sequence;
+    id_t id;
+    node_meta_t meta;
+};
+
+
+struct DAGMergeEvent : public Event {
+    DAGMergeEvent()
+        : Event(MSG_DAG_MERGE)
+    {}
+
+    string sequence;
+    id_t lparent, rparent, child;
+    node_meta_t meta;
+};
+
+
+struct DAGExtendEvent : public Event {
+    DAGExtendEvent()
+        : Event(MSG_DAG_EXTEND)
+    {}
+
+    id_t id;
+    string sequence;
+    node_meta_t meta;
+};
+
+
+struct DAGDeleteEvent : public Event {
+    DAGDeleteEvent()
+        : Event(MSG_DAG_DELETE)
+    {}
+
+    id_t id;
+    node_meta_t meta;
+};
+
+
+struct DAGClipEvent : public Event {
+    DAGClipEvent()
+        : Event(MSG_DAG_CLIP)
+    {}
+
+    id_t id;
+    string sequence;
+    node_meta_t meta;
+};
+
+
+struct DAGSplitEvent : public Event {
+    DAGSplitEvent()
+        : Event(MSG_DAG_SPLIT)
+    {}
+
+    id_t parent, lchild, rchild;
+    node_meta_t lmeta, rmeta;
+    string lsequence, rsequence;
+};
+
+
+struct DAGSplitCircularEvent : public Event {
+    DAGSplitCircularEvent ()
+        : Event(MSG_DAG_SPLIT_CIRCULAR)
+    {}
+
+    id_t id;
+    string sequence;
+    node_meta_t meta;
 };
 
 

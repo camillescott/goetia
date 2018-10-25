@@ -28,6 +28,9 @@ cdef extern from "boink/reporters.hh" namespace "boink::reporters" nogil:
     cdef cppclass _cDBGWriter "boink::reporters::cDBGWriter" [GraphType] (_MultiFileReporter):
         _cDBGWriter(_cDBG[GraphType] *, cDBGFormat, const string&)
 
+    cdef cppclass _cDBGHistoryReporter "boink::reporters::cDBGHistoryReporter" (_SingleFileReporter):
+        _cDBGHistoryReporter(const string&)
+
 
 cdef class SingleFileReporter(EventListener):
     cdef readonly object          output_filename
@@ -39,5 +42,10 @@ cdef class MultiFileReporter(EventListener):
     cdef readonly object                prefix
     cdef unique_ptr[_MultiFileReporter] _owner
     cdef _MultiFileReporter *           _this
+
+
+cdef class cDBGHistoryReporter(SingleFileReporter):
+    cdef unique_ptr[_cDBGHistoryReporter] _h_owner
+    cdef _cDBGHistoryReporter *           _h_this
 
 include "reporters.tpl.pxd.pxi"

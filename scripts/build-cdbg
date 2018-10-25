@@ -10,7 +10,8 @@ from boink.compactor import make_streaming_compactor
 from boink.parsing import grouper
 from boink.processors import make_streaming_compactor_processor
 from boink.reporters import (make_streaming_compactor_reporter,
-                             make_cdbgwriter_reporter)
+                             make_cdbgwriter_reporter,
+                             cDBGHistoryReporter)
 
 
 
@@ -47,6 +48,11 @@ def main():
                                               compactor.cdbg)
             processor.Notifier.register_listener(writer)
             writers.append(writer)
+
+    if args.save_cdbg_history:
+        print("Saving cDBG history DAG to", args.cdbg_history_filename)
+        history = cDBGHistoryReporter(args.cdbg_history_filename)
+        compactor.cdbg.Notifier.register_listener(history)
 
 
     if args.pairing_mode == 'split':
