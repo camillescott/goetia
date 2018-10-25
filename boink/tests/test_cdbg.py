@@ -535,6 +535,39 @@ class TestUnitigBuildExtend(object):
         assert compactor.cdbg.query_unode_end(graph.hash(left[-ksize:])) is None
         assert compactor.cdbg.query_unode_end(graph.hash(right[:ksize])) is None
 
+    @using_ksize(7)
+    @using_length(20)
+    @pytest.mark.parametrize("offset", range(1,5))
+    def test_overlap_merge(self, ksize, offset, length, graph, compactor, linear_path, check_fp):
+        sequence = linear_path()
+        check_fp()
+
+        pivot = length // 2
+        left = sequence[:pivot + offset]
+        right = sequence[pivot:]
+        print(left)
+        print(right)
+
+        compactor.update_sequence(left);
+        assert compactor.cdbg.n_unodes == 1
+        unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
+        assert unode.sequence == left
+        assert unode.meta == 'ISLAND'
+
+        compactor.update_sequence(right)
+        assert compactor.cdbg.n_unodes == 2
+        unode = compactor.cdbg.query_unode_end(graph.hash(right[:ksize]))
+        assert unode.sequence == right
+        assert unode.meta == 'ISLAND'
+
+        compactor.update_sequence(sequence)
+        assert compactor.cdbg.n_unodes == 1
+        unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
+        assert unode.sequence == sequence
+        assert unode.meta == 'ISLAND'
+        assert compactor.cdbg.query_unode_end(graph.hash(left[-ksize:])) is None
+        assert compactor.cdbg.query_unode_end(graph.hash(right[:ksize])) is None
+
     @using_ksize(15)
     @using_length(100)
     def test_trivial_merge_left(self, ksize, length, graph, compactor, linear_path, check_fp):
@@ -1017,7 +1050,7 @@ class TestCircularUnitigs:
 
     @using_ksize(15)
     @using_length(40)
-    def test_completed_by_segment_overlap(self, ksize, length, graph, compactor,
+    def test_circular_merge(self, ksize, length, graph, compactor,
                                                 circular, check_fp):
         sequence = circular()
         check_fp()
@@ -1032,8 +1065,89 @@ class TestCircularUnitigs:
 
         unode = compactor.cdbg.query_unode_end(graph.hash(start[:ksize]))
         assert unode.right_end == graph.hash(start[:ksize])
-        assert unode.sequence == sequence[:length]
+        assert unode.sequence == sequence[:length+ksize-1]
         assert unode.meta == 'CIRCULAR'
+
+    @using_ksize(7)
+    @using_length(20)
+    @pytest.mark.parametrize("offset", range(1,7), ids=lambda offset: 'offset={0}'.format(offset))
+    def test_circular_cycling_merge(self, ksize, offset, length, graph, compactor,
+                                          suffix_circular, check_fp):
+        sequence = suffix_circular()
+        check_fp()
+
+        pivot = (length - ksize + 1) // 2
+        start = sequence[:pivot]
+        print(sequence, pivot)
+        expected = sequence[pivot+offset:] + sequence[ksize-1:pivot+offset+ksize-1]
+        
+        compactor.update_sequence(start)
+        compactor.update_sequence(sequence[pivot+offset:])
+
+        assert compactor.cdbg.n_unodes == 1
+        assert compactor.cdbg.n_unitig_ends == 2
+        
+        compactor.update_sequence(sequence)
+
+        print('unitig should be:', expected)
+
+        assert compactor.cdbg.n_unodes == 1
+        assert compactor.cdbg.n_unitig_ends == 1
+
+        unode = compactor.cdbg.query_unode_end(graph.hash(expected[:ksize]))
+        assert unode.right_end == graph.hash(expected[:ksize])
+        assert unode.sequence == expected
+        assert unode.meta == 'CIRCULAR'
+
+    @using_ksize(7)
+    @using_length(20)
+    @pytest.mark.parametrize("offset", range(1,6), ids=lambda offset: 'offset={0}'.format(offset))
+    def test_circular_overlap_merge(self, ksize, offset, length, graph, compactor,
+                                          suffix_circular, check_fp):
+        sequence = suffix_circular()
+        check_fp()
+
+        start = sequence[:-ksize+1+offset]
+        print(sequence, start)
+        
+        compactor.update_sequence(start)
+        assert compactor.cdbg.n_unodes == 1
+        assert compactor.cdbg.n_unitig_ends == 2
+
+        compactor.update_sequence(sequence)
+
+        assert compactor.cdbg.n_unodes == 1
+        assert compactor.cdbg.n_unitig_ends == 1
+
+        unode = compactor.cdbg.query_unode_end(graph.hash(sequence[:ksize]))
+        assert unode.right_end == graph.hash(sequence[:ksize])
+        assert unode.sequence == sequence
+        assert unode.meta == 'CIRCULAR'
+
+    @using_ksize(7)
+    @using_length(21)
+    def test_split_circular_tangle_chain(self, ksize, length, graph, compactor,
+                                               suffix_circular_tangle, check_fp):
+        (loop, inducer), lpivot = suffix_circular_tangle()
+        check_fp()
+
+        # create circular unitig
+        # already tested
+        compactor.update_sequence(loop)
+        compactor.update_sequence(inducer)
+
+        assert compactor.cdbg.n_unodes == 3
+        assert compactor.cdbg.n_unitig_ends == 6
+        assert compactor.cdbg.n_dnodes == 4
+
+        assert compactor.cdbg.query_dnode(graph.hash(loop[lpivot:lpivot+ksize])).sequence == loop[lpivot:lpivot+ksize]
+        assert compactor.cdbg.query_dnode(graph.hash(loop[lpivot+1:lpivot+1+ksize])).sequence == loop[lpivot+1:lpivot+1+ksize]
+        
+        cycled_unode = compactor.cdbg.query_unode_end(graph.hash(loop[lpivot-1:lpivot-1+ksize]))
+        expected = loop[lpivot+2:] + loop[ksize-1:lpivot+ksize-1]
+        assert cycled_unode is not None
+        assert cycled_unode.sequence == expected
+        assert cycled_unode.right_end == graph.hash(expected[-ksize:])
 
     @using_ksize(7)
     @using_length(20)

@@ -96,6 +96,46 @@ typedef uint64_t id_t;
 typedef pair<hash_t, hash_t> junction_t;
 
 
+enum node_meta_t {
+    FULL,
+    TIP,
+    ISLAND,
+    CIRCULAR,
+    LOOP,
+    TRIVIAL
+};
+
+inline const char * node_meta_repr(node_meta_t meta) {
+    switch(meta) {
+        case FULL:
+            return "FULL";
+        case TIP:
+            return "TIP";
+        case ISLAND:
+            return "ISLAND";
+        case CIRCULAR:
+            return "CIRCULAR";
+        case TRIVIAL:
+            return "TRIVIAL";
+        case LOOP:
+            return "LOOP";
+        default:
+            return "UNKNOWN";
+    }
+}
+
+
+enum update_meta_t {
+    BUILD_UNODE,
+    BUILD_DNODE,
+    DELETE_UNODE,
+    SPLIT_UNODE,
+    EXTEND_UNODE,
+    CLIP_UNODE,
+    MERGE_UNODES
+};
+
+
 template<typename _Ty1, typename _Ty2>
 std::ostream& operator<<(std::ostream& _os, const std::pair<_Ty1, _Ty2>& _p) {
     _os << "(" << _p.first << ", " << _p.second << ")";

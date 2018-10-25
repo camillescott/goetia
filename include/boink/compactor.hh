@@ -786,7 +786,7 @@ public:
                      std::back_inserter(lfiltered),
                      [&] (kmer_t neighbor) { return
                         !new_kmers.count(neighbor.hash) &&
-                        !induced_decision_kmer_hashes.count(neighbor.hash);
+                        !processed.count(neighbor.hash);
                      });
 
         vector<kmer_t> rfiltered;
@@ -795,7 +795,7 @@ public:
                      std::back_inserter(rfiltered),
                      [&] (kmer_t neighbor) { return
                         !new_kmers.count(neighbor.hash) &&
-                        !induced_decision_kmer_hashes.count(neighbor.hash);
+                        !processed.count(neighbor.hash);
                      });
 
         pdebug(lfiltered.size() << " left, " << rfiltered.size() << " right");
@@ -942,9 +942,20 @@ public:
                                segment.left_anchor,
                                segment.tags);
         } else if (has_left_unode && has_right_unode) {
-            auto trimmed_seq = sequence.substr(segment.start_pos + this->_K - 1,
-                                               segment.length - (this->_K * 2 - 2));
+            string trimmed_seq;
+            pdebug("Segment is " << segment.length);
+            //if (segment.length  < (this->_K * 2 - 2)) {
+            //    trimmed_seq = "";
+            //} else {
+            //    trimmed_seq = sequence.substr(segment.start_pos + this->_K - 1,
+            //                                  segment.length - (this->_K * 2 - 2));
+            //}
+            trimmed_seq = sequence.substr(segment.start_pos, segment.length);
+            size_t span_kmers = segment.length - this->_K + 1;
+            pdebug(span_kmers << " kmers in segment");
+
             cdbg->merge_unodes(trimmed_seq,
+                               span_kmers,
                                segment.left_flank,
                                segment.right_flank,
                                segment.tags);

@@ -84,47 +84,6 @@ inline const string cdbg_format_repr(cDBGFormat fmt) {
 }
 
 
-enum node_meta_t {
-    FULL,
-    TIP,
-    ISLAND,
-    CIRCULAR,
-    LOOP,
-    TRIVIAL
-};
-
-
-enum update_meta_t {
-    BUILD_UNODE,
-    BUILD_DNODE,
-    DELETE_UNODE,
-    SPLIT_UNODE,
-    EXTEND_UNODE,
-    CLIP_UNODE,
-    MERGE_UNODES
-};
-
-
-inline const char * node_meta_repr(node_meta_t meta) {
-    switch(meta) {
-        case FULL:
-            return "FULL";
-        case TIP:
-            return "TIP";
-        case ISLAND:
-            return "ISLAND";
-        case CIRCULAR:
-            return "CIRCULAR";
-        case TRIVIAL:
-            return "TRIVIAL";
-        case LOOP:
-            return "LOOP";
-        default:
-            return "UNKNOWN";
-    }
-}
-
-
 struct node_meta_counter {
 
     int64_t full_count;
@@ -807,14 +766,22 @@ public:
                                     tags,
                                     new_left_end,
                                     right_unode_right_end);
+
+        notify_dag_split(unode->node_id, unode->node_id, new_node->node_id,
+                         unode->sequence, new_node->sequence,
+                         unode->meta(), new_node->meta());
         pdebug("SPLIT complete: " << std::endl << *unode << std::endl << *new_node);
 
     }
 
-    void merge_unodes(const string& new_sequence,
+    void merge_unodes(const string& span_sequence,
+                      size_t n_span_kmers,
                       hash_t left_end,
                       hash_t right_end,
                       HashVector& new_tags) {
+        /* span_sequence is the (K * 2) - 2 sequence connecting the two unitigs
+         *
+         */
 
         UnitigNode *left_unode, *right_unode;
         string right_sequence;
@@ -837,21 +804,36 @@ public:
             right_unode = right_unode_it->second;
         }
 
+        auto rid = right_unode->node_id;
+
         if (left_unode->node_id == right_unode->node_id) {
-            pdebug("MERGE: CIRCULAR! Creating circular unitig.");
+            pdebug("MERGE: CIRCULAR! Creating circular unitig, span is " << span_sequence);
             meta_counter.decrement(right_unode->meta());
+            string extend = span_sequence;
+            //if (n_span_kmers < this->_K - 1) {
+                pdebug("Overlap between merged sequence, trimming right " << n_span_kmers);
+                extend = span_sequence.substr(this->_K-1, n_span_kmers);
+            //} 
             extend_unode(DIR_RIGHT,
-                         new_sequence,
+                         extend,
                          left_end, // this is left_unode's right_end
                          left_unode->left_end(),
                          new_tags);
         } else {
 
             pdebug("MERGE: " << left_end << " to " << right_end
-                   << " with " << new_sequence
+                   << " with " << span_sequence 
                    << std::endl << *left_unode << std::endl << *right_unode);
 
-            right_sequence = new_sequence + right_unode->sequence;
+            if (n_span_kmers < this->_K - 1) {
+                size_t trim = (this->_K - 1) - n_span_kmers;
+                pdebug("Overlap between merged sequence, trimming right " << trim);
+                right_sequence = right_unode->sequence.substr(trim);
+            } else {
+                pdebug("No overlap, adding segment sequence, " << n_span_kmers);
+                right_sequence = span_sequence.substr(this->_K - 1, n_span_kmers - this->_K + 1)
+                                                       + right_unode->sequence;
+            }
             std::copy(right_unode->tags.begin(), right_unode->tags.end(),
                       std::back_inserter(new_tags));
             new_right_end = right_unode->right_end();
@@ -911,21 +893,28 @@ public:
         compactor.set_cursor(unode->sequence.c_str() + unode->sequence.size() - this->_K);
         auto right_shifts = compactor.gather_right();
 
+        uint8_t n_left = 0;
         for (auto shift : left_shifts) {
             DecisionNode * dnode;
             if ((dnode = query_dnode(shift.hash)) != nullptr) {
                 left = dnode;
+                n_left++;
                 pdebug("Found left d-node: " << *dnode);
             }
         }
 
+        uint8_t n_right = 0;
         for (auto shift : right_shifts) {
             DecisionNode * dnode;
             if ((dnode = query_dnode(shift.hash)) != nullptr) {
                 right = dnode;
+                n_right++;
                 pdebug("Found right d-node: " << *dnode);
             }
         }
+
+        assert(n_left < 2);
+        assert(n_right < 2);
 
         return std::make_pair(left, right);
     }
