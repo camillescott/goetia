@@ -84,8 +84,8 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
     ctypedef _UnitigNode * UnitigNodePtr
     
     cdef cppclass _cDBG "boink::cDBG" [GraphType] (_KmerClient, _EventNotifier):
-        ctypedef umap[hash_t,unique_ptr[_DecisionNode]].const_iterator dnode_iter_t
-        ctypedef umap[id_t,unique_ptr[_UnitigNode]].const_iterator unode_iter_t
+        #ctypedef umap[hash_t,unique_ptr[_DecisionNode]].const_iterator dnode_iter_t
+        #ctypedef umap[id_t,unique_ptr[_UnitigNode]].const_iterator unode_iter_t
 
         _cDBG(uint16_t K)
 
@@ -95,10 +95,10 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
         uint64_t n_tags() const
         uint64_t n_unitig_ends() const
 
-        unode_iter_t unodes_begin() const
-        unode_iter_t unodes_end() const
-        dnode_iter_t dnodes_begin() const
-        dnode_iter_t dnodes_end() const
+        #unode_iter_t unodes_begin() const
+        #unode_iter_t unodes_end() const
+        #dnode_iter_t dnodes_begin() const
+        #dnode_iter_t dnodes_end() const
 
         _DecisionNode * query_dnode(hash_t)
         bool has_dnode(hash_t)

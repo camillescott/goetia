@@ -42,9 +42,10 @@ cdef class cDBG__BitStorage__DefaultShifter(cDBG_Base):
         cdbg._this = ptr
         cdbg.Notifier = EventNotifier._wrap(<_EventNotifier*>cdbg._this);
         return cdbg
-
+    '''
     def unodes(self):
-        cdef _cDBG[_dBG[_BitStorage,_DefaultShifter]].unode_iter_t it = deref(self._this).unodes_begin()
+        cdef _cDBG[_dBG[_BitStorage,_DefaultShifter]].unode_iter_t it = \
+                deref(self._this).unodes_begin()
         cdef _UnitigNode * unode
         while(it != deref(self._this).unodes_end()):
             unode = deref(it).second.get()
@@ -53,12 +54,14 @@ cdef class cDBG__BitStorage__DefaultShifter(cDBG_Base):
 
 
     def dnodes(self):
-        cdef _cDBG[_dBG[_BitStorage,_DefaultShifter]].dnode_iter_t it = deref(self._this).dnodes_begin()
+        cdef _cDBG[_dBG[_BitStorage,_DefaultShifter]].dnode_iter_t it = \
+                deref(self._this).dnodes_begin()
         cdef _DecisionNode * dnode
         while(it != deref(self._this).dnodes_end()):
             dnode = deref(it).second.get()
             yield DecisionNodeView._wrap(dnode)
             princ(it)
+    '''
 
     def query_unode_hash(self, hash_t h):
         cdef _UnitigNode * _node = deref(self._this).query_unode_tag(h)
@@ -132,9 +135,10 @@ cdef class cDBG__ByteStorage__DefaultShifter(cDBG_Base):
         cdbg._this = ptr
         cdbg.Notifier = EventNotifier._wrap(<_EventNotifier*>cdbg._this);
         return cdbg
-
+    '''
     def unodes(self):
-        cdef _cDBG[_dBG[_ByteStorage,_DefaultShifter]].unode_iter_t it = deref(self._this).unodes_begin()
+        cdef _cDBG[_dBG[_ByteStorage,_DefaultShifter]].unode_iter_t it = \
+                deref(self._this).unodes_begin()
         cdef _UnitigNode * unode
         while(it != deref(self._this).unodes_end()):
             unode = deref(it).second.get()
@@ -143,12 +147,14 @@ cdef class cDBG__ByteStorage__DefaultShifter(cDBG_Base):
 
 
     def dnodes(self):
-        cdef _cDBG[_dBG[_ByteStorage,_DefaultShifter]].dnode_iter_t it = deref(self._this).dnodes_begin()
+        cdef _cDBG[_dBG[_ByteStorage,_DefaultShifter]].dnode_iter_t it = \
+                deref(self._this).dnodes_begin()
         cdef _DecisionNode * dnode
         while(it != deref(self._this).dnodes_end()):
             dnode = deref(it).second.get()
             yield DecisionNodeView._wrap(dnode)
             princ(it)
+    '''
 
     def query_unode_hash(self, hash_t h):
         cdef _UnitigNode * _node = deref(self._this).query_unode_tag(h)
@@ -222,9 +228,10 @@ cdef class cDBG__NibbleStorage__DefaultShifter(cDBG_Base):
         cdbg._this = ptr
         cdbg.Notifier = EventNotifier._wrap(<_EventNotifier*>cdbg._this);
         return cdbg
-
+    '''
     def unodes(self):
-        cdef _cDBG[_dBG[_NibbleStorage,_DefaultShifter]].unode_iter_t it = deref(self._this).unodes_begin()
+        cdef _cDBG[_dBG[_NibbleStorage,_DefaultShifter]].unode_iter_t it = \
+                deref(self._this).unodes_begin()
         cdef _UnitigNode * unode
         while(it != deref(self._this).unodes_end()):
             unode = deref(it).second.get()
@@ -233,12 +240,14 @@ cdef class cDBG__NibbleStorage__DefaultShifter(cDBG_Base):
 
 
     def dnodes(self):
-        cdef _cDBG[_dBG[_NibbleStorage,_DefaultShifter]].dnode_iter_t it = deref(self._this).dnodes_begin()
+        cdef _cDBG[_dBG[_NibbleStorage,_DefaultShifter]].dnode_iter_t it = \
+                deref(self._this).dnodes_begin()
         cdef _DecisionNode * dnode
         while(it != deref(self._this).dnodes_end()):
             dnode = deref(it).second.get()
             yield DecisionNodeView._wrap(dnode)
             princ(it)
+    '''
 
     def query_unode_hash(self, hash_t h):
         cdef _UnitigNode * _node = deref(self._this).query_unode_tag(h)
@@ -312,9 +321,10 @@ cdef class cDBG__SparseppSetStorage__DefaultShifter(cDBG_Base):
         cdbg._this = ptr
         cdbg.Notifier = EventNotifier._wrap(<_EventNotifier*>cdbg._this);
         return cdbg
-
+    '''
     def unodes(self):
-        cdef _cDBG[_dBG[_SparseppSetStorage,_DefaultShifter]].unode_iter_t it = deref(self._this).unodes_begin()
+        cdef _cDBG[_dBG[_SparseppSetStorage,_DefaultShifter]].unode_iter_t it = \
+                deref(self._this).unodes_begin()
         cdef _UnitigNode * unode
         while(it != deref(self._this).unodes_end()):
             unode = deref(it).second.get()
@@ -323,12 +333,14 @@ cdef class cDBG__SparseppSetStorage__DefaultShifter(cDBG_Base):
 
 
     def dnodes(self):
-        cdef _cDBG[_dBG[_SparseppSetStorage,_DefaultShifter]].dnode_iter_t it = deref(self._this).dnodes_begin()
+        cdef _cDBG[_dBG[_SparseppSetStorage,_DefaultShifter]].dnode_iter_t it = \
+                deref(self._this).dnodes_begin()
         cdef _DecisionNode * dnode
         while(it != deref(self._this).dnodes_end()):
             dnode = deref(it).second.get()
             yield DecisionNodeView._wrap(dnode)
             princ(it)
+    '''
 
     def query_unode_hash(self, hash_t h):
         cdef _UnitigNode * _node = deref(self._this).query_unode_tag(h)

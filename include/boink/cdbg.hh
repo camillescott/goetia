@@ -21,6 +21,7 @@
 
 #include "oxli/alphabets.hh"
 #include "gfakluge/src/gfakluge.hpp"
+#include "sparsepp/sparsepp/spp.h"
 
 #include "boink/boink.hh"
 #include "boink/hashing.hh"
@@ -362,16 +363,16 @@ public:
     /* Map of k-mer hash --> DecisionNode. DecisionNodes take
      * their k-mer hash value as their Node ID.
      */
-    typedef std::unordered_map<hash_t,
-                               std::unique_ptr<DecisionNode>> dnode_map_t;
+    typedef spp::sparse_hash_map<hash_t,
+                                 std::unique_ptr<DecisionNode>> dnode_map_t;
     typedef dnode_map_t::const_iterator dnode_iter_t;
 
     /* Map of Node ID --> UnitigNode. This is a container
      * for the UnitigNodes' pointers; k-mer maps are stored elsewhere,
      * mapping k-mers to Node IDs.
      */
-    typedef std::unordered_map<id_t,
-                               std::unique_ptr<UnitigNode>> unode_map_t;
+    typedef spp::sparse_hash_map<id_t,
+                                 std::unique_ptr<UnitigNode>> unode_map_t;
     typedef unode_map_t::const_iterator unode_iter_t;
 
 protected:
@@ -384,9 +385,9 @@ protected:
     // The actual ID --> UNode map
     unode_map_t unitig_nodes;
     // The map from Unitig end k-mer hashes to UnitigNodes
-    std::unordered_map<hash_t, UnitigNode*> unitig_end_map;
+    spp::sparse_hash_map<hash_t, UnitigNode*> unitig_end_map;
     // The map from dBG k-mer tags to UnitigNodes
-    std::unordered_map<hash_t, UnitigNode*> unitig_tag_map;
+    spp::sparse_hash_map<hash_t, UnitigNode*> unitig_tag_map;
 
     std::mutex dnode_mutex;
     std::mutex unode_mutex;
@@ -630,7 +631,7 @@ public:
 
         auto unode = switch_unode_ends(old_unode_end, new_unode_end);
         assert(unode != nullptr);
-        pdebug("CLIP: from " << (clip_from == DIR_LEFT ? string("LEFT") : string("RIGHT")) <<
+        pdebug("CLIP: " << *unode << " from " << (clip_from == DIR_LEFT ? string("LEFT") : string("RIGHT")) <<
                " and swap " << old_unode_end << " to " << new_unode_end);
 
         if (unode->sequence.length() == this->_K) {
@@ -913,8 +914,8 @@ public:
             }
         }
 
-        assert(n_left < 2);
-        assert(n_right < 2);
+        //assert(n_left < 2);
+        //assert(n_right < 2);
 
         return std::make_pair(left, right);
     }

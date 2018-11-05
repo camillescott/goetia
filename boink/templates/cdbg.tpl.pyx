@@ -43,9 +43,10 @@ cdef class cDBG_{{type_bundle.suffix}}(cDBG_Base):
         cdbg._this = ptr
         cdbg.Notifier = EventNotifier._wrap(<_EventNotifier*>cdbg._this);
         return cdbg
-
+    '''
     def unodes(self):
-        cdef _cDBG[_dBG[{{type_bundle.params}}]].unode_iter_t it = deref(self._this).unodes_begin()
+        cdef _cDBG[_dBG[{{type_bundle.params}}]].unode_iter_t it = \
+                deref(self._this).unodes_begin()
         cdef _UnitigNode * unode
         while(it != deref(self._this).unodes_end()):
             unode = deref(it).second.get()
@@ -54,12 +55,14 @@ cdef class cDBG_{{type_bundle.suffix}}(cDBG_Base):
 
 
     def dnodes(self):
-        cdef _cDBG[_dBG[{{type_bundle.params}}]].dnode_iter_t it = deref(self._this).dnodes_begin()
+        cdef _cDBG[_dBG[{{type_bundle.params}}]].dnode_iter_t it = \
+                deref(self._this).dnodes_begin()
         cdef _DecisionNode * dnode
         while(it != deref(self._this).dnodes_end()):
             dnode = deref(it).second.get()
             yield DecisionNodeView._wrap(dnode)
             princ(it)
+    '''
 
     def query_unode_hash(self, hash_t h):
         cdef _UnitigNode * _node = deref(self._this).query_unode_tag(h)
