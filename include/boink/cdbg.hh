@@ -474,8 +474,10 @@ public:
         DecisionNode * dnode = query_dnode(hash);
         if (dnode == nullptr) {
             pdebug("BUILD_DNODE: " << hash << ", " << kmer);
-            unique_ptr<DecisionNode> dnode_ptr = make_unique<DecisionNode>(hash, kmer);
-            decision_nodes.insert(make_pair(hash, std::move(dnode_ptr)));
+            //unique_ptr<DecisionNode> dnode_ptr = make_unique<DecisionNode>(hash, kmer);
+            decision_nodes.emplace(hash,
+                                   std::move(make_unique<DecisionNode>(hash, kmer)));
+                    //make_pair(hash, std::move(dnode_ptr)));
             dnode = query_dnode(hash);
             pdebug("BUILD_DNODE complete: " << *dnode);
         } else {
@@ -547,18 +549,19 @@ public:
 
         auto lock = lock_unodes();
         id_t id = _unitig_id_counter;
-        unique_ptr<UnitigNode> unode = make_unique<UnitigNode>(id,
-                                                               left_end,
-                                                               right_end,
-                                                               sequence);
+        
+        // Transfer the UnitigNode's ownership to the map;
+        // get its new memory address
+        unitig_nodes.emplace(id, std::move(make_unique<UnitigNode>(id,
+                                                                   left_end,
+                                                                   right_end,
+                                                                   sequence)));
+        UnitigNode * unode_ptr = unitig_nodes[id].get();
+        
         _unitig_id_counter++;
         _n_unitig_nodes++;
         _n_updates++;
 
-        // Transfer the UnitigNode's ownership to the map;
-        // get its new memory address and return it
-        unitig_nodes.insert(make_pair(id, std::move(unode)));
-        UnitigNode * unode_ptr = unitig_nodes[id].get();
 
         // Link up its new tags
         unode_ptr->tags.insert(std::end(unode_ptr->tags),
