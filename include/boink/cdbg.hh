@@ -160,17 +160,14 @@ std::ostream& operator<<(std::ostream& o, const node_meta_counter& c) {
 class CompactNode {
 public:
     const id_t node_id;
-    string sequence;
+    string seed;
+    size_t length;
     
-    CompactNode(id_t node_id, const string& sequence) :
-        node_id(node_id), sequence(sequence) {}
+    CompactNode(id_t node_id, const string& seed) :
+        node_id(node_id), seed(seed) {}
 
     string revcomp() const {
         return _revcomp(sequence);
-    }
-
-    size_t length() const {
-        return sequence.length();
     }
 
     friend bool operator== (const CompactNode& lhs, const CompactNode& rhs) {
@@ -189,8 +186,6 @@ class DecisionNode: public CompactNode {
 protected:
 
     bool _dirty;
-    uint8_t _left_degree;
-    uint8_t _right_degree;
     uint32_t _count;
 
 public:
@@ -198,10 +193,9 @@ public:
     DecisionNode(id_t node_id, const string& sequence) :
         CompactNode(node_id, sequence),
         _dirty(true),
-        _left_degree(0),
-        _right_degree(0),
         _count(1) {
         
+        length = sequence.length();
     }
 
     const bool is_dirty() const {
@@ -253,8 +247,6 @@ public:
 std::ostream& operator<<(std::ostream& o, const DecisionNode& dn) {
 
     o << "<DNode ID/hash=" << dn.node_id << " k-mer=" << dn.sequence
-      //<< " Dl=" << std::to_string(dn.left_degree())
-      //<< " Dr=" << std::to_string(dn.right_degree())
       << " count=" << dn.count()
       << " dirty=" << dn.is_dirty() << ">";
     return o;
@@ -265,20 +257,19 @@ class UnitigNode : public CompactNode {
 
 protected:
 
-    hash_t _left_end, _right_end;
+    std::deque<hash_t> tags;
     node_meta_t _meta;
 
 public:
 
-    HashVector tags;
-
     UnitigNode(id_t node_id,
-               hash_t left_end,
-               hash_t right_end,
-               const string& sequence)
-        : CompactNode(node_id, sequence),
-          _left_end(left_end),
-          _right_end(right_end) { 
+               std::deque<hash_t> tags,
+               const string& seed,
+               length)
+        : CompactNode(node_id, seed),
+          tags(tags) {
+
+        legnth = length;
     }
 
     const node_meta_t meta() const {
@@ -290,29 +281,41 @@ public:
     }
 
     const hash_t left_end() const {
-        return _left_end;
+        return tags.front();
     }
 
-    void set_left_end(hash_t left_end) {
-        _left_end = left_end;
+    void extend_right(std::deque<tags> new_tags, size_t added_length) {
+        std::copy(new_tags.begin(), new_tags.end(), std::back_inserter(tags));
+        length += added_length;
     }
 
-    void extend_right(hash_t right_end, const string& new_sequence) {
-        sequence += new_sequence;
-        _right_end = right_end;
+    void extend_left(std::deque<tags> new_tags, size_t added_length) {
+        std::copy(new_tags.begin(), new_tags.end(), std::front_inserter(tags));
+        length += added_length;
     }
 
-    void extend_left(hash_t left_end, const string& new_sequence) {
-        sequence = new_sequence + sequence;
-        _left_end = left_end;
+    void pop_front() {
+        tags.pop_front();
+    }
+
+    void pop_back() {
+        tags.pop_back();
+    }
+
+    void push_front(hash_t tag) {
+        if (tags.front() != tag) {
+            tags.push_front(tag);
+        }
+    }
+
+    void push_back(hash_t tag) {
+        if (tags.back() != tag) {
+            tags.push_back();
+        }
     }
 
     const hash_t right_end() const {
-        return _right_end;
-    }
-
-    void set_right_end(hash_t right_end) {
-        _right_end = right_end;
+        return tags.back();
     }
 
     std::string repr() const {
@@ -330,8 +333,7 @@ std::ostream& operator<<(std::ostream& o, const UnitigNode& un) {
     o << "<UNode ID=" << un.node_id
       << " left_end=" << un.left_end()
       << " right_end=" << un.right_end()
-      << " sequence=" << un.sequence
-      << " length=" << un.sequence.length()
+      //<< " length=" << un.sequence.length()
       << " meta=" << node_meta_repr(un.meta())
       << ">";
     return o;
@@ -542,10 +544,9 @@ public:
         return result;
     }
 
-    UnitigNode * build_unode(const string& sequence,
-                             HashVector& tags,
-                             hash_t left_end,
-                             hash_t right_end) {
+    UnitigNode * build_unode(const string& seed,
+                             std::deque<hash_t>& tags,
+                             size_t length) {
 
         auto lock = lock_unodes();
         id_t id = _unitig_id_counter;
@@ -553,9 +554,9 @@ public:
         // Transfer the UnitigNode's ownership to the map;
         // get its new memory address
         unitig_nodes.emplace(id, std::move(make_unique<UnitigNode>(id,
-                                                                   left_end,
-                                                                   right_end,
-                                                                   sequence)));
+                                                                   tags,
+                                                                   seed,
+                                                                   length)));
         UnitigNode * unode_ptr = unitig_nodes[id].get();
         
         _unitig_id_counter++;
@@ -570,13 +571,13 @@ public:
         for (auto tag: tags) {
             unitig_tag_map.insert(make_pair(tag, unode_ptr));
         }
-        unitig_end_map.insert(make_pair(left_end, unode_ptr));
-        unitig_end_map.insert(make_pair(right_end, unode_ptr));
+        unitig_end_map.insert(make_pair(unode_ptr->left_end(), unode_ptr));
+        unitig_end_map.insert(make_pair(unode_ptr->right_end(), unode_ptr));
 
         recompute_node_meta(unode_ptr);
         meta_counter.increment(unode_ptr->meta());
 
-        notify_dag_new(id, unode_ptr->sequence, unode_ptr->meta());
+        //notify_dag_new(id, unode_ptr->sequence, unode_ptr->meta());
         pdebug("BUILD_UNODE complete: " << *unode_ptr);
 
         return unode_ptr;
@@ -637,17 +638,18 @@ public:
         pdebug("CLIP: " << *unode << " from " << (clip_from == DIR_LEFT ? string("LEFT") : string("RIGHT")) <<
                " and swap " << old_unode_end << " to " << new_unode_end);
 
-        if (unode->sequence.length() == this->_K) {
+        if (unode->length == this->_K) {
             delete_unode(unode);
             pdebug("CLIP complete: deleted null unode.");
         } else if (clip_from == DIR_LEFT) {
-            unode->sequence = unode->sequence.substr(1);
-            unode->set_left_end(new_unode_end);
+            unode->length -= 1;
+            unode->pop_front();
+            unode->push_front(new_unode_end);
 
             meta_counter.decrement(unode->meta());
             recompute_node_meta(unode);
 
-            notify_dag_clip(unode->node_id, unode->sequence, unode->meta());
+            //notify_dag_clip(unode->node_id, unode->sequence, unode->meta());
             pdebug("CLIP complete: " << *unode);
         } else {
             unode->sequence = unode->sequence.substr(0, unode->sequence.length() - 1);
@@ -656,7 +658,7 @@ public:
             meta_counter.decrement(unode->meta());
             recompute_node_meta(unode);
 
-            notify_dag_clip(unode->node_id, unode->sequence, unode->meta());
+            //notify_dag_clip(unode->node_id, unode->sequence, unode->meta());
             pdebug("CLIP complete: " << *unode);
         }
 
