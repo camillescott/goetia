@@ -435,7 +435,7 @@ public:
                 first.right_flank = hashes[decision_segments.front().start_pos];
                 first.is_decision_kmer = false;
                 first.start_pos = segment.start_pos;
-                first.length = decision_segments.front().start_pos + this->_K - 1;
+                first.length = decision_segments.front().start_pos + this->_K - 1 - segment.start_pos;
                 if (first.length >= this->_K) segments.push_back(first);
                 segments.push_back(decision_segments.front());
 

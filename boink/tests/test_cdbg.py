@@ -250,6 +250,38 @@ class TestFindNewSegments:
         assert len(segments) == 0
 
 
+    @using_ksize(15)
+    @using_length(100)
+    def test_two_or_more_decisions(self, ksize, length, graph, compactor,
+                                           snp_bubble, check_fp):
+        (wild, mut), pivotL, pivotR = snp_bubble()
+        print(wild)
+        print(' ' * (pivotL - 1), wild[pivotL:pivotL+ksize])
+        print(' ' * (pivotR - 1), wild[pivotR:pivotR+ksize])
+        print(mut)
+
+        wilds = [wild[:ksize], wild[pivotL+1:pivotR+ksize-1]]
+        for wild in wilds:
+            compactor.update_sequence(wild)
+        assert compactor.cdbg.n_unodes == 2
+        assert compactor.cdbg.n_dnodes == 0
+        assert compactor.cdbg.n_unitig_ends == 3
+        
+        segments = compactor.find_new_segments(mut)
+        assert len(segments) == 7
+
+        assert segments[1].start == 1
+        assert segments[1].length == pivotL + ksize - 2
+        assert segments[2].start == pivotL
+        assert segments[2].length == ksize
+        assert segments[3].start == pivotL + 1
+        assert segments[3].length == (pivotR + ksize - 1) - (pivotL + 1)
+        assert segments[4].start == pivotR
+        assert segments[4].length == ksize
+        assert segments[5].start == pivotR + 1
+        assert segments[5].length == len(mut) - (pivotR + 1)
+
+
 
 class TestDecisionNodes(object):
 
