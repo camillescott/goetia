@@ -564,124 +564,6 @@ public:
         }
     }
 
-    uint8_t _find_induced_decision_nodes(kmer_t kmer,
-                                      NeighborBundle& neighbors,
-                                      set<hash_t>& new_kmers,
-                                      deque<DecisionKmer>& induced) {
-
-        return _find_induced_decision_nodes_left(kmer, neighbors, new_kmers, induced) +
-               _find_induced_decision_nodes_right(kmer, neighbors, new_kmers, induced);
-    }
-
-    uint8_t _find_induced_decision_nodes_left(kmer_t kmer,
-                                              set<hash_t>& new_kmers,
-                                              deque<DecisionKmer>& induced) {
-
-        pdebug("Prepare to attempt left induction on " << kmer);
-        this->set_cursor(kmer.kmer);
-        NeighborBundle bundle;
-        bundle.first = find_left_kmers();
-
-        if (bundle.first.size()) {
-            return _find_induced_decision_nodes_left(kmer,
-                                                     bundle,
-                                                     new_kmers,
-                                                     induced);
-        }
-        return 0;
-    }
-
-    uint8_t _find_induced_decision_nodes_left(kmer_t kmer,
-                                              NeighborBundle& neighbors,
-                                              set<hash_t>& new_kmers,
-                                              deque<DecisionKmer>& induced) {
-
-        // decision k-mers which are also new k-mers
-        // cannot split existing unitigs. however, they can induce
-        // an existing k-mer to be a decision k-mer, which can split
-        // existing unitigs. so, we filter out neighbors of
-        // the new decision k-mer which already exist and are already known
-        // to the cDBG to be decision k-mers
-
-        pdebug("Attempt left d-node induction from " << kmer);
-
-        uint8_t n_found = 0;
-        for (auto lneighbor : neighbors.first) {
-            if (new_kmers.count(lneighbor.hash) ||
-                cdbg->has_dnode(lneighbor.hash)) {
-                continue;
-            }
-            NeighborBundle inductee_neighbors;
-            if (get_decision_neighbors(lneighbor.kmer,
-                                       inductee_neighbors,
-                                       new_kmers)) {
-
-                pdebug("Found induced d-node: " << lneighbor.hash << ", " << lneighbor.kmer);
-                induced.push_back(make_pair(lneighbor, inductee_neighbors));
-                ++n_found;
-                //_build_dnode(lneighbor);
-                //_split_unode(lneighbor, neighbors, neighbor_mask); 
-            }
-            inductee_neighbors.first.clear();
-            inductee_neighbors.second.clear();
-        }
-
-        return n_found;
-    }
-
-    uint8_t _find_induced_decision_nodes_right(kmer_t kmer,
-                                         set<hash_t>& new_kmers,
-                                         deque<DecisionKmer>& induced) {
-
-        pdebug("Prepare to attempt right induction on " << kmer);
-        this->set_cursor(kmer.kmer);
-        NeighborBundle bundle;
-        bundle.second = find_right_kmers();
-        
-        if (bundle.second.size()) {
-            return _find_induced_decision_nodes_right(kmer,
-                                                      bundle,
-                                                      new_kmers,
-                                                      induced);
-        }
-        return 0;
-    }
-
-    uint8_t _find_induced_decision_nodes_right(kmer_t kmer,
-                                         NeighborBundle& neighbors,
-                                         set<hash_t>& new_kmers,
-                                         deque<DecisionKmer>& induced) {
-
-        // see _induce_decision_nodes_left for information
-
-        pdebug("Attempt right d-node induction from " << kmer.kmer
-                << ", " << kmer.hash);
-
-        uint8_t n_found = 0;
-        for (auto rneighbor : neighbors.second) {
-            if (new_kmers.count(rneighbor.hash) ||
-                cdbg->has_dnode(rneighbor.hash)) {
-                continue;
-            }
-
-            NeighborBundle inductee_neighbors;
-            if (get_decision_neighbors(rneighbor.kmer,
-                                       inductee_neighbors,
-                                       new_kmers)) {
-                // induced decision k-mer
-                pdebug("Found induced d-node: " << rneighbor.hash << ", " << rneighbor.kmer);
-                induced.push_back(make_pair(rneighbor, inductee_neighbors));
-                ++n_found;
-                //_build_dnode(rneighbor);
-                //_split_unode(rneighbor, neighbors, neighbor_mask); 
-            }
-            inductee_neighbors.first.clear();
-            inductee_neighbors.second.clear();
-        }
-
-        return n_found;
-    }
-
     void _induce_decision_nodes(deque<DecisionKmer>& induced_decision_kmers,
                                 set<hash_t>& new_kmers) {
 
@@ -965,6 +847,124 @@ public:
                               segment.left_anchor,
                               segment.right_anchor);
         }
+    }
+
+    uint8_t _find_induced_decision_nodes(kmer_t kmer,
+                                      NeighborBundle& neighbors,
+                                      set<hash_t>& new_kmers,
+                                      deque<DecisionKmer>& induced) {
+
+        return _find_induced_decision_nodes_left(kmer, neighbors, new_kmers, induced) +
+               _find_induced_decision_nodes_right(kmer, neighbors, new_kmers, induced);
+    }
+
+    uint8_t _find_induced_decision_nodes_left(kmer_t kmer,
+                                              set<hash_t>& new_kmers,
+                                              deque<DecisionKmer>& induced) {
+
+        pdebug("Prepare to attempt left induction on " << kmer);
+        this->set_cursor(kmer.kmer);
+        NeighborBundle bundle;
+        bundle.first = find_left_kmers();
+
+        if (bundle.first.size()) {
+            return _find_induced_decision_nodes_left(kmer,
+                                                     bundle,
+                                                     new_kmers,
+                                                     induced);
+        }
+        return 0;
+    }
+
+    uint8_t _find_induced_decision_nodes_left(kmer_t kmer,
+                                              NeighborBundle& neighbors,
+                                              set<hash_t>& new_kmers,
+                                              deque<DecisionKmer>& induced) {
+
+        // decision k-mers which are also new k-mers
+        // cannot split existing unitigs. however, they can induce
+        // an existing k-mer to be a decision k-mer, which can split
+        // existing unitigs. so, we filter out neighbors of
+        // the new decision k-mer which already exist and are already known
+        // to the cDBG to be decision k-mers
+
+        pdebug("Attempt left d-node induction from " << kmer);
+
+        uint8_t n_found = 0;
+        for (auto lneighbor : neighbors.first) {
+            if (new_kmers.count(lneighbor.hash) ||
+                cdbg->has_dnode(lneighbor.hash)) {
+                continue;
+            }
+            NeighborBundle inductee_neighbors;
+            if (get_decision_neighbors(lneighbor.kmer,
+                                       inductee_neighbors,
+                                       new_kmers)) {
+
+                pdebug("Found induced d-node: " << lneighbor.hash << ", " << lneighbor.kmer);
+                induced.push_back(make_pair(lneighbor, inductee_neighbors));
+                ++n_found;
+                //_build_dnode(lneighbor);
+                //_split_unode(lneighbor, neighbors, neighbor_mask); 
+            }
+            inductee_neighbors.first.clear();
+            inductee_neighbors.second.clear();
+        }
+
+        return n_found;
+    }
+
+    uint8_t _find_induced_decision_nodes_right(kmer_t kmer,
+                                         set<hash_t>& new_kmers,
+                                         deque<DecisionKmer>& induced) {
+
+        pdebug("Prepare to attempt right induction on " << kmer);
+        this->set_cursor(kmer.kmer);
+        NeighborBundle bundle;
+        bundle.second = find_right_kmers();
+        
+        if (bundle.second.size()) {
+            return _find_induced_decision_nodes_right(kmer,
+                                                      bundle,
+                                                      new_kmers,
+                                                      induced);
+        }
+        return 0;
+    }
+
+    uint8_t _find_induced_decision_nodes_right(kmer_t kmer,
+                                         NeighborBundle& neighbors,
+                                         set<hash_t>& new_kmers,
+                                         deque<DecisionKmer>& induced) {
+
+        // see _induce_decision_nodes_left for information
+
+        pdebug("Attempt right d-node induction from " << kmer.kmer
+                << ", " << kmer.hash);
+
+        uint8_t n_found = 0;
+        for (auto rneighbor : neighbors.second) {
+            if (new_kmers.count(rneighbor.hash) ||
+                cdbg->has_dnode(rneighbor.hash)) {
+                continue;
+            }
+
+            NeighborBundle inductee_neighbors;
+            if (get_decision_neighbors(rneighbor.kmer,
+                                       inductee_neighbors,
+                                       new_kmers)) {
+                // induced decision k-mer
+                pdebug("Found induced d-node: " << rneighbor.hash << ", " << rneighbor.kmer);
+                induced.push_back(make_pair(rneighbor, inductee_neighbors));
+                ++n_found;
+                //_build_dnode(rneighbor);
+                //_split_unode(rneighbor, neighbors, neighbor_mask); 
+            }
+            inductee_neighbors.first.clear();
+            inductee_neighbors.second.clear();
+        }
+
+        return n_found;
     }
 
     virtual void _build_dnode(kmer_t kmer) {
