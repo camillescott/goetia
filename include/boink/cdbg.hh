@@ -495,8 +495,11 @@ public:
         return false;   
     }
 
-    std::vector<UnitigNode*> find_dnode_neighbors(DecisionNode* dnode) {
-        std::vector<UnitigNode*> unodes;
+    std::pair<std::vector<UnitigNode*>,
+              std::vector<UnitigNode*>> find_dnode_neighbors(DecisionNode* dnode) {
+
+        std::vector<UnitigNode*> left_unodes;
+        std::vector<UnitigNode*> right_unodes;
         CompactorType compactor(dbg);
         compactor.set_cursor(dnode->sequence);
 
@@ -506,18 +509,18 @@ public:
         for (auto shift : left_shifts) {
             UnitigNode * unode;
             if ((unode = query_unode_end(shift.hash)) != nullptr) {
-                unodes.push_back(unode);
+                left_unodes.push_back(unode);
             }
         }
 
         for (auto shift : right_shifts) {
             UnitigNode * unode;
             if ((unode = query_unode_end(shift.hash)) != nullptr) {
-                unodes.push_back(unode);
+                right_unodes.push_back(unode);
             }
         }
 
-        return unodes;
+        return make_pair(left_unodes, right_unodes);
     }
 
     DecisionNode* query_dnode(hash_t hash) {
@@ -1115,11 +1118,16 @@ public:
             gfa.add_sequence(s);
         }
 
-        /*
+        auto get_link_name = [](id_t l, id_t r) { return std::string("LINK-") +
+                                                         std::to_string(l) +
+                                                         "-" +
+                                                         std::to_string(r); };
+
         for (auto it = decision_nodes.begin(); it != decision_nodes.end(); ++it) {
             string root = it->second->get_name();
-            for (auto junc : it->second->left_juncs) {
-                UnitigNode * in_node = get_unode(junc);
+            auto neighbors = find_dnode_neighbors(it->second.get());
+
+            for (auto in_node : neighbors.first) {
                 if (in_node == nullptr) continue;
 
                 gfak::link_elem l;
@@ -1129,7 +1137,7 @@ public:
                 l.sink_orientation_forward = true;
                 l.cigar = std::to_string(_K) + "M";
 
-                string link_name = "LINK" + junction_to_string(junc);
+                string link_name = get_link_name(in_node->node_id, it->second->node_id);
                 gfak::opt_elem id_elem;
                 id_elem.key = "ID";
                 id_elem.type = "Z";
@@ -1138,8 +1146,7 @@ public:
 
                 gfa.add_link(in_node->get_name(), l);
             }
-            for (auto junc : it->second->right_juncs) {
-                UnitigNode * out_node = get_unode(junc);
+            for (auto out_node : neighbors.second) {
                 if (out_node == nullptr) continue;
 
                 gfak::link_elem l;
@@ -1149,7 +1156,7 @@ public:
                 l.sink_orientation_forward = true;
                 l.cigar = std::to_string(_K) + "M";
 
-                string link_name = "LINK" + junction_to_string(junc);
+                string link_name = get_link_name(it->second->node_id, out_node->node_id);
                 gfak::opt_elem id_elem;
                 id_elem.key = "ID";
                 id_elem.type = "Z";
@@ -1158,7 +1165,6 @@ public:
                 gfa.add_link(root, l);
             }
         }
-        */
         out << gfa << std::endl;
 
     }
