@@ -120,6 +120,9 @@ cdef class cDBG__BitStorage__DefaultShifter(cDBG_Base):
     def n_unitig_ends(self):
         return deref(self._this).n_unitig_ends()
 
+    def validate(self, str filename):
+        deref(self._this).validate(_bstring(filename))
+
     def save(self, str filename, str file_format):
         if file_format is None:
             return
@@ -212,6 +215,9 @@ cdef class cDBG__ByteStorage__DefaultShifter(cDBG_Base):
     @property
     def n_unitig_ends(self):
         return deref(self._this).n_unitig_ends()
+
+    def validate(self, str filename):
+        deref(self._this).validate(_bstring(filename))
 
     def save(self, str filename, str file_format):
         if file_format is None:
@@ -306,6 +312,9 @@ cdef class cDBG__NibbleStorage__DefaultShifter(cDBG_Base):
     def n_unitig_ends(self):
         return deref(self._this).n_unitig_ends()
 
+    def validate(self, str filename):
+        deref(self._this).validate(_bstring(filename))
+
     def save(self, str filename, str file_format):
         if file_format is None:
             return
@@ -398,6 +407,9 @@ cdef class cDBG__SparseppSetStorage__DefaultShifter(cDBG_Base):
     @property
     def n_unitig_ends(self):
         return deref(self._this).n_unitig_ends()
+
+    def validate(self, str filename):
+        deref(self._this).validate(_bstring(filename))
 
     def save(self, str filename, str file_format):
         if file_format is None:

@@ -121,6 +121,9 @@ cdef class cDBG_{{type_bundle.suffix}}(cDBG_Base):
     def n_unitig_ends(self):
         return deref(self._this).n_unitig_ends()
 
+    def validate(self, str filename):
+        deref(self._this).validate(_bstring(filename))
+
     def save(self, str filename, str file_format):
         if file_format is None:
             return

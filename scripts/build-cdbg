@@ -33,25 +33,27 @@ def main():
                      args.max_tablesize,
                      args.n_tables,
                      storage='_' + args.storage_type)
+    print('Built graph with K', graph.K)
     compactor = make_streaming_compactor(graph)
     processor = make_streaming_compactor_processor(compactor,
-                                                   args.save_stats_interval)
-    reporter = make_streaming_compactor_reporter(args.save_cdbg_stats,
-                                                 compactor)
-    processor.Notifier.register_listener(reporter)
+                                                   args.track_stats_interval)
+    if args.track_cdbg_stats:
+        reporter = make_streaming_compactor_reporter(args.track_cdbg_stats,
+                                                     compactor)
+        processor.Notifier.register_listener(reporter)
 
     writers = []
-    if args.save_cdbg_format:
+    if args.save_cdbg:
         for cdbg_format in args.save_cdbg_format:
-            writer = make_cdbgwriter_reporter(args.save_cdbg_prefix + '.' + cdbg_format,
+            writer = make_cdbgwriter_reporter(args.save_cdbg + '.' + cdbg_format,
                                               cdbg_format,
                                               compactor.cdbg)
             processor.Notifier.register_listener(writer)
             writers.append(writer)
 
-    if args.save_cdbg_history:
-        print("Saving cDBG history DAG to", args.cdbg_history_filename)
-        history = cDBGHistoryReporter(args.cdbg_history_filename)
+    if args.track_cdbg_history:
+        print("Saving cDBG history DAG to", args.track_cdbg_history)
+        history = cDBGHistoryReporter(args.track_cdbg_history)
         compactor.cdbg.Notifier.register_listener(history)
 
 
@@ -68,6 +70,12 @@ def main():
 
     if args.save_dbg:
         graph.save(args.savegraph)
+
+    if args.validate:
+        if not args.validate.endswith('.csv'):
+            args.validate += '.csv'
+        print('Saving validation to', args.validate)
+        compactor.cdbg.validate(args.validate)
 
 
 if __name__ == '__main__':

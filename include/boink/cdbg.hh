@@ -1007,6 +1007,31 @@ public:
         this->notify(event);
     }
 
+    void validate(const std::string& filename) {
+        std::ofstream out;
+        out.open(filename);
+
+        auto lock1 = lock_dnodes();
+        auto lock2 = lock_unodes();
+
+        for (auto it = unitig_nodes.begin(); it != unitig_nodes.end(); ++it) {
+            auto unode = it->second.get();
+            auto counts = dbg->get_counts(unode->sequence);
+            if (std::any_of(counts.begin(), counts.end(), 
+                            [](count_t i){ return i == 0; })) {
+                out << unode->node_id << ";"
+                    << unode->left_end() << ";"
+                    << unode->right_end() << ";"
+                    << unode->sequence << ";"
+                    << counts
+                    << std::endl;
+            }
+        }
+
+        out.close();
+    
+    }
+
     void write(const std::string& filename, cDBGFormat format) {
         std::ofstream out;
         out.open(filename);

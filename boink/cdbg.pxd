@@ -108,6 +108,7 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
         _UnitigNode * query_unode_end(hash_t)
         _UnitigNode * query_unode_id(id_t)
     
+        void validate(const string&) except+ OSError
         void write(const string&, cDBGFormat) except +OSError
         void write_adj_matrix(const string&) except +OSError
         void write_graphml(const string&) except +OSError

@@ -177,17 +177,36 @@ def build_dBG_args(descr=None, epilog=None, parser=None):
 def add_save_cDBG_args(parser):
     default_prefix = CUR_TIME + '.cdbg'
     parser.default_prefix = default_prefix
-    parser.add_argument('--save-cdbg-format', nargs='+',
-                        choices=cDBG_Base.SAVE_FORMATS)
-    parser.add_argument('--save-cdbg-prefix', default=default_prefix)
-    parser.add_argument('--save-cdbg-stats', 
-                        default=default_prefix + '.stats.csv')
-    parser.add_argument('--save-stats-interval', type=int, default=10000)
-    parser.add_argument('--save-cdbg-interval', type=int, default=100000)
-    parser.add_argument('--save-cdbg-history', action='store_true',
-                        default=False)
-    parser.add_argument('--cdbg-history-filename',
-                        default=default_prefix + '.history.graphml')
+
+    parser.add_argument('--save-cdbg',
+                        metavar='PREFIX.<format>',
+                        nargs='?',
+                        const=default_prefix)
+    parser.add_argument('--save-cdbg-format',
+                        nargs='+',
+                        choices=cDBG_Base.SAVE_FORMATS,
+                        default=['gfa1'])
+    parser.add_argument('--save-cdbg-interval',
+                        type=int,
+                        default=100000)
+
+    parser.add_argument('--track-cdbg-stats',
+                        metavar='FILE_NAME.csv',
+                        nargs='?',
+                        const=default_prefix + '.stats.csv')
+    parser.add_argument('--track-stats-interval',
+                        type=int,
+                        default=10000)
+
+    parser.add_argument('--track-cdbg-history',
+                        metavar='FILENAME.graphml',
+                        nargs='?',
+                        const=default_prefix + '.history.graphml')
+
+    parser.add_argument('--validate',
+                        metavar='FILENAME.csv',
+                        nargs='?',
+                        const=default_prefix + '.validation.csv')
 
     return parser
 
