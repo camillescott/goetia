@@ -40,7 +40,9 @@ cdef class cDBG__BitStorage__DefaultShifter(cDBG_Base):
     cdef cDBG__BitStorage__DefaultShifter _wrap(_cDBG[_dBG[_BitStorage,_DefaultShifter]] * ptr):
         cdef cDBG__BitStorage__DefaultShifter cdbg = cDBG__BitStorage__DefaultShifter()
         cdbg._this = ptr
-        cdbg.Notifier = EventNotifier._wrap(<_EventNotifier*>cdbg._this);
+        cdbg.Notifier = EventNotifier._wrap(<_EventNotifier*>cdbg._this)
+        cdbg.storage_type = "_BitStorage"
+        cdbg.shifter_type = "_DefaultShifter"
         return cdbg
     '''
     def unodes(self):
@@ -136,7 +138,9 @@ cdef class cDBG__ByteStorage__DefaultShifter(cDBG_Base):
     cdef cDBG__ByteStorage__DefaultShifter _wrap(_cDBG[_dBG[_ByteStorage,_DefaultShifter]] * ptr):
         cdef cDBG__ByteStorage__DefaultShifter cdbg = cDBG__ByteStorage__DefaultShifter()
         cdbg._this = ptr
-        cdbg.Notifier = EventNotifier._wrap(<_EventNotifier*>cdbg._this);
+        cdbg.Notifier = EventNotifier._wrap(<_EventNotifier*>cdbg._this)
+        cdbg.storage_type = "_ByteStorage"
+        cdbg.shifter_type = "_DefaultShifter"
         return cdbg
     '''
     def unodes(self):
@@ -232,7 +236,9 @@ cdef class cDBG__NibbleStorage__DefaultShifter(cDBG_Base):
     cdef cDBG__NibbleStorage__DefaultShifter _wrap(_cDBG[_dBG[_NibbleStorage,_DefaultShifter]] * ptr):
         cdef cDBG__NibbleStorage__DefaultShifter cdbg = cDBG__NibbleStorage__DefaultShifter()
         cdbg._this = ptr
-        cdbg.Notifier = EventNotifier._wrap(<_EventNotifier*>cdbg._this);
+        cdbg.Notifier = EventNotifier._wrap(<_EventNotifier*>cdbg._this)
+        cdbg.storage_type = "_NibbleStorage"
+        cdbg.shifter_type = "_DefaultShifter"
         return cdbg
     '''
     def unodes(self):
@@ -328,7 +334,9 @@ cdef class cDBG__SparseppSetStorage__DefaultShifter(cDBG_Base):
     cdef cDBG__SparseppSetStorage__DefaultShifter _wrap(_cDBG[_dBG[_SparseppSetStorage,_DefaultShifter]] * ptr):
         cdef cDBG__SparseppSetStorage__DefaultShifter cdbg = cDBG__SparseppSetStorage__DefaultShifter()
         cdbg._this = ptr
-        cdbg.Notifier = EventNotifier._wrap(<_EventNotifier*>cdbg._this);
+        cdbg.Notifier = EventNotifier._wrap(<_EventNotifier*>cdbg._this)
+        cdbg.storage_type = "_SparseppSetStorage"
+        cdbg.shifter_type = "_DefaultShifter"
         return cdbg
     '''
     def unodes(self):
