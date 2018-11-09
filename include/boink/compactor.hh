@@ -578,6 +578,7 @@ public:
 
         set<hash_t> processed;
         size_t n_attempts = 0;
+        size_t max_attempts = 2 * induced_decision_kmer_hashes.size();
         while (induced_decision_kmers.size() > 0) {
             pdebug(induced_decision_kmers.size() << " more splits to attempt...");
             n_attempts++;
@@ -601,20 +602,11 @@ public:
                 induced_decision_kmers.push_back(d_kmer);
             }
             
-            if (n_attempts > 10) {
+            if (n_attempts > max_attempts) {
                 throw BoinkException("Stuck in split attempt loop, failing.");
             }
         }
     }
-
-    void _find_unode_to_split(kmer_t root,
-                              NeighborBundle& neighbors,
-                              set<hash_t>& new_kmers,
-                              set<hash_t>& induced_decision_kmer_hashes) {
-        pdebug("Find split unitig");
-        
-    }
-
 
     virtual bool _try_split_unode(kmer_t root,
                               NeighborBundle& neighbors,
