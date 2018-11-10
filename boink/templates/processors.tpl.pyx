@@ -28,9 +28,14 @@ cdef class FileProcessor_Base(FileProcessor):
 cdef class FileConsumer_{{type_bundle.suffix}}(FileProcessor_Base):
 
     def __cinit__(self, dBG_{{type_bundle.suffix}} graph,
-                        uint32_t output_interval):
+                        uint64_t fine_interval,
+                        uint64_t medium_interval,
+                        uint64_t coarse_interval):
+
         self._this = make_unique[_FileConsumer[_dBG[{{type_bundle.params}}]]](graph._this.get(),
-                                                                              output_interval)
+                                                                              fine_interval,
+                                                                              medium_interval,
+                                                                              coarse_interval)
         self.storage_type = graph.storage_type
         self.shifter_type = graph.shifter_type
 
@@ -43,13 +48,19 @@ cdef class FileConsumer_{{type_bundle.suffix}}(FileProcessor_Base):
 
 cdef class DecisionNodeProcessor_{{type_bundle.suffix}}(FileProcessor_Base):
     
-    def __cinit__(self, StreamingCompactor_{{type_bundle.suffix}} compactor, str output_filename,
-                        uint32_t output_interval):
+    def __cinit__(self, StreamingCompactor_{{type_bundle.suffix}} compactor,
+                        str output_filename,
+                        uint64_t fine_interval,
+                        uint64_t medium_interval,
+                        uint64_t coarse_interval):
+
         self.output_filename = output_filename
         cdef string _output_filename = _bstring(output_filename)
         self._this = make_unique[_DecisionNodeProcessor[_dBG[{{type_bundle.params}}]]](compactor._this.get(),
                                                                                        _output_filename,
-                                                                                       output_interval)
+                                                                                       fine_interval,
+                                                                                       medium_interval,
+                                                                                       coarse_interval)
         self.storage_type = compactor.storage_type
         self.shifter_type = compactor.shifter_type
 
@@ -62,10 +73,14 @@ cdef class DecisionNodeProcessor_{{type_bundle.suffix}}(FileProcessor_Base):
 cdef class StreamingCompactorProcessor_{{type_bundle.suffix}}(FileProcessor_Base):
     
     def __cinit__(self, StreamingCompactor_{{type_bundle.suffix}} compactor,
-                        uint32_t output_interval):
+                        uint64_t fine_interval,
+                        uint64_t medium_interval,
+                        uint64_t coarse_interval):
 
         self._this = make_unique[_StreamingCompactorProcessor[_dBG[{{type_bundle.params}}]]](compactor._this.get(),
-                                                                                             output_interval)
+                                                                                             fine_interval,
+                                                                                             medium_interval,
+                                                                                             coarse_interval)
         self.Notifier = EventNotifier._wrap(<_EventNotifier*>self._this.get())
 
         self.storage_type = compactor.storage_type
@@ -81,32 +96,49 @@ cdef class StreamingCompactorProcessor_{{type_bundle.suffix}}(FileProcessor_Base
         return deref(self._this).n_reads()
 {% endfor %}
 
-
-cdef object _make_file_consumer(dBG_Base graph, int output_interval):
+cdef object _make_file_consumer(dBG_Base graph,
+                                uint64_t fine_interval,
+                                uint64_t medium_interval,
+                                uint64_t coarse_interval):
     {% for type_bundle in type_bundles %}
     if graph.storage_type == "{{type_bundle.storage_type}}" and \
        graph.shifter_type == "{{type_bundle.shifter_type}}":
-        return FileConsumer_{{type_bundle.suffix}}(graph, output_interval)
+        return FileConsumer_{{type_bundle.suffix}}(graph, 
+                                                   fine_interval,
+                                                   medium_interval,
+                                                   coarse_interval)
     {% endfor %}
 
     raise TypeError("Invalid dBG type.")
 
-
-cdef object _make_decision_node_processor(StreamingCompactor_Base compactor, str filename, int output_interval):
+cdef object _make_decision_node_processor(StreamingCompactor_Base compactor,
+                                          str filename, 
+                                          uint64_t fine_interval,
+                                          uint64_t medium_interval,
+                                          uint64_t coarse_interval):
     {% for type_bundle in type_bundles %}
     if compactor.storage_type == "{{type_bundle.storage_type}}" and \
        compactor.shifter_type == "{{type_bundle.shifter_type}}":
-        return DecisionNodeProcessor_{{type_bundle.suffix}}(compactor, filename, output_interval)
+        return DecisionNodeProcessor_{{type_bundle.suffix}}(compactor,
+                                                            filename,  
+                                                            fine_interval,
+                                                            medium_interval,
+                                                            coarse_interval)
     {% endfor %}
 
     raise TypeError("Invalid dBG type.")
 
-
-cdef object _make_streaming_compactor_processor(StreamingCompactor_Base compactor, int output_interval):
+cdef object _make_streaming_compactor_processor(StreamingCompactor_Base compactor, 
+                                                uint64_t fine_interval,
+                                                uint64_t medium_interval,
+                                                uint64_t coarse_interval):
     {% for type_bundle in type_bundles %}
     if compactor.storage_type == "{{type_bundle.storage_type}}" and \
        compactor.shifter_type == "{{type_bundle.shifter_type}}":
-        return StreamingCompactorProcessor_{{type_bundle.suffix}}(compactor, output_interval)
+        return StreamingCompactorProcessor_{{type_bundle.suffix}}(compactor,
+                                                                  fine_interval,
+                                                                  medium_interval,
+                                                                  coarse_interval)
     {% endfor %}
 
     raise TypeError("Invalid dBG type.")

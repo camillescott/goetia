@@ -126,6 +126,8 @@ public:
         : SingleFileReporter(output_filename, "StreamingCompactorReporter"),
           compactor(compactor)
     {    
+        _cerr(this->THREAD_NAME << " reporting at FINE interval.");
+
         this->msg_type_whitelist.insert(boink::event_types::MSG_TIME_INTERVAL);
 
         _output_stream << "read_n,n_full,n_tips,n_islands,n_trivial"
@@ -170,6 +172,8 @@ public:
         : SingleFileReporter(filename, "cDBGHistoryReporter"),
           _edge_id_counter(0)
     {
+        _cerr(this->THREAD_NAME << " reporting continuously.");
+
         this->msg_type_whitelist.insert(boink::event_types::MSG_DAG_NEW);
         this->msg_type_whitelist.insert(boink::event_types::MSG_DAG_SPLIT);
         this->msg_type_whitelist.insert(boink::event_types::MSG_DAG_SPLIT_CIRCULAR);
@@ -302,13 +306,15 @@ public:
           cdbg(cdbg),
           format(format)
     {
+        _cerr(this->THREAD_NAME << " reporting at COARSE interval.");
+
         this->msg_type_whitelist.insert(boink::event_types::MSG_TIME_INTERVAL);
     }
 
     virtual void handle_msg(shared_ptr<Event> event) {
         if (event->msg_type == boink::event_types::MSG_TIME_INTERVAL) {
             auto _event = static_cast<TimeIntervalEvent*>(event.get());
-            if (_event->level == TimeIntervalEvent::MEDIUM ||
+            if (_event->level == TimeIntervalEvent::COARSE ||
                 _event->level == TimeIntervalEvent::END) {
 
                 std::ofstream& stream = this->next_stream(_event->t,

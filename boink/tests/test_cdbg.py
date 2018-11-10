@@ -752,6 +752,13 @@ class TestUnitigSplit(object):
         assert bottom_unode.left_end == graph.hash(bottom[:ksize])
         assert bottom_unode.meta == 'TIP'
 
+
+    @using_ksize(7)
+    @using_length(25)
+    def test_new_decision_kmer_oriented_tip_inducer(self, ksize, length, graph, compactor,
+                                                          right_fork, check_fp):
+        (core, branch), pivot 
+
     @using_ksize(15)
     @using_length(150)
     def test_induced_decision_to_unitig_extend(self, ksize, length, graph, compactor,

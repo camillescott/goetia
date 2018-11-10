@@ -43,6 +43,8 @@ from collections import namedtuple
 from boink.cdbg import cDBG_Base
 from boink.metadata import __version__, CUR_TIME
 from boink.parsing import PAIRING_MODES
+from boink.processors import DEFAULT_INTERVALS
+                              
 
 
 DEFAULT_K = 31
@@ -129,6 +131,11 @@ class BoinkArgumentParser(argparse.ArgumentParser):
                           default=argparse.SUPPRESS,
                           help='show this help message and exit')
 
+def print_boink_intro():
+    print('****\n*', file=sys.stderr)
+    print('*    BOINK v{0}'.format(__version__), file=sys.stderr)
+    print('*\n****', file=sys.stderr)
+
 
 def build_dBG_args(descr=None, epilog=None, parser=None):
     """Build an ArgumentParser with args for bloom filter based scripts."""
@@ -174,6 +181,24 @@ def build_dBG_args(descr=None, epilog=None, parser=None):
     return parser
 
 
+def print_dBG_args(args):
+    print('* dBG will be order', args.ksize, file=sys.stderr)
+    print('* dBG will have underlying storage of', args.storage_type, file=sys.stderr)
+    print('*', file=sys.stderr)
+
+def add_output_interval_args(parser):
+    parser.add_argument('--fine-interval', type=int, default=DEFAULT_INTERVALS.FINE)
+    parser.add_argument('--medium-interval', type=int, default=DEFAULT_INTERVALS.MEDIUM)
+    parser.add_argument('--coarse-interval', type=int, default=DEFAULT_INTERVALS.COARSE)
+
+
+def print_interval_settings(args):
+    print('* FINE output interval:', args.fine_interval, file=sys.stderr)
+    print('* MEDIUM output interval:', args.medium_interval, file=sys.stderr)
+    print('* COARSE output interval:', args.coarse_interval, file=sys.stderr)
+    print('*', file=sys.stderr)
+
+
 def add_save_cDBG_args(parser):
     default_prefix = CUR_TIME + '.cdbg'
     parser.default_prefix = default_prefix
@@ -186,17 +211,11 @@ def add_save_cDBG_args(parser):
                         nargs='+',
                         choices=cDBG_Base.SAVE_FORMATS,
                         default=['gfa1'])
-    parser.add_argument('--save-cdbg-interval',
-                        type=int,
-                        default=100000)
 
     parser.add_argument('--track-cdbg-stats',
                         metavar='FILE_NAME.csv',
                         nargs='?',
                         const=default_prefix + '.stats.csv')
-    parser.add_argument('--track-stats-interval',
-                        type=int,
-                        default=10000)
 
     parser.add_argument('--track-cdbg-history',
                         metavar='FILENAME.graphml',
@@ -209,6 +228,27 @@ def add_save_cDBG_args(parser):
                         const=default_prefix + '.validation.csv')
 
     return parser
+
+def print_cdbg_args(args):
+    if args.save_cdbg:
+        print('*', file=sys.stderr)
+        print('* Saving cDBG every {0} sequences with file prefix {1}'.format(args.coarse_interval,
+                                                                              args.save_cdbg),
+              file=sys.stderr)
+        print('* cDBG save formats: {0}'.format(', '.join(args.save_cdbg_format)))
+    if args.track_cdbg_stats:
+        print('*', file=sys.stderr)
+        print('* Tracking cDBG stats and reportering every {0} sequences'.format(args.fine_interval),
+              file=sys.stderr)
+        print('* Saving tracking information to', args.track_cdbg_stats, file=sys.stderr)
+    if args.track_cdbg_history:
+        print('*', file=sys.stderr)
+        print('* Tracking cDBG history and saving to', args.track_cdbg_history, file=sys.stderr)
+    if args.validate:
+        print('*', file=sys.stderr)
+        print('* cDBG will be validated on completion and results saved to', args.validate,
+              file=sys.stderr)
+    print('*', file=sys.stderr)
 
 
 def add_pairing_args(parser):

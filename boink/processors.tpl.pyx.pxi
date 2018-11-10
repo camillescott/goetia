@@ -27,9 +27,14 @@ cdef class FileProcessor_Base(FileProcessor):
 cdef class FileConsumer__BitStorage__DefaultShifter(FileProcessor_Base):
 
     def __cinit__(self, dBG__BitStorage__DefaultShifter graph,
-                        uint32_t output_interval):
+                        uint64_t fine_interval,
+                        uint64_t medium_interval,
+                        uint64_t coarse_interval):
+
         self._this = make_unique[_FileConsumer[_dBG[_BitStorage,_DefaultShifter]]](graph._this.get(),
-                                                                              output_interval)
+                                                                              fine_interval,
+                                                                              medium_interval,
+                                                                              coarse_interval)
         self.storage_type = graph.storage_type
         self.shifter_type = graph.shifter_type
 
@@ -42,13 +47,19 @@ cdef class FileConsumer__BitStorage__DefaultShifter(FileProcessor_Base):
 
 cdef class DecisionNodeProcessor__BitStorage__DefaultShifter(FileProcessor_Base):
     
-    def __cinit__(self, StreamingCompactor__BitStorage__DefaultShifter compactor, str output_filename,
-                        uint32_t output_interval):
+    def __cinit__(self, StreamingCompactor__BitStorage__DefaultShifter compactor,
+                        str output_filename,
+                        uint64_t fine_interval,
+                        uint64_t medium_interval,
+                        uint64_t coarse_interval):
+
         self.output_filename = output_filename
         cdef string _output_filename = _bstring(output_filename)
         self._this = make_unique[_DecisionNodeProcessor[_dBG[_BitStorage,_DefaultShifter]]](compactor._this.get(),
                                                                                        _output_filename,
-                                                                                       output_interval)
+                                                                                       fine_interval,
+                                                                                       medium_interval,
+                                                                                       coarse_interval)
         self.storage_type = compactor.storage_type
         self.shifter_type = compactor.shifter_type
 
@@ -61,10 +72,14 @@ cdef class DecisionNodeProcessor__BitStorage__DefaultShifter(FileProcessor_Base)
 cdef class StreamingCompactorProcessor__BitStorage__DefaultShifter(FileProcessor_Base):
     
     def __cinit__(self, StreamingCompactor__BitStorage__DefaultShifter compactor,
-                        uint32_t output_interval):
+                        uint64_t fine_interval,
+                        uint64_t medium_interval,
+                        uint64_t coarse_interval):
 
         self._this = make_unique[_StreamingCompactorProcessor[_dBG[_BitStorage,_DefaultShifter]]](compactor._this.get(),
-                                                                                             output_interval)
+                                                                                             fine_interval,
+                                                                                             medium_interval,
+                                                                                             coarse_interval)
         self.Notifier = EventNotifier._wrap(<_EventNotifier*>self._this.get())
 
         self.storage_type = compactor.storage_type
@@ -82,9 +97,14 @@ cdef class StreamingCompactorProcessor__BitStorage__DefaultShifter(FileProcessor
 cdef class FileConsumer__ByteStorage__DefaultShifter(FileProcessor_Base):
 
     def __cinit__(self, dBG__ByteStorage__DefaultShifter graph,
-                        uint32_t output_interval):
+                        uint64_t fine_interval,
+                        uint64_t medium_interval,
+                        uint64_t coarse_interval):
+
         self._this = make_unique[_FileConsumer[_dBG[_ByteStorage,_DefaultShifter]]](graph._this.get(),
-                                                                              output_interval)
+                                                                              fine_interval,
+                                                                              medium_interval,
+                                                                              coarse_interval)
         self.storage_type = graph.storage_type
         self.shifter_type = graph.shifter_type
 
@@ -97,13 +117,19 @@ cdef class FileConsumer__ByteStorage__DefaultShifter(FileProcessor_Base):
 
 cdef class DecisionNodeProcessor__ByteStorage__DefaultShifter(FileProcessor_Base):
     
-    def __cinit__(self, StreamingCompactor__ByteStorage__DefaultShifter compactor, str output_filename,
-                        uint32_t output_interval):
+    def __cinit__(self, StreamingCompactor__ByteStorage__DefaultShifter compactor,
+                        str output_filename,
+                        uint64_t fine_interval,
+                        uint64_t medium_interval,
+                        uint64_t coarse_interval):
+
         self.output_filename = output_filename
         cdef string _output_filename = _bstring(output_filename)
         self._this = make_unique[_DecisionNodeProcessor[_dBG[_ByteStorage,_DefaultShifter]]](compactor._this.get(),
                                                                                        _output_filename,
-                                                                                       output_interval)
+                                                                                       fine_interval,
+                                                                                       medium_interval,
+                                                                                       coarse_interval)
         self.storage_type = compactor.storage_type
         self.shifter_type = compactor.shifter_type
 
@@ -116,10 +142,14 @@ cdef class DecisionNodeProcessor__ByteStorage__DefaultShifter(FileProcessor_Base
 cdef class StreamingCompactorProcessor__ByteStorage__DefaultShifter(FileProcessor_Base):
     
     def __cinit__(self, StreamingCompactor__ByteStorage__DefaultShifter compactor,
-                        uint32_t output_interval):
+                        uint64_t fine_interval,
+                        uint64_t medium_interval,
+                        uint64_t coarse_interval):
 
         self._this = make_unique[_StreamingCompactorProcessor[_dBG[_ByteStorage,_DefaultShifter]]](compactor._this.get(),
-                                                                                             output_interval)
+                                                                                             fine_interval,
+                                                                                             medium_interval,
+                                                                                             coarse_interval)
         self.Notifier = EventNotifier._wrap(<_EventNotifier*>self._this.get())
 
         self.storage_type = compactor.storage_type
@@ -137,9 +167,14 @@ cdef class StreamingCompactorProcessor__ByteStorage__DefaultShifter(FileProcesso
 cdef class FileConsumer__NibbleStorage__DefaultShifter(FileProcessor_Base):
 
     def __cinit__(self, dBG__NibbleStorage__DefaultShifter graph,
-                        uint32_t output_interval):
+                        uint64_t fine_interval,
+                        uint64_t medium_interval,
+                        uint64_t coarse_interval):
+
         self._this = make_unique[_FileConsumer[_dBG[_NibbleStorage,_DefaultShifter]]](graph._this.get(),
-                                                                              output_interval)
+                                                                              fine_interval,
+                                                                              medium_interval,
+                                                                              coarse_interval)
         self.storage_type = graph.storage_type
         self.shifter_type = graph.shifter_type
 
@@ -152,13 +187,19 @@ cdef class FileConsumer__NibbleStorage__DefaultShifter(FileProcessor_Base):
 
 cdef class DecisionNodeProcessor__NibbleStorage__DefaultShifter(FileProcessor_Base):
     
-    def __cinit__(self, StreamingCompactor__NibbleStorage__DefaultShifter compactor, str output_filename,
-                        uint32_t output_interval):
+    def __cinit__(self, StreamingCompactor__NibbleStorage__DefaultShifter compactor,
+                        str output_filename,
+                        uint64_t fine_interval,
+                        uint64_t medium_interval,
+                        uint64_t coarse_interval):
+
         self.output_filename = output_filename
         cdef string _output_filename = _bstring(output_filename)
         self._this = make_unique[_DecisionNodeProcessor[_dBG[_NibbleStorage,_DefaultShifter]]](compactor._this.get(),
                                                                                        _output_filename,
-                                                                                       output_interval)
+                                                                                       fine_interval,
+                                                                                       medium_interval,
+                                                                                       coarse_interval)
         self.storage_type = compactor.storage_type
         self.shifter_type = compactor.shifter_type
 
@@ -171,10 +212,14 @@ cdef class DecisionNodeProcessor__NibbleStorage__DefaultShifter(FileProcessor_Ba
 cdef class StreamingCompactorProcessor__NibbleStorage__DefaultShifter(FileProcessor_Base):
     
     def __cinit__(self, StreamingCompactor__NibbleStorage__DefaultShifter compactor,
-                        uint32_t output_interval):
+                        uint64_t fine_interval,
+                        uint64_t medium_interval,
+                        uint64_t coarse_interval):
 
         self._this = make_unique[_StreamingCompactorProcessor[_dBG[_NibbleStorage,_DefaultShifter]]](compactor._this.get(),
-                                                                                             output_interval)
+                                                                                             fine_interval,
+                                                                                             medium_interval,
+                                                                                             coarse_interval)
         self.Notifier = EventNotifier._wrap(<_EventNotifier*>self._this.get())
 
         self.storage_type = compactor.storage_type
@@ -192,9 +237,14 @@ cdef class StreamingCompactorProcessor__NibbleStorage__DefaultShifter(FileProces
 cdef class FileConsumer__SparseppSetStorage__DefaultShifter(FileProcessor_Base):
 
     def __cinit__(self, dBG__SparseppSetStorage__DefaultShifter graph,
-                        uint32_t output_interval):
+                        uint64_t fine_interval,
+                        uint64_t medium_interval,
+                        uint64_t coarse_interval):
+
         self._this = make_unique[_FileConsumer[_dBG[_SparseppSetStorage,_DefaultShifter]]](graph._this.get(),
-                                                                              output_interval)
+                                                                              fine_interval,
+                                                                              medium_interval,
+                                                                              coarse_interval)
         self.storage_type = graph.storage_type
         self.shifter_type = graph.shifter_type
 
@@ -207,13 +257,19 @@ cdef class FileConsumer__SparseppSetStorage__DefaultShifter(FileProcessor_Base):
 
 cdef class DecisionNodeProcessor__SparseppSetStorage__DefaultShifter(FileProcessor_Base):
     
-    def __cinit__(self, StreamingCompactor__SparseppSetStorage__DefaultShifter compactor, str output_filename,
-                        uint32_t output_interval):
+    def __cinit__(self, StreamingCompactor__SparseppSetStorage__DefaultShifter compactor,
+                        str output_filename,
+                        uint64_t fine_interval,
+                        uint64_t medium_interval,
+                        uint64_t coarse_interval):
+
         self.output_filename = output_filename
         cdef string _output_filename = _bstring(output_filename)
         self._this = make_unique[_DecisionNodeProcessor[_dBG[_SparseppSetStorage,_DefaultShifter]]](compactor._this.get(),
                                                                                        _output_filename,
-                                                                                       output_interval)
+                                                                                       fine_interval,
+                                                                                       medium_interval,
+                                                                                       coarse_interval)
         self.storage_type = compactor.storage_type
         self.shifter_type = compactor.shifter_type
 
@@ -226,10 +282,14 @@ cdef class DecisionNodeProcessor__SparseppSetStorage__DefaultShifter(FileProcess
 cdef class StreamingCompactorProcessor__SparseppSetStorage__DefaultShifter(FileProcessor_Base):
     
     def __cinit__(self, StreamingCompactor__SparseppSetStorage__DefaultShifter compactor,
-                        uint32_t output_interval):
+                        uint64_t fine_interval,
+                        uint64_t medium_interval,
+                        uint64_t coarse_interval):
 
         self._this = make_unique[_StreamingCompactorProcessor[_dBG[_SparseppSetStorage,_DefaultShifter]]](compactor._this.get(),
-                                                                                             output_interval)
+                                                                                             fine_interval,
+                                                                                             medium_interval,
+                                                                                             coarse_interval)
         self.Notifier = EventNotifier._wrap(<_EventNotifier*>self._this.get())
 
         self.storage_type = compactor.storage_type
@@ -244,54 +304,101 @@ cdef class StreamingCompactorProcessor__SparseppSetStorage__DefaultShifter(FileP
 
         return deref(self._this).n_reads()
 
-
-cdef object _make_file_consumer(dBG_Base graph, int output_interval):
+cdef object _make_file_consumer(dBG_Base graph,
+                                uint64_t fine_interval,
+                                uint64_t medium_interval,
+                                uint64_t coarse_interval):
     if graph.storage_type == "_BitStorage" and \
        graph.shifter_type == "_DefaultShifter":
-        return FileConsumer__BitStorage__DefaultShifter(graph, output_interval)
+        return FileConsumer__BitStorage__DefaultShifter(graph, 
+                                                   fine_interval,
+                                                   medium_interval,
+                                                   coarse_interval)
     if graph.storage_type == "_ByteStorage" and \
        graph.shifter_type == "_DefaultShifter":
-        return FileConsumer__ByteStorage__DefaultShifter(graph, output_interval)
+        return FileConsumer__ByteStorage__DefaultShifter(graph, 
+                                                   fine_interval,
+                                                   medium_interval,
+                                                   coarse_interval)
     if graph.storage_type == "_NibbleStorage" and \
        graph.shifter_type == "_DefaultShifter":
-        return FileConsumer__NibbleStorage__DefaultShifter(graph, output_interval)
+        return FileConsumer__NibbleStorage__DefaultShifter(graph, 
+                                                   fine_interval,
+                                                   medium_interval,
+                                                   coarse_interval)
     if graph.storage_type == "_SparseppSetStorage" and \
        graph.shifter_type == "_DefaultShifter":
-        return FileConsumer__SparseppSetStorage__DefaultShifter(graph, output_interval)
+        return FileConsumer__SparseppSetStorage__DefaultShifter(graph, 
+                                                   fine_interval,
+                                                   medium_interval,
+                                                   coarse_interval)
 
     raise TypeError("Invalid dBG type.")
 
-
-cdef object _make_decision_node_processor(StreamingCompactor_Base compactor, str filename, int output_interval):
+cdef object _make_decision_node_processor(StreamingCompactor_Base compactor,
+                                          str filename, 
+                                          uint64_t fine_interval,
+                                          uint64_t medium_interval,
+                                          uint64_t coarse_interval):
     if compactor.storage_type == "_BitStorage" and \
        compactor.shifter_type == "_DefaultShifter":
-        return DecisionNodeProcessor__BitStorage__DefaultShifter(compactor, filename, output_interval)
+        return DecisionNodeProcessor__BitStorage__DefaultShifter(compactor,
+                                                            filename,  
+                                                            fine_interval,
+                                                            medium_interval,
+                                                            coarse_interval)
     if compactor.storage_type == "_ByteStorage" and \
        compactor.shifter_type == "_DefaultShifter":
-        return DecisionNodeProcessor__ByteStorage__DefaultShifter(compactor, filename, output_interval)
+        return DecisionNodeProcessor__ByteStorage__DefaultShifter(compactor,
+                                                            filename,  
+                                                            fine_interval,
+                                                            medium_interval,
+                                                            coarse_interval)
     if compactor.storage_type == "_NibbleStorage" and \
        compactor.shifter_type == "_DefaultShifter":
-        return DecisionNodeProcessor__NibbleStorage__DefaultShifter(compactor, filename, output_interval)
+        return DecisionNodeProcessor__NibbleStorage__DefaultShifter(compactor,
+                                                            filename,  
+                                                            fine_interval,
+                                                            medium_interval,
+                                                            coarse_interval)
     if compactor.storage_type == "_SparseppSetStorage" and \
        compactor.shifter_type == "_DefaultShifter":
-        return DecisionNodeProcessor__SparseppSetStorage__DefaultShifter(compactor, filename, output_interval)
+        return DecisionNodeProcessor__SparseppSetStorage__DefaultShifter(compactor,
+                                                            filename,  
+                                                            fine_interval,
+                                                            medium_interval,
+                                                            coarse_interval)
 
     raise TypeError("Invalid dBG type.")
 
-
-cdef object _make_streaming_compactor_processor(StreamingCompactor_Base compactor, int output_interval):
+cdef object _make_streaming_compactor_processor(StreamingCompactor_Base compactor, 
+                                                uint64_t fine_interval,
+                                                uint64_t medium_interval,
+                                                uint64_t coarse_interval):
     if compactor.storage_type == "_BitStorage" and \
        compactor.shifter_type == "_DefaultShifter":
-        return StreamingCompactorProcessor__BitStorage__DefaultShifter(compactor, output_interval)
+        return StreamingCompactorProcessor__BitStorage__DefaultShifter(compactor,
+                                                                  fine_interval,
+                                                                  medium_interval,
+                                                                  coarse_interval)
     if compactor.storage_type == "_ByteStorage" and \
        compactor.shifter_type == "_DefaultShifter":
-        return StreamingCompactorProcessor__ByteStorage__DefaultShifter(compactor, output_interval)
+        return StreamingCompactorProcessor__ByteStorage__DefaultShifter(compactor,
+                                                                  fine_interval,
+                                                                  medium_interval,
+                                                                  coarse_interval)
     if compactor.storage_type == "_NibbleStorage" and \
        compactor.shifter_type == "_DefaultShifter":
-        return StreamingCompactorProcessor__NibbleStorage__DefaultShifter(compactor, output_interval)
+        return StreamingCompactorProcessor__NibbleStorage__DefaultShifter(compactor,
+                                                                  fine_interval,
+                                                                  medium_interval,
+                                                                  coarse_interval)
     if compactor.storage_type == "_SparseppSetStorage" and \
        compactor.shifter_type == "_DefaultShifter":
-        return StreamingCompactorProcessor__SparseppSetStorage__DefaultShifter(compactor, output_interval)
+        return StreamingCompactorProcessor__SparseppSetStorage__DefaultShifter(compactor,
+                                                                  fine_interval,
+                                                                  medium_interval,
+                                                                  coarse_interval)
 
     raise TypeError("Invalid dBG type.")
 

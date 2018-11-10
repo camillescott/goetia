@@ -26,7 +26,9 @@ using namespace oxli:: read_parsers;
 using namespace boink::events;
 using namespace boink::event_types;
 
-#define DEFAULT_OUTPUT_INTERVAL 10000
+#define DEFAULT_FINE_INTERVAL 10000
+#define DEFAULT_MEDIUM_INTERVAL 100000
+#define DEFAULT_COARSE_INTERVAL 1000000
 
 namespace boink {
 
@@ -70,11 +72,13 @@ public:
     using EventNotifier::register_listener;
     using EventNotifier::notify;
 
-    FileProcessor(uint64_t output_interval=DEFAULT_OUTPUT_INTERVAL)
+    FileProcessor(uint64_t fine_interval=DEFAULT_FINE_INTERVAL,
+                  uint64_t medium_interval=DEFAULT_MEDIUM_INTERVAL,
+                  uint64_t coarse_interval=DEFAULT_COARSE_INTERVAL)
         :  boink::events::EventNotifier(),
-           counters ({{ output_interval, 
-                       output_interval * 10,
-                       output_interval * 100 }}),
+           counters ({{ fine_interval, 
+                        medium_interval,
+                        coarse_interval }}),
           _n_reads(0) {
 
     }
@@ -225,8 +229,11 @@ public:
 
     using Base::process_sequence;
     
-    FileConsumer(GraphType * graph, uint32_t output_interval)
-        : Base(output_interval),
+    FileConsumer(GraphType * graph,
+                 uint64_t fine_interval=DEFAULT_FINE_INTERVAL,
+                 uint64_t medium_interval=DEFAULT_MEDIUM_INTERVAL,
+                 uint64_t coarse_interval=DEFAULT_COARSE_INTERVAL)
+        : Base(fine_interval, medium_interval, coarse_interval),
           graph(graph), _n_consumed(0) {
 
     }
@@ -266,8 +273,10 @@ public:
 
     DecisionNodeProcessor(StreamingCompactor<GraphType> * compactor,
                           std::string& output_filename,
-                          uint32_t output_interval)
-        : Base(output_interval),
+                          uint64_t fine_interval=DEFAULT_FINE_INTERVAL,
+                          uint64_t medium_interval=DEFAULT_MEDIUM_INTERVAL,
+                          uint64_t coarse_interval=DEFAULT_COARSE_INTERVAL)
+        : Base(fine_interval, medium_interval, coarse_interval),
           compactor(compactor),
           graph(compactor->dbg),
           _output_filename(output_filename),
@@ -329,8 +338,10 @@ public:
     using EventNotifier::register_listener;
     
     StreamingCompactorProcessor(StreamingCompactor<GraphType> * compactor,
-                                uint32_t output_interval)
-        : Base(output_interval),
+                                uint64_t fine_interval=DEFAULT_FINE_INTERVAL,
+                                uint64_t medium_interval=DEFAULT_MEDIUM_INTERVAL,
+                                uint64_t coarse_interval=DEFAULT_COARSE_INTERVAL)
+        : Base(fine_interval, medium_interval, coarse_interval),
           compactor(compactor),
           graph(compactor->dbg)
     {
@@ -381,8 +392,10 @@ public:
     MinimizerProcessor(int32_t window_size,
                        uint16_t K,
                        const std::string& output_filename,
-                       uint32_t output_interval)
-        : Base(output_interval),
+                       uint64_t fine_interval=DEFAULT_FINE_INTERVAL,
+                       uint64_t medium_interval=DEFAULT_MEDIUM_INTERVAL,
+                       uint64_t coarse_interval=DEFAULT_COARSE_INTERVAL)
+        : Base(fine_interval, medium_interval, coarse_interval),
           M(window_size, K),
           _output_filename(output_filename),
           _output_stream(_output_filename.c_str()) {

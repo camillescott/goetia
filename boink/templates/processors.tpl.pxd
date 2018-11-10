@@ -40,8 +40,20 @@ cdef class StreamingCompactorProcessor_{{type_bundle.suffix}}(FileProcessor_Base
 
 {% endfor %}
 
-cdef object _make_file_consumer(dBG_Base graph, int output_interval)
-cdef object _make_decision_node_processor(StreamingCompactor_Base compactor, str filename, int output_interval)
-cdef object _make_streaming_compactor_processor(StreamingCompactor_Base compactor, int output_interval)
+cdef object _make_file_consumer(dBG_Base graph,
+                                uint64_t fine_interval,
+                                uint64_t medium_interval,
+                                uint64_t coarse_interval)
+
+cdef object _make_decision_node_processor(StreamingCompactor_Base compactor,
+                                          str filename, 
+                                          uint64_t fine_interval,
+                                          uint64_t medium_interval,
+                                          uint64_t coarse_interval)
+
+cdef object _make_streaming_compactor_processor(StreamingCompactor_Base compactor, 
+                                                uint64_t fine_interval,
+                                                uint64_t medium_interval,
+                                                uint64_t coarse_interval)
 
 {% endblock code %}

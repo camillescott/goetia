@@ -671,6 +671,8 @@ public:
                         !new_kmers.count(neighbor.hash) &&
                         !processed.count(neighbor.hash);
                      });
+        // EDGE CASE: split k-mer has no unitig to split because of previous processed
+        // nodes or because neighbor is a properly oriented unitig end
 
         pdebug(lfiltered.size() << " left, " << rfiltered.size() << " right");
         if (lfiltered.size()) {

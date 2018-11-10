@@ -15,10 +15,17 @@ from boink.compactor cimport *
 from boink.events cimport EventNotifier, _EventNotifier, _EventListener
 from boink.utils cimport _bstring
 
+
+cdef extern from "boink/processors.hh":
+    cdef uint64_t DEFAULT_FINE_INTERVAL
+    cdef uint64_t DEFAULT_MEDIUM_INTERVAL
+    cdef uint64_t DEFAULT_COARSE_INTERVAL
+
+
 cdef extern from "boink/processors.hh" namespace "boink" nogil:
 
     cdef cppclass _FileProcessor "boink::FileProcessor" [Derived] (_EventNotifier):
-        _FileProcessor(uint64_t)
+        _FileProcessor(uint64_t, uint64_t, uint64_t)
         _FileProcessor()
 
         uint64_t process(...) except +ValueError
@@ -32,20 +39,32 @@ cdef extern from "boink/processors.hh" namespace "boink" nogil:
         uint64_t n_reads() const
 
     cdef cppclass _FileConsumer "boink::FileConsumer" [GraphType] (_FileProcessor[_FileConsumer[GraphType]]):
-        _FileConsumer(GraphType *, uint64_t)
+        _FileConsumer(GraphType *,
+                      uint64_t,
+                      uint64_t,
+                      uint64_t)
         uint64_t n_consumed()
 
     cdef cppclass _DecisionNodeProcessor "boink::DecisionNodeProcessor"[GraphType] (_FileProcessor[_DecisionNodeProcessor[GraphType]]):
         _DecisionNodeProcessor(_StreamingCompactor*,
                                string &,
+                               uint64_t,
+                               uint64_t,
                                uint64_t)
 
     cdef cppclass _StreamingCompactorProcessor "boink::StreamingCompactorProcessor"[GraphType](_FileProcessor[_StreamingCompactorProcessor[GraphType]]):
         _StreamingCompactorProcessor(_StreamingCompactor*,
+                                     uint64_t,
+                                     uint64_t,
                                      uint64_t)
 
     cdef cppclass _MinimizerProcessor "boink::MinimizerProcessor" [ShifterType] (_FileProcessor[_MinimizerProcessor[ShifterType]]):
-        _MinimizerProcessor(int64_t, uint16_t, const string&, uint32_t)
+        _MinimizerProcessor(int32_t,
+                            uint16_t,
+                            const string&,
+                            uint64_t,
+                            uint64_t,
+                            uint64_t)
 
 
 cdef class FileProcessor:

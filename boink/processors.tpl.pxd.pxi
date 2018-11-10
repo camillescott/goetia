@@ -80,7 +80,19 @@ cdef class StreamingCompactorProcessor__SparseppSetStorage__DefaultShifter(FileP
     cdef unique_ptr[_StreamingCompactorProcessor[_dBG[_SparseppSetStorage,_DefaultShifter]]] _this
 
 
-cdef object _make_file_consumer(dBG_Base graph, int output_interval)
-cdef object _make_decision_node_processor(StreamingCompactor_Base compactor, str filename, int output_interval)
-cdef object _make_streaming_compactor_processor(StreamingCompactor_Base compactor, int output_interval)
+cdef object _make_file_consumer(dBG_Base graph,
+                                uint64_t fine_interval,
+                                uint64_t medium_interval,
+                                uint64_t coarse_interval)
+
+cdef object _make_decision_node_processor(StreamingCompactor_Base compactor,
+                                          str filename, 
+                                          uint64_t fine_interval,
+                                          uint64_t medium_interval,
+                                          uint64_t coarse_interval)
+
+cdef object _make_streaming_compactor_processor(StreamingCompactor_Base compactor, 
+                                                uint64_t fine_interval,
+                                                uint64_t medium_interval,
+                                                uint64_t coarse_interval)
 
