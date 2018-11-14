@@ -31,6 +31,7 @@ cdef class StreamingCompactor_{{type_bundle.suffix}}(StreamingCompactor_Base):
         if type(self) is StreamingCompactor_{{type_bundle.suffix}}:
             self._this = make_unique[_StreamingCompactor[_dBG[{{type_bundle.params}}]]](graph._this.get())
             self._graph = graph._this.get()
+            self.graph = graph # for reference counting
             self.cdbg = cDBG_{{type_bundle.suffix}}._wrap(deref(self._this).cdbg)
             self.Notifier = EventNotifier._wrap(<_EventNotifier*>self._this.get())
 

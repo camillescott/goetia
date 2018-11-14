@@ -1129,10 +1129,16 @@ public:
 
         for (auto it = decision_nodes.begin(); it != decision_nodes.end(); ++it) {
             string root = it->second->get_name();
-            auto neighbors = find_dnode_neighbors(it->second.get());
+            auto neighbors = dbg->neighbors(it->second->sequence);
 
-            for (auto in_node : neighbors.first) {
-                if (in_node == nullptr) continue;
+            for (auto in_neighbor : neighbors.first) {
+                CompactNode * in_node = query_unode_end(in_neighbor.hash);
+                if (in_node == nullptr) {
+                    in_node = query_dnode(in_neighbor.hash);
+                }
+                if (in_node == nullptr) {
+                    throw BoinkException("No cDBG neighbor matching dBG neighbor.");
+                }
 
                 gfak::link_elem l;
                 l.source_name = in_node->get_name();
@@ -1150,8 +1156,14 @@ public:
 
                 gfa.add_link(in_node->get_name(), l);
             }
-            for (auto out_node : neighbors.second) {
-                if (out_node == nullptr) continue;
+            for (auto out_neighbor : neighbors.second) {
+                CompactNode * out_node = query_unode_end(out_neighbor.hash);
+                if (out_node == nullptr) {
+                    out_node = query_dnode(out_neighbor.hash);
+                }
+                if (out_node == nullptr) {
+                    throw BoinkException("No cDBG neighbor matching dBG neighbor.");
+                }
 
                 gfak::link_elem l;
                 l.source_name = root;

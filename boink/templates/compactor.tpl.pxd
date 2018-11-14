@@ -17,6 +17,7 @@ from boink.cdbg cimport *
 cdef class StreamingCompactor_Base:
     cdef readonly object storage_type
     cdef readonly object shifter_type
+    cdef object graph
 
 {% for type_bundle in type_bundles %}
 cdef class StreamingCompactor_{{type_bundle.suffix}}(StreamingCompactor_Base):

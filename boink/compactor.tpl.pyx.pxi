@@ -30,6 +30,7 @@ cdef class StreamingCompactor__BitStorage__DefaultShifter(StreamingCompactor_Bas
         if type(self) is StreamingCompactor__BitStorage__DefaultShifter:
             self._this = make_unique[_StreamingCompactor[_dBG[_BitStorage,_DefaultShifter]]](graph._this.get())
             self._graph = graph._this.get()
+            self.graph = graph # for reference counting
             self.cdbg = cDBG__BitStorage__DefaultShifter._wrap(deref(self._this).cdbg)
             self.Notifier = EventNotifier._wrap(<_EventNotifier*>self._this.get())
 
@@ -92,6 +93,7 @@ cdef class StreamingCompactor__ByteStorage__DefaultShifter(StreamingCompactor_Ba
         if type(self) is StreamingCompactor__ByteStorage__DefaultShifter:
             self._this = make_unique[_StreamingCompactor[_dBG[_ByteStorage,_DefaultShifter]]](graph._this.get())
             self._graph = graph._this.get()
+            self.graph = graph # for reference counting
             self.cdbg = cDBG__ByteStorage__DefaultShifter._wrap(deref(self._this).cdbg)
             self.Notifier = EventNotifier._wrap(<_EventNotifier*>self._this.get())
 
@@ -154,6 +156,7 @@ cdef class StreamingCompactor__NibbleStorage__DefaultShifter(StreamingCompactor_
         if type(self) is StreamingCompactor__NibbleStorage__DefaultShifter:
             self._this = make_unique[_StreamingCompactor[_dBG[_NibbleStorage,_DefaultShifter]]](graph._this.get())
             self._graph = graph._this.get()
+            self.graph = graph # for reference counting
             self.cdbg = cDBG__NibbleStorage__DefaultShifter._wrap(deref(self._this).cdbg)
             self.Notifier = EventNotifier._wrap(<_EventNotifier*>self._this.get())
 
@@ -216,6 +219,7 @@ cdef class StreamingCompactor__SparseppSetStorage__DefaultShifter(StreamingCompa
         if type(self) is StreamingCompactor__SparseppSetStorage__DefaultShifter:
             self._this = make_unique[_StreamingCompactor[_dBG[_SparseppSetStorage,_DefaultShifter]]](graph._this.get())
             self._graph = graph._this.get()
+            self.graph = graph # for reference counting
             self.cdbg = cDBG__SparseppSetStorage__DefaultShifter._wrap(deref(self._this).cdbg)
             self.Notifier = EventNotifier._wrap(<_EventNotifier*>self._this.get())
 

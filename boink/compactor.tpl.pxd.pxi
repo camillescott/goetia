@@ -17,6 +17,7 @@ from boink.cdbg cimport *
 cdef class StreamingCompactor_Base:
     cdef readonly object storage_type
     cdef readonly object shifter_type
+    cdef object graph
 
 cdef class StreamingCompactor__BitStorage__DefaultShifter(StreamingCompactor_Base):
     cdef unique_ptr[_StreamingCompactor[_dBG[_BitStorage,_DefaultShifter]]] _this
