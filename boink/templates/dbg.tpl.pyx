@@ -69,6 +69,19 @@ cdef class dBG_{{type_bundle.suffix}}(dBG_Base):
             h = deref(kmer_iter).next()
             yield h
 
+    def neighbors(self, str root):
+        cdef bytes _root = _bstring(root)
+        cdef pair[vector[kmer_t], vector[kmer_t]] result = deref(self._this).neighbors(_root)
+        
+        cdef list left = []
+        cdef list right = []
+        for i in range(result.first.size()):
+            left.append((result.first[i].hash, result.first[i].kmer))
+        for i in range(result.second.size()):
+            right.append((result.second[i].hash, result.second[i].kmer))
+
+        return left, right
+
     def add_sequence_and_report(self, str sequence):
         cdef bytes _sequence = _bstring(sequence)
         cdef vector[hash_t] _hashes

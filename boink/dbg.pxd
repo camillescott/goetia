@@ -59,6 +59,13 @@ cdef extern from "boink/dbg.hh" namespace "boink" nogil:
         count_t get(string&) except +ValueError
         count_t get(hash_t)
 
+        const string suffix(const string&)
+        const string prefix(const string&)
+
+        vector[kmer_t] left_neighbors(const string&)
+        vector[kmer_t] right_neighbors(const string&)
+        pair[vector[kmer_t], vector[kmer_t]] neighbors(const string&)
+
         uint64_t add_sequence(string&,
                               vector[hash_t]&,
                               vector[bool]&) except +ValueError
