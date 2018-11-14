@@ -103,6 +103,37 @@ public:
         return S.n_occupied();
     }
 
+    const string suffix(const string& kmer) {
+        return kmer.substr(kmer.length() - this->_K + 1);
+    }
+
+    const string prefix(const string& kmer) {
+        return kmer.substr(0, this->_K - 1);
+    }
+
+    vector<kmer_t> left_neighbors(const string& root) {
+        auto assembler = this->get_assembler();
+        assembler->set_cursor(root);
+        auto filtered = assembler->filter_nodes(assembler->gather_left());
+        return assembler->build_left_kmers(filtered, root);
+    }
+
+    vector<kmer_t> right_neighbors(const string& root) {
+        auto assembler = this->get_assembler();
+        assembler->set_cursor(root);
+        auto filtered = assembler->filter_nodes(assembler->gather_right());
+        return assembler->build_right_kmers(filtered, root);
+    }
+
+    pair<vector<kmer_t>, vector<kmer_t>> neighbors(const string& root) {
+        auto assembler = this->get_assembler();
+        assembler->set_cursor(root);
+        auto lfiltered = assembler->filter_nodes(assembler->gather_left());
+        auto rfiltered = assembler->filter_nodes(assembler->gather_right());
+        return make_pair(assembler->build_left_kmers(lfiltered, root),
+                         assembler->build_right_kmers(rfiltered, root));
+    }
+
     uint8_t ** get_raw() const {
         return S.get_raw_tables();
     }
