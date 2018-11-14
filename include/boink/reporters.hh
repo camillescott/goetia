@@ -174,13 +174,13 @@ public:
     {
         _cerr(this->THREAD_NAME << " reporting continuously.");
 
-        this->msg_type_whitelist.insert(boink::event_types::MSG_DAG_NEW);
-        this->msg_type_whitelist.insert(boink::event_types::MSG_DAG_SPLIT);
-        this->msg_type_whitelist.insert(boink::event_types::MSG_DAG_SPLIT_CIRCULAR);
-        this->msg_type_whitelist.insert(boink::event_types::MSG_DAG_MERGE);
-        this->msg_type_whitelist.insert(boink::event_types::MSG_DAG_EXTEND);
-        this->msg_type_whitelist.insert(boink::event_types::MSG_DAG_CLIP);
-        this->msg_type_whitelist.insert(boink::event_types::MSG_DAG_DELETE);
+        this->msg_type_whitelist.insert(boink::event_types::MSG_HISTORY_NEW);
+        this->msg_type_whitelist.insert(boink::event_types::MSG_HISTORY_SPLIT);
+        this->msg_type_whitelist.insert(boink::event_types::MSG_HISTORY_SPLIT_CIRCULAR);
+        this->msg_type_whitelist.insert(boink::event_types::MSG_HISTORY_MERGE);
+        this->msg_type_whitelist.insert(boink::event_types::MSG_HISTORY_EXTEND);
+        this->msg_type_whitelist.insert(boink::event_types::MSG_HISTORY_CLIP);
+        this->msg_type_whitelist.insert(boink::event_types::MSG_HISTORY_DELETE);
 
         _output_stream << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                           "<graphml xmlns=\"http://graphml.graphdrawing.org/xmlns\" "
@@ -235,12 +235,12 @@ public:
     }
 
     virtual void handle_msg(shared_ptr<Event> event) {
-        if (event->msg_type == boink::event_types::MSG_DAG_NEW) {
-            auto _event = static_cast<DAGNewEvent*>(event.get());
+        if (event->msg_type == boink::event_types::MSG_HISTORY_NEW) {
+            auto _event = static_cast<HistoryNewEvent*>(event.get());
             add_new_node(_event->id, _event->meta, _event->sequence);
 
-        } else if (event->msg_type == boink::event_types::MSG_DAG_SPLIT) {
-            auto _event = static_cast<DAGSplitEvent*>(event.get());
+        } else if (event->msg_type == boink::event_types::MSG_HISTORY_SPLIT) {
+            auto _event = static_cast<HistorySplitEvent*>(event.get());
             
             string parent_id = node_history[_event->parent].back();
             string lid, rid;
@@ -254,8 +254,8 @@ public:
             write_edge(parent_id, lid, string("SPLIT"));
             write_edge(parent_id, rid, string("SPLIT"));
 
-        } else if (event->msg_type == boink::event_types::MSG_DAG_MERGE) {
-            auto _event = static_cast<DAGMergeEvent*>(event.get());
+        } else if (event->msg_type == boink::event_types::MSG_HISTORY_MERGE) {
+            auto _event = static_cast<HistoryMergeEvent*>(event.get());
 
             string l_parent_id = node_history[_event->lparent].back();
             string r_parent_id = node_history[_event->rparent].back();
@@ -264,22 +264,22 @@ public:
             write_edge(l_parent_id, child_id, string("MERGE"));
             write_edge(r_parent_id, child_id, string("MERGE"));
 
-        } else if (event->msg_type == boink::event_types::MSG_DAG_EXTEND) {
-            auto _event = static_cast<DAGExtendEvent*>(event.get());
+        } else if (event->msg_type == boink::event_types::MSG_HISTORY_EXTEND) {
+            auto _event = static_cast<HistoryExtendEvent*>(event.get());
 
             string src = node_history[_event->id].back();
             string dst = add_node_edit(_event->id, _event->meta, _event->sequence);
             write_edge(src, dst, string("EXTEND"));
 
-        } else if (event->msg_type == boink::event_types::MSG_DAG_CLIP) {
-            auto _event = static_cast<DAGClipEvent*>(event.get());
+        } else if (event->msg_type == boink::event_types::MSG_HISTORY_CLIP) {
+            auto _event = static_cast<HistoryClipEvent*>(event.get());
 
             string src = node_history[_event->id].back();
             string dst = add_node_edit(_event->id, _event->meta, _event->sequence);
             write_edge(src, dst, string("CLIP"));
 
-        } else if (event->msg_type == boink::event_types::MSG_DAG_SPLIT_CIRCULAR) {
-            auto _event = static_cast<DAGSplitCircularEvent*>(event.get());
+        } else if (event->msg_type == boink::event_types::MSG_HISTORY_SPLIT_CIRCULAR) {
+            auto _event = static_cast<HistorySplitCircularEvent*>(event.get());
 
             string src = node_history[_event->id].back();
             string dst = add_node_edit(_event->id, _event->meta, _event->sequence);

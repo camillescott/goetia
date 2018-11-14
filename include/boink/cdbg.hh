@@ -583,7 +583,7 @@ public:
         recompute_node_meta(unode_ptr);
         meta_counter.increment(unode_ptr->meta());
 
-        notify_dag_new(id, unode_ptr->sequence, unode_ptr->meta());
+        notify_history_new(id, unode_ptr->sequence, unode_ptr->meta());
         pdebug("BUILD_UNODE complete: " << *unode_ptr);
 
         return unode_ptr;
@@ -654,7 +654,7 @@ public:
             meta_counter.decrement(unode->meta());
             recompute_node_meta(unode);
 
-            notify_dag_clip(unode->node_id, unode->sequence, unode->meta());
+            notify_history_clip(unode->node_id, unode->sequence, unode->meta());
             pdebug("CLIP complete: " << *unode);
         } else {
             unode->sequence = unode->sequence.substr(0, unode->sequence.length() - 1);
@@ -663,7 +663,7 @@ public:
             meta_counter.decrement(unode->meta());
             recompute_node_meta(unode);
 
-            notify_dag_clip(unode->node_id, unode->sequence, unode->meta());
+            notify_history_clip(unode->node_id, unode->sequence, unode->meta());
             pdebug("CLIP complete: " << *unode);
         }
 
@@ -712,7 +712,7 @@ public:
         recompute_node_meta(unode);
         ++_n_updates;
 
-        notify_dag_extend(unode->node_id, unode->sequence, unode->meta());
+        notify_history_extend(unode->node_id, unode->sequence, unode->meta());
         pdebug("EXTEND complete: " << *unode);
     }
 
@@ -749,7 +749,7 @@ public:
                 meta_counter.increment(FULL);
                 ++_n_updates;
 
-                notify_dag_split_circular(unode->node_id, unode->sequence, unode->meta());
+                notify_history_split_circular(unode->node_id, unode->sequence, unode->meta());
                 pdebug("SPLIT complete (CIRCULAR): " << *unode);
                 return;
 
@@ -778,7 +778,7 @@ public:
                                     new_left_end,
                                     right_unode_right_end);
 
-        notify_dag_split(unode->node_id, unode->node_id, new_node->node_id,
+        notify_history_split(unode->node_id, unode->node_id, new_node->node_id,
                          unode->sequence, new_node->sequence,
                          unode->meta(), new_node->meta());
         pdebug("SPLIT complete: " << std::endl << *unode << std::endl << *new_node);
@@ -859,7 +859,7 @@ public:
 
         }
         
-        notify_dag_merge(left_unode->node_id, rid,
+        notify_history_merge(left_unode->node_id, rid,
                          left_unode->node_id,
                          left_unode->sequence,
                          left_unode->meta());
@@ -965,17 +965,17 @@ public:
         }
     }
 
-    void notify_dag_new(id_t id, string& sequence, node_meta_t meta) {
-        auto event = make_shared<DAGNewEvent>();
+    void notify_history_new(id_t id, string& sequence, node_meta_t meta) {
+        auto event = make_shared<HistoryNewEvent>();
         event->id = id;
         event->sequence = sequence;
         event->meta = meta;
         this->notify(event);
     }
 
-    void notify_dag_merge(id_t lparent, id_t rparent, id_t child,
+    void notify_history_merge(id_t lparent, id_t rparent, id_t child,
                           string& sequence, node_meta_t meta) {
-        auto event = make_shared<DAGMergeEvent>();
+        auto event = make_shared<HistoryMergeEvent>();
         event->lparent = lparent;
         event->rparent = rparent;
         event->child = child;
@@ -984,26 +984,26 @@ public:
         this->notify(event);
     }
 
-    void notify_dag_extend(id_t id, string& sequence, node_meta_t meta) {
-        auto event = make_shared<DAGExtendEvent>();
+    void notify_history_extend(id_t id, string& sequence, node_meta_t meta) {
+        auto event = make_shared<HistoryExtendEvent>();
         event->id = id;
         event->sequence = sequence;
         event->meta = meta;
         this->notify(event);
     }
 
-    void notify_dag_clip(id_t id, string& sequence, node_meta_t meta) {
-        auto event = make_shared<DAGClipEvent>();
+    void notify_history_clip(id_t id, string& sequence, node_meta_t meta) {
+        auto event = make_shared<HistoryClipEvent>();
         event->id = id;
         event->sequence = sequence;
         event->meta = meta;
         this->notify(event);
     }
 
-    void notify_dag_split(id_t parent, id_t lchild, id_t rchild,
+    void notify_history_split(id_t parent, id_t lchild, id_t rchild,
                           string& lsequence, string& rsequence,
                           node_meta_t lmeta, node_meta_t rmeta) {
-        auto event = make_shared<DAGSplitEvent>();
+        auto event = make_shared<HistorySplitEvent>();
         event->parent = parent;
         event->lchild = lchild;
         event->rchild = rchild;
@@ -1014,8 +1014,8 @@ public:
         this->notify(event);
     }
 
-    void notify_dag_split_circular(id_t id, string& sequence, node_meta_t meta) {
-        auto event = make_shared<DAGSplitCircularEvent>();
+    void notify_history_split_circular(id_t id, string& sequence, node_meta_t meta) {
+        auto event = make_shared<HistorySplitCircularEvent>();
         event->id = id;
         event->sequence = sequence;
         event->meta = meta;

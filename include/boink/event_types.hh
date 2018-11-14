@@ -19,6 +19,9 @@ using std::string;
 namespace boink {
 namespace event_types {
 
+/* All event types. 
+ */
+
 enum event_t {
     // EventListener control events
     MSG_EXIT_THREAD,
@@ -36,15 +39,19 @@ enum event_t {
     MSG_EXTEND_UNODE,
     MSG_MERGE_UNODES,
     MSG_INCR_DNODE_COUNT,
-    MSG_DAG_NEW,
-    MSG_DAG_SPLIT,
-    MSG_DAG_MERGE,
-    MSG_DAG_EXTEND,
-    MSG_DAG_CLIP,
-    MSG_DAG_SPLIT_CIRCULAR,
-    MSG_DAG_DELETE
+    MSG_HISTORY_NEW,
+    MSG_HISTORY_SPLIT,
+    MSG_HISTORY_MERGE,
+    MSG_HISTORY_EXTEND,
+    MSG_HISTORY_CLIP,
+    MSG_HISTORY_SPLIT_CIRCULAR,
+    MSG_HISTORY_DELETE
 };
 
+/* The base Event. All Events should inherit from
+ * this, as well as define an event_t.
+ *
+ */
 
 struct Event {
     Event(event_t msg_t)
@@ -55,9 +62,14 @@ struct Event {
     const event_t msg_type;
 };
 
-struct DAGNewEvent : public Event {
-    DAGNewEvent()
-        : Event(MSG_DAG_NEW)
+/* cDBG history events. These all encode the sequence of the new node,
+ * the parents (if necessary), the children (if necessary), and related node
+ * meta.
+ */
+
+struct HistoryNewEvent : public Event {
+    HistoryNewEvent()
+        : Event(MSG_HISTORY_NEW)
     {}
 
     string sequence;
@@ -66,9 +78,9 @@ struct DAGNewEvent : public Event {
 };
 
 
-struct DAGMergeEvent : public Event {
-    DAGMergeEvent()
-        : Event(MSG_DAG_MERGE)
+struct HistoryMergeEvent : public Event {
+    HistoryMergeEvent()
+        : Event(MSG_HISTORY_MERGE)
     {}
 
     string sequence;
@@ -77,9 +89,9 @@ struct DAGMergeEvent : public Event {
 };
 
 
-struct DAGExtendEvent : public Event {
-    DAGExtendEvent()
-        : Event(MSG_DAG_EXTEND)
+struct HistoryExtendEvent : public Event {
+    HistoryExtendEvent()
+        : Event(MSG_HISTORY_EXTEND)
     {}
 
     id_t id;
@@ -88,9 +100,9 @@ struct DAGExtendEvent : public Event {
 };
 
 
-struct DAGDeleteEvent : public Event {
-    DAGDeleteEvent()
-        : Event(MSG_DAG_DELETE)
+struct HistoryDeleteEvent : public Event {
+    HistoryDeleteEvent()
+        : Event(MSG_HISTORY_DELETE)
     {}
 
     id_t id;
@@ -98,9 +110,9 @@ struct DAGDeleteEvent : public Event {
 };
 
 
-struct DAGClipEvent : public Event {
-    DAGClipEvent()
-        : Event(MSG_DAG_CLIP)
+struct HistoryClipEvent : public Event {
+    HistoryClipEvent()
+        : Event(MSG_HISTORY_CLIP)
     {}
 
     id_t id;
@@ -109,9 +121,9 @@ struct DAGClipEvent : public Event {
 };
 
 
-struct DAGSplitEvent : public Event {
-    DAGSplitEvent()
-        : Event(MSG_DAG_SPLIT)
+struct HistorySplitEvent : public Event {
+    HistorySplitEvent()
+        : Event(MSG_HISTORY_SPLIT)
     {}
 
     id_t parent, lchild, rchild;
@@ -120,9 +132,9 @@ struct DAGSplitEvent : public Event {
 };
 
 
-struct DAGSplitCircularEvent : public Event {
-    DAGSplitCircularEvent ()
-        : Event(MSG_DAG_SPLIT_CIRCULAR)
+struct HistorySplitCircularEvent : public Event {
+    HistorySplitCircularEvent ()
+        : Event(MSG_HISTORY_SPLIT_CIRCULAR)
     {}
 
     id_t id;
@@ -130,6 +142,9 @@ struct DAGSplitCircularEvent : public Event {
     node_meta_t meta;
 };
 
+/* Used for output timekeeping.
+ *
+ */
 
 struct TimeIntervalEvent : public Event {
     TimeIntervalEvent()
@@ -146,73 +161,6 @@ struct TimeIntervalEvent : public Event {
     interval_level_t level;
     uint64_t t;
 };
-
-
-struct BuildDNodeEvent : public Event {
-    BuildDNodeEvent()
-        : Event(MSG_ADD_DNODE)
-    {}
-    hash_t hash;
-    string kmer;
-};
-
-
-struct BuildUNodeEvent : public Event {
-    BuildUNodeEvent()
-        : Event(MSG_ADD_UNODE)
-    {}
-    HashVector tags;
-    hash_t left_end;
-    hash_t right_end;
-    string sequence;
-};
-
-
-struct DeleteUNodeEvent : public Event {
-    DeleteUNodeEvent()
-        : Event(MSG_DELETE_UNODE)
-    {}
-    id_t node_id;
-};
-
-
-struct IncrDNodeEvent : public Event {
-    IncrDNodeEvent()
-        : Event(MSG_INCR_DNODE_COUNT)
-    {}
-    hash_t dnode;
-};
-
-
-struct ExtendUNodeEvent : public Event {
-    ExtendUNodeEvent()
-        : Event(MSG_EXTEND_UNODE)
-    {}
-    hash_t tip_hash;
-    string new_sequence;
-    direction_t from;
-};
-
-
-struct MergeUNodeEvent : public Event {
-    MergeUNodeEvent()
-        : Event(MSG_MERGE_UNODES)
-    {}
-    hash_t left_tip;
-    hash_t right_tip;
-    string new_sequence;
-};
-
-
-struct SplitUNodeEvent : public Event {
-    SplitUNodeEvent()
-        : Event(MSG_SPLIT_UNODE)
-    {}
-
-    hash_t tag;
-    size_t split_at;
-};
-
 
 }
 }
