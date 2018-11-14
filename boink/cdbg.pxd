@@ -9,8 +9,6 @@ cimport cython
 from libcpp.list cimport list as stdlist
 from libcpp.memory cimport unique_ptr
 from libcpp.pair cimport pair
-from libcpp.unordered_set cimport unordered_set as uset
-from libcpp.unordered_map cimport unordered_map as umap
 from libcpp.set cimport set
 from libcpp.vector cimport vector
 from libc.stdint cimport uint8_t, uint32_t, uint64_t
@@ -22,6 +20,8 @@ from boink.dbg cimport *
 from boink.minimizers cimport _InteriorMinimizer
 from boink.events cimport (_StreamingCompactorReport, _EventNotifier,
                            _EventListener, EventNotifier, EventListener)
+
+from boink.sparsepp cimport sparse_hash_set, sparse_hash_map
 
 cdef extern from "boink/cdbg.hh":
     cdef uint64_t NULL_ID
@@ -84,10 +84,12 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
     ctypedef _UnitigNode * UnitigNodePtr
     
     cdef cppclass _cDBG "boink::cDBG" [GraphType] (_KmerClient, _EventNotifier):
-        #ctypedef umap[hash_t,unique_ptr[_DecisionNode]].const_iterator dnode_iter_t
-        #ctypedef umap[id_t,unique_ptr[_UnitigNode]].const_iterator unode_iter_t
+        ctypedef sparse_hash_map[hash_t,unique_ptr[_DecisionNode]].const_iterator dnode_iter_t
+        ctypedef sparse_hash_map[id_t,unique_ptr[_UnitigNode]].const_iterator unode_iter_t
 
         _cDBG(uint16_t K)
+
+        GraphType * get_dbg()
 
         uint64_t n_updates() const
         uint64_t n_unitig_nodes() const
@@ -95,18 +97,20 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
         uint64_t n_tags() const
         uint64_t n_unitig_ends() const
 
-        #unode_iter_t unodes_begin() const
-        #unode_iter_t unodes_end() const
-        #dnode_iter_t dnodes_begin() const
-        #dnode_iter_t dnodes_end() const
+        unode_iter_t unodes_begin() const
+        unode_iter_t unodes_end() const
+        dnode_iter_t dnodes_begin() const
+        dnode_iter_t dnodes_end() const
 
         _DecisionNode * query_dnode(hash_t)
         bool has_dnode(hash_t)
         vector[_DecisionNode*] query_dnodes(const string&) except +ValueError
+        pair[vector[UnitigNodePtr], vector[UnitigNodePtr]] find_dnode_neighbors(_DecisionNode *)
 
         _UnitigNode * query_unode_tag(hash_t)
         _UnitigNode * query_unode_end(hash_t)
         _UnitigNode * query_unode_id(id_t)
+        pair[DecisionNodePtr, DecisionNodePtr] find_unode_neighbors(_UnitigNode*)
     
         void validate(const string&) except+ OSError
         void write(const string&, cDBGFormat) except +OSError
