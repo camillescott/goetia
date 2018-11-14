@@ -930,6 +930,14 @@ public:
         return std::make_pair(left, right);
     }
 
+    CompactNode* query_cnode(hash_t hash) {
+        CompactNode * node = query_unode_end(hash);
+        if (node == nullptr) {
+            node = query_dnode(hash);
+        }
+        return node;
+    }
+
     void delete_unode(UnitigNode * unode) {
         if (unode != nullptr) {
             pdebug("Deleting " << *unode);
@@ -1132,10 +1140,7 @@ public:
             auto neighbors = dbg->neighbors(it->second->sequence);
 
             for (auto in_neighbor : neighbors.first) {
-                CompactNode * in_node = query_unode_end(in_neighbor.hash);
-                if (in_node == nullptr) {
-                    in_node = query_dnode(in_neighbor.hash);
-                }
+                CompactNode * in_node = query_cnode(in_neighbor.hash);
                 if (in_node == nullptr) {
                     throw BoinkException("No cDBG neighbor matching dBG neighbor.");
                 }
@@ -1157,10 +1162,7 @@ public:
                 gfa.add_link(in_node->get_name(), l);
             }
             for (auto out_neighbor : neighbors.second) {
-                CompactNode * out_node = query_unode_end(out_neighbor.hash);
-                if (out_node == nullptr) {
-                    out_node = query_dnode(out_neighbor.hash);
-                }
+                CompactNode * out_node = query_cnode(out_neighbor.hash);
                 if (out_node == nullptr) {
                     throw BoinkException("No cDBG neighbor matching dBG neighbor.");
                 }
