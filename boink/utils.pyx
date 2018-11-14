@@ -31,3 +31,14 @@ cdef unicode _ustring(s):
         return unicode(s)
     else:
         raise TypeError(...)
+
+
+cpdef bool is_str(object s):
+    return isinstance(s, (basestring, bytes))
+
+
+cpdef bool is_num(object n):
+    return isinstance(n, (int, long))
+
+
+
