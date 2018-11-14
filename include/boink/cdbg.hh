@@ -426,6 +426,10 @@ public:
      * (the caller will need to lock).
      */
 
+    GraphType * get_dbg() {
+        return dbg;
+    }
+
     dnode_map_t::const_iterator dnodes_begin() const {
         return decision_nodes.cbegin();
     }

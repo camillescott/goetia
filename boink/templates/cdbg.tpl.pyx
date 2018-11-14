@@ -8,6 +8,8 @@
 {% extends "base.tpl" %}
 {% block code %}
 
+from boink.utils cimport is_num
+
 cdef class cDBG_Base:
 
     SAVE_FORMATS = ['graphml', 'edgelist',
@@ -45,7 +47,7 @@ cdef class cDBG_{{type_bundle.suffix}}(cDBG_Base):
         cdbg.storage_type = "{{type_bundle.storage_type}}"
         cdbg.shifter_type = "{{type_bundle.shifter_type}}"
         return cdbg
-    '''
+    
     def unodes(self):
         cdef _cDBG[_dBG[{{type_bundle.params}}]].unode_iter_t it = \
                 deref(self._this).unodes_begin()
@@ -64,7 +66,7 @@ cdef class cDBG_{{type_bundle.suffix}}(cDBG_Base):
             dnode = deref(it).second.get()
             yield DecisionNodeView._wrap(dnode)
             princ(it)
-    '''
+    
 
     def query_unode_hash(self, hash_t h):
         cdef _UnitigNode * _node = deref(self._this).query_unode_tag(h)
@@ -88,6 +90,30 @@ cdef class cDBG_{{type_bundle.suffix}}(cDBG_Base):
             return UnitigNodeView._wrap(_node)
         else:
             return None
+
+    def find_unode_neighbors(self, object unode):
+        cdef pair[DecisionNodePtr, DecisionNodePtr] result
+        cdef UnitigNodePtr root
+        if isinstance(unode, UnitigNodeView):
+            root = (<UnitigNodeView>unode)._un_this
+        elif isinstance(unode, UnitigNode):
+            root = deref(self._this).query_unode_id(unode.node_id)
+        elif is_num(unode):
+            root = deref(self._this).query_unode_id(unode)
+        else:
+            raise TypeError('Expected UnitigNode (or View), or node id.')
+
+        if root == NULL:
+            raise ValueError('Associated UnitigNode does not exist.')
+        
+        result = deref(self._this).find_unode_neighbors(root)
+        left, right = None, None
+        if result.first != NULL:
+            left = DecisionNodeView._wrap(result.first)
+        if result.second != NULL:
+            right = DecisionNodeView._wrap(result.second)
+
+        return left, right
     
     def query_dnode(self, hash_t h):
         cdef _DecisionNode * _node = \
@@ -99,6 +125,51 @@ cdef class cDBG_{{type_bundle.suffix}}(cDBG_Base):
 
     def has_dnode(self, hash_t h):
         return deref(self._this).has_dnode(h)
+
+    def find_dnode_neighbors(self, object dnode):
+        cdef pair[vector[UnitigNodePtr], vector[UnitigNodePtr]] result
+        cdef DecisionNodePtr root
+
+        if isinstance(dnode, DecisionNodeView):
+            root = (<DecisionNodeView>dnode)._dn_this
+        elif isinstance(dnode, DecisionNode):
+            root = deref(self._this).query_dnode(<hash_t>dnode.node_id)
+        elif is_num(dnode):
+            root = deref(self._this).query_dnode(dnode)
+        else:
+            raise TypeError('Expected DecisionNode (or View), or hash.')
+
+        cdef pair[vector[kmer_t], vector[kmer_t]] neighbors = deref(deref(self._this).get_dbg())\
+                                                              .neighbors(deref(root).sequence)
+        cdef list left_neighbors = []
+        cdef list right_neighbors = []
+        cdef UnitigNodePtr neighbor_unode
+        cdef DecisionNodePtr neighbor_dnode
+
+        for i in range(neighbors.first.size()):
+            neighbor_unode = NULL
+            neighbor_unode = deref(self._this).query_unode_end(neighbors.first[i].hash)
+            if neighbor_unode != NULL:
+                left_neighbors.append(UnitigNodeView._wrap(neighbor_unode))
+            else:
+                neighbor_dnode = NULL
+                neighbor_dnode = deref(self._this).query_dnode(neighbors.first[i].hash)
+                if neighbor_dnode != NULL:
+                    left_neighbors.append(DecisionNodeView._wrap(neighbor_dnode))
+
+        for i in range(neighbors.second.size()):
+            neighbor_unode = NULL
+            neighbor_unode = deref(self._this).query_unode_end(neighbors.second[i].hash)
+            if neighbor_unode != NULL:
+                right_neighbors.append(UnitigNodeView._wrap(neighbor_unode))
+            else:
+                neighbor_dnode = NULL
+                neighbor_dnode = deref(self._this).query_dnode(neighbors.second[i].hash)
+                if neighbor_dnode != NULL:
+                    right_neighbors.append(DecisionNodeView._wrap(neighbor_dnode))
+
+        return left_neighbors, right_neighbors
+
 
     def query_dnodes(self, str sequence):
         pass
