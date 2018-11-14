@@ -102,7 +102,8 @@ enum node_meta_t {
     ISLAND,
     CIRCULAR,
     LOOP,
-    TRIVIAL
+    TRIVIAL,
+    DECISION
 };
 
 inline const char * node_meta_repr(node_meta_t meta) {

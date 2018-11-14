@@ -52,9 +52,10 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
         const id_t node_id
         string sequence
 
-        _CompactNode(id_t, string)
+        _CompactNode(id_t, string, node_meta_t)
         
         string revcomp()
+        node_meta_t meta()
 
         bool operator==(const _CompactNode&, const _CompactNode&)
 
@@ -73,7 +74,6 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
         
         hash_t left_end()
         hash_t right_end()
-        node_meta_t meta()
 
         string repr()
 

@@ -143,7 +143,7 @@ struct node_meta_counter {
     }
 
     string header() const {
-        return string("full,tip,island,circular,trivial,loop");
+        return string("n_full,n_tips,n_islands,n_circular,n_trivial,n_loops");
     }
 
     friend std::ostream& operator<<(std::ostream& o, const node_meta_counter& c);
@@ -158,12 +158,24 @@ std::ostream& operator<<(std::ostream& o, const node_meta_counter& c) {
 
 
 class CompactNode {
+
+protected:
+
+    node_meta_t _meta;
+
 public:
+
     const id_t node_id;
     string sequence;
     
-    CompactNode(id_t node_id, const string& sequence) :
-        node_id(node_id), sequence(sequence) {}
+    CompactNode(id_t node_id,
+                const string& sequence,
+                node_meta_t meta)
+        : _meta(meta),
+          node_id(node_id),
+          sequence(sequence)
+    {
+    }
 
     string revcomp() const {
         return _revcomp(sequence);
@@ -171,6 +183,10 @@ public:
 
     size_t length() const {
         return sequence.length();
+    }
+
+    const node_meta_t meta() const {
+        return _meta;
     }
 
     friend bool operator== (const CompactNode& lhs, const CompactNode& rhs) {
@@ -195,13 +211,13 @@ protected:
 
 public:
 
-    DecisionNode(id_t node_id, const string& sequence) :
-        CompactNode(node_id, sequence),
-        _dirty(true),
-        _left_degree(0),
-        _right_degree(0),
-        _count(1) {
-        
+    DecisionNode(id_t node_id, const string& sequence)
+        : CompactNode(node_id, sequence, DECISION),
+          _dirty(true),
+          _left_degree(0),
+          _right_degree(0),
+          _count(1)
+    {    
     }
 
     const bool is_dirty() const {
@@ -266,7 +282,6 @@ class UnitigNode : public CompactNode {
 protected:
 
     hash_t _left_end, _right_end;
-    node_meta_t _meta;
 
 public:
 
@@ -276,13 +291,9 @@ public:
                hash_t left_end,
                hash_t right_end,
                const string& sequence)
-        : CompactNode(node_id, sequence),
+        : CompactNode(node_id, sequence, ISLAND),
           _left_end(left_end),
           _right_end(right_end) { 
-    }
-
-    const node_meta_t meta() const {
-        return _meta;
     }
 
     void set_node_meta(node_meta_t new_meta) {
@@ -399,10 +410,9 @@ protected:
     // Current number of Unitigs
     uint64_t _n_unitig_nodes;
 
-public:
-
-    // Container for cDBG metadata
     node_meta_counter meta_counter;
+
+public:
 
     cDBG(GraphType * dbg,
          uint64_t minimizer_window_size=8)
@@ -411,7 +421,25 @@ public:
           dbg(dbg),
           _n_updates(0),
           _unitig_id_counter(UNITIG_START_ID),
-          _n_unitig_nodes(0) {}
+          _n_unitig_nodes(0)
+    {
+        /*
+        counter_keys = { "N_FULL",
+                         "N_TIPS",
+                         "N_ISLANDS",
+                         "N_CIRCULAR",
+                         "N_TRIVIAL",
+                         "N_LOOPS",
+                         "N_UPDATES",
+                         "N_MERGES",
+                         "N_SPLITS",
+                         "N_EXTENDS",
+                         "N_CLIPS",
+                         "N_BUILDS",
+                         "N_DELETES" }
+        meta_counter.register_counters(counter_keys);
+        */
+    }
 
     std::unique_lock<std::mutex> lock_dnodes() {
         return std::unique_lock<std::mutex>(dnode_mutex);
@@ -483,6 +511,7 @@ public:
                                    std::move(make_unique<DecisionNode>(hash, kmer)));
                     //make_pair(hash, std::move(dnode_ptr)));
             dnode = query_dnode(hash);
+            notify_history_new(dnode->node_id, dnode->sequence, dnode->meta());
             pdebug("BUILD_DNODE complete: " << *dnode);
         } else {
             pdebug("BUILD_DNODE: d-node for " << hash << " already exists.");
@@ -569,7 +598,6 @@ public:
         _n_unitig_nodes++;
         _n_updates++;
 
-
         // Link up its new tags
         unode_ptr->tags.insert(std::end(unode_ptr->tags),
                                std::begin(tags),
@@ -580,8 +608,9 @@ public:
         unitig_end_map.insert(make_pair(left_end, unode_ptr));
         unitig_end_map.insert(make_pair(right_end, unode_ptr));
 
-        recompute_node_meta(unode_ptr);
-        meta_counter.increment(unode_ptr->meta());
+        auto unode_meta = recompute_node_meta(unode_ptr);
+        meta_counter.increment(unode_meta);
+        unode_ptr->set_node_meta(unode_meta);
 
         notify_history_new(id, unode_ptr->sequence, unode_ptr->meta());
         pdebug("BUILD_UNODE complete: " << *unode_ptr);
@@ -589,30 +618,28 @@ public:
         return unode_ptr;
     }
 
-    void recompute_node_meta(UnitigNode * unode) {
+    node_meta_t recompute_node_meta(UnitigNode * unode) {
         pdebug("Recompute node meta for " << unode->node_id);
         if (unode->sequence.size() == this->_K) {
-            unode->set_node_meta(TRIVIAL);
+            return TRIVIAL;
         } else if (unode->left_end() == unode->right_end()) {
-            unode->set_node_meta(CIRCULAR);
+            return CIRCULAR;
         } else {
             auto neighbors = find_unode_neighbors(unode);
             if (neighbors.first == neighbors.second) {
                 if (neighbors.first == nullptr) {
-                    unode->set_node_meta(ISLAND);
+                    return ISLAND;
                 } else {
-                    unode->set_node_meta(LOOP);
+                    return LOOP;
                 }
             } else {
                 if (neighbors.first == nullptr || neighbors.second == nullptr) {
-                    unode->set_node_meta(TIP);
+                    return TIP;
                 } else {
-                    unode->set_node_meta(FULL);
+                    return FULL;
                 }
             }
         }
-        pdebug("New meta type is " << node_meta_repr(unode->meta()));
-        meta_counter.increment(unode->meta());
     }
 
     UnitigNode * switch_unode_ends(hash_t old_unode_end,
@@ -645,6 +672,7 @@ public:
                " and swap " << old_unode_end << " to " << new_unode_end);
 
         if (unode->sequence.length() == this->_K) {
+            meta_counter.decrement(unode->meta());
             delete_unode(unode);
             pdebug("CLIP complete: deleted null unode.");
         } else if (clip_from == DIR_LEFT) {
@@ -652,7 +680,9 @@ public:
             unode->set_left_end(new_unode_end);
 
             meta_counter.decrement(unode->meta());
-            recompute_node_meta(unode);
+            auto meta = recompute_node_meta(unode);
+            meta_counter.increment(meta);
+            unode->set_node_meta(meta);
 
             notify_history_clip(unode->node_id, unode->sequence, unode->meta());
             pdebug("CLIP complete: " << *unode);
@@ -661,7 +691,9 @@ public:
             unode->set_right_end(new_unode_end);
 
             meta_counter.decrement(unode->meta());
-            recompute_node_meta(unode);
+            auto meta = recompute_node_meta(unode);
+            meta_counter.increment(meta);
+            unode->set_node_meta(meta);
 
             notify_history_clip(unode->node_id, unode->sequence, unode->meta());
             pdebug("CLIP complete: " << *unode);
@@ -709,7 +741,9 @@ public:
         }
 
         meta_counter.decrement(unode->meta());
-        recompute_node_meta(unode);
+        auto meta = recompute_node_meta(unode);
+        meta_counter.increment(meta);
+        unode->set_node_meta(meta);
         ++_n_updates;
 
         notify_history_extend(unode->node_id, unode->sequence, unode->meta());
@@ -744,6 +778,7 @@ public:
 
                 unode->set_left_end(new_left_end);
                 unode->set_right_end(new_right_end);
+
                 unode->set_node_meta(FULL);
                 meta_counter.decrement(CIRCULAR);
                 meta_counter.increment(FULL);
@@ -768,7 +803,9 @@ public:
             unode->sequence = unode->sequence.substr(0, split_at + this->_K - 1);
             
             meta_counter.decrement(unode->meta());
-            recompute_node_meta(unode);
+            auto meta = recompute_node_meta(unode);
+            meta_counter.increment(meta);
+            unode->set_node_meta(meta);
             ++_n_updates;
         }
 
