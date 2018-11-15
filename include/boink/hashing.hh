@@ -323,11 +323,10 @@ public:
         KmerClient(K), _seq(seq), 
         index(0), _initialized(false), _shifter_owner(true) {
 
-        shifter = new ShifterType(seq, K);
-
         if (_seq.length() < _K) {
             throw BoinkException("Sequence must have length >= K");
         }
+        shifter = new ShifterType(seq, K);
     }
 
     KmerIterator(const std::string& seq, ShifterType * shifter) :
