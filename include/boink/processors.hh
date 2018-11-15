@@ -359,11 +359,13 @@ public:
         } catch (SequenceLengthException &e) {
             std::cerr << "NOTE: Skipped sequence that was too short: read "
                       << this->_n_reads << " with sequence "
-                      << read.cleaned_seq << " of length " << read.cleaned_seq.size()
+                      << read.cleaned_seq 
                       << std::endl;
             return;
         } catch (std::exception &e) {
-            std::cerr << "ERROR: Exception thrown at " << this->_n_reads << std::endl;
+            std::cerr << "ERROR: Exception thrown at " << this->_n_reads 
+                      << " with msg: " << e.what()
+                      <<  std::endl;
             throw e;
         }
     }

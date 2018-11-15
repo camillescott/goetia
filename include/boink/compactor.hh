@@ -578,7 +578,7 @@ public:
 
         set<hash_t> processed;
         size_t n_attempts = 0;
-        size_t max_attempts = 2 * induced_decision_kmer_hashes.size();
+        size_t max_attempts = 4 * induced_decision_kmer_hashes.size();
         while (induced_decision_kmers.size() > 0) {
             pdebug(induced_decision_kmers.size() << " more splits to attempt...");
             n_attempts++;

@@ -324,7 +324,7 @@ public:
         index(0), _initialized(false), _shifter_owner(true) {
 
         if (_seq.length() < _K) {
-            throw BoinkException("Sequence must have length >= K");
+            throw SequenceLengthException("Sequence must have length >= K");
         }
         shifter = new ShifterType(seq, K);
     }
@@ -335,7 +335,7 @@ public:
         _shifter_owner(false), shifter(shifter) {
         
         if(_seq.length() < _K) {
-            throw BoinkException("Sequence must have length >= K");
+            throw SequenceLengthException("Sequence must have length >= K");
         }
 
         shifter->set_cursor(seq);
