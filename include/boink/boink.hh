@@ -160,7 +160,7 @@ std::ostream& operator<<(std::ostream& os, const Container<T,A>& v)
 
 class BoinkException : public std::exception {
 public:
-    explicit BoinkException(const std::string& msg = "Generic boink exception")
+    explicit BoinkException(const std::string& msg = "Generic boink exception.")
         : _msg(msg) { }
 
     virtual ~BoinkException() throw() { }
@@ -175,10 +175,25 @@ protected:
 
 class InvalidCharacterException : public std::exception {
 public:
-    explicit InvalidCharacterException(const std::string& msg = "Invalid character encountered")
+    explicit InvalidCharacterException(const std::string& msg = "Invalid character encountered.")
         : _msg(msg) { }
 
     virtual ~InvalidCharacterException() throw() { }
+    virtual const char* what() const throw ()
+    {
+        return _msg.c_str();
+    }
+
+protected:
+    const std::string _msg;
+};
+
+class SequenceLengthException: public std::exception {
+public:
+    explicit SequenceLengthException(const std::string& msg = "Sequence was too short.")
+        : _msg(msg) { }
+
+    virtual ~SequenceLengthException() throw() { }
     virtual const char* what() const throw ()
     {
         return _msg.c_str();

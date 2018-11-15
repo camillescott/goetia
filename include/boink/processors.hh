@@ -356,6 +356,12 @@ public:
                       << read.cleaned_seq << ", exception was "
                       << e.what() << std::endl;
             return;
+        } catch (SequenceLengthException &e) {
+            std::cerr << "NOTE: Skipped sequence that was too short: read "
+                      << this->_n_reads << " with sequence "
+                      << read.cleaned_seq << " of length " << read.cleaned_seq.size()
+                      << std::endl;
+            return;
         } catch (std::exception &e) {
             std::cerr << "ERROR: Exception thrown at " << this->_n_reads << std::endl;
             throw e;
