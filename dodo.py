@@ -85,6 +85,8 @@ DEBUG        = get_var('DEBUG', DEBUG_CDBG or \
                                 DEBUG_ASMLY or \
                                 DEBUG_EVENTS)
 
+HEAP_PROFILE = get_var('HEAP_PROFILE', False)
+
 if DEBUG_ALL:
     DEBUG        = True
     DEBUG_CDBG   = True
@@ -148,6 +150,9 @@ if PROFILING:
         CXXFLAGS += ['-pg']
         CFLAGS   += ['-pg']
         LDFLAGS  += ['-pg']
+
+if HEAP_PROFILE:
+    LDFLAGS  += ['-ltcmalloc']
 
 if sys.platform == 'linux':
     LDFLAGS  += ['-pthread']
