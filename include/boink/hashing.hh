@@ -342,6 +342,12 @@ public:
         shifter->set_cursor(seq);
     }
 
+    ~KmerIterator() {
+        if (_shifter_owner) {
+            delete shifter;
+        }
+    }
+
     hash_t first() {
         _initialized = true;
 
