@@ -62,9 +62,13 @@ cdef extern from "boink/dbg.hh" namespace "boink" nogil:
         const string suffix(const string&)
         const string prefix(const string&)
 
-        vector[kmer_t] left_neighbors(const string&)
-        vector[kmer_t] right_neighbors(const string&)
-        pair[vector[kmer_t], vector[kmer_t]] neighbors(const string&)
+        vector[kmer_t] left_neighbor_kmers(const string&)
+        vector[kmer_t] right_neighbor_kmers(const string&)
+        pair[vector[kmer_t], vector[kmer_t]] neighbor_kmers(const string&)
+
+        vector[shift_t] left_neighbors(const string&)
+        vector[shift_t] right_neighbors(const string&)
+        pair[vector[shift_t], vector[shift_t]] neighbors(const string&)
 
         uint64_t add_sequence(string&,
                               vector[hash_t]&,

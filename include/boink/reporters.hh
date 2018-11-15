@@ -330,6 +330,70 @@ public:
 
 };
 
+
+class cDBGComponentReporter : public SingleFileReporter {
+private:
+
+    id_t _component_id_counter;
+
+    class WeakComponent {
+        public:
+
+            id_t component_id;
+            spp::sparse_hash_set<id_t> nodes;
+
+            WeakComponent(id_t id)
+                : component_id(id)
+            {
+            }
+
+    };
+
+    //spp::sparse_hash_map<id_t, unique_ptr<WeakComponent>> component_owner;
+    //spp::sparse_hash_map<id_t, *WeakComponent> node_component_map;
+
+
+public:
+
+    cDBGComponentReporter(const std::string& filename)
+        : SingleFileReporter(filename, "cDBGComponentReporter")
+    {
+        _cerr(this->THREAD_NAME << " reporting continuously.");
+
+        this->msg_type_whitelist.insert(boink::event_types::MSG_HISTORY_NEW);
+        this->msg_type_whitelist.insert(boink::event_types::MSG_HISTORY_SPLIT);
+        this->msg_type_whitelist.insert(boink::event_types::MSG_HISTORY_SPLIT_CIRCULAR);
+        this->msg_type_whitelist.insert(boink::event_types::MSG_HISTORY_MERGE);
+        this->msg_type_whitelist.insert(boink::event_types::MSG_HISTORY_EXTEND);
+        this->msg_type_whitelist.insert(boink::event_types::MSG_HISTORY_CLIP);
+        this->msg_type_whitelist.insert(boink::event_types::MSG_HISTORY_DELETE);
+
+    }
+
+    virtual void handle_msg(shared_ptr<Event> event) {
+        if (event->msg_type == boink::event_types::MSG_HISTORY_NEW) {
+            auto _event = static_cast<HistoryNewEvent*>(event.get());
+
+        } else if (event->msg_type == boink::event_types::MSG_HISTORY_SPLIT) {
+            auto _event = static_cast<HistorySplitEvent*>(event.get());
+
+        } else if (event->msg_type == boink::event_types::MSG_HISTORY_MERGE) {
+            auto _event = static_cast<HistoryMergeEvent*>(event.get());
+
+        } else if (event->msg_type == boink::event_types::MSG_HISTORY_EXTEND) {
+            auto _event = static_cast<HistoryExtendEvent*>(event.get());
+
+        } else if (event->msg_type == boink::event_types::MSG_HISTORY_CLIP) {
+            auto _event = static_cast<HistoryClipEvent*>(event.get());
+
+        } else if (event->msg_type == boink::event_types::MSG_HISTORY_SPLIT_CIRCULAR) {
+            auto _event = static_cast<HistorySplitCircularEvent*>(event.get());
+
+        }
+    }
+};
+
+
 }
 }
 

@@ -410,9 +410,9 @@ protected:
     // Current number of Unitigs
     uint64_t _n_unitig_nodes;
 
-    node_meta_counter meta_counter;
-
 public:
+
+    node_meta_counter meta_counter;
 
     cDBG(GraphType * dbg,
          uint64_t minimizer_window_size=8)
@@ -498,7 +498,8 @@ public:
         return unitig_end_map.size();
     }
 
-    DecisionNode* build_dnode(hash_t hash, const string& kmer) {
+    DecisionNode* build_dnode(hash_t hash,
+                              const string& kmer) {
         /* Build a new DecisionNode; or, if the given k-mer hash
          * already has a DecisionNode, do nothing.
          */
@@ -506,12 +507,13 @@ public:
         DecisionNode * dnode = query_dnode(hash);
         if (dnode == nullptr) {
             pdebug("BUILD_DNODE: " << hash << ", " << kmer);
-            //unique_ptr<DecisionNode> dnode_ptr = make_unique<DecisionNode>(hash, kmer);
             decision_nodes.emplace(hash,
                                    std::move(make_unique<DecisionNode>(hash, kmer)));
-                    //make_pair(hash, std::move(dnode_ptr)));
+            // the memory location changes after the move; get a fresh address
             dnode = query_dnode(hash);
-            notify_history_new(dnode->node_id, dnode->sequence, dnode->meta());
+            notify_history_new(dnode->node_id,
+                               dnode->sequence,
+                               dnode->meta());
             pdebug("BUILD_DNODE complete: " << *dnode);
         } else {
             pdebug("BUILD_DNODE: d-node for " << hash << " already exists.");
@@ -528,35 +530,32 @@ public:
         return false;   
     }
 
-    std::pair<std::vector<UnitigNode*>,
-              std::vector<UnitigNode*>> find_dnode_neighbors(DecisionNode* dnode) {
+    std::pair<std::vector<CompactNode*>,
+              std::vector<CompactNode*>> find_dnode_neighbors(DecisionNode* dnode) {
 
-        std::vector<UnitigNode*> left_unodes;
-        std::vector<UnitigNode*> right_unodes;
-        CompactorType compactor(dbg);
-        compactor.set_cursor(dnode->sequence);
+        std::vector<CompactNode*> left;
+        std::vector<CompactNode*> right;
+        auto neighbors = dbg->neighbors(dnode->sequence);
 
-        auto left_shifts = compactor.gather_left();
-        auto right_shifts = compactor.gather_right();
-
-        for (auto shift : left_shifts) {
-            UnitigNode * unode;
-            if ((unode = query_unode_end(shift.hash)) != nullptr) {
-                left_unodes.push_back(unode);
+        for (auto shift : neighbors.first) {
+            CompactNode * node = query_cnode(shift.hash);
+            if (node != nullptr) {
+                left.push_back(node);
             }
         }
 
-        for (auto shift : right_shifts) {
-            UnitigNode * unode;
-            if ((unode = query_unode_end(shift.hash)) != nullptr) {
-                right_unodes.push_back(unode);
+        for (auto shift : neighbors.second) {
+            CompactNode * node = query_cnode(shift.hash);
+            if (node != nullptr) {
+                right.push_back(node);
             }
         }
 
-        return make_pair(left_unodes, right_unodes);
+        return make_pair(left, right);
     }
 
     DecisionNode* query_dnode(hash_t hash) {
+
         auto search = decision_nodes.find(hash);
         if (search != decision_nodes.end()) {
             return search->second.get();
@@ -565,6 +564,7 @@ public:
     }
 
     vector<DecisionNode*> query_dnodes(const string& sequence) {
+
         KmerIterator<ShifterType> kmers(sequence, this->_K);
         vector<DecisionNode*> result;
         while(!kmers.done()) {
@@ -1174,13 +1174,9 @@ public:
 
         for (auto it = decision_nodes.begin(); it != decision_nodes.end(); ++it) {
             string root = it->second->get_name();
-            auto neighbors = dbg->neighbors(it->second->sequence);
+            auto neighbors = find_dnode_neighbors(it->second.get());
 
-            for (auto in_neighbor : neighbors.first) {
-                CompactNode * in_node = query_cnode(in_neighbor.hash);
-                if (in_node == nullptr) {
-                    throw BoinkException("No cDBG neighbor matching dBG neighbor.");
-                }
+            for (auto in_node : neighbors.first) {
 
                 gfak::link_elem l;
                 l.source_name = in_node->get_name();
@@ -1198,11 +1194,7 @@ public:
 
                 gfa.add_link(in_node->get_name(), l);
             }
-            for (auto out_neighbor : neighbors.second) {
-                CompactNode * out_node = query_cnode(out_neighbor.hash);
-                if (out_node == nullptr) {
-                    throw BoinkException("No cDBG neighbor matching dBG neighbor.");
-                }
+            for (auto out_node : neighbors.second) {
 
                 gfak::link_elem l;
                 l.source_name = root;

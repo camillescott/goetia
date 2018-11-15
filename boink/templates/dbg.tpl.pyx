@@ -71,7 +71,7 @@ cdef class dBG_{{type_bundle.suffix}}(dBG_Base):
 
     def neighbors(self, str root):
         cdef bytes _root = _bstring(root)
-        cdef pair[vector[kmer_t], vector[kmer_t]] result = deref(self._this).neighbors(_root)
+        cdef pair[vector[kmer_t], vector[kmer_t]] result = deref(self._this).neighbor_kmers(_root)
         
         cdef list left = []
         cdef list right = []

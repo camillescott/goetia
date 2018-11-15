@@ -120,6 +120,8 @@ inline const char * node_meta_repr(node_meta_t meta) {
             return "TRIVIAL";
         case LOOP:
             return "LOOP";
+        case DECISION:
+            return "DECISION";
         default:
             return "UNKNOWN";
     }

@@ -212,51 +212,28 @@ public:
         return result;
     }
 
-    vector<kmer_t> build_left_kmers(const vector<shift_t>& nodes,
-                                    const string& root) {
-        KmerVector kmers;
-        for (auto neighbor : nodes) {
-            kmers.push_back(kmer_t(neighbor.hash,
-                                   neighbor.symbol
-                                   + root.substr(0, this->_K-1)));
-        }
-        return kmers;
-    }
-
-    vector<kmer_t> build_right_kmers(const vector<shift_t>& nodes,
-                                     const string& root) {
-        KmerVector kmers;
-        for (auto neighbor : nodes) {
-            kmers.push_back(kmer_t(neighbor.hash,
-                                   root.substr(1, this->_K-1)
-                                   + neighbor.symbol));
-        }
-
-        return kmers;
-    }
-
     vector<kmer_t> find_left_kmers() {
         auto root = this->get_cursor();
         auto filtered = filter_nodes(this->gather_left());
-        return build_left_kmers(filtered, root);
+        return graph->build_left_kmers(filtered, root);
     }
 
     vector<kmer_t> find_right_kmers() {
         auto root = this->get_cursor();
         auto filtered = filter_nodes(this->gather_right());
-        return build_right_kmers(filtered, root);
+        return graph->build_right_kmers(filtered, root);
     }
 
     vector<kmer_t> find_left_kmers(std::set<hash_t>& extras) {
         auto root = this->get_cursor();
         auto filtered = filter_nodes(this->gather_left(), extras);
-        return build_left_kmers(filtered, root);
+        return graph->build_left_kmers(filtered, root);
     }
 
     vector<kmer_t> find_right_kmers(std::set<hash_t>& extras) {
         auto root = this->get_cursor();
         auto filtered = filter_nodes(this->gather_right(), extras);
-        return build_right_kmers(filtered, root);
+        return graph->build_right_kmers(filtered, root);
     }
 
     void assemble_left(const std::string& seed,

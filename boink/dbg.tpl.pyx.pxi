@@ -70,7 +70,7 @@ cdef class dBG__BitStorage__DefaultShifter(dBG_Base):
 
     def neighbors(self, str root):
         cdef bytes _root = _bstring(root)
-        cdef pair[vector[kmer_t], vector[kmer_t]] result = deref(self._this).neighbors(_root)
+        cdef pair[vector[kmer_t], vector[kmer_t]] result = deref(self._this).neighbor_kmers(_root)
         
         cdef list left = []
         cdef list right = []
@@ -189,7 +189,7 @@ cdef class dBG__ByteStorage__DefaultShifter(dBG_Base):
 
     def neighbors(self, str root):
         cdef bytes _root = _bstring(root)
-        cdef pair[vector[kmer_t], vector[kmer_t]] result = deref(self._this).neighbors(_root)
+        cdef pair[vector[kmer_t], vector[kmer_t]] result = deref(self._this).neighbor_kmers(_root)
         
         cdef list left = []
         cdef list right = []
@@ -308,7 +308,7 @@ cdef class dBG__NibbleStorage__DefaultShifter(dBG_Base):
 
     def neighbors(self, str root):
         cdef bytes _root = _bstring(root)
-        cdef pair[vector[kmer_t], vector[kmer_t]] result = deref(self._this).neighbors(_root)
+        cdef pair[vector[kmer_t], vector[kmer_t]] result = deref(self._this).neighbor_kmers(_root)
         
         cdef list left = []
         cdef list right = []
@@ -427,7 +427,7 @@ cdef class dBG__SparseppSetStorage__DefaultShifter(dBG_Base):
 
     def neighbors(self, str root):
         cdef bytes _root = _bstring(root)
-        cdef pair[vector[kmer_t], vector[kmer_t]] result = deref(self._this).neighbors(_root)
+        cdef pair[vector[kmer_t], vector[kmer_t]] result = deref(self._this).neighbor_kmers(_root)
         
         cdef list left = []
         cdef list right = []

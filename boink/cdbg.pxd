@@ -34,10 +34,13 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
     ctypedef vector[hash_t] HashVector
 
     ctypedef enum node_meta_t:
-        FULL
-        TIP
-        ISLAND
-        TRIVIAL
+        FULL,
+        TIP,
+        ISLAND,
+        CIRCULAR,
+        LOOP,
+        TRIVIAL,
+        DECISION
 
     ctypedef enum cDBGFormat:
         GRAPHML,
@@ -105,7 +108,9 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
         _DecisionNode * query_dnode(hash_t)
         bool has_dnode(hash_t)
         vector[_DecisionNode*] query_dnodes(const string&) except +ValueError
-        pair[vector[UnitigNodePtr], vector[UnitigNodePtr]] find_dnode_neighbors(_DecisionNode *)
+        pair[vector[CompactNodePtr], vector[CompactNodePtr]] find_dnode_neighbors(_DecisionNode *)
+
+        CompactNodePtr query_cnode(hash_t)
 
         _UnitigNode * query_unode_tag(hash_t)
         _UnitigNode * query_unode_end(hash_t)

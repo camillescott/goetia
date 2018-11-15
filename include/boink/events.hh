@@ -204,6 +204,7 @@ protected:
 			}
 
 			if (msg->msg_type == MSG_EXIT_THREAD) {
+                handle_exit();
                 _cerr("Exit " << THREAD_NAME 
                       << " listener at thread ID " << get_current_thread_id());
                 {
@@ -226,6 +227,10 @@ protected:
 
     virtual void handle_msg(shared_ptr<Event> msg) {
         pdebug("Handled no-op message");
+    }
+
+    virtual void handle_exit() {
+        pdebug("Handled no-op exit.");
     }
 };
 
