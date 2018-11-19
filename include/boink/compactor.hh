@@ -149,19 +149,19 @@ public:
     typedef MinimizerType minimizer_type;
     typedef cDBGType cdbg_type;
 
-    GraphType * dbg;
-    cDBG<GraphType> * cdbg;
+    shared_ptr<GraphType> dbg;
+    shared_ptr<cDBG<GraphType>> cdbg;
 
-    StreamingCompactor(GraphType * dbg,
+    StreamingCompactor(shared_ptr<GraphType> dbg,
                        uint64_t minimizer_window_size=8,
-                       cDBG<GraphType> * cdbg=nullptr)
+                       shared_ptr<cDBG<GraphType>> cdbg=nullptr)
         : CompactorMixin<GraphType>(dbg),
           EventNotifier(),
           _minimizer_window_size(minimizer_window_size),
           dbg(dbg)
     {
         if (cdbg == nullptr) {
-            this->cdbg = new cDBG<GraphType>(dbg);
+            this->cdbg = make_shared<cDBG<GraphType>>(dbg);
             _cdbg_external = false;
         } else {
             this->cdbg = cdbg;
@@ -173,12 +173,7 @@ public:
         //cdbg->wait_on_processing(0);
 
         // make sure nothing else has a lock on the cdbg
-        auto dlock = cdbg->lock_dnodes();
-        auto ulock = cdbg->lock_unodes();
-
-        if (!_cdbg_external) {
-            delete cdbg;
-        }
+        auto lock = cdbg->lock_nodes();
     }
     
     StreamingCompactorReport* get_report() {

@@ -50,6 +50,7 @@ cdef extern from "boink/events.hh" namespace "boink::events" nogil:
         
         void exit_thread()
         void notify(shared_ptr[_Event])
+        void wait_on_processing(uint64_t)
 
     cdef cppclass _EventNotifier "boink::events::EventNotifier":
         _EventNotifier()
@@ -60,12 +61,12 @@ cdef extern from "boink/events.hh" namespace "boink::events" nogil:
 
 
 cdef class EventListener:
-    cdef _EventListener * _listener
+    cdef shared_ptr[_EventListener] _listener
     @staticmethod
-    cdef EventListener _wrap(_EventListener*)
+    cdef EventListener _wrap(shared_ptr[_EventListener])
 
 
 cdef class EventNotifier:
-    cdef _EventNotifier * _notifier
+    cdef shared_ptr[_EventNotifier] _notifier
     @staticmethod
-    cdef EventNotifier _wrap(_EventNotifier*) 
+    cdef EventNotifier _wrap(shared_ptr[_EventNotifier]) 

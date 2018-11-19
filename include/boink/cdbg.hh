@@ -388,7 +388,7 @@ public:
 
 protected:
 
-    GraphType * dbg;
+    shared_ptr<GraphType> dbg;
 
     // The actual k-mer hash --> DNode map
     dnode_map_t decision_nodes;
@@ -400,8 +400,9 @@ protected:
     // The map from dBG k-mer tags to UnitigNodes
     spp::sparse_hash_map<hash_t, UnitigNode*> unitig_tag_map;
 
-    std::mutex dnode_mutex;
-    std::mutex unode_mutex;
+    //std::mutex dnode_mutex;
+    //std::mutex unode_mutex;
+    std::mutex mutex;
 
     // Counts the number of cDBG updates so far
     uint64_t _n_updates;
@@ -414,7 +415,7 @@ public:
 
     node_meta_counter meta_counter;
 
-    cDBG(GraphType * dbg,
+    cDBG(shared_ptr<GraphType> dbg,
          uint64_t minimizer_window_size=8)
         : KmerClient(dbg->K()),
           EventNotifier(),
@@ -441,12 +442,18 @@ public:
         */
     }
 
+    /*
     std::unique_lock<std::mutex> lock_dnodes() {
         return std::unique_lock<std::mutex>(dnode_mutex);
     }
 
     std::unique_lock<std::mutex> lock_unodes() {
         return std::unique_lock<std::mutex>(unode_mutex);
+    }
+    */
+
+    std::unique_lock<std::mutex> lock_nodes() {
+        return std::unique_lock<std::mutex>(mutex);
     }
 
     /* Utility methods for iterating DNode and UNode
@@ -503,7 +510,7 @@ public:
         /* Build a new DecisionNode; or, if the given k-mer hash
          * already has a DecisionNode, do nothing.
          */
-        auto lock = lock_dnodes();
+        auto lock = lock_nodes();
         DecisionNode * dnode = query_dnode(hash);
         if (dnode == nullptr) {
             pdebug("BUILD_DNODE: " << hash << ", " << kmer);
@@ -583,7 +590,7 @@ public:
                              hash_t left_end,
                              hash_t right_end) {
 
-        auto lock = lock_unodes();
+        auto lock = lock_nodes();
         id_t id = _unitig_id_counter;
         
         // Transfer the UnitigNode's ownership to the map;
@@ -664,7 +671,7 @@ public:
                     hash_t old_unode_end,
                     hash_t new_unode_end) {
         
-        auto lock = lock_unodes();
+        auto lock = lock_nodes();
 
         auto unode = switch_unode_ends(old_unode_end, new_unode_end);
         assert(unode != nullptr);
@@ -708,7 +715,7 @@ public:
                       hash_t new_unode_end,
                       HashVector& new_tags) {
 
-        auto lock = lock_unodes();
+        auto lock = lock_nodes();
 
         auto unode = switch_unode_ends(old_unode_end, new_unode_end);
         if (unode->meta() == TRIVIAL) {
@@ -760,7 +767,7 @@ public:
         string right_unitig;
         hash_t right_unode_right_end;
         {
-            auto lock = lock_unodes();
+            auto lock = lock_nodes();
 
             unode = query_unode_id(node_id);
             assert(unode != nullptr);
@@ -836,7 +843,7 @@ public:
         hash_t new_right_end;
 
         {
-            auto lock = lock_unodes();
+            auto lock = lock_nodes();
 
             auto left_unode_it = unitig_end_map.find(left_end);
             if (left_unode_it == unitig_end_map.end()) {
@@ -1063,8 +1070,7 @@ public:
         std::ofstream out;
         out.open(filename);
 
-        auto lock1 = lock_dnodes();
-        auto lock2 = lock_unodes();
+        auto lock = lock_nodes();
 
         for (auto it = unitig_nodes.begin(); it != unitig_nodes.end(); ++it) {
             auto unode = it->second.get();
@@ -1115,7 +1121,7 @@ public:
     }
 
     void write_fasta(std::ofstream& out) {
-        auto lock = lock_unodes();
+        auto lock = lock_nodes();
 
         for (auto it = unitig_nodes.begin(); it != unitig_nodes.end(); ++it) {
             out << ">ID=" << it->first 
@@ -1135,8 +1141,7 @@ public:
     }
 
     void write_gfa1(std::ofstream& out) {
-        auto lock2 = lock_dnodes();
-        auto lock1 = lock_unodes();
+        auto lock = lock_nodes();
 
         gfak::GFAKluge gfa;
         for (auto it = unitig_nodes.begin(); it != unitig_nodes.end(); ++it) {
@@ -1241,8 +1246,7 @@ public:
             << std::endl; // open <graph>
         */
 
-        auto lock1 = lock_unodes();
-        auto lock2 = lock_dnodes();
+        auto lock = lock_nodes();
 
         //id_t edge_counter = 0;
         for (auto it = decision_nodes.begin(); it != decision_nodes.end(); ++it) {

@@ -15,7 +15,7 @@ from boink.utils cimport *
 import sys
 
 from cython.operator cimport dereference as deref
-from libcpp.memory cimport unique_ptr, make_unique
+from libcpp.memory cimport shared_ptr, make_shared
 
 from boink.utils cimport _bstring
 from boink.events cimport _EventListener
@@ -31,11 +31,10 @@ cdef class StreamingCompactorReporter_{{type_bundle.suffix}}(StreamingCompactorR
     def __cinit__(self, str output_filename, StreamingCompactor_{{type_bundle.suffix}} compactor,
                         *args, **kwargs):
         if type(self) is StreamingCompactorReporter_{{type_bundle.suffix}}:
-            self._s_owner = make_unique[_StreamingCompactorReporter[_dBG[{{type_bundle.params}}]]](\
-                    compactor._this.get(), _bstring(output_filename))
-            self._s_this = self._s_owner.get()
-            self._this = self._s_this
-            self._listener = <_EventListener*>self._s_owner.get()
+            self._s_this = make_shared[_StreamingCompactorReporter[_dBG[{{type_bundle.params}}]]](\
+                    compactor._this, _bstring(output_filename))
+            self._this = <shared_ptr[_SingleFileReporter]>self._s_this
+            self._listener = <shared_ptr[_EventListener]>self._s_this
 
         self.storage_type = compactor.storage_type
         self.shifter_type = compactor.shifter_type
@@ -49,12 +48,11 @@ cdef class cDBGWriter_{{type_bundle.suffix}}(cDBGWriter_Base):
         self.shifter_type = cdbg.shifter_type
 
         if type(self) is cDBGWriter_{{type_bundle.suffix}}:
-            self._s_owner = make_unique[_cDBGWriter[_dBG[{{type_bundle.params}}]]](cdbg._this,
+            self._s_this = make_shared[_cDBGWriter[_dBG[{{type_bundle.params}}]]](cdbg._this,
                                                      convert_format(graph_format),
                                                      _bstring(output_prefix))
-            self._s_this = self._s_owner.get()
-            self._this = self._s_this
-            self._listener = <_EventListener*>self._s_owner.get()
+            self._this = <shared_ptr[_MultiFileReporter]>self._s_this
+            self._listener = <shared_ptr[_EventListener]>self._s_this
 
 {% endfor %}
 

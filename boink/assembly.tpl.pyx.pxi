@@ -11,7 +11,7 @@
 from cython.operator cimport dereference as deref
 
 from libc.stdint cimport uint64_t
-from libcpp.memory cimport make_unique
+from libcpp.memory cimport make_shared
 from libcpp.string cimport string
 
 from boink.dbg cimport *
@@ -25,8 +25,8 @@ cdef class Assembler__BitStorage__DefaultShifter(Assembler_Base):
 
     def __cinit__(self, dBG__BitStorage__DefaultShifter graph):
         if type(self) is Assembler__BitStorage__DefaultShifter:
-            self._this = make_unique[_AssemblerMixin[_dBG[_BitStorage,_DefaultShifter]]](graph._this.get())
-            self._graph = graph._this.get()
+            self._this = make_shared[_AssemblerMixin[_dBG[_BitStorage,_DefaultShifter]]](graph._this)
+            self._graph = graph._this
             self.Graph = graph
         self.storage_type = graph.storage_type
         self.shifter_type = graph.shifter_type
@@ -79,8 +79,8 @@ cdef class Assembler__ByteStorage__DefaultShifter(Assembler_Base):
 
     def __cinit__(self, dBG__ByteStorage__DefaultShifter graph):
         if type(self) is Assembler__ByteStorage__DefaultShifter:
-            self._this = make_unique[_AssemblerMixin[_dBG[_ByteStorage,_DefaultShifter]]](graph._this.get())
-            self._graph = graph._this.get()
+            self._this = make_shared[_AssemblerMixin[_dBG[_ByteStorage,_DefaultShifter]]](graph._this)
+            self._graph = graph._this
             self.Graph = graph
         self.storage_type = graph.storage_type
         self.shifter_type = graph.shifter_type
@@ -133,8 +133,8 @@ cdef class Assembler__NibbleStorage__DefaultShifter(Assembler_Base):
 
     def __cinit__(self, dBG__NibbleStorage__DefaultShifter graph):
         if type(self) is Assembler__NibbleStorage__DefaultShifter:
-            self._this = make_unique[_AssemblerMixin[_dBG[_NibbleStorage,_DefaultShifter]]](graph._this.get())
-            self._graph = graph._this.get()
+            self._this = make_shared[_AssemblerMixin[_dBG[_NibbleStorage,_DefaultShifter]]](graph._this)
+            self._graph = graph._this
             self.Graph = graph
         self.storage_type = graph.storage_type
         self.shifter_type = graph.shifter_type
@@ -187,8 +187,8 @@ cdef class Assembler__SparseppSetStorage__DefaultShifter(Assembler_Base):
 
     def __cinit__(self, dBG__SparseppSetStorage__DefaultShifter graph):
         if type(self) is Assembler__SparseppSetStorage__DefaultShifter:
-            self._this = make_unique[_AssemblerMixin[_dBG[_SparseppSetStorage,_DefaultShifter]]](graph._this.get())
-            self._graph = graph._this.get()
+            self._this = make_shared[_AssemblerMixin[_dBG[_SparseppSetStorage,_DefaultShifter]]](graph._this)
+            self._graph = graph._this
             self.Graph = graph
         self.storage_type = graph.storage_type
         self.shifter_type = graph.shifter_type

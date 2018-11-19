@@ -9,7 +9,7 @@
 {% block code %}
 
 from libc.stdint cimport uint8_t, uint32_t, uint64_t
-from libcpp.memory cimport shared_ptr, unique_ptr
+from libcpp.memory cimport shared_ptr
 from libcpp.string cimport string
 
 from boink.dbg cimport *
@@ -30,12 +30,10 @@ cdef class cDBGWriter_Base(MultiFileReporter):
 
 {% for type_bundle in type_bundles %}
 cdef class StreamingCompactorReporter_{{type_bundle.suffix}}(StreamingCompactorReporter_Base):
-    cdef unique_ptr[_StreamingCompactorReporter[_dBG[{{type_bundle.params}}]]] _s_owner
-    cdef _StreamingCompactorReporter[_dBG[{{type_bundle.params}}]] *           _s_this
+    cdef shared_ptr[_StreamingCompactorReporter[_dBG[{{type_bundle.params}}]]] _s_this
 
 cdef class cDBGWriter_{{type_bundle.suffix}}(cDBGWriter_Base):
-    cdef unique_ptr[_cDBGWriter[_dBG[{{type_bundle.params}}]]] _s_owner
-    cdef _cDBGWriter[_dBG[{{type_bundle.params}}]] *           _s_this
+    cdef shared_ptr[_cDBGWriter[_dBG[{{type_bundle.params}}]]] _s_this
 
 {% endfor %}
 

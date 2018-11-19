@@ -13,13 +13,16 @@ cdef class EventListener:
         pass
 
     @staticmethod
-    cdef EventListener _wrap(_EventListener * listener):
+    cdef EventListener _wrap(shared_ptr[_EventListener] listener):
         cdef EventListener el = EventListener()
         el._listener = listener
         return el
 
     def stop(self):
         deref(self._listener).exit_thread()
+
+    def wait_on_processing(self, int min_events=0):
+        deref(self._listener).wait_on_processing(min_events)
 
 
 cdef class EventNotifier:
@@ -28,13 +31,13 @@ cdef class EventNotifier:
         pass
 
     @staticmethod
-    cdef EventNotifier _wrap(_EventNotifier * notifier):
+    cdef EventNotifier _wrap(shared_ptr[_EventNotifier] notifier):
         cdef EventNotifier en = EventNotifier()
         en._notifier = notifier 
         return en
 
     def register_listener(self, EventListener listener):
-        deref(self._notifier).register_listener(listener._listener)
+        deref(self._notifier).register_listener(listener._listener.get())
 
     def stop_listeners(self):
         deref(self._notifier).stop_listeners()

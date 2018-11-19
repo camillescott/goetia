@@ -11,7 +11,7 @@
 from cython.operator cimport dereference as deref
 
 from libc.stdint cimport uint64_t
-from libcpp.memory cimport make_unique
+from libcpp.memory cimport make_shared
 from libcpp.string cimport string
 
 from boink.dbg cimport *
@@ -32,7 +32,7 @@ cdef class FileConsumer_{{type_bundle.suffix}}(FileProcessor_Base):
                         uint64_t medium_interval,
                         uint64_t coarse_interval):
 
-        self._this = make_unique[_FileConsumer[_dBG[{{type_bundle.params}}]]](graph._this.get(),
+        self._this = make_shared[_FileConsumer[_dBG[{{type_bundle.params}}]]](graph._this,
                                                                               fine_interval,
                                                                               medium_interval,
                                                                               coarse_interval)
@@ -56,7 +56,7 @@ cdef class DecisionNodeProcessor_{{type_bundle.suffix}}(FileProcessor_Base):
 
         self.output_filename = output_filename
         cdef string _output_filename = _bstring(output_filename)
-        self._this = make_unique[_DecisionNodeProcessor[_dBG[{{type_bundle.params}}]]](compactor._this.get(),
+        self._this = make_shared[_DecisionNodeProcessor[_dBG[{{type_bundle.params}}]]](compactor._this,
                                                                                        _output_filename,
                                                                                        fine_interval,
                                                                                        medium_interval,
@@ -77,11 +77,11 @@ cdef class StreamingCompactorProcessor_{{type_bundle.suffix}}(FileProcessor_Base
                         uint64_t medium_interval,
                         uint64_t coarse_interval):
 
-        self._this = make_unique[_StreamingCompactorProcessor[_dBG[{{type_bundle.params}}]]](compactor._this.get(),
+        self._this = make_shared[_StreamingCompactorProcessor[_dBG[{{type_bundle.params}}]]](compactor._this,
                                                                                              fine_interval,
                                                                                              medium_interval,
                                                                                              coarse_interval)
-        self.Notifier = EventNotifier._wrap(<_EventNotifier*>self._this.get())
+        self.Notifier = EventNotifier._wrap(<shared_ptr[_EventNotifier]>self._this)
 
         self.storage_type = compactor.storage_type
         self.shifter_type = compactor.shifter_type

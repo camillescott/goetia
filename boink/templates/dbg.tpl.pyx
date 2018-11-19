@@ -11,7 +11,7 @@
 from cython.operator cimport dereference as deref
 
 from libc.stdint cimport uint64_t
-from libcpp.memory cimport make_unique
+from libcpp.memory cimport make_shared
 from libcpp.string cimport string
 from libcpp.vector cimport vector
 
@@ -34,8 +34,8 @@ cdef class dBG_{{type_bundle.suffix}}(dBG_Base):
         #if type(self) is dBG_{{suffix}}:
         if not self._this:
             primes = get_n_primes_near_x(n_tables, starting_size)
-            self._this = make_unique[_dBG[{{type_bundle.params}}]](K, primes)
-            self._assembler = make_unique[_AssemblerMixin[_dBG[{{type_bundle.params}}]]](self._this.get())
+            self._this = make_shared[_dBG[{{type_bundle.params}}]](K, primes)
+            self._assembler = make_shared[_AssemblerMixin[_dBG[{{type_bundle.params}}]]](self._this)
             self.allocated = True
 
         self.storage_type = "{{type_bundle.storage_type}}"
@@ -61,7 +61,7 @@ cdef class dBG_{{type_bundle.suffix}}(dBG_Base):
 
     def hashes(self, str sequence):
         cdef bytes _sequence = _bstring(sequence)
-        cdef unique_ptr[_KmerIterator[{{type_bundle.shifter_type}}]] kmer_iter = \
+        cdef shared_ptr[_KmerIterator[{{type_bundle.shifter_type}}]] kmer_iter = \
                 deref(self._this).get_hash_iter(_sequence)
 
         cdef hash_t h
@@ -140,7 +140,7 @@ cdef class dBG_{{type_bundle.suffix}}(dBG_Base):
     def clone(self):
         cdef dBG_{{type_bundle.suffix}} cloned = dBG_{{type_bundle.suffix}}(1,1,1)
         cloned._this = deref(self._this).clone()
-        cloned._assembler.reset(new _AssemblerMixin[_dBG[{{type_bundle.params}}]](self._this.get()))
+        cloned._assembler = make_shared[_AssemblerMixin[_dBG[{{type_bundle.params}}]]](self._this)
         return cloned
 
     def reset(self):

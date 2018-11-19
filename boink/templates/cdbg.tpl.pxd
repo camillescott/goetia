@@ -8,6 +8,7 @@
 {% extends "base.tpl" %}
 {% block code %}
 
+from libcpp.memory cimport shared_ptr
 
 cdef class cDBG_Base:
     cdef readonly object shifter_type
@@ -15,11 +16,11 @@ cdef class cDBG_Base:
 
 {% for type_bundle in type_bundles %}
 cdef class cDBG_{{type_bundle.suffix}}(cDBG_Base):
-    cdef _cDBG[_dBG[{{type_bundle.params}}]] * _this
+    cdef shared_ptr[_cDBG[_dBG[{{type_bundle.params}}]]] _this
     cdef public EventNotifier Notifier
 
     @staticmethod
-    cdef cDBG_{{type_bundle.suffix}} _wrap(_cDBG[_dBG[{{type_bundle.params}}]] *)
+    cdef cDBG_{{type_bundle.suffix}} _wrap(shared_ptr[_cDBG[_dBG[{{type_bundle.params}}]]])
 {% endfor %}
 
 {% endblock code %}

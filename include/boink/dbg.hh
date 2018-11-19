@@ -18,6 +18,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -32,7 +33,8 @@ typedef std::vector<bit_pair_t> bit_pair_vector_t;
 
 template <class StorageType,
           class HashShifter>
-class dBG : public KmerClient {
+class dBG : public KmerClient,
+            public std::enable_shared_from_this<dBG<StorageType, HashShifter>> {
     StorageType S;
     HashShifter hasher;
 
@@ -67,8 +69,8 @@ public:
 
     }
 
-    std::unique_ptr<dBG<StorageType, HashShifter>> clone() const {
-        return std::make_unique<dBG<StorageType, HashShifter>>(_K, sizes);
+    std::shared_ptr<dBG<StorageType, HashShifter>> clone() const {
+        return std::make_shared<dBG<StorageType, HashShifter>>(_K, sizes);
     }
 
     /**
@@ -416,12 +418,13 @@ public:
         S.reset();
     }
 
-    unique_ptr<KmerIterator<HashShifter>> get_hash_iter(const string& sequence) {
-        return make_unique<KmerIterator<HashShifter>>(sequence, _K);
+    shared_ptr<KmerIterator<HashShifter>> get_hash_iter(const string& sequence) {
+        return make_shared<KmerIterator<HashShifter>>(sequence, _K);
     }
 
-    unique_ptr<assembler_type> get_assembler() {
-        return make_unique<assembler_type>(this);
+    shared_ptr<assembler_type> get_assembler() {
+        auto ptr = this->shared_from_this();
+        return make_shared<assembler_type>(ptr);
     }
 
 };

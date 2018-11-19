@@ -8,7 +8,7 @@
 {% extends "base.tpl" %}
 {% block code %}
 
-from libcpp.memory cimport unique_ptr
+from libcpp.memory cimport shared_ptr
 
 from boink.dbg cimport *
 from boink.cdbg cimport *
@@ -21,8 +21,8 @@ cdef class StreamingCompactor_Base:
 
 {% for type_bundle in type_bundles %}
 cdef class StreamingCompactor_{{type_bundle.suffix}}(StreamingCompactor_Base):
-    cdef unique_ptr[_StreamingCompactor[_dBG[{{type_bundle.params}}]]] _this
-    cdef _dBG[{{type_bundle.params}}] * _graph
+    cdef shared_ptr[_StreamingCompactor[_dBG[{{type_bundle.params}}]]] _this
+    cdef shared_ptr[_dBG[{{type_bundle.params}}]] _graph
     cdef public cDBG_{{type_bundle.suffix}} cdbg
     cdef public EventNotifier Notifier
 {% endfor %}

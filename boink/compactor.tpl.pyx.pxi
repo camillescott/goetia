@@ -11,7 +11,7 @@
 from cython.operator cimport dereference as deref
 
 from libc.stdint cimport uint64_t
-from libcpp.memory cimport make_unique
+from libcpp.memory cimport make_shared
 from libcpp.string cimport string
 
 from boink.utils cimport *
@@ -28,11 +28,11 @@ cdef class StreamingCompactor__BitStorage__DefaultShifter(StreamingCompactor_Bas
         self.shifter_type = graph.shifter_type
 
         if type(self) is StreamingCompactor__BitStorage__DefaultShifter:
-            self._this = make_unique[_StreamingCompactor[_dBG[_BitStorage,_DefaultShifter]]](graph._this.get())
-            self._graph = graph._this.get()
+            self._this = make_shared[_StreamingCompactor[_dBG[_BitStorage,_DefaultShifter]]](graph._this)
+            self._graph = graph._this
             self.graph = graph # for reference counting
             self.cdbg = cDBG__BitStorage__DefaultShifter._wrap(deref(self._this).cdbg)
-            self.Notifier = EventNotifier._wrap(<_EventNotifier*>self._this.get())
+            self.Notifier = EventNotifier._wrap(<shared_ptr[_EventNotifier]>self._this)
 
     def find_decision_kmers(self, str sequence):
         cdef string _sequence = _bstring(sequence)
@@ -91,11 +91,11 @@ cdef class StreamingCompactor__ByteStorage__DefaultShifter(StreamingCompactor_Ba
         self.shifter_type = graph.shifter_type
 
         if type(self) is StreamingCompactor__ByteStorage__DefaultShifter:
-            self._this = make_unique[_StreamingCompactor[_dBG[_ByteStorage,_DefaultShifter]]](graph._this.get())
-            self._graph = graph._this.get()
+            self._this = make_shared[_StreamingCompactor[_dBG[_ByteStorage,_DefaultShifter]]](graph._this)
+            self._graph = graph._this
             self.graph = graph # for reference counting
             self.cdbg = cDBG__ByteStorage__DefaultShifter._wrap(deref(self._this).cdbg)
-            self.Notifier = EventNotifier._wrap(<_EventNotifier*>self._this.get())
+            self.Notifier = EventNotifier._wrap(<shared_ptr[_EventNotifier]>self._this)
 
     def find_decision_kmers(self, str sequence):
         cdef string _sequence = _bstring(sequence)
@@ -154,11 +154,11 @@ cdef class StreamingCompactor__NibbleStorage__DefaultShifter(StreamingCompactor_
         self.shifter_type = graph.shifter_type
 
         if type(self) is StreamingCompactor__NibbleStorage__DefaultShifter:
-            self._this = make_unique[_StreamingCompactor[_dBG[_NibbleStorage,_DefaultShifter]]](graph._this.get())
-            self._graph = graph._this.get()
+            self._this = make_shared[_StreamingCompactor[_dBG[_NibbleStorage,_DefaultShifter]]](graph._this)
+            self._graph = graph._this
             self.graph = graph # for reference counting
             self.cdbg = cDBG__NibbleStorage__DefaultShifter._wrap(deref(self._this).cdbg)
-            self.Notifier = EventNotifier._wrap(<_EventNotifier*>self._this.get())
+            self.Notifier = EventNotifier._wrap(<shared_ptr[_EventNotifier]>self._this)
 
     def find_decision_kmers(self, str sequence):
         cdef string _sequence = _bstring(sequence)
@@ -217,11 +217,11 @@ cdef class StreamingCompactor__SparseppSetStorage__DefaultShifter(StreamingCompa
         self.shifter_type = graph.shifter_type
 
         if type(self) is StreamingCompactor__SparseppSetStorage__DefaultShifter:
-            self._this = make_unique[_StreamingCompactor[_dBG[_SparseppSetStorage,_DefaultShifter]]](graph._this.get())
-            self._graph = graph._this.get()
+            self._this = make_shared[_StreamingCompactor[_dBG[_SparseppSetStorage,_DefaultShifter]]](graph._this)
+            self._graph = graph._this
             self.graph = graph # for reference counting
             self.cdbg = cDBG__SparseppSetStorage__DefaultShifter._wrap(deref(self._this).cdbg)
-            self.Notifier = EventNotifier._wrap(<_EventNotifier*>self._this.get())
+            self.Notifier = EventNotifier._wrap(<shared_ptr[_EventNotifier]>self._this)
 
     def find_decision_kmers(self, str sequence):
         cdef string _sequence = _bstring(sequence)

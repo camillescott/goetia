@@ -6,7 +6,7 @@
 # of the MIT license.  See the LICENSE file for details.
 
 from libc.stdint cimport uint8_t, uint32_t, uint64_t
-from libcpp.memory cimport shared_ptr, unique_ptr
+from libcpp.memory cimport shared_ptr
 from libcpp.string cimport string
 
 from boink.dbg cimport DefaultDBG
@@ -23,10 +23,10 @@ cdef extern from "boink/reporters.hh" namespace "boink::reporters" nogil:
         _MultiFileReporter(string&)
 
     cdef cppclass _StreamingCompactorReporter "boink::reporters::StreamingCompactorReporter" [GraphType] (_SingleFileReporter):
-        _StreamingCompactorReporter(_StreamingCompactor[GraphType] *, string&)
+        _StreamingCompactorReporter(shared_ptr[_StreamingCompactor[GraphType]], string&)
 
     cdef cppclass _cDBGWriter "boink::reporters::cDBGWriter" [GraphType] (_MultiFileReporter):
-        _cDBGWriter(_cDBG[GraphType] *, cDBGFormat, const string&)
+        _cDBGWriter(shared_ptr[_cDBG[GraphType]], cDBGFormat, const string&)
 
     cdef cppclass _cDBGHistoryReporter "boink::reporters::cDBGHistoryReporter" (_SingleFileReporter):
         _cDBGHistoryReporter(const string&)
@@ -34,18 +34,15 @@ cdef extern from "boink/reporters.hh" namespace "boink::reporters" nogil:
 
 cdef class SingleFileReporter(EventListener):
     cdef readonly object          output_filename
-    cdef unique_ptr[_SingleFileReporter]    _owner
-    cdef _SingleFileReporter *    _this
+    cdef shared_ptr[_SingleFileReporter]    _this
 
 
 cdef class MultiFileReporter(EventListener):
     cdef readonly object                prefix
-    cdef unique_ptr[_MultiFileReporter] _owner
-    cdef _MultiFileReporter *           _this
+    cdef shared_ptr[_MultiFileReporter] _this
 
 
 cdef class cDBGHistoryReporter(SingleFileReporter):
-    cdef unique_ptr[_cDBGHistoryReporter] _h_owner
-    cdef _cDBGHistoryReporter *           _h_this
+    cdef shared_ptr[_cDBGHistoryReporter] _h_this
 
 include "reporters.tpl.pxd.pxi"

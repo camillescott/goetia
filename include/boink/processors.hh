@@ -219,7 +219,7 @@ class FileConsumer : public FileProcessor<FileConsumer<GraphType, ParserType>,
 
 protected:
 
-    GraphType * graph;
+    shared_ptr<GraphType> graph;
     uint64_t _n_consumed;
 
     typedef FileProcessor<FileConsumer<GraphType, ParserType>,
@@ -229,7 +229,7 @@ public:
 
     using Base::process_sequence;
     
-    FileConsumer(GraphType * graph,
+    FileConsumer(shared_ptr<GraphType> graph,
                  uint64_t fine_interval=DEFAULT_FINE_INTERVAL,
                  uint64_t medium_interval=DEFAULT_MEDIUM_INTERVAL,
                  uint64_t coarse_interval=DEFAULT_COARSE_INTERVAL)
@@ -262,8 +262,8 @@ class DecisionNodeProcessor : public FileProcessor<DecisionNodeProcessor<GraphTy
 protected:
     typedef FileProcessor<DecisionNodeProcessor<GraphType, ParserType>,
                           ParserType> Base;
-    StreamingCompactor<GraphType> * compactor;
-    GraphType * graph;
+    shared_ptr<StreamingCompactor<GraphType>> compactor;
+    shared_ptr<GraphType> graph;
     std::string _output_filename;
     std::ofstream _output_stream;
 
@@ -271,7 +271,7 @@ public:
 
     using Base::process_sequence;
 
-    DecisionNodeProcessor(StreamingCompactor<GraphType> * compactor,
+    DecisionNodeProcessor(shared_ptr<StreamingCompactor<GraphType>> compactor,
                           std::string& output_filename,
                           uint64_t fine_interval=DEFAULT_FINE_INTERVAL,
                           uint64_t medium_interval=DEFAULT_MEDIUM_INTERVAL,
@@ -326,8 +326,8 @@ class StreamingCompactorProcessor :
 
 protected:
 
-    StreamingCompactor<GraphType> * compactor;
-    GraphType * graph;
+    shared_ptr<StreamingCompactor<GraphType>> compactor;
+    shared_ptr<GraphType> graph;
 
     typedef FileProcessor<StreamingCompactorProcessor<GraphType, ParserType>,
                           ParserType> Base;
@@ -337,7 +337,7 @@ public:
     using Base::process_sequence;
     using EventNotifier::register_listener;
     
-    StreamingCompactorProcessor(StreamingCompactor<GraphType> * compactor,
+    StreamingCompactorProcessor(shared_ptr<StreamingCompactor<GraphType>> compactor,
                                 uint64_t fine_interval=DEFAULT_FINE_INTERVAL,
                                 uint64_t medium_interval=DEFAULT_MEDIUM_INTERVAL,
                                 uint64_t coarse_interval=DEFAULT_COARSE_INTERVAL)

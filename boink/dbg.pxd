@@ -10,7 +10,7 @@ cimport cython
 from libc.stdint cimport uint8_t, uint16_t, uint64_t
 
 from libcpp cimport bool
-from libcpp.memory cimport unique_ptr
+from libcpp.memory cimport shared_ptr
 from libcpp.set cimport set
 from libcpp.vector cimport vector
 from libcpp.utility cimport pair
@@ -48,7 +48,7 @@ cdef extern from "boink/dbg.hh" namespace "boink" nogil:
         _dBG(uint16_t, vector[uint64_t])
         _dBG(uint16_t, uint64_t, uint16_t)
 
-        unique_ptr[_dBG[StorageType, HashShifter]] clone()
+        shared_ptr[_dBG[StorageType, HashShifter]] clone()
 
         ctypedef HashShifter shifter_type
 
@@ -89,7 +89,7 @@ cdef extern from "boink/dbg.hh" namespace "boink" nogil:
         void load(string)
         void reset()
 
-        unique_ptr[_KmerIterator[HashShifter]] get_hash_iter(string&)
+        shared_ptr[_KmerIterator[HashShifter]] get_hash_iter(string&)
 
     ctypedef _dBG[_BitStorage, _DefaultShifter] DefaultDBG
 

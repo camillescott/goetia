@@ -6,7 +6,7 @@
 # of the MIT license.  See the LICENSE file for details.
 
 from cython.operator cimport dereference as deref
-from libcpp.memory cimport make_unique
+from libcpp.memory cimport make_shared
 
 from boink.dbg cimport *
 from boink.cdbg cimport *
@@ -36,7 +36,7 @@ cdef class MinimizerProcessor(FileProcessor):
                         uint64_t coarse_interval):
 
         cdef string _output_filename = _bstring(output_filename)
-        self._mp_this = make_unique[_MinimizerProcessor[_DefaultShifter]](window_size,
+        self._mp_this = make_shared[_MinimizerProcessor[_DefaultShifter]](window_size,
                                                                          ksize,
                                                                          _output_filename,
                                                                          fine_interval,

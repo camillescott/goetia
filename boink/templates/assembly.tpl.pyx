@@ -11,7 +11,7 @@
 from cython.operator cimport dereference as deref
 
 from libc.stdint cimport uint64_t
-from libcpp.memory cimport make_unique
+from libcpp.memory cimport make_shared
 from libcpp.string cimport string
 
 from boink.dbg cimport *
@@ -26,8 +26,8 @@ cdef class Assembler_{{type_bundle.suffix}}(Assembler_Base):
 
     def __cinit__(self, dBG_{{type_bundle.suffix}} graph):
         if type(self) is Assembler_{{type_bundle.suffix}}:
-            self._this = make_unique[_AssemblerMixin[_dBG[{{type_bundle.params}}]]](graph._this.get())
-            self._graph = graph._this.get()
+            self._this = make_shared[_AssemblerMixin[_dBG[{{type_bundle.params}}]]](graph._this)
+            self._graph = graph._this
             self.Graph = graph
         self.storage_type = graph.storage_type
         self.shifter_type = graph.shifter_type

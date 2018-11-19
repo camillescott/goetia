@@ -13,6 +13,7 @@
 #include "hashing.hh"
 
 #include <deque>
+#include <memory>
 
 
 # ifdef DEBUG_ASMLY
@@ -66,15 +67,15 @@ public:
     typedef GraphType graph_type;
     typedef BaseShifter shifter_type;
 
-    GraphType * graph;
+    std::shared_ptr<GraphType> graph;
 
-    AssemblerMixin(GraphType * graph, BaseShifter const& shifter) :
+    AssemblerMixin(shared_ptr<GraphType> graph, BaseShifter const& shifter) :
         BaseShifter(shifter),
         graph(graph) {
 
     }
 
-    AssemblerMixin(GraphType * graph) :
+    AssemblerMixin(shared_ptr<GraphType> graph) :
         BaseShifter(graph->K()),
         graph(graph) {
     }
@@ -326,12 +327,12 @@ public:
     typedef AssemblerType assembler_type;
     typedef BaseShifter shifter_type;
 
-    CompactorMixin(GraphType * graph, BaseShifter const& shifter) :
+    CompactorMixin(shared_ptr<GraphType> graph, BaseShifter const& shifter) :
         AssemblerType(graph, shifter)
     {
     }
 
-    CompactorMixin(GraphType * graph) :
+    CompactorMixin(shared_ptr<GraphType> graph) :
         AssemblerType(graph)
     {
     }

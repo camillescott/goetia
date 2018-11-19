@@ -8,6 +8,7 @@
 cimport cython
 
 from libcpp.deque cimport deque
+from libcpp.memory cimport shared_ptr
 from libcpp.set cimport set
 from libcpp.vector cimport vector
 from libc.stdint cimport uint8_t, uint32_t, uint64_t
@@ -36,9 +37,9 @@ cdef extern from "boink/compactor.hh" namespace "boink" nogil:
         const bool is_null() 
 
     cdef cppclass _StreamingCompactor "boink::StreamingCompactor" [GraphType] (_AssemblerMixin[GraphType], _EventNotifier):
-        _cDBG[GraphType] * cdbg
+        shared_ptr[_cDBG[GraphType]] cdbg
 
-        _StreamingCompactor(GraphType *)
+        _StreamingCompactor(shared_ptr[GraphType])
 
         #string compactify(const string&) except +ValueError
         #void compactify_right(Path&) 

@@ -11,7 +11,7 @@
 from cython.operator cimport dereference as deref
 
 from libc.stdint cimport uint64_t
-from libcpp.memory cimport make_unique
+from libcpp.memory cimport make_shared
 from libcpp.string cimport string
 
 from boink.utils cimport *
@@ -29,11 +29,11 @@ cdef class StreamingCompactor_{{type_bundle.suffix}}(StreamingCompactor_Base):
         self.shifter_type = graph.shifter_type
 
         if type(self) is StreamingCompactor_{{type_bundle.suffix}}:
-            self._this = make_unique[_StreamingCompactor[_dBG[{{type_bundle.params}}]]](graph._this.get())
-            self._graph = graph._this.get()
+            self._this = make_shared[_StreamingCompactor[_dBG[{{type_bundle.params}}]]](graph._this)
+            self._graph = graph._this
             self.graph = graph # for reference counting
             self.cdbg = cDBG_{{type_bundle.suffix}}._wrap(deref(self._this).cdbg)
-            self.Notifier = EventNotifier._wrap(<_EventNotifier*>self._this.get())
+            self.Notifier = EventNotifier._wrap(<shared_ptr[_EventNotifier]>self._this)
 
     def find_decision_kmers(self, str sequence):
         cdef string _sequence = _bstring(sequence)

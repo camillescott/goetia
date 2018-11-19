@@ -117,11 +117,11 @@ class StreamingCompactorReporter: public SingleFileReporter {
 
 protected:
 
-    StreamingCompactor<GraphType> * compactor;
+    shared_ptr<StreamingCompactor<GraphType>> compactor;
 
 public:
 
-    StreamingCompactorReporter(StreamingCompactor<GraphType> * compactor,
+    StreamingCompactorReporter(shared_ptr<StreamingCompactor<GraphType>> compactor,
                                const std::string& output_filename)
         : SingleFileReporter(output_filename, "StreamingCompactorReporter"),
           compactor(compactor)
@@ -196,7 +196,7 @@ public:
                        << std::endl; // open <graph>
     }
 
-    virtual ~cDBGHistoryReporter() {
+    virtual void handle_exit() {
         _output_stream << "</graph>" << std::endl;
         _output_stream << "</graphml>" << std::endl;
     }
@@ -293,12 +293,12 @@ template <class GraphType>
 class cDBGWriter : public MultiFileReporter {
 protected:
 
-    cDBG<GraphType> * cdbg;
+    shared_ptr<cDBG<GraphType>> cdbg;
     cDBGFormat format;
 
 public:
 
-    cDBGWriter(cDBG<GraphType> * cdbg,
+    cDBGWriter(shared_ptr<cDBG<GraphType>> cdbg,
                cDBGFormat format,
                const string& output_prefix)
         : MultiFileReporter(output_prefix,

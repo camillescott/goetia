@@ -8,6 +8,7 @@
 from libc.stdint cimport uint16_t, uint32_t, uint64_t, int64_t
 from libcpp cimport bool
 from libcpp.string cimport string
+from libcpp.memory cimport shared_ptr
 
 from boink.dbg cimport *
 from boink.cdbg cimport *
@@ -71,7 +72,7 @@ cdef class FileProcessor:
     cdef public EventNotifier Notifier
 
 cdef class MinimizerProcessor(FileProcessor):
-    cdef unique_ptr[_MinimizerProcessor[_DefaultShifter]] _mp_this
+    cdef shared_ptr[_MinimizerProcessor[_DefaultShifter]] _mp_this
 
 
 include "processors.tpl.pxd.pxi"

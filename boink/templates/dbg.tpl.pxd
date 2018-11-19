@@ -8,7 +8,7 @@
 {% extends "base.tpl" %}
 {% block code %}
 
-from libcpp.memory cimport unique_ptr
+from libcpp.memory cimport shared_ptr
 from boink.assembly cimport _AssemblerMixin
 
 cdef class dBG_Base:
@@ -19,8 +19,8 @@ cdef class dBG_Base:
 
 {% for type_bundle in type_bundles %}
 cdef class dBG_{{type_bundle.suffix}}(dBG_Base):
-    cdef unique_ptr[_dBG[{{type_bundle.params}}]] _this
-    cdef unique_ptr[_AssemblerMixin[_dBG[{{type_bundle.params}}]]] _assembler
+    cdef shared_ptr[_dBG[{{type_bundle.params}}]] _this
+    cdef shared_ptr[_AssemblerMixin[_dBG[{{type_bundle.params}}]]] _assembler
     cdef hash_t _handle_kmer(self, object) except 0
 {% endfor %}
 

@@ -15,6 +15,7 @@ from libcpp.string cimport string
 from boink.dbg cimport *
 from boink.cdbg cimport *
 from boink.events cimport EventNotifier, _EventNotifier, _EventListener
+from libcpp.memory cimport shared_ptr
 from boink.utils cimport _bstring
 
 from boink.processors cimport *
@@ -25,59 +26,59 @@ cdef class FileProcessor_Base(FileProcessor):
 
 
 cdef class FileConsumer__BitStorage__DefaultShifter(FileProcessor_Base):
-    cdef unique_ptr[_FileConsumer[_dBG[_BitStorage,_DefaultShifter]]] _this
+    cdef shared_ptr[_FileConsumer[_dBG[_BitStorage,_DefaultShifter]]] _this
 
 
 cdef class DecisionNodeProcessor__BitStorage__DefaultShifter(FileProcessor_Base):
     cdef readonly str output_filename
-    cdef unique_ptr[_DecisionNodeProcessor[_dBG[_BitStorage,_DefaultShifter]]] _this
+    cdef shared_ptr[_DecisionNodeProcessor[_dBG[_BitStorage,_DefaultShifter]]] _this
 
 
 cdef class StreamingCompactorProcessor__BitStorage__DefaultShifter(FileProcessor_Base):
     cdef readonly str output_filename
-    cdef unique_ptr[_StreamingCompactorProcessor[_dBG[_BitStorage,_DefaultShifter]]] _this
+    cdef shared_ptr[_StreamingCompactorProcessor[_dBG[_BitStorage,_DefaultShifter]]] _this
 
 
 cdef class FileConsumer__ByteStorage__DefaultShifter(FileProcessor_Base):
-    cdef unique_ptr[_FileConsumer[_dBG[_ByteStorage,_DefaultShifter]]] _this
+    cdef shared_ptr[_FileConsumer[_dBG[_ByteStorage,_DefaultShifter]]] _this
 
 
 cdef class DecisionNodeProcessor__ByteStorage__DefaultShifter(FileProcessor_Base):
     cdef readonly str output_filename
-    cdef unique_ptr[_DecisionNodeProcessor[_dBG[_ByteStorage,_DefaultShifter]]] _this
+    cdef shared_ptr[_DecisionNodeProcessor[_dBG[_ByteStorage,_DefaultShifter]]] _this
 
 
 cdef class StreamingCompactorProcessor__ByteStorage__DefaultShifter(FileProcessor_Base):
     cdef readonly str output_filename
-    cdef unique_ptr[_StreamingCompactorProcessor[_dBG[_ByteStorage,_DefaultShifter]]] _this
+    cdef shared_ptr[_StreamingCompactorProcessor[_dBG[_ByteStorage,_DefaultShifter]]] _this
 
 
 cdef class FileConsumer__NibbleStorage__DefaultShifter(FileProcessor_Base):
-    cdef unique_ptr[_FileConsumer[_dBG[_NibbleStorage,_DefaultShifter]]] _this
+    cdef shared_ptr[_FileConsumer[_dBG[_NibbleStorage,_DefaultShifter]]] _this
 
 
 cdef class DecisionNodeProcessor__NibbleStorage__DefaultShifter(FileProcessor_Base):
     cdef readonly str output_filename
-    cdef unique_ptr[_DecisionNodeProcessor[_dBG[_NibbleStorage,_DefaultShifter]]] _this
+    cdef shared_ptr[_DecisionNodeProcessor[_dBG[_NibbleStorage,_DefaultShifter]]] _this
 
 
 cdef class StreamingCompactorProcessor__NibbleStorage__DefaultShifter(FileProcessor_Base):
     cdef readonly str output_filename
-    cdef unique_ptr[_StreamingCompactorProcessor[_dBG[_NibbleStorage,_DefaultShifter]]] _this
+    cdef shared_ptr[_StreamingCompactorProcessor[_dBG[_NibbleStorage,_DefaultShifter]]] _this
 
 
 cdef class FileConsumer__SparseppSetStorage__DefaultShifter(FileProcessor_Base):
-    cdef unique_ptr[_FileConsumer[_dBG[_SparseppSetStorage,_DefaultShifter]]] _this
+    cdef shared_ptr[_FileConsumer[_dBG[_SparseppSetStorage,_DefaultShifter]]] _this
 
 
 cdef class DecisionNodeProcessor__SparseppSetStorage__DefaultShifter(FileProcessor_Base):
     cdef readonly str output_filename
-    cdef unique_ptr[_DecisionNodeProcessor[_dBG[_SparseppSetStorage,_DefaultShifter]]] _this
+    cdef shared_ptr[_DecisionNodeProcessor[_dBG[_SparseppSetStorage,_DefaultShifter]]] _this
 
 
 cdef class StreamingCompactorProcessor__SparseppSetStorage__DefaultShifter(FileProcessor_Base):
     cdef readonly str output_filename
-    cdef unique_ptr[_StreamingCompactorProcessor[_dBG[_SparseppSetStorage,_DefaultShifter]]] _this
+    cdef shared_ptr[_StreamingCompactorProcessor[_dBG[_SparseppSetStorage,_DefaultShifter]]] _this
 
 
 cdef object _make_file_consumer(dBG_Base graph,

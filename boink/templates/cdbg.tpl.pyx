@@ -8,7 +8,9 @@
 {% extends "base.tpl" %}
 {% block code %}
 
+from libcpp.memory cimport make_shared, shared_ptr
 from boink.utils cimport is_num
+
 
 cdef class cDBG_Base:
 
@@ -40,10 +42,10 @@ cdef cDBGFormat convert_format(str file_format) except *:
 cdef class cDBG_{{type_bundle.suffix}}(cDBG_Base):
 
     @staticmethod
-    cdef cDBG_{{type_bundle.suffix}} _wrap(_cDBG[_dBG[{{type_bundle.params}}]] * ptr):
+    cdef cDBG_{{type_bundle.suffix}} _wrap(shared_ptr[_cDBG[_dBG[{{type_bundle.params}}]]] ptr):
         cdef cDBG_{{type_bundle.suffix}} cdbg = cDBG_{{type_bundle.suffix}}()
         cdbg._this = ptr
-        cdbg.Notifier = EventNotifier._wrap(<_EventNotifier*>cdbg._this)
+        cdbg.Notifier = EventNotifier._wrap(<shared_ptr[_EventNotifier]>cdbg._this)
         cdbg.storage_type = "{{type_bundle.storage_type}}"
         cdbg.shifter_type = "{{type_bundle.shifter_type}}"
         return cdbg

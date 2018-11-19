@@ -15,6 +15,7 @@ from libcpp.string cimport string
 from boink.dbg cimport *
 from boink.cdbg cimport *
 from boink.events cimport EventNotifier, _EventNotifier, _EventListener
+from libcpp.memory cimport shared_ptr
 from boink.utils cimport _bstring
 
 from boink.processors cimport *
@@ -26,17 +27,17 @@ cdef class FileProcessor_Base(FileProcessor):
 {% for type_bundle in type_bundles %}
 
 cdef class FileConsumer_{{type_bundle.suffix}}(FileProcessor_Base):
-    cdef unique_ptr[_FileConsumer[_dBG[{{type_bundle.params}}]]] _this
+    cdef shared_ptr[_FileConsumer[_dBG[{{type_bundle.params}}]]] _this
 
 
 cdef class DecisionNodeProcessor_{{type_bundle.suffix}}(FileProcessor_Base):
     cdef readonly str output_filename
-    cdef unique_ptr[_DecisionNodeProcessor[_dBG[{{type_bundle.params}}]]] _this
+    cdef shared_ptr[_DecisionNodeProcessor[_dBG[{{type_bundle.params}}]]] _this
 
 
 cdef class StreamingCompactorProcessor_{{type_bundle.suffix}}(FileProcessor_Base):
     cdef readonly str output_filename
-    cdef unique_ptr[_StreamingCompactorProcessor[_dBG[{{type_bundle.params}}]]] _this
+    cdef shared_ptr[_StreamingCompactorProcessor[_dBG[{{type_bundle.params}}]]] _this
 
 {% endfor %}
 

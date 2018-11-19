@@ -15,7 +15,7 @@ from boink.utils cimport *
 import sys
 
 from cython.operator cimport dereference as deref
-from libcpp.memory cimport unique_ptr, make_unique
+from libcpp.memory cimport shared_ptr, make_shared
 
 from boink.utils cimport _bstring
 from boink.events cimport _EventListener
@@ -30,11 +30,10 @@ cdef class StreamingCompactorReporter__BitStorage__DefaultShifter(StreamingCompa
     def __cinit__(self, str output_filename, StreamingCompactor__BitStorage__DefaultShifter compactor,
                         *args, **kwargs):
         if type(self) is StreamingCompactorReporter__BitStorage__DefaultShifter:
-            self._s_owner = make_unique[_StreamingCompactorReporter[_dBG[_BitStorage,_DefaultShifter]]](\
-                    compactor._this.get(), _bstring(output_filename))
-            self._s_this = self._s_owner.get()
-            self._this = self._s_this
-            self._listener = <_EventListener*>self._s_owner.get()
+            self._s_this = make_shared[_StreamingCompactorReporter[_dBG[_BitStorage,_DefaultShifter]]](\
+                    compactor._this, _bstring(output_filename))
+            self._this = <shared_ptr[_SingleFileReporter]>self._s_this
+            self._listener = <shared_ptr[_EventListener]>self._s_this
 
         self.storage_type = compactor.storage_type
         self.shifter_type = compactor.shifter_type
@@ -48,12 +47,11 @@ cdef class cDBGWriter__BitStorage__DefaultShifter(cDBGWriter_Base):
         self.shifter_type = cdbg.shifter_type
 
         if type(self) is cDBGWriter__BitStorage__DefaultShifter:
-            self._s_owner = make_unique[_cDBGWriter[_dBG[_BitStorage,_DefaultShifter]]](cdbg._this,
+            self._s_this = make_shared[_cDBGWriter[_dBG[_BitStorage,_DefaultShifter]]](cdbg._this,
                                                      convert_format(graph_format),
                                                      _bstring(output_prefix))
-            self._s_this = self._s_owner.get()
-            self._this = self._s_this
-            self._listener = <_EventListener*>self._s_owner.get()
+            self._this = <shared_ptr[_MultiFileReporter]>self._s_this
+            self._listener = <shared_ptr[_EventListener]>self._s_this
 
 
 cdef class StreamingCompactorReporter__ByteStorage__DefaultShifter(StreamingCompactorReporter_Base):
@@ -61,11 +59,10 @@ cdef class StreamingCompactorReporter__ByteStorage__DefaultShifter(StreamingComp
     def __cinit__(self, str output_filename, StreamingCompactor__ByteStorage__DefaultShifter compactor,
                         *args, **kwargs):
         if type(self) is StreamingCompactorReporter__ByteStorage__DefaultShifter:
-            self._s_owner = make_unique[_StreamingCompactorReporter[_dBG[_ByteStorage,_DefaultShifter]]](\
-                    compactor._this.get(), _bstring(output_filename))
-            self._s_this = self._s_owner.get()
-            self._this = self._s_this
-            self._listener = <_EventListener*>self._s_owner.get()
+            self._s_this = make_shared[_StreamingCompactorReporter[_dBG[_ByteStorage,_DefaultShifter]]](\
+                    compactor._this, _bstring(output_filename))
+            self._this = <shared_ptr[_SingleFileReporter]>self._s_this
+            self._listener = <shared_ptr[_EventListener]>self._s_this
 
         self.storage_type = compactor.storage_type
         self.shifter_type = compactor.shifter_type
@@ -79,12 +76,11 @@ cdef class cDBGWriter__ByteStorage__DefaultShifter(cDBGWriter_Base):
         self.shifter_type = cdbg.shifter_type
 
         if type(self) is cDBGWriter__ByteStorage__DefaultShifter:
-            self._s_owner = make_unique[_cDBGWriter[_dBG[_ByteStorage,_DefaultShifter]]](cdbg._this,
+            self._s_this = make_shared[_cDBGWriter[_dBG[_ByteStorage,_DefaultShifter]]](cdbg._this,
                                                      convert_format(graph_format),
                                                      _bstring(output_prefix))
-            self._s_this = self._s_owner.get()
-            self._this = self._s_this
-            self._listener = <_EventListener*>self._s_owner.get()
+            self._this = <shared_ptr[_MultiFileReporter]>self._s_this
+            self._listener = <shared_ptr[_EventListener]>self._s_this
 
 
 cdef class StreamingCompactorReporter__NibbleStorage__DefaultShifter(StreamingCompactorReporter_Base):
@@ -92,11 +88,10 @@ cdef class StreamingCompactorReporter__NibbleStorage__DefaultShifter(StreamingCo
     def __cinit__(self, str output_filename, StreamingCompactor__NibbleStorage__DefaultShifter compactor,
                         *args, **kwargs):
         if type(self) is StreamingCompactorReporter__NibbleStorage__DefaultShifter:
-            self._s_owner = make_unique[_StreamingCompactorReporter[_dBG[_NibbleStorage,_DefaultShifter]]](\
-                    compactor._this.get(), _bstring(output_filename))
-            self._s_this = self._s_owner.get()
-            self._this = self._s_this
-            self._listener = <_EventListener*>self._s_owner.get()
+            self._s_this = make_shared[_StreamingCompactorReporter[_dBG[_NibbleStorage,_DefaultShifter]]](\
+                    compactor._this, _bstring(output_filename))
+            self._this = <shared_ptr[_SingleFileReporter]>self._s_this
+            self._listener = <shared_ptr[_EventListener]>self._s_this
 
         self.storage_type = compactor.storage_type
         self.shifter_type = compactor.shifter_type
@@ -110,12 +105,11 @@ cdef class cDBGWriter__NibbleStorage__DefaultShifter(cDBGWriter_Base):
         self.shifter_type = cdbg.shifter_type
 
         if type(self) is cDBGWriter__NibbleStorage__DefaultShifter:
-            self._s_owner = make_unique[_cDBGWriter[_dBG[_NibbleStorage,_DefaultShifter]]](cdbg._this,
+            self._s_this = make_shared[_cDBGWriter[_dBG[_NibbleStorage,_DefaultShifter]]](cdbg._this,
                                                      convert_format(graph_format),
                                                      _bstring(output_prefix))
-            self._s_this = self._s_owner.get()
-            self._this = self._s_this
-            self._listener = <_EventListener*>self._s_owner.get()
+            self._this = <shared_ptr[_MultiFileReporter]>self._s_this
+            self._listener = <shared_ptr[_EventListener]>self._s_this
 
 
 cdef class StreamingCompactorReporter__SparseppSetStorage__DefaultShifter(StreamingCompactorReporter_Base):
@@ -123,11 +117,10 @@ cdef class StreamingCompactorReporter__SparseppSetStorage__DefaultShifter(Stream
     def __cinit__(self, str output_filename, StreamingCompactor__SparseppSetStorage__DefaultShifter compactor,
                         *args, **kwargs):
         if type(self) is StreamingCompactorReporter__SparseppSetStorage__DefaultShifter:
-            self._s_owner = make_unique[_StreamingCompactorReporter[_dBG[_SparseppSetStorage,_DefaultShifter]]](\
-                    compactor._this.get(), _bstring(output_filename))
-            self._s_this = self._s_owner.get()
-            self._this = self._s_this
-            self._listener = <_EventListener*>self._s_owner.get()
+            self._s_this = make_shared[_StreamingCompactorReporter[_dBG[_SparseppSetStorage,_DefaultShifter]]](\
+                    compactor._this, _bstring(output_filename))
+            self._this = <shared_ptr[_SingleFileReporter]>self._s_this
+            self._listener = <shared_ptr[_EventListener]>self._s_this
 
         self.storage_type = compactor.storage_type
         self.shifter_type = compactor.shifter_type
@@ -141,12 +134,11 @@ cdef class cDBGWriter__SparseppSetStorage__DefaultShifter(cDBGWriter_Base):
         self.shifter_type = cdbg.shifter_type
 
         if type(self) is cDBGWriter__SparseppSetStorage__DefaultShifter:
-            self._s_owner = make_unique[_cDBGWriter[_dBG[_SparseppSetStorage,_DefaultShifter]]](cdbg._this,
+            self._s_this = make_shared[_cDBGWriter[_dBG[_SparseppSetStorage,_DefaultShifter]]](cdbg._this,
                                                      convert_format(graph_format),
                                                      _bstring(output_prefix))
-            self._s_this = self._s_owner.get()
-            self._this = self._s_this
-            self._listener = <_EventListener*>self._s_owner.get()
+            self._this = <shared_ptr[_MultiFileReporter]>self._s_this
+            self._listener = <shared_ptr[_EventListener]>self._s_this
 
 
 cdef object _make_streaming_compactor_reporter(str output_filename,
