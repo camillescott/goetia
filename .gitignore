@@ -97,6 +97,7 @@ ENV/
 *.info
 *.json
 *.tmp
+*.svg
 
 
 work/
