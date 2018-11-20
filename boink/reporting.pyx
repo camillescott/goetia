@@ -44,7 +44,7 @@ cdef class cDBGHistoryReporter(SingleFileReporter):
             self._listener = <shared_ptr[_EventListener]>self._h_this
 
 
-include "reporters.tpl.pyx.pxi"
+include "reporting.tpl.pyx.pxi"
 
 def make_streaming_compactor_reporter(str output_filename, StreamingCompactor_Base compactor):
     return _make_streaming_compactor_reporter(output_filename, compactor)

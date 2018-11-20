@@ -15,7 +15,7 @@ from boink.dbg import make_dBG
 from boink.compactor import make_streaming_compactor
 from boink.parsing import grouper
 from boink.processors import make_streaming_compactor_processor
-from boink.reporters import (make_streaming_compactor_reporter,
+from boink.reporting import (make_streaming_compactor_reporter,
                              make_cdbgwriter_reporter,
                              cDBGHistoryReporter)
 

@@ -18,11 +18,13 @@
 #include "boink/cdbg.hh"
 #include "boink/minimizers.hh"
 #include "boink/event_types.hh"
+#include "boink/reporting/report_types.hh"
 
 
 namespace boink {
-using namespace boink::event_types;
 
+using namespace boink::event_types;
+using namespace boink::reporting::report_types;
 
 # ifdef DEBUG_CPTR
 #   define pdebug(x) do { std::cerr << std::endl << "@ " << __FILE__ <<\
@@ -36,23 +38,6 @@ using namespace boink::event_types;
 #define complement(ch) ((ch) == 'A' ? 'T' : \
                         (ch) == 'T' ? 'A' : \
                         (ch) == 'C' ? 'G' : 'C')
-
-/* Packs up information on the current compaction state.
- */
-struct StreamingCompactorReport {
-    uint64_t n_full;
-    uint64_t n_tips;
-    uint64_t n_islands;
-    uint64_t n_trivial;
-    uint64_t n_circular;
-    uint64_t n_loops;
-    uint64_t n_dnodes;
-    uint64_t n_unodes;
-    uint64_t n_updates;
-    uint64_t n_tags;
-    uint64_t n_unique;
-    double   estimated_fp;
-};
 
 
 /* Represents a segment of new k-mers from a sequence, relative to the current

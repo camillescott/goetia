@@ -7,19 +7,20 @@
  * of the MIT license.  See the LICENSE file for details.
  */
 
-#ifndef EVENT_TYPES_HH
-#define EVENT_TYPES_HH
+#ifndef BOINK_REPORT_TYPES_HH
+#define BOINK_REPORT_TYPES_HH
 
 namespace boink {
-namespace event_types {
+namespace reporting {
+namespace report_types {
 
 struct StreamingCompactorReport {
-    uint64_t read_n;
     uint64_t n_full;
     uint64_t n_tips;
     uint64_t n_islands;
-    uint64_t n_unknown;
     uint64_t n_trivial;
+    uint64_t n_circular;
+    uint64_t n_loops;
     uint64_t n_dnodes;
     uint64_t n_unodes;
     uint64_t n_updates;
@@ -29,6 +30,7 @@ struct StreamingCompactorReport {
 };
 
 
+}
 }
 }
 

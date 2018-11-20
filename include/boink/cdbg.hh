@@ -166,6 +166,7 @@ protected:
 public:
 
     const id_t node_id;
+    id_t component_id;
     string sequence;
     
     CompactNode(id_t node_id,
@@ -410,6 +411,7 @@ protected:
     uint64_t _unitig_id_counter;
     // Current number of Unitigs
     uint64_t _n_unitig_nodes;
+    uint64_t _component_id_counter;
 
 public:
 
@@ -422,7 +424,8 @@ public:
           dbg(dbg),
           _n_updates(0),
           _unitig_id_counter(UNITIG_START_ID),
-          _n_unitig_nodes(0)
+          _n_unitig_nodes(0),
+          _component_id_counter(0)
     {
         /*
         counter_keys = { "N_FULL",
@@ -441,16 +444,6 @@ public:
         meta_counter.register_counters(counter_keys);
         */
     }
-
-    /*
-    std::unique_lock<std::mutex> lock_dnodes() {
-        return std::unique_lock<std::mutex>(dnode_mutex);
-    }
-
-    std::unique_lock<std::mutex> lock_unodes() {
-        return std::unique_lock<std::mutex>(unode_mutex);
-    }
-    */
 
     std::unique_lock<std::mutex> lock_nodes() {
         return std::unique_lock<std::mutex>(mutex);
@@ -505,60 +498,16 @@ public:
         return unitig_end_map.size();
     }
 
-    DecisionNode* build_dnode(hash_t hash,
-                              const string& kmer) {
-        /* Build a new DecisionNode; or, if the given k-mer hash
-         * already has a DecisionNode, do nothing.
-         */
-        auto lock = lock_nodes();
-        DecisionNode * dnode = query_dnode(hash);
-        if (dnode == nullptr) {
-            pdebug("BUILD_DNODE: " << hash << ", " << kmer);
-            decision_nodes.emplace(hash,
-                                   std::move(make_unique<DecisionNode>(hash, kmer)));
-            // the memory location changes after the move; get a fresh address
-            dnode = query_dnode(hash);
-            notify_history_new(dnode->node_id,
-                               dnode->sequence,
-                               dnode->meta());
-            pdebug("BUILD_DNODE complete: " << *dnode);
-        } else {
-            pdebug("BUILD_DNODE: d-node for " << hash << " already exists.");
-            dnode->incr_count();
+    /* Node query methods: separate query mechanisms for
+     * decision nodes and unitig nodes.
+     */
+
+    CompactNode* query_cnode(hash_t hash) {
+        CompactNode * node = query_unode_end(hash);
+        if (node == nullptr) {
+            node = query_dnode(hash);
         }
-        return dnode;
-    }
-
-    bool has_dnode(hash_t hash) {
-        auto search = decision_nodes.find(hash);
-        if (search != decision_nodes.end()) {
-            return true;
-        }
-        return false;   
-    }
-
-    std::pair<std::vector<CompactNode*>,
-              std::vector<CompactNode*>> find_dnode_neighbors(DecisionNode* dnode) {
-
-        std::vector<CompactNode*> left;
-        std::vector<CompactNode*> right;
-        auto neighbors = dbg->neighbors(dnode->sequence);
-
-        for (auto shift : neighbors.first) {
-            CompactNode * node = query_cnode(shift.hash);
-            if (node != nullptr) {
-                left.push_back(node);
-            }
-        }
-
-        for (auto shift : neighbors.second) {
-            CompactNode * node = query_cnode(shift.hash);
-            if (node != nullptr) {
-                right.push_back(node);
-            }
-        }
-
-        return make_pair(left, right);
+        return node;
     }
 
     DecisionNode* query_dnode(hash_t hash) {
@@ -585,44 +534,136 @@ public:
         return result;
     }
 
-    UnitigNode * build_unode(const string& sequence,
-                             HashVector& tags,
-                             hash_t left_end,
-                             hash_t right_end) {
-
-        auto lock = lock_nodes();
-        id_t id = _unitig_id_counter;
-        
-        // Transfer the UnitigNode's ownership to the map;
-        // get its new memory address
-        unitig_nodes.emplace(id, std::move(make_unique<UnitigNode>(id,
-                                                                   left_end,
-                                                                   right_end,
-                                                                   sequence)));
-        UnitigNode * unode_ptr = unitig_nodes[id].get();
-        
-        _unitig_id_counter++;
-        _n_unitig_nodes++;
-        _n_updates++;
-
-        // Link up its new tags
-        unode_ptr->tags.insert(std::end(unode_ptr->tags),
-                               std::begin(tags),
-                               std::end(tags));
-        for (auto tag: tags) {
-            unitig_tag_map.insert(make_pair(tag, unode_ptr));
+    UnitigNode * query_unode_end(hash_t end_kmer) {
+        auto search = unitig_end_map.find(end_kmer);
+        if (search != unitig_end_map.end()) {
+            return search->second;
         }
-        unitig_end_map.insert(make_pair(left_end, unode_ptr));
-        unitig_end_map.insert(make_pair(right_end, unode_ptr));
+        return nullptr;
+    }
 
-        auto unode_meta = recompute_node_meta(unode_ptr);
-        meta_counter.increment(unode_meta);
-        unode_ptr->set_node_meta(unode_meta);
+    UnitigNode * query_unode_tag(hash_t hash) {
+        auto search = unitig_tag_map.find(hash);
+        if (search != unitig_tag_map.end()) {
+            return search->second;
+        }
+        return nullptr;
+    }
 
-        notify_history_new(id, unode_ptr->sequence, unode_ptr->meta());
-        pdebug("BUILD_UNODE complete: " << *unode_ptr);
+    UnitigNode * query_unode_id(id_t id) {
+        auto search = unitig_nodes.find(id);
+        if (search != unitig_nodes.end()) {
+            return search->second.get();
+        }
+        return nullptr;
+    }
 
-        return unode_ptr;
+    bool has_dnode(hash_t hash) {
+        auto search = decision_nodes.find(hash);
+        if (search != decision_nodes.end()) {
+            return true;
+        }
+        return false;   
+    }
+
+    bool has_unode_end(hash_t end_kmer) {
+        return unitig_end_map.count(end_kmer) != 0;
+    }
+
+    /* Neighbor-finding and traversal.
+     *
+     */
+
+    std::pair<std::vector<CompactNode*>,
+              std::vector<CompactNode*>> find_dnode_neighbors(DecisionNode* dnode) {
+
+        std::vector<CompactNode*> left;
+        std::vector<CompactNode*> right;
+        auto neighbors = dbg->neighbors(dnode->sequence);
+
+        for (auto shift : neighbors.first) {
+            CompactNode * node = query_cnode(shift.hash);
+            if (node != nullptr) {
+                left.push_back(node);
+            }
+        }
+
+        for (auto shift : neighbors.second) {
+            CompactNode * node = query_cnode(shift.hash);
+            if (node != nullptr) {
+                right.push_back(node);
+            }
+        }
+
+        return make_pair(left, right);
+    }
+
+    std::pair<DecisionNode*, DecisionNode*> find_unode_neighbors(UnitigNode * unode) {
+        DecisionNode * left = nullptr, * right = nullptr;
+        CompactorType compactor(dbg);
+
+        compactor.set_cursor(unode->sequence.c_str());
+        auto left_shifts = compactor.gather_left();
+
+        compactor.set_cursor(unode->sequence.c_str() + unode->sequence.size() - this->_K);
+        auto right_shifts = compactor.gather_right();
+
+        uint8_t n_left = 0;
+        for (auto shift : left_shifts) {
+            DecisionNode * dnode;
+            if ((dnode = query_dnode(shift.hash)) != nullptr) {
+                left = dnode;
+                n_left++;
+                pdebug("Found left d-node: " << *dnode);
+            }
+        }
+
+        uint8_t n_right = 0;
+        for (auto shift : right_shifts) {
+            DecisionNode * dnode;
+            if ((dnode = query_dnode(shift.hash)) != nullptr) {
+                right = dnode;
+                n_right++;
+                pdebug("Found right d-node: " << *dnode);
+            }
+        }
+
+        return std::make_pair(left, right);
+    }
+
+    vector<CompactNode*> traverse_breadth_first(CompactNode* root) {
+        std::set<id_t> seen;
+        vector<CompactNode*> node_q( {root} );
+        vector<CompactNode*> result;
+
+        while(!node_q.empty()) {
+            root = node_q.back();
+            node_q.pop_back();
+
+            if (seen.count(root->node_id)) {
+                continue;
+            } else {
+                result.push_back(root);
+            }
+
+            if (root->meta() == DECISION) {
+                auto neighbors = find_dnode_neighbors((DecisionNode*)root);
+                for (auto neighbor : neighbors.first) {
+                    node_q.push_back(neighbor);
+                }
+                for (auto neighbor : neighbors.second) {
+                    node_q.push_back(neighbor);
+                }
+            } else {
+                auto neighbors = find_unode_neighbors((UnitigNode*)root);
+                node_q.push_back(neighbors.first);
+                node_q.push_back(neighbors.second);
+            }
+
+            seen.insert(root->node_id);
+        }
+
+        return result;
     }
 
     node_meta_t recompute_node_meta(UnitigNode * unode) {
@@ -665,6 +706,70 @@ public:
                << " for " << unode->node_id);
 
         return unode;
+    }
+
+    DecisionNode* build_dnode(hash_t hash,
+                              const string& kmer) {
+        /* Build a new DecisionNode; or, if the given k-mer hash
+         * already has a DecisionNode, do nothing.
+         */
+        auto lock = lock_nodes();
+        DecisionNode * dnode = query_dnode(hash);
+        if (dnode == nullptr) {
+            pdebug("BUILD_DNODE: " << hash << ", " << kmer);
+            decision_nodes.emplace(hash,
+                                   std::move(make_unique<DecisionNode>(hash, kmer)));
+            // the memory location changes after the move; get a fresh address
+            dnode = query_dnode(hash);
+            notify_history_new(dnode->node_id,
+                               dnode->sequence,
+                               dnode->meta());
+            pdebug("BUILD_DNODE complete: " << *dnode);
+        } else {
+            pdebug("BUILD_DNODE: d-node for " << hash << " already exists.");
+            dnode->incr_count();
+        }
+        return dnode;
+    }
+
+    UnitigNode * build_unode(const string& sequence,
+                             HashVector& tags,
+                             hash_t left_end,
+                             hash_t right_end) {
+
+        auto lock = lock_nodes();
+        id_t id = _unitig_id_counter;
+        
+        // Transfer the UnitigNode's ownership to the map;
+        // get its new memory address
+        unitig_nodes.emplace(id, std::move(make_unique<UnitigNode>(id,
+                                                                   left_end,
+                                                                   right_end,
+                                                                   sequence)));
+        UnitigNode * unode_ptr = unitig_nodes[id].get();
+        
+        _unitig_id_counter++;
+        _n_unitig_nodes++;
+        _n_updates++;
+
+        // Link up its new tags
+        unode_ptr->tags.insert(std::end(unode_ptr->tags),
+                               std::begin(tags),
+                               std::end(tags));
+        for (auto tag: tags) {
+            unitig_tag_map.insert(make_pair(tag, unode_ptr));
+        }
+        unitig_end_map.insert(make_pair(left_end, unode_ptr));
+        unitig_end_map.insert(make_pair(right_end, unode_ptr));
+
+        auto unode_meta = recompute_node_meta(unode_ptr);
+        meta_counter.increment(unode_meta);
+        unode_ptr->set_node_meta(unode_meta);
+
+        notify_history_new(id, unode_ptr->sequence, unode_ptr->meta());
+        pdebug("BUILD_UNODE complete: " << *unode_ptr);
+
+        return unode_ptr;
     }
 
     void clip_unode(direction_t clip_from,
@@ -910,77 +1015,6 @@ public:
         pdebug("MERGE complete: " << *left_unode);
     }
 
-    UnitigNode * query_unode_end(hash_t end_kmer) {
-        auto search = unitig_end_map.find(end_kmer);
-        if (search != unitig_end_map.end()) {
-            return search->second;
-        }
-        return nullptr;
-    }
-
-    bool has_unode_end(hash_t end_kmer) {
-        return unitig_end_map.count(end_kmer) != 0;
-    }
-
-    UnitigNode * query_unode_tag(hash_t hash) {
-        auto search = unitig_tag_map.find(hash);
-        if (search != unitig_tag_map.end()) {
-            return search->second;
-        }
-        return nullptr;
-    }
-
-    UnitigNode * query_unode_id(id_t id) {
-        auto search = unitig_nodes.find(id);
-        if (search != unitig_nodes.end()) {
-            return search->second.get();
-        }
-        return nullptr;
-    }
-
-    std::pair<DecisionNode*, DecisionNode*> find_unode_neighbors(UnitigNode * unode) {
-        DecisionNode * left = nullptr, * right = nullptr;
-        CompactorType compactor(dbg);
-
-        compactor.set_cursor(unode->sequence.c_str());
-        auto left_shifts = compactor.gather_left();
-
-        compactor.set_cursor(unode->sequence.c_str() + unode->sequence.size() - this->_K);
-        auto right_shifts = compactor.gather_right();
-
-        uint8_t n_left = 0;
-        for (auto shift : left_shifts) {
-            DecisionNode * dnode;
-            if ((dnode = query_dnode(shift.hash)) != nullptr) {
-                left = dnode;
-                n_left++;
-                pdebug("Found left d-node: " << *dnode);
-            }
-        }
-
-        uint8_t n_right = 0;
-        for (auto shift : right_shifts) {
-            DecisionNode * dnode;
-            if ((dnode = query_dnode(shift.hash)) != nullptr) {
-                right = dnode;
-                n_right++;
-                pdebug("Found right d-node: " << *dnode);
-            }
-        }
-
-        //assert(n_left < 2);
-        //assert(n_right < 2);
-
-        return std::make_pair(left, right);
-    }
-
-    CompactNode* query_cnode(hash_t hash) {
-        CompactNode * node = query_unode_end(hash);
-        if (node == nullptr) {
-            node = query_dnode(hash);
-        }
-        return node;
-    }
 
     void delete_unode(UnitigNode * unode) {
         if (unode != nullptr) {

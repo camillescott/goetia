@@ -19,7 +19,7 @@ from build_utils import (check_for_openmp,
                          build_dir,
                          lib_dir,
                          BoinkReporter,
-						 title_with_actions,
+			 title_with_actions,
                          replace_ext,
                          replace_exts,
                          resolve_dependencies,
@@ -50,7 +50,8 @@ MOD_FILES    = {m:m+MOD_EXT for m in MOD_NAMES}
 
 INCLUDE_DIR  = os.path.join('include', PKG)
 SOURCE_DIR   = os.path.join('src', PKG)
-HEADER_NAMES = EXT_META['headers']
+HEADER_NAMES = [fn for fn in glob.glob('include/{0}/**/*.hh'.format(PKG), recursive=True) \
+                if not any((fn.endswith(ignore) for ignore in EXT_META['ignore_headers']))]
 HEADER_FILES = [os.path.join(INCLUDE_DIR, header) for header in HEADER_NAMES]
 SOURCE_NAMES = replace_exts(HEADER_NAMES, '.cc')
 SOURCE_FILES = isfile_filter([os.path.join(SOURCE_DIR, source) \

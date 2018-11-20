@@ -107,11 +107,10 @@ public:
             derived().process_sequence(bundle);
 
             int _bundle_count = bundle.has_left + bundle.has_right;
-            __sync_add_and_fetch( &_n_reads,
-                                  _bundle_count );
+            _n_reads += _bundle_count;
 
             if (counters[0].poll(_bundle_count)) {
-                 std::cerr << "processed " << _n_reads << " sequences." << std::endl;               
+                 //std::cerr << "processed " << _n_reads << " sequences." << std::endl;               
                  derived().report();
                  auto event = make_shared<TimeIntervalEvent>();
                  event->level = TimeIntervalEvent::FINE;
@@ -122,7 +121,7 @@ public:
                  auto event = make_shared<TimeIntervalEvent>();
                  event->level = TimeIntervalEvent::MEDIUM;
                  event->t = _n_reads;
-                notify(event);
+                 notify(event);
             }
             if (counters[2].poll(_bundle_count)) {
                  auto event = make_shared<TimeIntervalEvent>();
@@ -155,7 +154,7 @@ public:
             __sync_add_and_fetch( &_n_reads, 1 );
   
             if (counters[0].poll()) {
-                 std::cerr << "processed " << _n_reads << " sequences." << std::endl;               
+                 //std::cerr << "processed " << _n_reads << " sequences." << std::endl;               
                  derived().report();
                  auto event = make_shared<TimeIntervalEvent>();
                  event->level = TimeIntervalEvent::FINE;
@@ -371,9 +370,9 @@ public:
     }
 
     void report() {
-        std::cerr << "\tcurrently " << compactor->cdbg->n_decision_nodes()
-                  << " d-nodes, " << compactor->cdbg->n_unitig_nodes()
-                  << " u-nodes." << std::endl;
+        //std::cerr << "\tcurrently " << compactor->cdbg->n_decision_nodes()
+        //          << " d-nodes, " << compactor->cdbg->n_unitig_nodes()
+        //          << " u-nodes." << std::endl;
     }
 
 };

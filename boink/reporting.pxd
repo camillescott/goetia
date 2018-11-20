@@ -15,20 +15,23 @@ from boink.compactor cimport *
 from boink.events cimport EventListener, _EventListener
 
 
-cdef extern from "boink/reporters.hh" namespace "boink::reporters" nogil:
-    cdef cppclass _SingleFileReporter "boink::reporters::SingleFileReporter" (_EventListener):
+cdef extern from "boink/reporting/reporters.hh" namespace "boink::reporting" nogil:
+    cdef cppclass _SingleFileReporter "boink::reporting::SingleFileReporter" (_EventListener):
         _SingleFileReporter(string&)
 
-    cdef cppclass _MultiFileReporter "boink::reporters::MultiFileReporter" (_EventListener):
+    cdef cppclass _MultiFileReporter "boink::reporting::MultiFileReporter" (_EventListener):
         _MultiFileReporter(string&)
 
-    cdef cppclass _StreamingCompactorReporter "boink::reporters::StreamingCompactorReporter" [GraphType] (_SingleFileReporter):
+cdef extern from "boink/reporting/streaming_compactor_reporter.hh" namespace "boink::reporting" nogil:
+    cdef cppclass _StreamingCompactorReporter "boink::reporting::StreamingCompactorReporter" [GraphType] (_SingleFileReporter):
         _StreamingCompactorReporter(shared_ptr[_StreamingCompactor[GraphType]], string&)
 
-    cdef cppclass _cDBGWriter "boink::reporters::cDBGWriter" [GraphType] (_MultiFileReporter):
+cdef extern from "boink/reporting/cdbg_writer_reporter.hh" namespace "boink::reporting" nogil:
+    cdef cppclass _cDBGWriter "boink::reporting::cDBGWriter" [GraphType] (_MultiFileReporter):
         _cDBGWriter(shared_ptr[_cDBG[GraphType]], cDBGFormat, const string&)
 
-    cdef cppclass _cDBGHistoryReporter "boink::reporters::cDBGHistoryReporter" (_SingleFileReporter):
+cdef extern from "boink/reporting/cdbg_history_reporter.hh" namespace "boink::reporting" nogil:
+    cdef cppclass _cDBGHistoryReporter "boink::reporting::cDBGHistoryReporter" (_SingleFileReporter):
         _cDBGHistoryReporter(const string&)
 
 
@@ -45,4 +48,4 @@ cdef class MultiFileReporter(EventListener):
 cdef class cDBGHistoryReporter(SingleFileReporter):
     cdef shared_ptr[_cDBGHistoryReporter] _h_this
 
-include "reporters.tpl.pxd.pxi"
+include "reporting.tpl.pxd.pxi"

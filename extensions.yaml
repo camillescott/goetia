@@ -47,27 +47,17 @@ extensions:
       types:
         - ParserType
     - name: events
-    - name: reporters
+    - name: reporting
       types:
         - StorageType
         - ShifterType
       templates:
-        - reporters.tpl.pxd
-        - reporters.tpl.pyx
+        - reporting.tpl.pxd
+        - reporting.tpl.pyx
 
-headers:
-    - dbg.hh
-    - cdbg.hh
-    - hashing.hh
-    - assembly.hh
-    - boink.hh
-    - processors.hh
-    - minimizers.hh
-    - boink.hh
-    - parsing.hh
-    - reporters.hh
-    - events.hh
-    - event_types.hh
+ignore_headers:
+    - old_edge_centric_cdbg.hh
+    - node_centric_cdbg.hh
 
 types:
     - name: StorageType
