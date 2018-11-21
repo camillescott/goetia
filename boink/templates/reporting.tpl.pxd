@@ -17,16 +17,23 @@ from boink.compactor cimport *
 from boink.cdbg cimport cDBGFormat, _cDBG
 from boink.events cimport EventListener, _EventListener
 
-
 from boink.processors cimport *
+
 
 cdef class StreamingCompactorReporter_Base(SingleFileReporter):
     cdef readonly object storage_type
     cdef readonly object shifter_type
 
+
 cdef class cDBGWriter_Base(MultiFileReporter):
     cdef readonly object storage_type
     cdef readonly object shifter_type
+
+
+cdef class cDBGComponentReporter(SingleFileReporter):
+    cdef readonly object storage_type
+    cdef readonly object shifter_type
+
 
 {% for type_bundle in type_bundles %}
 cdef class StreamingCompactorReporter_{{type_bundle.suffix}}(StreamingCompactorReporter_Base):
@@ -34,6 +41,9 @@ cdef class StreamingCompactorReporter_{{type_bundle.suffix}}(StreamingCompactorR
 
 cdef class cDBGWriter_{{type_bundle.suffix}}(cDBGWriter_Base):
     cdef shared_ptr[_cDBGWriter[_dBG[{{type_bundle.params}}]]] _s_this
+
+cdef class cDBGComponentReporter_{{type_bundle.suffix}}(cDBGComponentReporter):
+    cdef shared_ptr[_cDBGComponentReporter[_dBG[{{type_bundle.params}}]]] _s_this
 
 {% endfor %}
 

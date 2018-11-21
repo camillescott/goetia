@@ -17,7 +17,8 @@ from boink.parsing import grouper
 from boink.processors import make_streaming_compactor_processor
 from boink.reporting import (make_streaming_compactor_reporter,
                              make_cdbgwriter_reporter,
-                             cDBGHistoryReporter)
+                             cDBGHistoryReporter,
+                             cDBGComponentReporter)
 
 
 
@@ -68,6 +69,10 @@ def main():
         history = cDBGHistoryReporter(args.track_cdbg_history)
         compactor.cdbg.Notifier.register_listener(history)
 
+    if args.track_cdbg_components:
+        components = cDBGComponentReporter.build(args.track_cdbg_components,
+                                                 compactor.cdbg)
+        processor.Notifier.register_listener(components)
 
     if args.pairing_mode == 'split':
         _samples = grouper(2, args.inputs)

@@ -111,6 +111,8 @@ cython_debug/
 src/boink/test_assembly
 src/boink/benchmark_boink_consume
 src/boink/benchmark_oxli_consume
+*.pyx.pxi
+*.pxd.pxi
 
 
 .doit.db.*

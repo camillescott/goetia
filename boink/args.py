@@ -222,6 +222,11 @@ def add_save_cDBG_args(parser):
                         nargs='?',
                         const=default_prefix + '.history.graphml')
 
+    parser.add_argument('--track-cdbg-components',
+                        metavar='FILE_NAME.csv',
+                        nargs='?',
+                        const=default_prefix + '.components.csv')
+
     parser.add_argument('--validate',
                         metavar='FILENAME.csv',
                         nargs='?',

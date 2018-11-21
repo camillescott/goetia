@@ -7,8 +7,8 @@
  * of the MIT license.  See the LICENSE file for details.
  */
 
-#ifndef REPORTERS_HH
-#define REPORTERS_HH
+#ifndef BOINK_REPORTERS_HH
+#define BOINK_REPORTERS_HH
 
 #include <fstream>
 #include <iostream>
@@ -41,7 +41,7 @@ protected:
 public:
 
     SingleFileReporter(const std::string& output_filename,
-             const std::string& thread_name) 
+                       const std::string& thread_name) 
         : EventListener(thread_name),
           _output_filename(output_filename),
           _output_stream(_output_filename.c_str())

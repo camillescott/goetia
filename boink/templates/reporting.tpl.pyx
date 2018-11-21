@@ -24,6 +24,19 @@ from boink.events cimport _EventListener
 cdef class StreamingCompactorReporter_Base(SingleFileReporter):
     pass
 
+
+cdef class cDBGComponentReporter(SingleFileReporter):
+    pass
+    @staticmethod
+    def build(str output_filename, cDBG_Base cdbg):
+        {% for type_bundle in type_bundles %}
+        if cdbg.storage_type == "{{type_bundle.storage_type}}" and \
+           cdbg.shifter_type == "{{type_bundle.shifter_type}}":
+            return cDBGComponentReporter_{{type_bundle.suffix}}(output_filename, cdbg);
+        {% endfor %}
+    
+        raise TypeError("Could not match cDBG template type.")
+
 {% for type_bundle in type_bundles %}
 
 cdef class StreamingCompactorReporter_{{type_bundle.suffix}}(StreamingCompactorReporter_Base):
@@ -41,17 +54,39 @@ cdef class StreamingCompactorReporter_{{type_bundle.suffix}}(StreamingCompactorR
 
 cdef class cDBGWriter_{{type_bundle.suffix}}(cDBGWriter_Base):
 
-    def __cinit__(self, str output_prefix, str graph_format, cDBG_{{type_bundle.suffix}} cdbg,
+    def __cinit__(self, str output_prefix,
+                        str graph_format,
+                        cDBG_{{type_bundle.suffix}} cdbg,
                         *args, **kwargs):
         
         self.storage_type = cdbg.storage_type
         self.shifter_type = cdbg.shifter_type
 
         if type(self) is cDBGWriter_{{type_bundle.suffix}}:
-            self._s_this = make_shared[_cDBGWriter[_dBG[{{type_bundle.params}}]]](cdbg._this,
-                                                     convert_format(graph_format),
-                                                     _bstring(output_prefix))
+            self._s_this = make_shared[_cDBGWriter[_dBG[{{type_bundle.params}}]]]\
+                                       (cdbg._this,
+                                        convert_format(graph_format),
+                                        _bstring(output_prefix))
+
             self._this = <shared_ptr[_MultiFileReporter]>self._s_this
+            self._listener = <shared_ptr[_EventListener]>self._s_this
+
+
+cdef class cDBGComponentReporter_{{type_bundle.suffix}}(cDBGComponentReporter):
+
+    def __cinit__(self, str output_filename,
+                        cDBG_{{type_bundle.suffix}} cdbg,
+                        *args, **kwargs):
+        
+        self.storage_type = cdbg.storage_type
+        self.shifter_type = cdbg.shifter_type
+
+        if type(self) is cDBGComponentReporter_{{type_bundle.suffix}}:
+            self._s_this = make_shared[_cDBGComponentReporter[_dBG[{{type_bundle.params}}]]]\
+                                      (cdbg._this,
+                                       _bstring(output_filename))
+
+            self._this = <shared_ptr[_SingleFileReporter]>self._s_this
             self._listener = <shared_ptr[_EventListener]>self._s_this
 
 {% endfor %}

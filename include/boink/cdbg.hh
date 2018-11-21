@@ -59,7 +59,7 @@ using namespace boink::event_types;
 
 #define NULL_ID             ULLONG_MAX
 #define UNITIG_START_ID     0
-#define NULL_JUNCTION       make_pair(0,0)
+
 
 enum cDBGFormat {
     GRAPHML,
@@ -174,6 +174,7 @@ public:
                 node_meta_t meta)
         : _meta(meta),
           node_id(node_id),
+          component_id(NULL_ID),
           sequence(sequence)
     {
     }
@@ -411,7 +412,6 @@ protected:
     uint64_t _unitig_id_counter;
     // Current number of Unitigs
     uint64_t _n_unitig_nodes;
-    uint64_t _component_id_counter;
 
 public:
 
@@ -424,8 +424,7 @@ public:
           dbg(dbg),
           _n_updates(0),
           _unitig_id_counter(UNITIG_START_ID),
-          _n_unitig_nodes(0),
-          _component_id_counter(0)
+          _n_unitig_nodes(0)
     {
         /*
         counter_keys = { "N_FULL",
@@ -656,8 +655,12 @@ public:
                 }
             } else {
                 auto neighbors = find_unode_neighbors((UnitigNode*)root);
-                node_q.push_back(neighbors.first);
-                node_q.push_back(neighbors.second);
+                if (neighbors.first != nullptr) {
+                    node_q.push_back(neighbors.first);
+                }
+                if (neighbors.second != nullptr) {
+                    node_q.push_back(neighbors.second);
+                }
             }
 
             seen.insert(root->node_id);

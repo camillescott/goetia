@@ -34,6 +34,10 @@ cdef extern from "boink/reporting/cdbg_history_reporter.hh" namespace "boink::re
     cdef cppclass _cDBGHistoryReporter "boink::reporting::cDBGHistoryReporter" (_SingleFileReporter):
         _cDBGHistoryReporter(const string&)
 
+cdef extern from "boink/reporting/cdbg_component_reporter.hh" namespace "boink::reporting" nogil:
+    cdef cppclass _cDBGComponentReporter "boink::reporting::cDBGComponentReporter" [GraphType] (_SingleFileReporter):
+        _cDBGComponentReporter(shared_ptr[_cDBG[GraphType]], const string&)
+
 
 cdef class SingleFileReporter(EventListener):
     cdef readonly object          output_filename

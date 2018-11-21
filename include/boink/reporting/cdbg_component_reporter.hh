@@ -27,64 +27,67 @@
 namespace boink {
 namespace reporting {
 
+
+template <class GraphType>
 class cDBGComponentReporter : public SingleFileReporter {
 private:
 
+    std::shared_ptr<cDBG<GraphType>> cdbg;
     id_t _component_id_counter;
-
-    class WeakComponent {
-        public:
-
-            id_t component_id;
-            spp::sparse_hash_set<id_t> nodes;
-
-            WeakComponent(id_t id)
-                : component_id(id)
-            {
-            }
-
-    };
-
-    //spp::sparse_hash_map<id_t, unique_ptr<WeakComponent>> component_owner;
-    //spp::sparse_hash_map<id_t, *WeakComponent> node_component_map;
-
+    spp::sparse_hash_map<id_t, uint64_t> component_size_map;
+    uint64_t max_component;
+    uint64_t min_component;
 
 public:
 
-    cDBGComponentReporter(const std::string& filename)
-        : SingleFileReporter(filename, "cDBGComponentReporter")
+    cDBGComponentReporter(std::shared_ptr<cDBG<GraphType>> cdbg,
+                          const std::string& filename)
+        : SingleFileReporter(filename, "cDBGComponentReporter"),
+          cdbg(cdbg),
+          min_component(ULLONG_MAX),
+          max_component(0)
     {
-        _cerr(this->THREAD_NAME << " reporting continuously.");
+        _cerr(this->THREAD_NAME << " reporting at MEDIUM interval.");
+        this->msg_type_whitelist.insert(boink::event_types::MSG_TIME_INTERVAL);
 
-        this->msg_type_whitelist.insert(boink::event_types::MSG_HISTORY_NEW);
-        this->msg_type_whitelist.insert(boink::event_types::MSG_HISTORY_SPLIT);
-        this->msg_type_whitelist.insert(boink::event_types::MSG_HISTORY_SPLIT_CIRCULAR);
-        this->msg_type_whitelist.insert(boink::event_types::MSG_HISTORY_MERGE);
-        this->msg_type_whitelist.insert(boink::event_types::MSG_HISTORY_EXTEND);
-        this->msg_type_whitelist.insert(boink::event_types::MSG_HISTORY_CLIP);
-        this->msg_type_whitelist.insert(boink::event_types::MSG_HISTORY_DELETE);
-
+        _output_stream << "read_n,n_components,max_component,min_component" << std::endl;
     }
 
-    virtual void handle_msg(shared_ptr<Event> event) {
-        if (event->msg_type == boink::event_types::MSG_HISTORY_NEW) {
-            auto _event = static_cast<HistoryNewEvent*>(event.get());
+    virtual void handle_msg(std::shared_ptr<Event> event) {
+         if (event->msg_type == boink::event_types::MSG_TIME_INTERVAL) {
+            auto _event = static_cast<TimeIntervalEvent*>(event.get());
+            if (_event->level == TimeIntervalEvent::MEDIUM ||
+                _event->level == TimeIntervalEvent::END) {
+                
+                this->recompute_components();
+                _output_stream << _event->t << ","
+                               << component_size_map.size() << ","
+                               << max_component << ","
+                               << min_component << ","
+                               << std::endl;
+            }
+        }       
+    }
 
-        } else if (event->msg_type == boink::event_types::MSG_HISTORY_SPLIT) {
-            auto _event = static_cast<HistorySplitEvent*>(event.get());
+    void recompute_components() {
+        auto lock = cdbg->lock_nodes();
 
-        } else if (event->msg_type == boink::event_types::MSG_HISTORY_MERGE) {
-            auto _event = static_cast<HistoryMergeEvent*>(event.get());
+        spp::sparse_hash_set<id_t> seen;
+        component_size_map.clear();
 
-        } else if (event->msg_type == boink::event_types::MSG_HISTORY_EXTEND) {
-            auto _event = static_cast<HistoryExtendEvent*>(event.get());
-
-        } else if (event->msg_type == boink::event_types::MSG_HISTORY_CLIP) {
-            auto _event = static_cast<HistoryClipEvent*>(event.get());
-
-        } else if (event->msg_type == boink::event_types::MSG_HISTORY_SPLIT_CIRCULAR) {
-            auto _event = static_cast<HistorySplitCircularEvent*>(event.get());
-
+        for (auto unitig_it = cdbg->unodes_begin(); unitig_it != cdbg->unodes_end(); unitig_it++) {
+            auto root = unitig_it->second.get();
+            if (!seen.count(root->node_id)) {
+                auto component_nodes = cdbg->traverse_breadth_first(root);
+                id_t component_id = (root->component_id == NULL_ID) ? ++_component_id_counter : root->component_id;
+                for (auto node : component_nodes) {
+                    node->component_id = component_id;
+                    seen.insert(node->node_id);
+                }
+                component_size_map[component_id] = component_nodes.size();
+                max_component = (component_nodes.size() > max_component) ? component_nodes.size() : max_component;
+                min_component = (component_nodes.size() < min_component) ? component_nodes.size() : min_component;
+            }
         }
     }
 };
