@@ -7,8 +7,8 @@
  * of the MIT license.  See the LICENSE file for details.
  */
 
-#ifndef CDBG_HH
-#define CDBG_HH
+#ifndef BOINK_CDBG_HH
+#define BOINK_CDBG_HH
 
 #include <algorithm>
 #include <cstdint>
@@ -17,9 +17,7 @@
 #include <limits>
 #include <iostream>
 #include <sstream>
-#include <unordered_map>
 
-#include "oxli/alphabets.hh"
 #include "gfakluge/src/gfakluge.hpp"
 #include "sparsepp/sparsepp/spp.h"
 
@@ -29,6 +27,9 @@
 
 #include "boink/events.hh"
 #include "boink/event_types.hh"
+
+#include "boink/cdbg/cdbg_types.hh"
+#include "boink/cdbg/metrics.hh"
 
 # ifdef DEBUG_CDBG
 #   define pdebug(x) do { std::ostringstream stream; \
@@ -41,11 +42,10 @@
 #   define pdebug(x) do {} while (0)
 # endif
 
-#define complement(ch) ((ch) == 'A' ? 'T' : \
-                        (ch) == 'T' ? 'A' : \
-                        (ch) == 'C' ? 'G' : 'C')
+#define ifmetrics(x) do { if (metrics != nullptr) { x; } } while (0)
 
 namespace boink {
+namespace cdbg {
 
 using std::string;
 using std::unique_ptr;
@@ -56,304 +56,6 @@ using std::pair;
 using namespace oxli;
 using namespace boink::events;
 using namespace boink::event_types;
-
-#define NULL_ID             ULLONG_MAX
-#define UNITIG_START_ID     0
-
-
-enum cDBGFormat {
-    GRAPHML,
-    EDGELIST,
-    FASTA,
-    GFA1
-};
-
-
-inline const string cdbg_format_repr(cDBGFormat fmt) {
-    switch(fmt) {
-        case GRAPHML:
-            return "graphml";
-        case EDGELIST:
-            return "edgelist";
-        case FASTA:
-            return "fasta";
-        case GFA1:
-            return "gfa1";
-        default:
-            return "FORMAT";
-    }
-}
-
-
-struct node_meta_counter {
-
-    int64_t full_count;
-    int64_t tip_count;
-    int64_t island_count;
-    int64_t trivial_count;
-    int64_t circular_count;
-    int64_t loop_count;
-
-    node_meta_counter() :
-        full_count(0),
-        tip_count(0),
-        island_count(0),
-        trivial_count(0),
-        circular_count(0),
-        loop_count(0) {
-    }
-
-    void mutate(node_meta_t meta, int64_t amt) {
-        switch(meta) {
-            case FULL:
-                full_count += amt;
-                break;
-            case TIP:
-                tip_count += amt;
-                break;
-            case ISLAND:
-                island_count += amt;
-                break;
-            case CIRCULAR:
-                circular_count += amt;
-                break;
-            case TRIVIAL:
-                trivial_count += amt;
-                break;
-            case LOOP:
-                loop_count += amt;
-                break;
-            default:
-                break;
-        }
-    }
-
-    void increment(node_meta_t meta) {
-        mutate(meta, 1);
-    }
-
-    void decrement(node_meta_t meta) {
-        mutate(meta, -1);
-    }
-
-    string repr() const {
-        std::ostringstream os;
-        os << *this;
-        return os.str();
-    }
-
-    string header() const {
-        return string("n_full,n_tips,n_islands,n_circular,n_trivial,n_loops");
-    }
-
-    friend std::ostream& operator<<(std::ostream& o, const node_meta_counter& c);
-
-};
-
-std::ostream& operator<<(std::ostream& o, const node_meta_counter& c) {
-    o << c.full_count << "," << c.tip_count << "," << c.island_count
-      << "," << c.circular_count << "," << c.trivial_count << "," << c.loop_count;
-    return o;
-}
-
-
-class CompactNode {
-
-protected:
-
-    node_meta_t _meta;
-
-public:
-
-    const id_t node_id;
-    id_t component_id;
-    string sequence;
-    
-    CompactNode(id_t node_id,
-                const string& sequence,
-                node_meta_t meta)
-        : _meta(meta),
-          node_id(node_id),
-          component_id(NULL_ID),
-          sequence(sequence)
-    {
-    }
-
-    string revcomp() const {
-        return _revcomp(sequence);
-    }
-
-    size_t length() const {
-        return sequence.length();
-    }
-
-    const node_meta_t meta() const {
-        return _meta;
-    }
-
-    friend bool operator== (const CompactNode& lhs, const CompactNode& rhs) {
-        return lhs.node_id == rhs.node_id;
-    }
-
-    string get_name() const {
-        return string("NODE") + std::to_string(node_id);
-    }
-
-};
-
-
-class DecisionNode: public CompactNode {
-
-protected:
-
-    bool _dirty;
-    uint8_t _left_degree;
-    uint8_t _right_degree;
-    uint32_t _count;
-
-public:
-
-    DecisionNode(id_t node_id, const string& sequence)
-        : CompactNode(node_id, sequence, DECISION),
-          _dirty(true),
-          _left_degree(0),
-          _right_degree(0),
-          _count(1)
-    {    
-    }
-
-    const bool is_dirty() const {
-        return _dirty;
-    }
-
-    void set_dirty(bool dirty) {
-        _dirty = dirty;
-    }
-
-    const uint32_t count() const {
-        return _count;
-    }
-
-    void incr_count() {
-        _count++;
-    }
-
-    const uint8_t degree() const {
-        return left_degree() + right_degree();
-    }
-
-    const uint8_t left_degree() const {
-        return _left_degree;
-    }
-
-    void incr_left_degree() {
-        _left_degree++;
-    }
-
-    const uint8_t right_degree() const {
-        return _right_degree;
-    }
-
-    void incr_right_degree() {
-        _right_degree++;
-    }
-
-    std::string repr() const {
-        std::ostringstream os;
-        os << *this;
-        return os.str();
-    }
-
-    friend std::ostream& operator<<(std::ostream& o, const DecisionNode& dn);
-};
-
-
-std::ostream& operator<<(std::ostream& o, const DecisionNode& dn) {
-
-    o << "<DNode ID/hash=" << dn.node_id << " k-mer=" << dn.sequence
-      //<< " Dl=" << std::to_string(dn.left_degree())
-      //<< " Dr=" << std::to_string(dn.right_degree())
-      << " count=" << dn.count()
-      << " dirty=" << dn.is_dirty() << ">";
-    return o;
-}
-
-
-class UnitigNode : public CompactNode {
-
-protected:
-
-    hash_t _left_end, _right_end;
-
-public:
-
-    HashVector tags;
-
-    UnitigNode(id_t node_id,
-               hash_t left_end,
-               hash_t right_end,
-               const string& sequence)
-        : CompactNode(node_id, sequence, ISLAND),
-          _left_end(left_end),
-          _right_end(right_end) { 
-    }
-
-    void set_node_meta(node_meta_t new_meta) {
-        _meta = new_meta;
-    }
-
-    const hash_t left_end() const {
-        return _left_end;
-    }
-
-    void set_left_end(hash_t left_end) {
-        _left_end = left_end;
-    }
-
-    void extend_right(hash_t right_end, const string& new_sequence) {
-        sequence += new_sequence;
-        _right_end = right_end;
-    }
-
-    void extend_left(hash_t left_end, const string& new_sequence) {
-        sequence = new_sequence + sequence;
-        _left_end = left_end;
-    }
-
-    const hash_t right_end() const {
-        return _right_end;
-    }
-
-    void set_right_end(hash_t right_end) {
-        _right_end = right_end;
-    }
-
-    std::string repr() const {
-        std::ostringstream os;
-        os << *this;
-        return os.str();
-    }
-
-    friend std::ostream& operator<<(std::ostream& o, const UnitigNode& un);
-
-};
-
-
-std::ostream& operator<<(std::ostream& o, const UnitigNode& un) {
-    o << "<UNode ID=" << un.node_id
-      << " left_end=" << un.left_end()
-      << " right_end=" << un.right_end()
-      << " sequence=" << un.sequence
-      << " length=" << un.sequence.length()
-      << " meta=" << node_meta_repr(un.meta())
-      << ">";
-    return o;
-}
-
-
-typedef CompactNode * CompactNodePtr;
-typedef DecisionNode * DecisionNodePtr;
-typedef UnitigNode * UnitigNodePtr;
 
 
 template <class GraphType>
@@ -413,35 +115,27 @@ protected:
     // Current number of Unitigs
     uint64_t _n_unitig_nodes;
 
+    shared_ptr<prometheus::Registry> pr_registry;
+
 public:
 
-    node_meta_counter meta_counter;
+    shared_ptr<cDBGMetrics> metrics;
 
     cDBG(shared_ptr<GraphType> dbg,
-         uint64_t minimizer_window_size=8)
+         uint64_t minimizer_window_size=8,
+         shared_ptr<prometheus::Registry> metrics_registry=nullptr)
         : KmerClient(dbg->K()),
           EventNotifier(),
           dbg(dbg),
           _n_updates(0),
           _unitig_id_counter(UNITIG_START_ID),
-          _n_unitig_nodes(0)
+          _n_unitig_nodes(0),
+          pr_registry(metrics_registry)
     {
-        /*
-        counter_keys = { "N_FULL",
-                         "N_TIPS",
-                         "N_ISLANDS",
-                         "N_CIRCULAR",
-                         "N_TRIVIAL",
-                         "N_LOOPS",
-                         "N_UPDATES",
-                         "N_MERGES",
-                         "N_SPLITS",
-                         "N_EXTENDS",
-                         "N_CLIPS",
-                         "N_BUILDS",
-                         "N_DELETES" }
-        meta_counter.register_counters(counter_keys);
-        */
+        if(metrics_registry != nullptr) {
+            pr_registry = metrics_registry;
+            metrics = make_shared<cDBGMetrics>(pr_registry);
+        }
     }
 
     std::unique_lock<std::mutex> lock_nodes() {
@@ -727,6 +421,7 @@ public:
             notify_history_new(dnode->node_id,
                                dnode->sequence,
                                dnode->meta());
+            ifmetrics(metrics->n_dnodes.Increment());
             pdebug("BUILD_DNODE complete: " << *dnode);
         } else {
             pdebug("BUILD_DNODE: d-node for " << hash << " already exists.");
@@ -750,10 +445,11 @@ public:
                                                                    right_end,
                                                                    sequence)));
         UnitigNode * unode_ptr = unitig_nodes[id].get();
-        
+
         _unitig_id_counter++;
         _n_unitig_nodes++;
         _n_updates++;
+        ifmetrics(metrics->n_unodes.Increment());
 
         // Link up its new tags
         unode_ptr->tags.insert(std::end(unode_ptr->tags),
@@ -766,8 +462,8 @@ public:
         unitig_end_map.insert(make_pair(right_end, unode_ptr));
 
         auto unode_meta = recompute_node_meta(unode_ptr);
-        meta_counter.increment(unode_meta);
         unode_ptr->set_node_meta(unode_meta);
+        ifmetrics(metrics->increment_cdbg_node(unode_meta));
 
         notify_history_new(id, unode_ptr->sequence, unode_ptr->meta());
         pdebug("BUILD_UNODE complete: " << *unode_ptr);
@@ -787,31 +483,34 @@ public:
                " and swap " << old_unode_end << " to " << new_unode_end);
 
         if (unode->sequence.length() == this->_K) {
-            meta_counter.decrement(unode->meta());
+            ifmetrics(metrics->decrement_cdbg_node(unode->meta()));
             delete_unode(unode);
             pdebug("CLIP complete: deleted null unode.");
-        } else if (clip_from == DIR_LEFT) {
-            unode->sequence = unode->sequence.substr(1);
-            unode->set_left_end(new_unode_end);
-
-            meta_counter.decrement(unode->meta());
-            auto meta = recompute_node_meta(unode);
-            meta_counter.increment(meta);
-            unode->set_node_meta(meta);
-
-            notify_history_clip(unode->node_id, unode->sequence, unode->meta());
-            pdebug("CLIP complete: " << *unode);
         } else {
-            unode->sequence = unode->sequence.substr(0, unode->sequence.length() - 1);
-            unode->set_right_end(new_unode_end);
+            ifmetrics(metrics->n_clips.Increment());
+            if (clip_from == DIR_LEFT) {
+                unode->sequence = unode->sequence.substr(1);
+                unode->set_left_end(new_unode_end);
 
-            meta_counter.decrement(unode->meta());
-            auto meta = recompute_node_meta(unode);
-            meta_counter.increment(meta);
-            unode->set_node_meta(meta);
+                ifmetrics(metrics->decrement_cdbg_node(unode->meta()));
+                auto meta = recompute_node_meta(unode);
+                ifmetrics(metrics->increment_cdbg_node(meta));
+                unode->set_node_meta(meta);
 
-            notify_history_clip(unode->node_id, unode->sequence, unode->meta());
-            pdebug("CLIP complete: " << *unode);
+                notify_history_clip(unode->node_id, unode->sequence, unode->meta());
+                pdebug("CLIP complete: " << *unode);
+            } else {
+                unode->sequence = unode->sequence.substr(0, unode->sequence.length() - 1);
+                unode->set_right_end(new_unode_end);
+
+                ifmetrics(metrics->decrement_cdbg_node(unode->meta()));
+                auto meta = recompute_node_meta(unode);
+                ifmetrics(metrics->increment_cdbg_node(meta));
+                unode->set_node_meta(meta);
+
+                notify_history_clip(unode->node_id, unode->sequence, unode->meta());
+                pdebug("CLIP complete: " << *unode);
+            }
         }
 
         ++_n_updates;
@@ -855,9 +554,10 @@ public:
             unitig_tag_map.insert(make_pair(tag, unode));
         }
 
-        meta_counter.decrement(unode->meta());
+        ifmetrics(metrics->n_extends.Increment());
+        ifmetrics(metrics->decrement_cdbg_node(unode->meta()));
         auto meta = recompute_node_meta(unode);
-        meta_counter.increment(meta);
+        ifmetrics(metrics->increment_cdbg_node(meta));
         unode->set_node_meta(meta);
         ++_n_updates;
 
@@ -874,6 +574,7 @@ public:
         UnitigNode * unode;
         string right_unitig;
         hash_t right_unode_right_end;
+
         {
             auto lock = lock_nodes();
 
@@ -894,9 +595,10 @@ public:
                 unode->set_left_end(new_left_end);
                 unode->set_right_end(new_right_end);
 
+                ifmetrics(metrics->n_splits.Increment());
                 unode->set_node_meta(FULL);
-                meta_counter.decrement(CIRCULAR);
-                meta_counter.increment(FULL);
+                ifmetrics(metrics->decrement_cdbg_node(CIRCULAR));
+                ifmetrics(metrics->increment_cdbg_node(FULL));
                 ++_n_updates;
 
                 notify_history_split_circular(unode->node_id, unode->sequence, unode->meta());
@@ -917,9 +619,10 @@ public:
             unode->set_right_end(new_right_end);
             unode->sequence = unode->sequence.substr(0, split_at + this->_K - 1);
             
-            meta_counter.decrement(unode->meta());
+            ifmetrics(metrics->n_splits.Increment());
+            ifmetrics(metrics->decrement_cdbg_node(unode->meta()));
             auto meta = recompute_node_meta(unode);
-            meta_counter.increment(meta);
+            ifmetrics(metrics->increment_cdbg_node(meta));
             unode->set_node_meta(meta);
             ++_n_updates;
         }
@@ -971,7 +674,8 @@ public:
 
         if (left_unode->node_id == right_unode->node_id) {
             pdebug("MERGE: CIRCULAR! Creating circular unitig, span is " << span_sequence);
-            meta_counter.decrement(right_unode->meta());
+            ifmetrics(metrics->decrement_cdbg_node(right_unode->meta()));
+            ifmetrics(metrics->n_circular_merges.Increment());
             string extend = span_sequence;
             //if (n_span_kmers < this->_K - 1) {
                 pdebug("Overlap between merged sequence, trimming right " << n_span_kmers);
@@ -1007,7 +711,7 @@ public:
                          left_end,
                          new_right_end,
                          new_tags);
-
+            ifmetrics(metrics->n_merges.Increment());
 
         }
         
@@ -1023,7 +727,7 @@ public:
         if (unode != nullptr) {
             pdebug("Deleting " << *unode);
             id_t id = unode->node_id;
-            meta_counter.decrement(unode->meta());
+            ifmetrics(metrics->decrement_cdbg_node(unode->meta()));
             for (hash_t tag: unode->tags) {
                 unitig_tag_map.erase(tag);
             }
@@ -1034,6 +738,8 @@ public:
             unode = nullptr;
             _n_unitig_nodes--;
             _n_updates++;
+            ifmetrics(metrics->n_unodes.Decrement());
+            ifmetrics(metrics->n_deletes.Increment());
         }
     }
 
@@ -1118,7 +824,7 @@ public:
                     << unode->left_end() << ";"
                     << unode->right_end() << ";"
                     << unode->sequence << ";"
-                    << counts
+                    //<< counts
                     << std::endl;
             }
         }
@@ -1406,7 +1112,7 @@ public:
     }
 };
 */
-
+}
 }
 
 #undef pdebug

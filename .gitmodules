@@ -7,3 +7,6 @@
 [submodule "include/sparsepp"]
 	path = include/sparsepp
 	url = https://github.com/greg7mdp/sparsepp
+[submodule "include/prometheus-cpp"]
+	path = include/prometheus-cpp
+	url = https://github.com/jupp0r/prometheus-cpp

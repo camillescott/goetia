@@ -16,13 +16,15 @@
 #include <string>
 
 #include "boink/boink.hh"
-#include "boink/cdbg.hh"
-#include "boink/compactor.hh"
 #include "boink/event_types.hh"
+#include "boink/cdbg/cdbg.hh"
+#include "boink/cdbg/compactor.hh"
 #include "boink/reporting/reporters.hh"
 #include "boink/reporting/report_types.hh"
 
 #include <sparsepp/sparsepp/spp.h>
+
+using namespace boink::cdbg;
 
 namespace boink {
 namespace reporting {

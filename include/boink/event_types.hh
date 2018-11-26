@@ -13,11 +13,14 @@
 #include <string>
 
 #include "boink/boink.hh"
+#include "boink/cdbg/cdbg_types.hh"
 
 using std::string;
 
 namespace boink {
 namespace event_types {
+
+using boink::cdbg::node_meta_t;
 
 /* All event types. 
  */

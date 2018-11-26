@@ -23,15 +23,11 @@ from boink.events cimport (_StreamingCompactorReport, _EventNotifier,
 
 from boink.sparsepp cimport sparse_hash_set, sparse_hash_map
 
-cdef extern from "boink/cdbg.hh":
+
+cdef extern from "boink/cdbg/cdbg_types.hh" namespace "boink::cdbg":
     cdef uint64_t NULL_ID
     cdef uint64_t UNITIG_START_ID
-
-cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
-
     ctypedef uint64_t id_t
-    ctypedef pair[hash_t, hash_t] junction_t
-    ctypedef vector[hash_t] HashVector
 
     ctypedef enum node_meta_t:
         FULL,
@@ -51,7 +47,7 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
 
     cdef const char * node_meta_repr(node_meta_t)
 
-    cdef cppclass _CompactNode "boink::CompactNode":
+    cdef cppclass _CompactNode "boink::cdbg::CompactNode":
         const id_t node_id
         string sequence
 
@@ -62,7 +58,7 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
 
         bool operator==(const _CompactNode&, const _CompactNode&)
 
-    cdef cppclass _DecisionNode "boink::DecisionNode" (_CompactNode):
+    cdef cppclass _DecisionNode "boink::cdbg::DecisionNode" (_CompactNode):
         uint32_t count()
         void incr_count()
 
@@ -72,8 +68,8 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
 
         string repr()
 
-    cdef cppclass _UnitigNode "boink::UnitigNode" (_CompactNode):
-        HashVector tags
+    cdef cppclass _UnitigNode "boink::cdbg::UnitigNode" (_CompactNode):
+        vector[hash_t] tags
         
         hash_t left_end()
         hash_t right_end()
@@ -85,8 +81,10 @@ cdef extern from "boink/cdbg.hh" namespace "boink" nogil:
     ctypedef _CompactNode * CompactNodePtr
     ctypedef _DecisionNode * DecisionNodePtr
     ctypedef _UnitigNode * UnitigNodePtr
-    
-    cdef cppclass _cDBG "boink::cDBG" [GraphType] (_KmerClient, _EventNotifier):
+
+cdef extern from "boink/cdbg/cdbg.hh" namespace "boink::cdbg" nogil:
+
+    cdef cppclass _cDBG "boink::cdbg::cDBG" [GraphType] (_KmerClient, _EventNotifier):
         ctypedef sparse_hash_map[hash_t,unique_ptr[_DecisionNode]].const_iterator dnode_iter_t
         ctypedef sparse_hash_map[id_t,unique_ptr[_UnitigNode]].const_iterator unode_iter_t
 

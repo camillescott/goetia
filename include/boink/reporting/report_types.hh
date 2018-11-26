@@ -24,6 +24,12 @@ struct StreamingCompactorReport {
     uint64_t n_dnodes;
     uint64_t n_unodes;
     uint64_t n_updates;
+    uint64_t n_splits;
+    uint64_t n_merges;
+    uint64_t n_extends;
+    uint64_t n_clips;
+    uint64_t n_deletes;
+    uint64_t n_circular_merges;
     uint64_t n_tags;
     uint64_t n_unique;
     double   estimated_fp;

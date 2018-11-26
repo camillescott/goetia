@@ -29,6 +29,12 @@ namespace boink {
                       std::cout << stream.str(); \
                     } while(0)
 
+#define complement(ch) ((ch) == 'A' ? 'T' : \
+                        (ch) == 'T' ? 'A' : \
+                        (ch) == 'C' ? 'G' : 'C')
+
+
+
 using std::pair;
 using std::vector;
 
@@ -92,51 +98,6 @@ enum direction_t {
 
 
 typedef vector<hash_t> HashVector;
-typedef uint64_t id_t;
-typedef pair<hash_t, hash_t> junction_t;
-
-
-enum node_meta_t {
-    FULL,
-    TIP,
-    ISLAND,
-    CIRCULAR,
-    LOOP,
-    TRIVIAL,
-    DECISION
-};
-
-inline const char * node_meta_repr(node_meta_t meta) {
-    switch(meta) {
-        case FULL:
-            return "FULL";
-        case TIP:
-            return "TIP";
-        case ISLAND:
-            return "ISLAND";
-        case CIRCULAR:
-            return "CIRCULAR";
-        case TRIVIAL:
-            return "TRIVIAL";
-        case LOOP:
-            return "LOOP";
-        case DECISION:
-            return "DECISION";
-        default:
-            return "UNKNOWN";
-    }
-}
-
-
-enum update_meta_t {
-    BUILD_UNODE,
-    BUILD_DNODE,
-    DELETE_UNODE,
-    SPLIT_UNODE,
-    EXTEND_UNODE,
-    CLIP_UNODE,
-    MERGE_UNODES
-};
 
 
 template<typename _Ty1, typename _Ty2>

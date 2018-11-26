@@ -16,10 +16,12 @@
 #include <string>
 
 #include "boink/boink.hh"
-#include "boink/compactor.hh"
 #include "boink/event_types.hh"
+#include "boink/cdbg/compactor.hh"
 #include "boink/reporting/reporters.hh"
 #include "boink/reporting/report_types.hh"
+
+using namespace boink::cdbg;
 
 namespace boink {
 namespace reporting {
@@ -46,7 +48,8 @@ public:
 
         _output_stream << "read_n,n_full,n_tips,n_islands,n_trivial"
                           ",n_circular,n_loops,n_dnodes,n_unodes,n_tags,"
-                          "n_updates,n_unique,estimated_fp" << std::endl;
+                          "n_updates,n_splits,n_merges,n_extends,n_clips"
+                          "n_deletes,n_circular_merges,n_unique,estimated_fp" << std::endl;
     }
 
     virtual void handle_msg(shared_ptr<Event> event) {
@@ -56,18 +59,24 @@ public:
                 _event->level == TimeIntervalEvent::END) {
                 auto report = compactor->get_report();
                 _output_stream << _event->t << ","
-                               << report->n_full << ","
-                               << report->n_tips << ","
-                               << report->n_islands << ","
-                               << report->n_trivial << ","
-                               << report->n_circular << ","
-                               << report->n_loops << ","
-                               << report->n_dnodes << ","
-                               << report->n_unodes << ","
-                               << report->n_tags << ","
-                               << report->n_updates << ","
-                               << report->n_unique << ","
-                               << report->estimated_fp 
+                               << report.n_full << ","
+                               << report.n_tips << ","
+                               << report.n_islands << ","
+                               << report.n_trivial << ","
+                               << report.n_circular << ","
+                               << report.n_loops << ","
+                               << report.n_dnodes << ","
+                               << report.n_unodes << ","
+                               << report.n_tags << ","
+                               << report.n_updates << ","
+                               << report.n_splits << ","
+                               << report.n_merges << ","
+                               << report.n_extends << ","
+                               << report.n_clips << ","
+                               << report.n_deletes << ","
+                               << report.n_circular_merges << ","
+                               << report.n_unique << ","
+                               << report.estimated_fp 
                                << std::endl;
             }
         }

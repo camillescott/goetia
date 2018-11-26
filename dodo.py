@@ -116,7 +116,9 @@ CFLAGS      = ['-Wshadow', '-Wcast-align', '-Wstrict-prototypes']
 CFLAGS     += INCLUDES
 CFLAGS     += CPPFLAGS
 
-LDFLAGS     = ['-loxli', '-lgfakluge']
+LDFLAGS     = ['-loxli', '-lgfakluge', '-lprometheus-cpp-pull',
+               '-lprometheus-cpp-push', '-lprometheus-cpp-core',
+               '-lpthread', '-lz']
 
 CY_CFLAGS   = sysconfig.get_config_var('CFLAGS').split()
 try:

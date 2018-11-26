@@ -16,11 +16,10 @@
 #include <string>
 
 #include "boink/boink.hh"
-#include "boink/cdbg.hh"
-#include "boink/compactor.hh"
 #include "boink/events.hh"
 #include "boink/event_types.hh"
-
+#include "boink/cdbg/cdbg.hh"
+#include "boink/cdbg/compactor.hh"
 
 namespace boink {
 namespace reporting {

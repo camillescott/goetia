@@ -16,15 +16,18 @@
 #include <string>
 
 #include "boink/boink.hh"
-#include "boink/compactor.hh"
 #include "boink/event_types.hh"
+#include "boink/cdbg/cdbg_types.hh"
 #include "boink/reporting/reporters.hh"
 #include "boink/reporting/report_types.hh"
 
 #include <sparsepp/sparsepp/spp.h>
 
+
 namespace boink {
 namespace reporting {
+
+using boink::cdbg::id_t;
 
 class cDBGHistoryReporter : public SingleFileReporter {
 private:

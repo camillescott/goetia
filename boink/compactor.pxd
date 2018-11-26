@@ -22,9 +22,9 @@ from boink.events cimport (_StreamingCompactorReport, _EventNotifier,
                            _EventListener, EventNotifier, EventListener)
 
 
-cdef extern from "boink/compactor.hh" namespace "boink" nogil:
+cdef extern from "boink/cdbg/compactor.hh" namespace "boink::cdbg" nogil:
 
-    cdef struct _compact_segment "boink::compact_segment":
+    cdef struct _compact_segment "boink::cdbg::compact_segment":
         hash_t left_anchor
         hash_t right_anchor
         hash_t left_flank
@@ -36,7 +36,7 @@ cdef extern from "boink/compactor.hh" namespace "boink" nogil:
         compact_segment()
         const bool is_null() 
 
-    cdef cppclass _StreamingCompactor "boink::StreamingCompactor" [GraphType] (_AssemblerMixin[GraphType], _EventNotifier):
+    cdef cppclass _StreamingCompactor "boink::cdbg::StreamingCompactor" [GraphType] (_AssemblerMixin[GraphType], _EventNotifier):
         shared_ptr[_cDBG[GraphType]] cdbg
 
         _StreamingCompactor(shared_ptr[GraphType])

@@ -15,13 +15,14 @@
 #include "boink/assembly.hh"
 #include "boink/hashing.hh"
 #include "boink/dbg.hh"
-#include "boink/cdbg.hh"
+#include "boink/cdbg/cdbg.hh"
 #include "boink/minimizers.hh"
 #include "boink/event_types.hh"
 #include "boink/reporting/report_types.hh"
 
 
 namespace boink {
+namespace cdbg {
 
 using namespace boink::event_types;
 using namespace boink::reporting::report_types;
@@ -161,20 +162,26 @@ public:
         auto lock = cdbg->lock_nodes();
     }
     
-    StreamingCompactorReport* get_report() {
-        StreamingCompactorReport * report = new StreamingCompactorReport();
-        report->n_full = cdbg->meta_counter.full_count;
-        report->n_tips = cdbg->meta_counter.tip_count;
-        report->n_islands = cdbg->meta_counter.island_count;
-        report->n_trivial = cdbg->meta_counter.trivial_count;
-        report->n_circular = cdbg->meta_counter.circular_count;
-        report->n_loops = cdbg->meta_counter.loop_count;
-        report->n_dnodes = cdbg->n_decision_nodes();
-        report->n_unodes = cdbg->n_unitig_nodes();
-        report->n_tags = cdbg->n_tags();
-        report->n_updates = cdbg->n_updates();
-        report->n_unique = dbg->n_unique();
-        report->estimated_fp = dbg->estimated_fp();
+    StreamingCompactorReport get_report() {
+        StreamingCompactorReport report;
+        report.n_full            = cdbg->metrics->n_full.Value();
+        report.n_tips            = cdbg->metrics->n_tips.Value();
+        report.n_islands         = cdbg->metrics->n_islands.Value();
+        report.n_trivial         = cdbg->metrics->n_trivial.Value();
+        report.n_circular        = cdbg->metrics->n_circular.Value();
+        report.n_loops           = cdbg->metrics->n_loops.Value();
+        report.n_dnodes          = cdbg->metrics->n_dnodes.Value();
+        report.n_unodes          = cdbg->metrics->n_unodes.Value();
+        report.n_tags            = cdbg->n_tags();
+        report.n_updates         = cdbg->n_updates();
+        report.n_splits          = cdbg->metrics->n_splits.Value();
+        report.n_merges          = cdbg->metrics->n_merges.Value();
+        report.n_extends         = cdbg->metrics->n_extends.Value();
+        report.n_clips           = cdbg->metrics->n_clips.Value();
+        report.n_deletes         = cdbg->metrics->n_deletes.Value();
+        report.n_circular_merges = cdbg->metrics->n_circular_merges.Value();
+        report.n_unique          = dbg->n_unique();
+        report.estimated_fp      = dbg->estimated_fp();
 
         return report;
     }
@@ -1005,6 +1012,7 @@ public:
     }
 };
 */
+}
 }
 #undef pdebug
 #endif

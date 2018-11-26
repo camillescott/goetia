@@ -20,11 +20,14 @@
 #include "boink/events.hh"
 #include "boink/event_types.hh"
 
+#include "boink/cdbg/compactor.hh"
+
 using namespace oxli;
 using namespace oxli:: read_parsers;
 
 using namespace boink::events;
 using namespace boink::event_types;
+using namespace boink::cdbg;
 
 #define DEFAULT_FINE_INTERVAL 10000
 #define DEFAULT_MEDIUM_INTERVAL 100000
