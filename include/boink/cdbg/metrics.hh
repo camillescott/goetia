@@ -54,24 +54,24 @@ public:
         node_gauge_family (prometheus::BuildGauge()
                                        .Name("boink_cdbg_nodes_current_total")
                                        .Register(*pr_registry)),
-        n_full            (node_gauge_family.Add({{"n_full", "count"}})),
-        n_tips            (node_gauge_family.Add({{"n_tips", "count"}})),
-        n_islands         (node_gauge_family.Add({{"n_islands", "count"}})),
-        n_trivial         (node_gauge_family.Add({{"n_trivial", "count"}})),
-        n_circular        (node_gauge_family.Add({{"n_circular", "count"}})),
-        n_loops           (node_gauge_family.Add({{"n_loops", "count"}})),
-        n_dnodes          (node_gauge_family.Add({{"n_dnodes", "count"}})),
-        n_unodes          (node_gauge_family.Add({{"n_unodes", "count"}})),
+        n_full            (node_gauge_family.Add({{"node_type", "full_unode"}})),
+        n_tips            (node_gauge_family.Add({{"node_type", "tip_unode"}})),
+        n_islands         (node_gauge_family.Add({{"node_type", "island_unode"}})),
+        n_trivial         (node_gauge_family.Add({{"node_type", "trivial_unode"}})),
+        n_circular        (node_gauge_family.Add({{"node_type", "circular_unode"}})),
+        n_loops           (node_gauge_family.Add({{"node_type", "loop_unode"}})),
+        n_dnodes          (node_gauge_family.Add({{"node_type", "decision_node"}})),
+        n_unodes          (node_gauge_family.Add({{"node_type", "unitig_node"}})),
 
         op_counter_family (prometheus::BuildCounter()
                                        .Name("boink_cdbg_update_ops_total")
                                        .Register(*pr_registry)),
-        n_splits          (op_counter_family.Add({{"n_splits", "count"}})),
-        n_merges          (op_counter_family.Add({{"n_merges", "count"}})),
-        n_extends         (op_counter_family.Add({{"n_extends", "count"}})),
-        n_clips           (op_counter_family.Add({{"n_clips", "count"}})),
-        n_deletes         (op_counter_family.Add({{"n_deletes", "count"}})),
-        n_circular_merges (op_counter_family.Add({{"n_cricular_merges", "count"}}))
+        n_splits          (op_counter_family.Add({{"update_op", "split"}})),
+        n_merges          (op_counter_family.Add({{"update_op", "merge"}})),
+        n_extends         (op_counter_family.Add({{"update_op", "extend"}})),
+        n_clips           (op_counter_family.Add({{"update_op", "clip"}})),
+        n_deletes         (op_counter_family.Add({{"update_op", "delete"}})),
+        n_circular_merges (op_counter_family.Add({{"update_op", "merge_circular"}}))
     {
     }
 
