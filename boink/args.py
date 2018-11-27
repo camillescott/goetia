@@ -256,6 +256,16 @@ def print_cdbg_args(args):
     print('*', file=sys.stderr)
 
 
+def add_prometheus_args(parser):
+    parser.add_argument('--port', default='7777',
+                        help='Port to expose prometheus metrics.')
+    return parser
+
+def print_prometheus_args(args):
+    print('*', file=sys.stderr)
+    print('* Exposing prometheus metrics on port', args.port, file=sys.stderr)
+
+
 def add_pairing_args(parser):
     """Common pairing mode argument."""
     parser.add_argument('--pairing-mode', default='interleaved',

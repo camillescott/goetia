@@ -122,8 +122,8 @@ public:
     shared_ptr<cDBGMetrics> metrics;
 
     cDBG(shared_ptr<GraphType> dbg,
-         uint64_t minimizer_window_size=8,
-         shared_ptr<prometheus::Registry> metrics_registry=nullptr)
+         shared_ptr<prometheus::Registry> metrics_registry=nullptr,
+         uint64_t minimizer_window_size=8)
         : KmerClient(dbg->K()),
           EventNotifier(),
           dbg(dbg),

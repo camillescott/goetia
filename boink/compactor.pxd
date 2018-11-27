@@ -18,6 +18,7 @@ from boink.hashing cimport *
 from boink.dbg cimport *
 from boink.cdbg cimport *
 from boink.minimizers cimport _InteriorMinimizer
+from boink.prometheus cimport _Registry
 from boink.events cimport (_StreamingCompactorReport, _EventNotifier,
                            _EventListener, EventNotifier, EventListener)
 
@@ -39,7 +40,12 @@ cdef extern from "boink/cdbg/compactor.hh" namespace "boink::cdbg" nogil:
     cdef cppclass _StreamingCompactor "boink::cdbg::StreamingCompactor" [GraphType] (_AssemblerMixin[GraphType], _EventNotifier):
         shared_ptr[_cDBG[GraphType]] cdbg
 
-        _StreamingCompactor(shared_ptr[GraphType])
+        _StreamingCompactor(shared_ptr[GraphType],
+                            shared_ptr[_Registry])
+
+        _StreamingCompactor(shared_ptr[GraphType],
+                            shared_ptr[_Registry],
+                            uint64_t)
 
         #string compactify(const string&) except +ValueError
         #void compactify_right(Path&) 

@@ -139,20 +139,16 @@ public:
     shared_ptr<cDBG<GraphType>> cdbg;
 
     StreamingCompactor(shared_ptr<GraphType> dbg,
-                       uint64_t minimizer_window_size=8,
-                       shared_ptr<cDBG<GraphType>> cdbg=nullptr)
+                       shared_ptr<prometheus::Registry> pr_registry,
+                       uint64_t minimizer_window_size=8)
         : CompactorMixin<GraphType>(dbg),
           EventNotifier(),
           _minimizer_window_size(minimizer_window_size),
           dbg(dbg)
     {
-        if (cdbg == nullptr) {
-            this->cdbg = make_shared<cDBG<GraphType>>(dbg);
-            _cdbg_external = false;
-        } else {
-            this->cdbg = cdbg;
-            _cdbg_external = true;
-        }
+        this->cdbg = make_shared<cDBG<GraphType>>(dbg,
+                                                  pr_registry,
+                                                  minimizer_window_size);
     }
 
     ~StreamingCompactor() {

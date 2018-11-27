@@ -12,6 +12,7 @@ from libcpp.memory cimport shared_ptr
 
 from boink.dbg cimport *
 from boink.cdbg cimport *
+from boink.prometheus cimport Instrumentation
 
 
 cdef class StreamingCompactor_Base:
@@ -27,6 +28,6 @@ cdef class StreamingCompactor_{{type_bundle.suffix}}(StreamingCompactor_Base):
     cdef public EventNotifier Notifier
 {% endfor %}
 
-cdef object _make_streaming_compactor(dBG_Base graph)
+cdef object _make_streaming_compactor(dBG_Base graph, Instrumentation inst)
 
 {% endblock code %}

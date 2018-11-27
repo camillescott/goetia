@@ -43,6 +43,7 @@ extensions:
         - processors.tpl.pyx
     - name: stats
     - name: utils
+    - name: prometheus
     - name: parsing
       types:
         - ParserType

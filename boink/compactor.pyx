@@ -12,6 +12,7 @@ from libcpp.string cimport string
 
 from boink.dbg cimport *
 from boink.cdbg cimport *
+from boink.prometheus cimport Instrumentation
 
 from collections import namedtuple
 
@@ -43,5 +44,5 @@ def display_segment_list(list segments):
 
 include "compactor.tpl.pyx.pxi"
 
-def make_streaming_compactor(dBG_Base graph):
-    return _make_streaming_compactor(graph)
+def make_streaming_compactor(dBG_Base graph, Instrumentation inst):
+    return _make_streaming_compactor(graph, inst)

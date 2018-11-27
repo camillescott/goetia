@@ -52,7 +52,7 @@ public:
     cDBGMetrics(std::shared_ptr<prometheus::Registry> registry) :
         pr_registry       (registry),
         node_gauge_family (prometheus::BuildGauge()
-                                       .Name("cdbg_nodes_current_total")
+                                       .Name("boink_cdbg_nodes_current_total")
                                        .Register(*pr_registry)),
         n_full            (node_gauge_family.Add({{"n_full", "count"}})),
         n_tips            (node_gauge_family.Add({{"n_tips", "count"}})),
@@ -64,7 +64,7 @@ public:
         n_unodes          (node_gauge_family.Add({{"n_unodes", "count"}})),
 
         op_counter_family (prometheus::BuildCounter()
-                                       .Name("update_ops_total")
+                                       .Name("boink_cdbg_update_ops_total")
                                        .Register(*pr_registry)),
         n_splits          (op_counter_family.Add({{"n_splits", "count"}})),
         n_merges          (op_counter_family.Add({{"n_merges", "count"}})),

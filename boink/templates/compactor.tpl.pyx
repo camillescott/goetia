@@ -14,6 +14,7 @@ from libc.stdint cimport uint64_t
 from libcpp.memory cimport make_shared
 from libcpp.string cimport string
 
+from boink.prometheus cimport Instrumentation
 from boink.utils cimport *
 
 
@@ -23,13 +24,14 @@ cdef class StreamingCompactor_Base:
 {% for type_bundle in type_bundles %}
 cdef class StreamingCompactor_{{type_bundle.suffix}}(StreamingCompactor_Base):
 
-    def __cinit__(self, dBG_{{type_bundle.suffix}} graph):
+    def __cinit__(self, dBG_{{type_bundle.suffix}} graph, Instrumentation inst):
 
         self.storage_type = graph.storage_type
         self.shifter_type = graph.shifter_type
 
         if type(self) is StreamingCompactor_{{type_bundle.suffix}}:
-            self._this = make_shared[_StreamingCompactor[_dBG[{{type_bundle.params}}]]](graph._this)
+            self._this = make_shared[_StreamingCompactor[_dBG[{{type_bundle.params}}]]](graph._this,
+                                                                                        inst.registry)
             self._graph = graph._this
             self.graph = graph # for reference counting
             self.cdbg = cDBG_{{type_bundle.suffix}}._wrap(deref(self._this).cdbg)
@@ -87,11 +89,11 @@ cdef class StreamingCompactor_{{type_bundle.suffix}}(StreamingCompactor_Base):
 {% endfor %}
 
 
-cdef object _make_streaming_compactor(dBG_Base graph):
+cdef object _make_streaming_compactor(dBG_Base graph, Instrumentation inst):
     {% for type_bundle in type_bundles %}
     if graph.storage_type == "{{type_bundle.storage_type}}" and \
        graph.shifter_type == "{{type_bundle.shifter_type}}":
-        return StreamingCompactor_{{type_bundle.suffix}}(graph)
+        return StreamingCompactor_{{type_bundle.suffix}}(graph, inst)
     {% endfor %}
 
     raise TypeError("Invalid dBG type.")
