@@ -22,11 +22,10 @@
 #include "boink/reporting/report_types.hh"
 
 using namespace boink::cdbg;
+using namespace boink::reporting::report_types;
 
 namespace boink {
 namespace reporting {
-
-using namespace boink::reporting::report_types;
 
 template <class GraphType>
 class StreamingCompactorReporter: public SingleFileReporter {

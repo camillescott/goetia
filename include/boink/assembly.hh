@@ -7,13 +7,17 @@
  * of the MIT license.  See the LICENSE file for details.
  */
 
-#ifndef ASSEMBLY_HH
-#define ASSEMBLY_HH
+#ifndef BOINK_ASSEMBLY_HH
+#define BOINK_ASSEMBLY_HH
 
-#include "hashing.hh"
+#include "boink/hashing/hashing_types.hh"
+#include "boink/hashing/kmeriterator.hh"
 
 #include <deque>
 #include <memory>
+#include <set>
+#include <unordered_set>
+#include <vector>
 
 
 # ifdef DEBUG_ASMLY
@@ -28,16 +32,22 @@
 
 namespace boink {
 
+using boink::hashing::hash_t;
+using boink::hashing::kmer_t;
+using boink::hashing::shift_t;
+
 
 typedef std::deque<char> Path;
 typedef std::vector<std::string> StringVector;
 typedef std::vector<kmer_t> KmerVector;
+
 typedef std::pair<KmerVector, KmerVector> NeighborBundle;
 typedef std::pair<kmer_t, NeighborBundle> DecisionKmer;
 
+
 struct DecisionKmerHash {
     // Just uses the hash of the kmer_t from the pair
-    inline std::size_t operator()(const DecisionKmer& n) const {
+    inline hash_t operator()(const DecisionKmer& n) const {
         return n.first.hash;
     }
 };
@@ -69,15 +79,17 @@ public:
 
     std::shared_ptr<GraphType> graph;
 
-    AssemblerMixin(shared_ptr<GraphType> graph, BaseShifter const& shifter) :
-        BaseShifter(shifter),
-        graph(graph) {
-
+    AssemblerMixin(std::shared_ptr<GraphType> graph,
+                   BaseShifter                const& shifter)
+        : BaseShifter(shifter),
+          graph(graph)
+    {
     }
 
-    AssemblerMixin(shared_ptr<GraphType> graph) :
-        BaseShifter(graph->K()),
-        graph(graph) {
+    AssemblerMixin(std::shared_ptr<GraphType> graph)
+        : BaseShifter(graph->K()),
+          graph(graph)
+    {
     }
 
     void clear_seen() {
@@ -133,7 +145,7 @@ public:
     }
 
 
-    uint8_t count_nodes(const vector<shift_t>& nodes) {
+    uint8_t count_nodes(const std::vector<shift_t>& nodes) {
         uint8_t n_found = 0;
         for (auto node: nodes) {
             if(this->graph->get(node.hash)) {
@@ -143,8 +155,8 @@ public:
         return n_found;
     }
 
-    uint8_t count_nodes(const vector<shift_t>& nodes,
-                        set<hash_t>& extras) {
+    uint8_t count_nodes(const std::vector<shift_t>& nodes,
+                        std::set<hash_t>&           extras) {
         uint8_t n_found = 0;
         for (auto node: nodes) {
             if(this->graph->get(node.hash) ||
@@ -155,8 +167,8 @@ public:
         return n_found;
     }
 
-    uint8_t reduce_nodes(const vector<shift_t>& nodes,
-                         shift_t& result) {
+    uint8_t reduce_nodes(const std::vector<shift_t>& nodes,
+                         shift_t&                    result) {
         uint8_t n_found = 0;
         for (auto node : nodes) {
             //pdebug("check " << neighbor.hash << " " << neighbor.symbol);
@@ -172,9 +184,9 @@ public:
         return n_found;
     }
 
-    uint8_t reduce_nodes(const vector<shift_t>& nodes,
-                         shift_t& result,
-                         std::set<hash_t>& extra) {
+    uint8_t reduce_nodes(const std::vector<shift_t>& nodes,
+                         shift_t&                    result,
+                         std::set<hash_t>&           extra) {
         uint8_t n_found = 0;
         for (auto node : nodes) {
             //pdebug("check " << neighbor.hash << " " << neighbor.symbol);
@@ -191,8 +203,8 @@ public:
         return n_found;
     }
 
-    vector<shift_t> filter_nodes(const vector<shift_t>& nodes) {
-        vector<shift_t> result;
+    std::vector<shift_t> filter_nodes(const std::vector<shift_t>& nodes) {
+        std::vector<shift_t> result;
         for (auto node : nodes) {
             if (this->graph->get(node.hash)) {
                 result.push_back(node);
@@ -201,9 +213,9 @@ public:
         return result;
     }
 
-    vector<shift_t> filter_nodes(const vector<shift_t>& nodes,
-                                 std::set<hash_t>& extra) {
-        vector<shift_t> result;
+    std::vector<shift_t> filter_nodes(const std::vector<shift_t>& nodes,
+                                 std::set<hash_t>&      extra) {
+        std::vector<shift_t> result;
         for (auto node : nodes) {
             if (this->graph->get(node.hash) ||
                 extra.count(node.hash)) {
@@ -213,32 +225,32 @@ public:
         return result;
     }
 
-    vector<kmer_t> find_left_kmers() {
+    std::vector<kmer_t> find_left_kmers() {
         auto root = this->get_cursor();
         auto filtered = filter_nodes(this->gather_left());
         return graph->build_left_kmers(filtered, root);
     }
 
-    vector<kmer_t> find_right_kmers() {
+    std::vector<kmer_t> find_right_kmers() {
         auto root = this->get_cursor();
         auto filtered = filter_nodes(this->gather_right());
         return graph->build_right_kmers(filtered, root);
     }
 
-    vector<kmer_t> find_left_kmers(std::set<hash_t>& extras) {
+    std::vector<kmer_t> find_left_kmers(std::set<hash_t>& extras) {
         auto root = this->get_cursor();
         auto filtered = filter_nodes(this->gather_left(), extras);
         return graph->build_left_kmers(filtered, root);
     }
 
-    vector<kmer_t> find_right_kmers(std::set<hash_t>& extras) {
+    std::vector<kmer_t> find_right_kmers(std::set<hash_t>& extras) {
         auto root = this->get_cursor();
         auto filtered = filter_nodes(this->gather_right(), extras);
         return graph->build_right_kmers(filtered, root);
     }
 
     void assemble_left(const std::string& seed,
-                       Path& path) {
+                       Path&              path) {
 
         this->set_cursor(seed);
         if (!this->graph->get(this->get())) {
@@ -259,7 +271,7 @@ public:
     }
 
     void assemble_right(const std::string& seed,
-                        Path& path) {
+                        Path&              path) {
 
         this->set_cursor(seed);
         if (!this->graph->get(this->get())) {
@@ -280,7 +292,7 @@ public:
     }
 
     void assemble(const std::string& seed,
-                  Path& path) {
+                  Path&              path) {
 
         this->set_cursor(seed);
         if (!this->graph->get(this->hash(seed))) {
@@ -292,15 +304,15 @@ public:
         assemble_right(path);
     }
                   
-    string to_string(Path& path) {
-        return string(path.begin(), path.end());
+    std::string to_string(Path& path) {
+        return std::string(path.begin(), path.end());
     }
 };
 
 
-template<class dBGType>
-AssemblerMixin<dBGType> make_assembler(dBGType * graph) {
-    return AssemblerMixin<dBGType>(graph);
+template<class GraphType>
+AssemblerMixin<GraphType> make_assembler(std::shared_ptr<GraphType> graph) {
+    return AssemblerMixin<GraphType>(graph);
 }
 
 
@@ -327,17 +339,18 @@ public:
     typedef AssemblerType assembler_type;
     typedef BaseShifter shifter_type;
 
-    CompactorMixin(shared_ptr<GraphType> graph, BaseShifter const& shifter) :
-        AssemblerType(graph, shifter)
+    CompactorMixin(std::shared_ptr<GraphType> graph,
+                   BaseShifter           const& shifter)
+        : AssemblerType(graph, shifter)
     {
     }
 
-    CompactorMixin(shared_ptr<GraphType> graph) :
-        AssemblerType(graph)
+    CompactorMixin(std::shared_ptr<GraphType> graph)
+        : AssemblerType(graph)
     {
     }
 
-    string compactify(const string& seed) {
+    std::string compactify(const std::string& seed) {
         Path path;
         this->set_cursor(seed);
         this->get_cursor(path);
@@ -349,7 +362,10 @@ public:
         return this->to_string(path);
     }
 
-    void compactify_right(Path& path, hash_t& end_hash, set<hash_t>& mask) {
+    void compactify_right(Path&             path,
+                          hash_t&           end_hash,
+                          std::set<hash_t>& mask) {
+
         end_hash = this->get();
         this->seen.clear();
         this->seen.insert(this->get());
@@ -387,7 +403,10 @@ public:
         }
     }
 
-    void compactify_left(Path& path, hash_t& end_hash, set<hash_t>& mask) {
+    void compactify_left(Path&             path,
+                         hash_t&           end_hash,
+                         std::set<hash_t>& mask) {
+
         end_hash = this->get();
         this->seen.clear();
         this->seen.insert(this->get());
@@ -429,13 +448,13 @@ public:
         }
     }
 
-    bool is_decision_kmer(const string& node,
+    bool is_decision_kmer(const std::string& node,
                           uint8_t& degree) {
         this->set_cursor(node);
         return is_decision_kmer(degree);
     }
 
-    bool is_decision_kmer(const string& node) {
+    bool is_decision_kmer(const std::string& node) {
         this->set_cursor(node);
         return this->degree_left() > 1 || this->degree_right() > 1;
     }
@@ -448,12 +467,12 @@ public:
         return ldegree > 1 || rdegree > 1;
     }
 
-    void find_decision_kmers(const string& sequence,
-                             vector<uint32_t>& decision_positions,
-                             HashVector& decision_hashes,
-                             vector<NeighborBundle>& decision_neighbors) {
+    void find_decision_kmers(const std::string&           sequence,
+                             std::vector<uint32_t>&       decision_positions,
+                             std::vector<hash_t>&         decision_hashes,
+                             std::vector<NeighborBundle>& decision_neighbors) {
 
-        KmerIterator<AssemblerType> iter(sequence, this);
+        hashing::KmerIterator<AssemblerType> iter(sequence, this);
         size_t pos = 0;
         while(!iter.done()) {
             hash_t h = iter.next();
@@ -470,27 +489,28 @@ public:
        }
     }
 
-    bool get_decision_neighbors(const string& root,
-                                NeighborBundle& result,
-                                set<hash_t>& union_nodes) {
+    bool get_decision_neighbors(const std::string& root,
+                                NeighborBundle&    result,
+                                std::set<hash_t>&  union_nodes) {
         return get_decision_neighbors(this, root, result, union_nodes);
     }
 
-    bool get_decision_neighbors(NeighborBundle& result, set<hash_t>& union_nodes) {
+    bool get_decision_neighbors(NeighborBundle&   result,
+                                std::set<hash_t>& union_nodes) {
         return get_decision_neighbors(this, result, union_nodes);
     }
 
-    bool get_decision_neighbors(AssemblerType* shifter,
-                                const string& root,
-                                NeighborBundle& result,
-                                set<hash_t>& union_nodes) {
+    bool get_decision_neighbors(AssemblerType*     shifter,
+                                const std::string& root,
+                                NeighborBundle&    result,
+                                std::set<hash_t>&  union_nodes) {
         shifter->set_cursor(root);
         return get_decision_neighbors(shifter, result, union_nodes);
     }
 
-    bool get_decision_neighbors(AssemblerType* shifter,
-                                NeighborBundle& result,
-                                set<hash_t>& union_nodes) {
+    bool get_decision_neighbors(AssemblerType*    shifter,
+                                NeighborBundle&   result,
+                                std::set<hash_t>& union_nodes) {
 
         auto left_kmers = shifter->find_left_kmers(union_nodes);
         auto right_kmers = shifter->find_right_kmers(union_nodes);
@@ -503,8 +523,8 @@ public:
         }
     }
 
-    bool get_decision_neighbors(const string& root,
-                                NeighborBundle& result) {
+    bool get_decision_neighbors(const std::string& root,
+                                NeighborBundle&    result) {
         return get_decision_neighbors(this, root, result);
     }
 
@@ -512,14 +532,14 @@ public:
         return get_decision_neighbors(this, result);
     }
 
-    bool get_decision_neighbors(AssemblerType* shifter,
-                                const string& root,
-                                NeighborBundle& result) {
+    bool get_decision_neighbors(AssemblerType*     shifter,
+                                const std::string& root,
+                                NeighborBundle&    result) {
         shifter->set_cursor(root);
         return get_decision_neighbors(shifter, result);
     }
 
-    bool get_decision_neighbors(AssemblerType* shifter,
+    bool get_decision_neighbors(AssemblerType*  shifter,
                                 NeighborBundle& result) {
 
         auto left_kmers = shifter->find_left_kmers();

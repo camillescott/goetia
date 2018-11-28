@@ -15,7 +15,6 @@
 #include "boink/boink.hh"
 #include "boink/cdbg/cdbg_types.hh"
 
-using std::string;
 
 namespace boink {
 namespace event_types {
@@ -75,7 +74,7 @@ struct HistoryNewEvent : public Event {
         : Event(MSG_HISTORY_NEW)
     {}
 
-    string sequence;
+    std::string sequence;
     id_t id;
     node_meta_t meta;
 };
@@ -86,7 +85,7 @@ struct HistoryMergeEvent : public Event {
         : Event(MSG_HISTORY_MERGE)
     {}
 
-    string sequence;
+    std::string sequence;
     id_t lparent, rparent, child;
     node_meta_t meta;
 };
@@ -98,7 +97,7 @@ struct HistoryExtendEvent : public Event {
     {}
 
     id_t id;
-    string sequence;
+    std::string sequence;
     node_meta_t meta;
 };
 
@@ -119,7 +118,7 @@ struct HistoryClipEvent : public Event {
     {}
 
     id_t id;
-    string sequence;
+    std::string sequence;
     node_meta_t meta;
 };
 
@@ -131,7 +130,7 @@ struct HistorySplitEvent : public Event {
 
     id_t parent, lchild, rchild;
     node_meta_t lmeta, rmeta;
-    string lsequence, rsequence;
+    std::string lsequence, rsequence;
 };
 
 
@@ -141,7 +140,7 @@ struct HistorySplitCircularEvent : public Event {
     {}
 
     id_t id;
-    string sequence;
+    std::string sequence;
     node_meta_t meta;
 };
 

@@ -16,13 +16,15 @@
 #include <mutex>
 #include <limits>
 #include <iostream>
+#include <fstream>
 #include <sstream>
 
 #include "gfakluge/src/gfakluge.hpp"
 #include "sparsepp/sparsepp/spp.h"
 
 #include "boink/boink.hh"
-#include "boink/hashing.hh"
+#include "boink/hashing/hashing_types.hh"
+#include "boink/hashing/kmeriterator.hh"
 #include "boink/minimizers.hh"
 
 #include "boink/events.hh"
@@ -47,7 +49,11 @@
 namespace boink {
 namespace cdbg {
 
-using std::string;
+using boink::hashing::hash_t;
+using boink::hashing::shift_t;
+using boink::hashing::kmer_t;
+using boink::hashing::KmerIterator;
+
 using std::unique_ptr;
 using std::make_unique;
 using std::vector;
@@ -212,7 +218,7 @@ public:
         return nullptr;
     }
 
-    vector<DecisionNode*> query_dnodes(const string& sequence) {
+    vector<DecisionNode*> query_dnodes(const std::string& sequence) {
 
         KmerIterator<ShifterType> kmers(sequence, this->_K);
         vector<DecisionNode*> result;
@@ -406,7 +412,7 @@ public:
     }
 
     DecisionNode* build_dnode(hash_t hash,
-                              const string& kmer) {
+                              const std::string& kmer) {
         /* Build a new DecisionNode; or, if the given k-mer hash
          * already has a DecisionNode, do nothing.
          */
@@ -430,8 +436,8 @@ public:
         return dnode;
     }
 
-    UnitigNode * build_unode(const string& sequence,
-                             HashVector& tags,
+    UnitigNode * build_unode(const std::string& sequence,
+                             std::vector<hash_t>& tags,
                              hash_t left_end,
                              hash_t right_end) {
 
@@ -479,7 +485,7 @@ public:
 
         auto unode = switch_unode_ends(old_unode_end, new_unode_end);
         assert(unode != nullptr);
-        pdebug("CLIP: " << *unode << " from " << (clip_from == DIR_LEFT ? string("LEFT") : string("RIGHT")) <<
+        pdebug("CLIP: " << *unode << " from " << (clip_from == DIR_LEFT ? std::string("LEFT") : std::string("RIGHT")) <<
                " and swap " << old_unode_end << " to " << new_unode_end);
 
         if (unode->sequence.length() == this->_K) {
@@ -517,10 +523,10 @@ public:
     }
 
     void extend_unode(direction_t ext_dir,
-                      const string& new_sequence,
+                      const std::string& new_sequence,
                       hash_t old_unode_end,
                       hash_t new_unode_end,
-                      HashVector& new_tags) {
+                      std::vector<hash_t>& new_tags) {
 
         auto lock = lock_nodes();
 
@@ -533,7 +539,7 @@ public:
         assert(unode != nullptr); 
 
         pdebug("EXTEND: from " << old_unode_end << " to " << new_unode_end
-               << (ext_dir == DIR_LEFT ? string(" to LEFT") : string(" to RIGHT"))
+               << (ext_dir == DIR_LEFT ? std::string(" to LEFT") : std::string(" to RIGHT"))
                << " adding " << new_sequence << " to"
                << std::endl << *unode);
 #ifdef DEBUG_CDBG
@@ -567,12 +573,12 @@ public:
 
     void split_unode(id_t node_id,
                      size_t split_at,
-                     string split_kmer,
+                     std::string split_kmer,
                      hash_t new_right_end,
                      hash_t new_left_end) {
 
         UnitigNode * unode;
-        string right_unitig;
+        std::string right_unitig;
         hash_t right_unode_right_end;
 
         {
@@ -627,7 +633,7 @@ public:
             ++_n_updates;
         }
 
-        HashVector tags; // TODO: WARNING: broken
+        std::vector<hash_t> tags; // TODO: WARNING: broken
         auto new_node = build_unode(right_unitig,
                                     tags,
                                     new_left_end,
@@ -640,17 +646,17 @@ public:
 
     }
 
-    void merge_unodes(const string& span_sequence,
+    void merge_unodes(const std::string& span_sequence,
                       size_t n_span_kmers,
                       hash_t left_end,
                       hash_t right_end,
-                      HashVector& new_tags) {
+                      std::vector<hash_t>& new_tags) {
         /* span_sequence is the (K * 2) - 2 sequence connecting the two unitigs
          *
          */
 
         UnitigNode *left_unode, *right_unode;
-        string right_sequence;
+        std::string right_sequence;
         hash_t new_right_end;
 
         {
@@ -676,7 +682,7 @@ public:
             pdebug("MERGE: CIRCULAR! Creating circular unitig, span is " << span_sequence);
             ifmetrics(metrics->decrement_cdbg_node(right_unode->meta()));
             ifmetrics(metrics->n_circular_merges.Increment());
-            string extend = span_sequence;
+            std::string extend = span_sequence;
             //if (n_span_kmers < this->_K - 1) {
                 pdebug("Overlap between merged sequence, trimming right " << n_span_kmers);
                 extend = span_sequence.substr(this->_K-1, n_span_kmers);
@@ -743,7 +749,7 @@ public:
         }
     }
 
-    void delete_unodes_from_tags(HashVector& tags) {
+    void delete_unodes_from_tags(std::vector<hash_t>& tags) {
         for (auto tag: tags) {
             UnitigNode * unode = query_unode_tag(tag);
             if (unode != nullptr) {
@@ -752,7 +758,7 @@ public:
         }
     }
 
-    void notify_history_new(id_t id, string& sequence, node_meta_t meta) {
+    void notify_history_new(id_t id, std::string& sequence, node_meta_t meta) {
         auto event = make_shared<HistoryNewEvent>();
         event->id = id;
         event->sequence = sequence;
@@ -761,7 +767,7 @@ public:
     }
 
     void notify_history_merge(id_t lparent, id_t rparent, id_t child,
-                          string& sequence, node_meta_t meta) {
+                          std::string& sequence, node_meta_t meta) {
         auto event = make_shared<HistoryMergeEvent>();
         event->lparent = lparent;
         event->rparent = rparent;
@@ -771,7 +777,7 @@ public:
         this->notify(event);
     }
 
-    void notify_history_extend(id_t id, string& sequence, node_meta_t meta) {
+    void notify_history_extend(id_t id, std::string& sequence, node_meta_t meta) {
         auto event = make_shared<HistoryExtendEvent>();
         event->id = id;
         event->sequence = sequence;
@@ -779,7 +785,7 @@ public:
         this->notify(event);
     }
 
-    void notify_history_clip(id_t id, string& sequence, node_meta_t meta) {
+    void notify_history_clip(id_t id, std::string& sequence, node_meta_t meta) {
         auto event = make_shared<HistoryClipEvent>();
         event->id = id;
         event->sequence = sequence;
@@ -788,7 +794,7 @@ public:
     }
 
     void notify_history_split(id_t parent, id_t lchild, id_t rchild,
-                          string& lsequence, string& rsequence,
+                          std::string& lsequence, std::string& rsequence,
                           node_meta_t lmeta, node_meta_t rmeta) {
         auto event = make_shared<HistorySplitEvent>();
         event->parent = parent;
@@ -801,7 +807,7 @@ public:
         this->notify(event);
     }
 
-    void notify_history_split_circular(id_t id, string& sequence, node_meta_t meta) {
+    void notify_history_split_circular(id_t id, std::string& sequence, node_meta_t meta) {
         auto event = make_shared<HistorySplitCircularEvent>();
         event->id = id;
         event->sequence = sequence;
@@ -856,7 +862,7 @@ public:
         };
     }
 
-    void write_fasta(const string& filename) {
+    void write_fasta(const std::string& filename) {
         std::ofstream out;
         out.open(filename);
         write_fasta(out);
@@ -876,7 +882,7 @@ public:
         }
     }
 
-    void write_gfa1(const string& filename) {
+    void write_gfa1(const std::string& filename) {
         std::ofstream out;
         out.open(filename);
         write_gfa1(out);
@@ -921,7 +927,7 @@ public:
                                                          std::to_string(r); };
 
         for (auto it = decision_nodes.begin(); it != decision_nodes.end(); ++it) {
-            string root = it->second->get_name();
+            std::string root = it->second->get_name();
             auto neighbors = find_dnode_neighbors(it->second.get());
 
             for (auto in_node : neighbors.first) {
@@ -933,7 +939,7 @@ public:
                 l.sink_orientation_forward = true;
                 l.cigar = std::to_string(_K) + "M";
 
-                string link_name = get_link_name(in_node->node_id, it->second->node_id);
+                std::string link_name = get_link_name(in_node->node_id, it->second->node_id);
                 gfak::opt_elem id_elem;
                 id_elem.key = "ID";
                 id_elem.type = "Z";
@@ -951,7 +957,7 @@ public:
                 l.sink_orientation_forward = true;
                 l.cigar = std::to_string(_K) + "M";
 
-                string link_name = get_link_name(it->second->node_id, out_node->node_id);
+                std::string link_name = get_link_name(it->second->node_id, out_node->node_id);
                 gfak::opt_elem id_elem;
                 id_elem.key = "ID";
                 id_elem.type = "Z";
@@ -965,8 +971,8 @@ public:
     }
 
 
-    void write_graphml(const string& filename,
-                       string graph_name="cDBG") {
+    void write_graphml(const std::string& filename,
+                       const std::string graph_name="cDBG") {
         std::ofstream out;
         out.open(filename);
         write_graphml(out, graph_name);
@@ -974,7 +980,7 @@ public:
     }
 
     void write_graphml(std::ofstream& out,
-                       const string graph_name="cDBG") {
+                       const std::string graph_name="cDBG") {
 
         /*
         out << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"

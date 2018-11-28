@@ -7,16 +7,14 @@
  * of the MIT license.  See the LICENSE file for details.
  */
 
-#ifndef BOINK_HH
-#define BOINK_HH
+#ifndef BOINK_MISC_HH
+#define BOINK_MISC_HH
 
 #include <exception>
 #include <string>
 #include <iostream>
-#include <vector>
 #include <type_traits>
 #include <iterator>
-#include <set>
 
 namespace boink {
 
@@ -29,75 +27,11 @@ namespace boink {
                       std::cout << stream.str(); \
                     } while(0)
 
-#define complement(ch) ((ch) == 'A' ? 'T' : \
-                        (ch) == 'T' ? 'A' : \
-                        (ch) == 'C' ? 'G' : 'C')
-
-
-
-using std::pair;
-using std::vector;
-
-
-typedef uint64_t hash_t;
-typedef std::pair<hash_t, hash_t> full_hash_t;
-
-struct shift_t {
-    hash_t hash;
-    char symbol;
-
-    shift_t() : 
-        hash(0),
-        symbol('A') {
-    
-    }
-
-    shift_t(hash_t hash, char symbol) : 
-        hash(hash),
-        symbol(symbol) {
-    
-    }
-};
-
-
-std::ostream& operator<<(std::ostream& os, const shift_t& shift)
-{
-    os << "<shift_t symbol=" << shift.symbol << " hash=" << shift.hash << ">";
-    return os;
-}
-
-
-struct kmer_t {
-    const hash_t hash;
-    const std::string kmer;
-
-    kmer_t(const hash_t hash, const std::string kmer) :
-        hash(hash),
-        kmer(kmer) {
-    }
-
-    bool operator==(const kmer_t& other) const {
-        return other.hash == this->hash;
-    }
-
-};
-
-
-std::ostream& operator<<(std::ostream& os, const kmer_t& kmer)
-{
-    os << "<kmer_t kmer=" << kmer.kmer << " hash=" << kmer.hash << ">";
-    return os;
-}
-
-
-
 enum direction_t {
     DIR_LEFT,
     DIR_RIGHT
 };
 
-
-typedef vector<hash_t> HashVector;
 
 
 template<typename _Ty1, typename _Ty2>
@@ -164,7 +98,7 @@ protected:
     const std::string _msg;
 };
 
-} // namespace boink
+} // boink
 
 
 #endif

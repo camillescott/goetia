@@ -10,6 +10,8 @@
 #ifndef BOINK_REPORT_TYPES_HH
 #define BOINK_REPORT_TYPES_HH
 
+#include <cstdint>
+
 namespace boink {
 namespace reporting {
 namespace report_types {

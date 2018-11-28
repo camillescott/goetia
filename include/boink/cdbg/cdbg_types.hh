@@ -13,15 +13,29 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <vector>
 
 #include "boink/boink.hh"
-#include "oxli/kmer_hash.hh"
-
-namespace boink {
-namespace cdbg {
+#include "boink/hashing/alphabets.hh"
 
 #define NULL_ID             ULLONG_MAX
 #define UNITIG_START_ID     0
+
+# ifdef DEBUG_CDBG
+#   define pdebug(x) do { std::ostringstream stream; \
+                          stream << std::endl << "@ " << __FILE__ <<\
+                          ":" << __FUNCTION__ << ":" <<\
+                          __LINE__  << std::endl << x << std::endl;\
+                          std::cerr << stream.str(); \
+                          } while (0)
+# else
+#   define pdebug(x) do {} while (0)
+# endif
+
+using boink::hashing::hash_t;
+
+namespace boink {
+namespace cdbg {
 
 typedef uint64_t id_t;
 
@@ -113,7 +127,7 @@ public:
     }
 
     std::string revcomp() const {
-        return oxli::_revcomp(sequence);
+        return hashing::revcomp(sequence);
     }
 
     size_t length() const {
@@ -220,7 +234,7 @@ protected:
 
 public:
 
-    HashVector tags;
+    std::vector<hash_t> tags;
 
     UnitigNode(id_t node_id,
                hash_t left_end,

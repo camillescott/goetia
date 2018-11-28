@@ -18,32 +18,37 @@ from libcpp.string cimport string
 
 from boink.hashing cimport *
 
-cdef extern from "oxli/storage.hh" nogil:
+cdef extern from "boink/storage/storage.hh" nogil:
     # Need these for the Storage template parameter;
     # they don't need methods
-    cdef cppclass _Storage "oxli::Storage":
-        pass
-    cdef cppclass _BitStorage "oxli::BitStorage" (_Storage):
-        pass
-    cdef cppclass _NibbleStorage "oxli::NibbleStorage" (_Storage):
-        pass
-    cdef cppclass _QFStorage "oxli::QFStorage" (_Storage):
-        pass
-    cdef cppclass _ByteStorage "oxli::ByteStorage" (_Storage):
+    ctypedef uint8_t count_t
+    ctypedef pair[count_t, count_t] full_count_t
+
+    cdef cppclass _Storage "boink::storage::Storage":
         pass
 
+cdef extern from "boink/storage/bitstorage.hh" nogil:
+    cdef cppclass _BitStorage "boink::storage::BitStorage" (_Storage):
+        pass
 
-cdef extern from "boink/storage.hh" nogil:
-    cdef cppclass _SparseppSetStorage "boink::SparseppSetStorage" (_Storage):
+cdef extern from "boink/storage/nibblestorage.hh" nogil:
+    cdef cppclass _NibbleStorage "boink::storage::NibbleStorage" (_Storage):
+        pass
+
+cdef extern from "boink/storage/qfstorage.hh" nogil:
+    cdef cppclass _QFStorage "boink::storage::QFStorage" (_Storage):
+        pass
+
+cdef extern from "boink/storage/bytestorage.hh" nogil:
+    cdef cppclass _ByteStorage "boink::storage::ByteStorage" (_Storage):
+        pass
+
+cdef extern from "boink/storage/sparseppstorage.hh" nogil:
+    cdef cppclass _SparseppSetStorage "boink::storage::SparseppSetStorage" (_Storage):
         pass
 
 
 cdef extern from "boink/dbg.hh" namespace "boink" nogil:
-    ctypedef pair[bool, bool] bit_pair_t
-    ctypedef vector[bit_pair_t] bit_pair_vector_t
-    ctypedef uint8_t count_t
-    ctypedef pair[count_t, count_t] full_count_t
-
     cdef cppclass _dBG "boink::dBG" [StorageType, HashShifter] (_KmerClient):
         _dBG(uint16_t, vector[uint64_t])
         _dBG(uint16_t, uint64_t, uint16_t)

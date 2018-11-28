@@ -1,4 +1,4 @@
-/* storage.hh -- storage classes for the boink dbg
+/* sparseppstorage.hh -- storage classes for the boink dbg
  *
  * Copyright (C) 2018 Camille Scott
  * All rights reserved.
@@ -7,30 +7,28 @@
  * of the MIT license.  See the LICENSE file for details.
  */
 
-#ifndef BOINK_STORAGE_HH
-#define BOINK_STORAGE_HH
+#ifndef BOINK_SPARSEPPSETSTORAGE_HH
+#define BOINK_SPARSEPPSETSTORAGE_HH
 
-#include "hashing.hh"
-#include "oxli/storage.hh"
+#include "boink/hashing/hashing_types.hh"
+#include "boink/storage/storage.hh"
 #include "sparsepp/sparsepp/spp.h"
 
 #include <vector>
 
 namespace boink {
-
-typedef oxli::BoundedCounterType count_t;
-typedef std::pair<uint8_t, uint8_t> full_count_t;
+namespace storage {
 
 
-class SparseppSetStorage : public oxli::Storage {
+class SparseppSetStorage : public Storage {
 
 protected:
 
-    spp::sparse_hash_set<hash_t> _store;
+    spp::sparse_hash_set<hashing::hash_t> _store;
 
 public:
     
-    SparseppSetStorage(std::vector<uint64_t>& sizes)
+    SparseppSetStorage(const std::vector<uint64_t>& sizes)
     {
     }
 
@@ -54,35 +52,36 @@ public:
         return _store.bucket_count();
     }
 
-    void save(std::string, oxli::WordLength) {
+    void save(std::string, uint16_t ) {
      
     }
 
-    void load(std::string, oxli::WordLength&) {
+    void load(std::string, uint16_t &) {
 
     }
 
-    count_t test_and_set_bits(oxli::HashIntoType h) {
+    count_t test_and_set_bits(hashing::hash_t h) {
         count_t count = get_count(h);
         add(h);
         return count;
     }
 
-    bool add(oxli::HashIntoType h) {
+    bool add(hashing::hash_t h) {
         count_t count = get_count(h);
         _store.insert(h);
         return count == 0;
     }
 
-    const count_t get_count(oxli::HashIntoType h) const {
+    const count_t get_count(hashing::hash_t h) const {
         return _store.count(h);
     }
 
-    oxli::Byte ** get_raw_tables() {
+    byte_t ** get_raw_tables() {
         return nullptr;
     }
 
 };
 
+}
 }
 #endif

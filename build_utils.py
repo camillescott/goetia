@@ -221,6 +221,13 @@ class BoinkReporter(ConsoleReporter):
 *
 '''
 
+
+def get_gcc_includes(source, includes, pkg):
+    from sh import gcc
+    res = gcc(*includes, '-std=c++14', '-M', source)
+    return [os.path.abspath(token) for token in res.split() if pkg in token]
+
+
 def get_cpp_includes(filename, include_dir):
     with open(filename) as fp:
         for line in fp:

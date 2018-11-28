@@ -7,12 +7,11 @@
  * of the MIT license.  See the LICENSE file for details.
  */
 
-#ifndef PARSING_HH
-#define PARSING_HH
+#ifndef BOINK_PARSING_HH
+#define BOINK_PARSING_HH
 
 #include <string>
 #include <utility>
-#include <vector>
 
 #include "oxli/read_parsers.hh"
 #include "utils/stringutils.h"
@@ -26,9 +25,6 @@ using namespace utils;
 
 namespace boink {
 
-using std::string;
-using std::vector;
-using std::pair;
 
 struct ReadBundle {
     
@@ -41,7 +37,7 @@ struct ReadBundle {
 };
 
 
-bool check_char(const char c, const string against) {
+bool check_char(const char c, const std::string against) {
     for (auto ag : against) {
         if (c == ag) {
             return true;
@@ -51,10 +47,10 @@ bool check_char(const char c, const string against) {
 }
 
 
-pair<string, string> split_on_first(const string& name,
-                                    const string delims=" \t") {
-    string left = "";
-    string right = "";
+std::pair<std::string, std::string> split_on_first(const std::string& name,
+                                    const std::string delims=" \t") {
+    std::string left = "";
+    std::string right = "";
     for (size_t i = 0; i < name.length(); ++i) {
         const char c = name[i];
         if (left == "") {
@@ -76,7 +72,7 @@ pair<string, string> split_on_first(const string& name,
 }
 
 
-bool check_is_pair(const string& left, const string& right) {
+bool check_is_pair(const std::string& left, const std::string& right) {
     auto left_split = split_on_first(left);
     auto right_split = split_on_first(right);
     
@@ -107,7 +103,7 @@ bool check_is_pair(const string& left, const string& right) {
 }
 
 
-bool check_is_left(const string& name) {
+bool check_is_left(const std::string& name) {
     auto split = split_on_first(name);
     if (StringUtils::endsWith(split.first, "/1") ||
         StringUtils::endsWith(split.second, "1:") ||
@@ -118,7 +114,7 @@ bool check_is_left(const string& name) {
 }
 
 
-bool check_is_right(const string& name) {
+bool check_is_right(const std::string& name) {
     auto split = split_on_first(name);
     if (StringUtils::endsWith(split.first, "/2") ||
         StringUtils::endsWith(split.second, "2:") ||
@@ -149,8 +145,8 @@ class SplitPairedReader {
 
 public:
 
-    SplitPairedReader(const string &left,
-                 const string &right,
+    SplitPairedReader(const std::string &left,
+                 const std::string &right,
                  uint32_t min_length=0,
                  bool force_name_match=false)
         : _min_length(min_length),

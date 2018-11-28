@@ -1,16 +1,22 @@
 #include "boink/assembly.hh"
 #include "boink/boink.hh"
 #include "boink/dbg.hh"
+#include "boink/storage/sparseppstorage.hh"
+#include "boink/hashing/rollinghashshifter.hh"
 
 #include <cassert>
 #include <string>
 #include <iostream>
+#include <memory>
 
 using namespace boink;
+using namespace std;
+
 namespace boink {
 void test_assemble_right() {
     uint16_t K = 21;
-    auto g = make_shared<DefaultDBG>(21, 1000, 4);
+    auto g = make_shared<dBG<storage::SparseppSetStorage,
+                             hashing::DefaultShifter>>(21, 1000, 4);
     auto assembler = make_assembler(g);
 
     string S = "TACATGCTTACTCACAGCACCCCTTCTAATGCGTAACCAGGCGTGGAATT";
@@ -35,7 +41,8 @@ void test_assemble_right() {
 
 void test_assemble_left() {
     uint16_t K = 21;
-    auto g = make_shared<DefaultDBG>(21, 1000, 4);
+    auto g = make_shared<dBG<storage::SparseppSetStorage,
+                             hashing::DefaultShifter>>(21, 1000, 4);
     auto assembler = make_assembler(g);
 
     string S = "TACATGCTTACTCACAGCACCCCTTCTAATGCGTAACCAGGCGTGGAATT";

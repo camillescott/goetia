@@ -14,8 +14,10 @@
 #include <utility>
 #include <vector>
 
-#include "boink/hashing.hh"
+#include "boink/hashing/hashing_types.hh"
+#include "boink/hashing/kmeriterator.hh"
 
+using namespace boink::hashing;
 
 namespace boink {
 

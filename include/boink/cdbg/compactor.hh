@@ -7,13 +7,14 @@
  * of the MIT license.  See the LICENSE file for details.
  */
 
-#ifndef COMPACTOR_HH
-#define COMPACTOR_HH
+#ifndef BOINK_COMPACTOR_HH
+#define BOINK_COMPACTOR_HH
 
 #include <assert.h>
 
 #include "boink/assembly.hh"
-#include "boink/hashing.hh"
+#include "boink/hashing/hashing_types.hh"
+#include "boink/hashing/kmeriterator.hh"
 #include "boink/dbg.hh"
 #include "boink/cdbg/cdbg.hh"
 #include "boink/minimizers.hh"
@@ -26,6 +27,7 @@ namespace cdbg {
 
 using namespace boink::event_types;
 using namespace boink::reporting::report_types;
+using namespace boink::hashing;
 
 # ifdef DEBUG_CPTR
 #   define pdebug(x) do { std::cerr << std::endl << "@ " << __FILE__ <<\
@@ -35,10 +37,6 @@ using namespace boink::reporting::report_types;
 # else
 #   define pdebug(x) do {} while (0)
 # endif
-
-#define complement(ch) ((ch) == 'A' ? 'T' : \
-                        (ch) == 'T' ? 'A' : \
-                        (ch) == 'C' ? 'G' : 'C')
 
 
 /* Represents a segment of new k-mers from a sequence, relative to the current
@@ -61,7 +59,7 @@ struct compact_segment {
     // end of last k-mer)
     size_t length;
     // tags associated with this segment
-    HashVector tags;
+    std::vector<hash_t> tags;
 
     // the default constructor creates a null segment
     compact_segment()
@@ -182,12 +180,12 @@ public:
         return report;
     }
 
-    void update_sequence(const string& sequence) {
-        set<hash_t> new_kmers;
-        deque<compact_segment> segments;
-        set<hash_t> new_decision_kmers;
-        deque<NeighborBundle> decision_neighbors;
-        vector<hash_t> hashes;
+    void update_sequence(const std::string& sequence) {
+        std::set<hash_t> new_kmers;
+        std::deque<compact_segment> segments;
+        std::set<hash_t> new_decision_kmers;
+        std::deque<NeighborBundle> decision_neighbors;
+        std::vector<hash_t> hashes;
 
         find_new_segments(sequence,
                           hashes,
@@ -226,7 +224,7 @@ public:
                         size_t end,
                         hash_t right_anchor,
                         hash_t right_flank,
-                        deque<compact_segment>& segments) {
+                        std::deque<compact_segment>& segments) {
         
         segment.length = end - segment.start_pos + this->_K;
         segment.right_anchor = right_anchor;
@@ -236,7 +234,7 @@ public:
     }
 
     void finish_decision_segment(compact_segment& segment,
-                                 deque<compact_segment>& segments) {
+                                 std::deque<compact_segment>& segments) {
         segment.length = this->_K;
         segment.right_anchor = segment.left_anchor;
         segment.right_flank = segment.left_flank;
@@ -246,13 +244,13 @@ public:
         pdebug("Finished decision segment: " << segment);       
     }
 
-    void find_new_segments(const string& sequence,
-                           deque<compact_segment>& result) {
+    void find_new_segments(const std::string& sequence,
+                           std::deque<compact_segment>& result) {
         // convenience function for cython land
-        vector<hash_t> hashes;
-        set<hash_t> new_kmers;
-        set<hash_t> new_decision_kmers;
-        deque<NeighborBundle> decision_neighbors;
+        std::vector<hash_t> hashes;
+        std::set<hash_t> new_kmers;
+        std::set<hash_t> new_decision_kmers;
+        std::deque<NeighborBundle> decision_neighbors;
 
         find_new_segments(sequence,
                           hashes,
@@ -263,12 +261,12 @@ public:
 
     }
 
-    void find_new_segments(const string& sequence,
-                           vector<hash_t>& hashes,
-                           set<hash_t>& new_kmers,
-                           deque<compact_segment>& segments,
-                           set<hash_t>& new_decision_kmers,
-                           deque<NeighborBundle>& decision_neighbors) {
+    void find_new_segments(const std::string& sequence,
+                           std::vector<hash_t>& hashes,
+                           std::set<hash_t>& new_kmers,
+                           std::deque<compact_segment>& segments,
+                           std::set<hash_t>& new_decision_kmers,
+                           std::deque<NeighborBundle>& decision_neighbors) {
 
         pdebug("FIND SEGMENTS: " << sequence);
 
@@ -277,12 +275,12 @@ public:
         size_t pos = 0;
         bool cur_new = false, prev_new = false, cur_seen = false, prev_seen = false;
 
-        deque<compact_segment> preprocess;
+        std::deque<compact_segment> preprocess;
 #ifdef DEBUG_CPTR
-        vector<count_t> counts;
+        std::vector<count_t> counts;
 #endif
         compact_segment current_segment; // start null
-        vector<CompactorType> segment_shifters;
+        std::vector<CompactorType> segment_shifters;
         while(!kmers.done()) {
             cur_hash = kmers.next();
             cur_new = this->dbg->get(cur_hash) == 0;
@@ -325,7 +323,7 @@ public:
         if (cur_new && !cur_seen) {
             pdebug("sequence ended on new k-mer");
             hash_t right_flank = cur_hash;
-            vector<shift_t> rneighbors = filter_nodes(kmers.shifter->gather_right(),
+            std::vector<shift_t> rneighbors = filter_nodes(kmers.shifter->gather_right(),
                                                       new_kmers);
             if (rneighbors.size() == 1) {
                 right_flank = rneighbors.front().hash;
@@ -345,7 +343,7 @@ public:
 
         // handle edge case for left_flank of first segment if it starts at pos 0
         if (preprocess[1].start_pos == 0) {
-            vector<shift_t> lneighbors = filter_nodes(segment_shifters[0].gather_left(),
+            std::vector<shift_t> lneighbors = filter_nodes(segment_shifters[0].gather_left(),
                                                       new_kmers);
             if (lneighbors.size() == 1) {
                 preprocess[1].left_flank = lneighbors.front().hash;
@@ -364,7 +362,7 @@ public:
                 continue;
             }
 
-            deque<compact_segment> decision_segments;
+            std::deque<compact_segment> decision_segments;
             size_t pos = segment.start_pos;
             size_t suffix_pos = pos + this->_K - 1;
             while (1) {
@@ -465,11 +463,11 @@ public:
 #endif
     }
 
-   void update_from_segments(const string& sequence,
-                              set<hash_t>& new_kmers,
-                              deque<compact_segment>& segments,
-                              set<hash_t> & new_decision_kmers,
-                              deque<NeighborBundle>& decision_neighbors
+   void update_from_segments(const std::string& sequence,
+                              std::set<hash_t>& new_kmers,
+                              std::deque<compact_segment>& segments,
+                              std::set<hash_t> & new_decision_kmers,
+                              std::deque<NeighborBundle>& decision_neighbors
                               ) {
 
         if (segments.size() < 3) {
@@ -482,7 +480,7 @@ public:
         // First find all induced decision k-kmers
         // Have to wait until all are found to proceed with induction process
         // in the cDBG though
-        deque<DecisionKmer> induced;
+        std::deque<DecisionKmer> induced;
         size_t i = 2;
         while (i < segments.size()) {
             auto u = segments.at(i-2);
@@ -547,10 +545,10 @@ public:
         }
     }
 
-    void _induce_decision_nodes(deque<DecisionKmer>& induced_decision_kmers,
-                                set<hash_t>& new_kmers) {
+    void _induce_decision_nodes(std::deque<DecisionKmer>& induced_decision_kmers,
+                                std::set<hash_t>& new_kmers) {
 
-        set<hash_t> induced_decision_kmer_hashes;
+        std::set<hash_t> induced_decision_kmer_hashes;
 
         pdebug("Perform induction on " << induced_decision_kmers.size() <<
                " new decision k-mers");
@@ -559,7 +557,7 @@ public:
             induced_decision_kmer_hashes.insert(dkmer.first.hash);
         }
 
-        set<hash_t> processed;
+        std::set<hash_t> processed;
         size_t n_attempts = 0;
         size_t max_attempts = 4 * induced_decision_kmer_hashes.size();
         while (induced_decision_kmers.size() > 0) {
@@ -593,9 +591,9 @@ public:
 
     virtual bool _try_split_unode(kmer_t root,
                               NeighborBundle& neighbors,
-                              set<hash_t>& new_kmers,
-                              set<hash_t>& induced_decision_kmer_hashes,
-                              set<hash_t>& processed) {
+                              std::set<hash_t>& new_kmers,
+                              std::set<hash_t>& induced_decision_kmer_hashes,
+                              std::set<hash_t>& processed) {
         pdebug("Attempt unitig split from " << root);
 
         UnitigNode * unode_to_split;
@@ -637,7 +635,7 @@ public:
             return true;
         }
 
-        vector<kmer_t> lfiltered;
+        std::vector<kmer_t> lfiltered;
         std::copy_if(neighbors.first.begin(),
                      neighbors.first.end(),
                      std::back_inserter(lfiltered),
@@ -646,7 +644,7 @@ public:
                         !processed.count(neighbor.hash);
                      });
 
-        vector<kmer_t> rfiltered;
+        std::vector<kmer_t> rfiltered;
         std::copy_if(neighbors.second.begin(),
                      neighbors.second.end(),
                      std::back_inserter(rfiltered),
@@ -762,7 +760,7 @@ public:
     }
 
     virtual void _update_unode(compact_segment& segment,
-                               const string& sequence) {
+                               const std::string& sequence) {
 
         pdebug("Update Unode from segment: " << segment);
 
@@ -801,7 +799,7 @@ public:
                                segment.left_anchor,
                                segment.tags);
         } else if (has_left_unode && has_right_unode) {
-            string trimmed_seq;
+            std::string trimmed_seq;
             pdebug("Segment is " << segment.length);
             //if (segment.length  < (this->_K * 2 - 2)) {
             //    trimmed_seq = "";
@@ -828,16 +826,16 @@ public:
 
     uint8_t _find_induced_decision_nodes(kmer_t kmer,
                                       NeighborBundle& neighbors,
-                                      set<hash_t>& new_kmers,
-                                      deque<DecisionKmer>& induced) {
+                                      std::set<hash_t>& new_kmers,
+                                      std::deque<DecisionKmer>& induced) {
 
         return _find_induced_decision_nodes_left(kmer, neighbors, new_kmers, induced) +
                _find_induced_decision_nodes_right(kmer, neighbors, new_kmers, induced);
     }
 
     uint8_t _find_induced_decision_nodes_left(kmer_t kmer,
-                                              set<hash_t>& new_kmers,
-                                              deque<DecisionKmer>& induced) {
+                                              std::set<hash_t>& new_kmers,
+                                              std::deque<DecisionKmer>& induced) {
 
         pdebug("Prepare to attempt left induction on " << kmer);
         this->set_cursor(kmer.kmer);
@@ -855,8 +853,8 @@ public:
 
     uint8_t _find_induced_decision_nodes_left(kmer_t kmer,
                                               NeighborBundle& neighbors,
-                                              set<hash_t>& new_kmers,
-                                              deque<DecisionKmer>& induced) {
+                                              std::set<hash_t>& new_kmers,
+                                              std::deque<DecisionKmer>& induced) {
 
         // decision k-mers which are also new k-mers
         // cannot split existing unitigs. however, they can induce
@@ -892,8 +890,8 @@ public:
     }
 
     uint8_t _find_induced_decision_nodes_right(kmer_t kmer,
-                                         set<hash_t>& new_kmers,
-                                         deque<DecisionKmer>& induced) {
+                                         std::set<hash_t>& new_kmers,
+                                         std::deque<DecisionKmer>& induced) {
 
         pdebug("Prepare to attempt right induction on " << kmer);
         this->set_cursor(kmer.kmer);
@@ -911,8 +909,8 @@ public:
 
     uint8_t _find_induced_decision_nodes_right(kmer_t kmer,
                                          NeighborBundle& neighbors,
-                                         set<hash_t>& new_kmers,
-                                         deque<DecisionKmer>& induced) {
+                                         std::set<hash_t>& new_kmers,
+                                         std::deque<DecisionKmer>& induced) {
 
         // see _induce_decision_nodes_left for information
 
@@ -982,14 +980,14 @@ public:
         acdbg->wait_on_processing(0);
     }
 
-    void notify_build_dnode(hash_t hash, const string& kmer) {
+    void notify_build_dnode(hash_t hash, const std::string& kmer) {
         auto event = make_shared<BuildDNodeEvent>();
         event->hash = hash;
         event->kmer = kmer;
         this->notify(event);
     }
 
-    void notify_build_unode(const string& sequence,
+    void notify_build_unode(const std::string& sequence,
                             HashVector& tags,
                             hash_t left_end,
                             hash_t right_end) {

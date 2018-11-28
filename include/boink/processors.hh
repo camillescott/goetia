@@ -7,8 +7,8 @@
  * of the MIT license.  See the LICENSE file for details.
  */
 
-#ifndef CONSUMER_HH
-#define CONSUMER_HH
+#ifndef BOINK_PROCESSORS_HH
+#define BOINK_PROCESSORS_HH
 
 #include <memory>
 #include <fstream>
@@ -19,6 +19,7 @@
 #include "boink/parsing.hh"
 #include "boink/events.hh"
 #include "boink/event_types.hh"
+#include "boink/hashing/hashing_types.hh"
 
 #include "boink/cdbg/compactor.hh"
 
@@ -28,6 +29,7 @@ using namespace oxli:: read_parsers;
 using namespace boink::events;
 using namespace boink::event_types;
 using namespace boink::cdbg;
+using namespace boink::hashing;
 
 #define DEFAULT_FINE_INTERVAL 10000
 #define DEFAULT_MEDIUM_INTERVAL 100000
@@ -296,7 +298,7 @@ public:
         uint64_t n_new = graph->add_sequence(read.cleaned_seq);
         if (n_new > 0) {
             std::vector<uint32_t> decision_positions;
-            HashVector decision_hashes;
+            std::vector<hash_t> decision_hashes;
             std::vector<NeighborBundle> decision_neighbors;
             std::set<hash_t> new_kmers;
 

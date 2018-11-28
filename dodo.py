@@ -27,7 +27,8 @@ from build_utils import (check_for_openmp,
                          flatten,
                          render,
                          get_templates,
-                         generate_cpp_params)
+                         generate_cpp_params,
+                         get_gcc_includes)
 
 DOIT_CONFIG  = {'verbosity': 2,
                 'reporter': BoinkReporter,
@@ -50,12 +51,9 @@ MOD_FILES    = {m:m+MOD_EXT for m in MOD_NAMES}
 
 INCLUDE_DIR  = os.path.join('include', PKG)
 SOURCE_DIR   = os.path.join('src', PKG)
-HEADER_NAMES = [fn for fn in glob.glob('include/{0}/**/*.hh'.format(PKG), recursive=True) \
-                if not any((fn.endswith(ignore) for ignore in EXT_META['ignore_headers']))]
-HEADER_FILES = [os.path.join(INCLUDE_DIR, header) for header in HEADER_NAMES]
-SOURCE_NAMES = replace_exts(HEADER_NAMES, '.cc')
-SOURCE_FILES = isfile_filter([os.path.join(SOURCE_DIR, source) \
-                             for source in SOURCE_NAMES])
+HEADER_FILES = [fn for fn in glob.glob('{0}/**/*.hh'.format(INCLUDE_DIR), recursive=True)]
+HEADER_NAMES = [os.path.basename(header) for header in HEADER_FILES]
+SOURCE_FILES = [fn for fn in glob.glob('{0}/**/*.cc'.format(SOURCE_DIR), recursive=True)]
 OBJECT_FILES = replace_exts(SOURCE_FILES, '.o')
 
 DEP_MAP = resolve_dependencies(PYX_FILES,
@@ -275,7 +273,7 @@ def task_compile_libboink():
 
         yield {'name': object_file,
                'title': title_with_actions,
-               'file_dep': HEADER_FILES + [source_file],
+               'file_dep': get_gcc_includes(source_file, INCLUDES, PKG) + [source_file],
                'task_dep': ['display_libboink_config'],
                'targets': [object_file],
                'actions': [cxx_command(source_file, object_file)],

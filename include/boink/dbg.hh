@@ -7,14 +7,14 @@
  * of the MIT license.  See the LICENSE file for details.
  */
 
-#ifndef BDBG_HH
-#define BDBG_HH
+#ifndef BOINK_DBG_HH
+#define BOINK_DBG_HH
 
-#include "hashing.hh"
-#include "assembly.hh"
-#include "oxli/storage.hh"
-#include "oxli/hashtable.hh"
-#include "storage.hh"
+
+#include "boink/assembly.hh"
+#include "boink/hashing/hashing_types.hh"
+#include "boink/hashing/kmeriterator.hh"
+#include "boink/storage/storage.hh"
 
 #include <algorithm>
 #include <cmath>
@@ -24,17 +24,12 @@
 
 namespace boink {
 
-using std::string;
-using std::make_pair;
-
-typedef std::pair<bool, bool> bit_pair_t;
-typedef std::vector<bit_pair_t> bit_pair_vector_t;
-
 
 template <class StorageType,
           class HashShifter>
-class dBG : public KmerClient,
+class dBG : public hashing::KmerClient,
             public std::enable_shared_from_this<dBG<StorageType, HashShifter>> {
+
     StorageType S;
     HashShifter hasher;
 
@@ -46,27 +41,27 @@ public:
 
     typedef HashShifter shifter_type;
 	typedef AssemblerMixin<dBG<StorageType, HashShifter>> assembler_type;
-    typedef KmerIterator<HashShifter> kmer_iter_type;
+    typedef hashing::KmerIterator<HashShifter> kmer_iter_type;
     
 
-    explicit dBG(uint16_t K, std::vector<uint64_t> storage_size) :
-        KmerClient(K),
-        S(storage_size),
-        hasher(K),
-        sizes(storage_size),
-        N(storage_size.size()),
-        max_table(*std::max_element(storage_size.begin(), storage_size.end())) {
-        
+    explicit dBG(uint16_t K, std::vector<uint64_t> storage_size)
+        : KmerClient(K),
+          S(storage_size),
+          hasher(K),
+          sizes(storage_size),
+          N(storage_size.size()),
+          max_table(*std::max_element(storage_size.begin(), storage_size.end()))
+    {    
     }
 
-    explicit dBG(uint16_t K, uint64_t max_table, uint16_t N) :
-        KmerClient(K),
-        hasher(K),
-        sizes(oxli::get_n_primes_near_x(N, max_table)),
-        N(N),
-        max_table(max_table),
-        S(sizes) {
-
+    explicit dBG(uint16_t K, uint64_t max_table, uint16_t N)
+        : KmerClient(K),
+          hasher(K),
+          sizes(storage::get_n_primes_near_x(N, max_table)),
+          N(N),
+          max_table(max_table),
+          S(sizes) 
+    {
     }
 
     std::shared_ptr<dBG<StorageType, HashShifter>> clone() const {
@@ -80,7 +75,7 @@ public:
      *
      * @Returns   The hash value.
      */
-    hash_t hash(const string& kmer) const {
+    hashing::hash_t hash(const std::string& kmer) const {
         return hasher.hash(kmer);
     }
 
@@ -92,7 +87,7 @@ public:
      *
      * @Returns   The hash value.
      */
-    hash_t hash(const char * kmer) const {
+    hashing::hash_t hash(const char * kmer) const {
         return hasher.hash(kmer);
     }
 
@@ -103,7 +98,7 @@ public:
      *
      * @Returns   True if the k-mer was new; fals otherwise.
      */
-    bool add(const string& kmer) {
+    bool add(const std::string& kmer) {
         return S.add(hash(kmer));
     }
 
@@ -114,7 +109,7 @@ public:
      *
      * @Returns   True if the hash value was new; false otherwise.
      */
-    bool add(hash_t kmer) {
+    bool add(hashing::hash_t kmer) {
         return S.add(kmer);
     }
 
@@ -125,7 +120,7 @@ public:
      *
      * @Returns   The count of the k-mer.
      */
-    const count_t get(const string& kmer) const {
+    const storage::count_t get(const std::string& kmer) const {
         return S.get_count(hash(kmer));
     }
 
@@ -136,7 +131,7 @@ public:
      *
      * @Returns   The count of the hash value.
      */
-    const count_t get(hash_t hashed_kmer) const {
+    const storage::count_t get(hashing::hash_t hashed_kmer) const {
         return S.get_count(hashed_kmer);
     }
 
@@ -165,7 +160,7 @@ public:
      *
      * @Returns   The suffix.
      */
-    const string suffix(const string& kmer) {
+    const std::string suffix(const std::string& kmer) {
         return kmer.substr(kmer.length() - this->_K + 1);
     }
 
@@ -176,7 +171,7 @@ public:
      *
      * @Returns   The prefix.
      */
-    const string prefix(const string& kmer) {
+    const std::string prefix(const std::string& kmer) {
         return kmer.substr(0, this->_K - 1);
     }
 
@@ -189,12 +184,12 @@ public:
      *
      * @Returns   kmer_t objects with the left k-mers.
      */
-    vector<kmer_t> build_left_kmers(const vector<shift_t>& nodes,
-                                    const string& root) {
-        KmerVector kmers;
+    std::vector<hashing::kmer_t> build_left_kmers(const std::vector<hashing::shift_t>& nodes,
+                                                  const std::string& root) {
+        std::vector<hashing::kmer_t> kmers;
         auto _prefix = prefix(root);
         for (auto neighbor : nodes) {
-            kmers.push_back(kmer_t(neighbor.hash,
+            kmers.push_back(hashing::kmer_t(neighbor.hash,
                                    neighbor.symbol
                                    + _prefix));
         }
@@ -210,12 +205,12 @@ public:
      *
      * @Returns   kmer_t objects with the right k-mers.
      */
-    vector<kmer_t> build_right_kmers(const vector<shift_t>& nodes,
-                                     const string& root) {
-        KmerVector kmers;
+    std::vector<hashing::kmer_t> build_right_kmers(const std::vector<hashing::shift_t>& nodes,
+                                                   const std::string& root) {
+        std::vector<hashing::kmer_t> kmers;
         auto _suffix = suffix(root);
         for (auto neighbor : nodes) {
-            kmers.push_back(kmer_t(neighbor.hash,
+            kmers.push_back(hashing::kmer_t(neighbor.hash,
                                    _suffix
                                    + neighbor.symbol));
         }
@@ -230,7 +225,7 @@ public:
      *
      * @Returns   shift_t objects with the prefix bases and hashes.
      */
-    vector<shift_t> left_neighbors(const string& root) {
+    std::vector<hashing::shift_t> left_neighbors(const std::string& root) {
         auto assembler = this->get_assembler();
         assembler->set_cursor(root);
         return assembler->filter_nodes(assembler->gather_left());
@@ -243,7 +238,7 @@ public:
      *
      * @Returns   kmer_t objects with the complete k-mers and hashes.
      */
-    vector<kmer_t> left_neighbor_kmers(const string& root) {
+    std::vector<hashing::kmer_t> left_neighbor_kmers(const std::string& root) {
         auto filtered = left_neighbors(root);
         return build_left_kmers(filtered, root);
     }
@@ -255,7 +250,7 @@ public:
      *
      * @Returns   shift_t objects with the suffix bases and hashes.
      */
-    vector<shift_t> right_neighbors(const string& root) {
+    std::vector<hashing::shift_t> right_neighbors(const std::string& root) {
         auto assembler = this->get_assembler();
         assembler->set_cursor(root);
         return assembler->filter_nodes(assembler->gather_right());
@@ -268,7 +263,7 @@ public:
      *
      * @Returns   kmer_t objects with the complete k-mers and hashes.
      */
-    vector<kmer_t> right_neighbor_kmers(const string& root) {
+    std::vector<hashing::kmer_t> right_neighbor_kmers(const std::string& root) {
         auto filtered = right_neighbors(root);
         return build_right_kmers(filtered, root);
     }
@@ -280,12 +275,13 @@ public:
      *
      * @Returns   A pair of shift_t vectors; first contains the left and second the right neighbors.
      */
-    pair<vector<shift_t>, vector<shift_t>> neighbors(const string& root) {
+    std::pair<std::vector<hashing::shift_t>,
+              std::vector<hashing::shift_t>> neighbors(const std::string& root) {
         auto assembler = this->get_assembler();
         assembler->set_cursor(root);
         auto lfiltered = assembler->filter_nodes(assembler->gather_left());
         auto rfiltered = assembler->filter_nodes(assembler->gather_right());
-        return make_pair(lfiltered, rfiltered);
+        return std::make_pair(lfiltered, rfiltered);
     }
 
     /**
@@ -295,10 +291,11 @@ public:
      *
      * @Returns   A pair of kmer_t vectors; first contains the left and second the right neighbors.
      */
-    pair<vector<kmer_t>, vector<kmer_t>> neighbor_kmers(const string& root) {
+    std::pair<std::vector<hashing::kmer_t>,
+              std::vector<hashing::kmer_t>> neighbor_kmers(const std::string& root) {
         auto filtered = neighbors(root);
-        return make_pair(build_left_kmers(filtered.first, root),
-                         build_right_kmers(filtered.second, root));
+        return std::make_pair(build_left_kmers(filtered.first, root),
+                              build_right_kmers(filtered.second, root));
     }
 
     /**
@@ -321,16 +318,16 @@ public:
         return fp;
     }
 
-    uint64_t add_sequence(const string& sequence,
-                          std::vector<hash_t>& kmer_hashes,
+    uint64_t add_sequence(const std::string& sequence,
+                          std::vector<hashing::hash_t>& kmer_hashes,
                           std::vector<bool>& is_new) {
-        KmerIterator<HashShifter> iter(sequence, _K);
+        hashing::KmerIterator<HashShifter> iter(sequence, _K);
 
         uint64_t n_consumed = 0;
         size_t pos = 0;
         bool kmer_consumed;
         while(!iter.done()) {
-            hash_t h = iter.next();
+            hashing::hash_t h = iter.next();
             kmer_consumed = add(h);
             kmer_hashes.push_back(h);
             is_new.push_back(kmer_consumed);
@@ -341,15 +338,15 @@ public:
         return n_consumed;
     }
 
-    uint64_t add_sequence(const string& sequence,
-                          std::set<hash_t>& new_kmers) {
-        KmerIterator<HashShifter> iter(sequence, _K);
+    uint64_t add_sequence(const std::string& sequence,
+                          std::set<hashing::hash_t>& new_kmers) {
+        hashing::KmerIterator<HashShifter> iter(sequence, _K);
 
         uint64_t n_consumed = 0;
         size_t pos = 0;
         bool is_new;
         while(!iter.done()) {
-            hash_t h = iter.next();
+            hashing::hash_t h = iter.next();
             is_new = add(h);
             if (is_new) {
                 new_kmers.insert(h);
@@ -361,25 +358,25 @@ public:
         return n_consumed;
     }
 
-    uint64_t add_sequence(const string& sequence) {
-        KmerIterator<HashShifter> iter(sequence, _K);
+    uint64_t add_sequence(const std::string& sequence) {
+        hashing::KmerIterator<HashShifter> iter(sequence, _K);
 
         uint64_t n_consumed = 0;
         while(!iter.done()) {
-            hash_t h = iter.next();
+            hashing::hash_t h = iter.next();
             n_consumed += add(h);
         }
 
         return n_consumed;
     }
 
-    std::vector<count_t> get_counts(const string& sequence) {
-        KmerIterator<HashShifter> iter(sequence, _K);
-        std::vector<count_t> counts(sequence.length() - _K + 1);
+    std::vector<storage::count_t> get_counts(const std::string& sequence) {
+        hashing::KmerIterator<HashShifter> iter(sequence, _K);
+        std::vector<storage::count_t> counts(sequence.length() - _K + 1);
 
         size_t pos = 0;
         while(!iter.done()) {
-            hash_t h = iter.next();
+            hashing::hash_t h = iter.next();
             counts[pos] = get(h);
             ++pos;
         }
@@ -387,16 +384,16 @@ public:
         return counts;
     }
 
-    void get_counts(const string& sequence,
-                        std::vector<count_t>& counts,
-                        std::vector<hash_t>& hashes,
-                        std::set<hash_t>& new_hashes) {
+    void get_counts(const std::string& sequence,
+                    std::vector<storage::count_t>& counts,
+                    std::vector<hashing::hash_t>& hashes,
+                    std::set<hashing::hash_t>& new_hashes) {
 
-        KmerIterator<HashShifter> iter(sequence, _K);
+        hashing::KmerIterator<HashShifter> iter(sequence, _K);
 
         while(!iter.done()) {
-            hash_t h = iter.next();
-            count_t result = get(h);
+            hashing::hash_t h = iter.next();
+            storage::count_t result = get(h);
             counts.push_back(result);
             hashes.push_back(h);
             if (result == 0) {
@@ -405,11 +402,11 @@ public:
         }
     }
 
-    void save(string filename) {
+    void save(std::string filename) {
         S.save(filename, _K);
     }
 
-    void load(string filename) {
+    void load(std::string filename) {
         unsigned char ksize = _K;
         S.load(filename, ksize);
     }
@@ -418,19 +415,18 @@ public:
         S.reset();
     }
 
-    shared_ptr<KmerIterator<HashShifter>> get_hash_iter(const string& sequence) {
-        return make_shared<KmerIterator<HashShifter>>(sequence, _K);
+    std::shared_ptr<hashing::KmerIterator<HashShifter>> get_hash_iter(const std::string& sequence) {
+        return std::make_shared<hashing::KmerIterator<HashShifter>>(sequence, _K);
     }
 
-    shared_ptr<assembler_type> get_assembler() {
+    std::shared_ptr<assembler_type> get_assembler() {
         auto ptr = this->shared_from_this();
-        return make_shared<assembler_type>(ptr);
+        return std::make_shared<assembler_type>(ptr);
     }
 
 };
 
 
-typedef dBG<oxli::BitStorage, DefaultShifter> DefaultDBG;
 }
 
 #endif
