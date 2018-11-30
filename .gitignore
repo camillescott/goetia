@@ -119,3 +119,7 @@ src/boink/benchmark_oxli_consume
 
 *.stats.csv
 *.history.graphml
+
+include/gfakluge/
+include/prometheus/
+include/sparsepp/

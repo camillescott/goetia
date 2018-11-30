@@ -2,10 +2,10 @@
 	path = include/utils
 	url = https://github.com/TUM-I5/utils.git
 [submodule "include/gfakluge"]
-	path = include/gfakluge
+	path = third-party/gfakluge
 	url = git@github.com:camillescott/gfakluge.git
 [submodule "include/sparsepp"]
-	path = include/sparsepp
+	path = third-party/sparsepp
 	url = https://github.com/greg7mdp/sparsepp
 [submodule "include/prometheus-cpp"]
 	path = third-party/prometheus-cpp
