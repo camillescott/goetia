@@ -14,7 +14,6 @@
 
 namespace boink {
 namespace reporting {
-namespace report_types {
 
 struct StreamingCompactorReport {
     uint64_t n_full;
@@ -38,7 +37,6 @@ struct StreamingCompactorReport {
 };
 
 
-}
 }
 }
 

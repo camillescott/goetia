@@ -17,7 +17,7 @@
 
 
 namespace boink {
-namespace event_types {
+namespace events {
 
 using boink::cdbg::node_meta_t;
 

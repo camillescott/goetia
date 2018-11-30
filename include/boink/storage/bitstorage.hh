@@ -48,6 +48,7 @@
 #define BOINK_BITSTORAGE_HH
 
 #include <cassert>
+#include <cstring>
 #include <array>
 #include <memory>
 #include <mutex>
@@ -84,7 +85,7 @@ protected:
     byte_t ** _counts;
 
 public:
-    BitStorage(std::vector<uint64_t>& tablesizes) :
+    BitStorage(const std::vector<uint64_t>& tablesizes) :
         _tablesizes(tablesizes)
     {
         _occupied_bins = 0;
@@ -152,8 +153,8 @@ public:
     // tests and mutations are being blended here against conventional
     // software engineering wisdom.
     inline
-    BoundedCounterType
-    test_and_set_bits( HashIntoType khash )
+    count_t 
+    test_and_set_bits( hashing::hash_t khash )
     {
         bool is_new_kmer = false;
 
@@ -180,13 +181,13 @@ public:
         return 0; // kmer already seen
     } // test_and_set_bits
 
-    inline bool add(HashIntoType khash)
+    inline bool add(hashing::hash_t khash)
     {
         return test_and_set_bits(khash);
     }
 
     // get the count for the given k-mer hash.
-    inline const BoundedCounterType get_count(HashIntoType khash) const
+    inline const count_t get_count(hashing::hash_t khash) const
     {
         for (size_t i = 0; i < _n_tables; i++) {
             uint64_t bin = khash % _tablesizes[i];

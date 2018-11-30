@@ -14,18 +14,19 @@
 #include <cstdint>
 #include <memory>
 #include <mutex>
-#include <limits>
 #include <iostream>
 #include <fstream>
 #include <sstream>
 
-#include "gfakluge/src/gfakluge.hpp"
-#include "sparsepp/sparsepp/spp.h"
+#include "gfakluge/gfakluge.hpp"
+#include "sparsepp/spp.h"
 
+#include "boink/assembly.hh"
 #include "boink/boink.hh"
 #include "boink/hashing/hashing_types.hh"
 #include "boink/hashing/kmeriterator.hh"
 #include "boink/minimizers.hh"
+#include "boink/storage/storage.hh"
 
 #include "boink/events.hh"
 #include "boink/event_types.hh"
@@ -59,14 +60,10 @@ using std::make_unique;
 using std::vector;
 using std::pair;
 
-using namespace oxli;
-using namespace boink::events;
-using namespace boink::event_types;
-
 
 template <class GraphType>
-class cDBG : public KmerClient,
-             public EventNotifier {
+class cDBG : public hashing::KmerClient,
+             public events::EventNotifier {
 
 protected:
 
@@ -759,7 +756,7 @@ public:
     }
 
     void notify_history_new(id_t id, std::string& sequence, node_meta_t meta) {
-        auto event = make_shared<HistoryNewEvent>();
+        auto event = make_shared<events::HistoryNewEvent>();
         event->id = id;
         event->sequence = sequence;
         event->meta = meta;
@@ -768,7 +765,7 @@ public:
 
     void notify_history_merge(id_t lparent, id_t rparent, id_t child,
                           std::string& sequence, node_meta_t meta) {
-        auto event = make_shared<HistoryMergeEvent>();
+        auto event = make_shared<events::HistoryMergeEvent>();
         event->lparent = lparent;
         event->rparent = rparent;
         event->child = child;
@@ -778,7 +775,7 @@ public:
     }
 
     void notify_history_extend(id_t id, std::string& sequence, node_meta_t meta) {
-        auto event = make_shared<HistoryExtendEvent>();
+        auto event = make_shared<events::HistoryExtendEvent>();
         event->id = id;
         event->sequence = sequence;
         event->meta = meta;
@@ -786,7 +783,7 @@ public:
     }
 
     void notify_history_clip(id_t id, std::string& sequence, node_meta_t meta) {
-        auto event = make_shared<HistoryClipEvent>();
+        auto event = make_shared<events::HistoryClipEvent>();
         event->id = id;
         event->sequence = sequence;
         event->meta = meta;
@@ -796,7 +793,7 @@ public:
     void notify_history_split(id_t parent, id_t lchild, id_t rchild,
                           std::string& lsequence, std::string& rsequence,
                           node_meta_t lmeta, node_meta_t rmeta) {
-        auto event = make_shared<HistorySplitEvent>();
+        auto event = make_shared<events::HistorySplitEvent>();
         event->parent = parent;
         event->lchild = lchild;
         event->rchild = rchild;
@@ -808,7 +805,7 @@ public:
     }
 
     void notify_history_split_circular(id_t id, std::string& sequence, node_meta_t meta) {
-        auto event = make_shared<HistorySplitCircularEvent>();
+        auto event = make_shared<events::HistorySplitCircularEvent>();
         event->id = id;
         event->sequence = sequence;
         event->meta = meta;
@@ -825,7 +822,7 @@ public:
             auto unode = it->second.get();
             auto counts = dbg->get_counts(unode->sequence);
             if (std::any_of(counts.begin(), counts.end(), 
-                            [](count_t i){ return i == 0; })) {
+                            [](storage::count_t i){ return i == 0; })) {
                 out << unode->node_id << ";"
                     << unode->left_end() << ";"
                     << unode->right_end() << ";"

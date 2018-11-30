@@ -22,9 +22,8 @@
 #include "boink/reporting/reporters.hh"
 #include "boink/reporting/report_types.hh"
 
-#include <sparsepp/sparsepp/spp.h>
+#include "sparsepp/spp.h"
 
-using namespace boink::cdbg;
 
 namespace boink {
 namespace reporting {
@@ -34,15 +33,15 @@ template <class GraphType>
 class cDBGComponentReporter : public SingleFileReporter {
 private:
 
-    std::shared_ptr<cDBG<GraphType>> cdbg;
-    id_t _component_id_counter;
-    spp::sparse_hash_map<id_t, uint64_t> component_size_map;
+    std::shared_ptr<cdbg::cDBG<GraphType>> cdbg;
+    cdbg::id_t _component_id_counter;
+    spp::sparse_hash_map<cdbg::id_t, uint64_t> component_size_map;
     uint64_t max_component;
     uint64_t min_component;
 
 public:
 
-    cDBGComponentReporter(std::shared_ptr<cDBG<GraphType>> cdbg,
+    cDBGComponentReporter(std::shared_ptr<cdbg::cDBG<GraphType>> cdbg,
                           const std::string& filename)
         : SingleFileReporter(filename, "cDBGComponentReporter"),
           cdbg(cdbg),
@@ -50,16 +49,16 @@ public:
           max_component(0)
     {
         _cerr(this->THREAD_NAME << " reporting at MEDIUM interval.");
-        this->msg_type_whitelist.insert(boink::event_types::MSG_TIME_INTERVAL);
+        this->msg_type_whitelist.insert(events::MSG_TIME_INTERVAL);
 
         _output_stream << "read_n,n_components,max_component,min_component" << std::endl;
     }
 
-    virtual void handle_msg(std::shared_ptr<Event> event) {
-         if (event->msg_type == boink::event_types::MSG_TIME_INTERVAL) {
-            auto _event = static_cast<TimeIntervalEvent*>(event.get());
-            if (_event->level == TimeIntervalEvent::MEDIUM ||
-                _event->level == TimeIntervalEvent::END) {
+    virtual void handle_msg(std::shared_ptr<events::Event> event) {
+         if (event->msg_type == events::MSG_TIME_INTERVAL) {
+            auto _event = static_cast<events::TimeIntervalEvent*>(event.get());
+            if (_event->level == events::TimeIntervalEvent::MEDIUM ||
+                _event->level == events::TimeIntervalEvent::END) {
                 
                 this->recompute_components();
                 _output_stream << _event->t << ","
@@ -74,14 +73,14 @@ public:
     void recompute_components() {
         auto lock = cdbg->lock_nodes();
 
-        spp::sparse_hash_set<id_t> seen;
+        spp::sparse_hash_set<cdbg::id_t> seen;
         component_size_map.clear();
 
         for (auto unitig_it = cdbg->unodes_begin(); unitig_it != cdbg->unodes_end(); unitig_it++) {
             auto root = unitig_it->second.get();
             if (!seen.count(root->node_id)) {
                 auto component_nodes = cdbg->traverse_breadth_first(root);
-                id_t component_id = (root->component_id == NULL_ID) ? ++_component_id_counter : root->component_id;
+                cdbg::id_t component_id = (root->component_id == NULL_ID) ? ++_component_id_counter : root->component_id;
                 for (auto node : component_nodes) {
                     node->component_id = component_id;
                     seen.insert(node->node_id);

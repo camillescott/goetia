@@ -48,6 +48,7 @@
 #define BOINK_NIBBLESTORAGE_HH
 
 #include <cassert>
+#include <cstring>
 #include <array>
 #include <memory>
 #include <mutex>
@@ -104,7 +105,7 @@ protected:
     }
 
 public:
-    NibbleStorage(std::vector<uint64_t>& tablesizes) :
+    NibbleStorage(const std::vector<uint64_t>& tablesizes) :
         _tablesizes{tablesizes},
         _occupied_bins{0}, _n_unique_kmers{0}
     {

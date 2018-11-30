@@ -27,7 +27,7 @@ struct cDBGMetrics {
 
 private:
 
-    shared_ptr<prometheus::Registry>        pr_registry;
+    std::shared_ptr<prometheus::Registry>        pr_registry;
     prometheus::Family<prometheus::Gauge>&   node_gauge_family;
     prometheus::Family<prometheus::Counter>& op_counter_family;
 
@@ -118,7 +118,7 @@ private:
 };
 
 
-std::ostream& operator<<(std::ostream& o, const cDBGMetrics& c) {
+inline std::ostream& operator<<(std::ostream& o, const cDBGMetrics& c) {
     o << c.n_full.Value() << "," 
         << c.n_tips.Value() << "," 
         << c.n_islands.Value() << ","

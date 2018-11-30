@@ -68,6 +68,12 @@ protected:
     const std::string _msg;
 };
 
+class BoinkFileException: public BoinkException {
+public:
+    explicit BoinkFileException(const std::string& msg = "Error reading or writing file.")
+        : BoinkException(msg) { }
+};
+
 class InvalidCharacterException : public std::exception {
 public:
     explicit InvalidCharacterException(const std::string& msg = "Invalid character encountered.")

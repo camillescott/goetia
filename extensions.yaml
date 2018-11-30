@@ -1,5 +1,4 @@
 extensions:
-    - name: analysis
     - name: assembly
       types:
         - GraphType
@@ -33,7 +32,6 @@ extensions:
     - name: minimizers
       types:
         - RollingMinType
-    - name: partitioning
     - name: processors
       types:
         - GraphType

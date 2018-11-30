@@ -18,7 +18,7 @@ from libcpp.string cimport string
 
 from boink.hashing cimport *
 
-cdef extern from "boink/storage/storage.hh" nogil:
+cdef extern from "boink/storage/storage.hh" namespace "boink::storage" nogil:
     # Need these for the Storage template parameter;
     # they don't need methods
     ctypedef uint8_t count_t

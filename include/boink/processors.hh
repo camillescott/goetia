@@ -23,13 +23,6 @@
 
 #include "boink/cdbg/compactor.hh"
 
-using namespace oxli;
-using namespace oxli:: read_parsers;
-
-using namespace boink::events;
-using namespace boink::event_types;
-using namespace boink::cdbg;
-using namespace boink::hashing;
 
 #define DEFAULT_FINE_INTERVAL 10000
 #define DEFAULT_MEDIUM_INTERVAL 100000
@@ -64,8 +57,8 @@ public:
 
 
 template <class Derived,
-          class ParserType = FastxReader>
-class FileProcessor : public boink::events::EventNotifier {
+          class ParserType = oxli::read_parsers::FastxReader>
+class FileProcessor : public events::EventNotifier {
 
 protected:
 
@@ -74,13 +67,13 @@ protected:
 
 public:
 
-    using EventNotifier::register_listener;
-    using EventNotifier::notify;
+    using events::EventNotifier::register_listener;
+    using events::EventNotifier::notify;
 
     FileProcessor(uint64_t fine_interval=DEFAULT_FINE_INTERVAL,
                   uint64_t medium_interval=DEFAULT_MEDIUM_INTERVAL,
                   uint64_t coarse_interval=DEFAULT_COARSE_INTERVAL)
-        :  boink::events::EventNotifier(),
+        :  events::EventNotifier(),
            counters ({{ fine_interval, 
                         medium_interval,
                         coarse_interval }}),
@@ -100,7 +93,7 @@ public:
     }
 
     uint64_t process(string const &filename) {
-        ReadParserPtr<ParserType> parser = get_parser<ParserType>(filename);
+        oxli::read_parsers::ReadParserPtr<ParserType> parser = oxli::read_parsers::get_parser<ParserType>(filename);
         return process(parser);
     }
 
@@ -117,39 +110,39 @@ public:
             if (counters[0].poll(_bundle_count)) {
                  //std::cerr << "processed " << _n_reads << " sequences." << std::endl;               
                  derived().report();
-                 auto event = make_shared<TimeIntervalEvent>();
-                 event->level = TimeIntervalEvent::FINE;
+                 auto event = make_shared<events::TimeIntervalEvent>();
+                 event->level = events::TimeIntervalEvent::FINE;
                  event->t = _n_reads;
                  notify(event);
             }
             if (counters[1].poll(_bundle_count)) {
-                 auto event = make_shared<TimeIntervalEvent>();
-                 event->level = TimeIntervalEvent::MEDIUM;
+                 auto event = make_shared<events::TimeIntervalEvent>();
+                 event->level = events::TimeIntervalEvent::MEDIUM;
                  event->t = _n_reads;
                  notify(event);
             }
             if (counters[2].poll(_bundle_count)) {
-                 auto event = make_shared<TimeIntervalEvent>();
-                 event->level = TimeIntervalEvent::COARSE;
+                 auto event = make_shared<events::TimeIntervalEvent>();
+                 event->level = events::TimeIntervalEvent::COARSE;
                  event->t = _n_reads;
                  notify(event);
             }
         }
-        auto event = make_shared<TimeIntervalEvent>();
-        event->level = TimeIntervalEvent::END;
+        auto event = make_shared<events::TimeIntervalEvent>();
+        event->level = events::TimeIntervalEvent::END;
         event->t = _n_reads;
         notify(event);
         return _n_reads;
     }
 
-    uint64_t process(read_parsers::ReadParserPtr<ParserType>& parser) {
-        Read read;
+    uint64_t process(oxli::read_parsers::ReadParserPtr<ParserType>& parser) {
+        oxli::read_parsers::Read read;
 
         // Iterate through the reads and consume their k-mers.
-        while (!parser->is_complete( )) {
+        while (!parser->is_complete()) {
             try {
                 read = parser->get_next_read( );
-            } catch (NoMoreReadsAvailable) {
+            } catch (oxli::read_parsers::NoMoreReadsAvailable) {
                 break;
             }
 
@@ -161,26 +154,26 @@ public:
             if (counters[0].poll()) {
                  //std::cerr << "processed " << _n_reads << " sequences." << std::endl;               
                  derived().report();
-                 auto event = make_shared<TimeIntervalEvent>();
-                 event->level = TimeIntervalEvent::FINE;
+                 auto event = make_shared<events::TimeIntervalEvent>();
+                 event->level = events::TimeIntervalEvent::FINE;
                  event->t = _n_reads;
                  notify(event);
             }
             if (counters[1].poll()) {
-                 auto event = make_shared<TimeIntervalEvent>();
-                 event->level = TimeIntervalEvent::MEDIUM;
+                 auto event = make_shared<events::TimeIntervalEvent>();
+                 event->level = events::TimeIntervalEvent::MEDIUM;
                  event->t = _n_reads;
                  notify(event);
             }
             if (counters[2].poll()) {
-                 auto event = make_shared<TimeIntervalEvent>();
-                 event->level = TimeIntervalEvent::COARSE;
+                 auto event = make_shared<events::TimeIntervalEvent>();
+                 event->level = events::TimeIntervalEvent::COARSE;
                  event->t = _n_reads;
                  notify(event);
             }
         }
-        auto event = make_shared<TimeIntervalEvent>();
-        event->level = TimeIntervalEvent::END;
+        auto event = make_shared<events::TimeIntervalEvent>();
+        event->level = events::TimeIntervalEvent::END;
         event->t = _n_reads;
         notify(event);
         return _n_reads;
@@ -217,7 +210,7 @@ private:
 
 
 template <class GraphType,
-          class ParserType = FastxReader>
+          class ParserType = oxli::read_parsers::FastxReader>
 class FileConsumer : public FileProcessor<FileConsumer<GraphType, ParserType>,
                                           ParserType> {
 
@@ -242,7 +235,7 @@ public:
 
     }
 
-    void process_sequence(const Read& read) {
+    void process_sequence(const oxli::read_parsers::Read& read) {
         auto this_n_consumed = graph->add_sequence(read.cleaned_seq);
         __sync_add_and_fetch( &_n_consumed, this_n_consumed );
     }
@@ -259,14 +252,14 @@ public:
 
 
 template <class GraphType,
-          class ParserType = FastxReader>
+          class ParserType = oxli::read_parsers::FastxReader>
 class DecisionNodeProcessor : public FileProcessor<DecisionNodeProcessor<GraphType, ParserType>,
                                                    ParserType> {
 
 protected:
     typedef FileProcessor<DecisionNodeProcessor<GraphType, ParserType>,
                           ParserType> Base;
-    shared_ptr<StreamingCompactor<GraphType>> compactor;
+    shared_ptr<cdbg::StreamingCompactor<GraphType>> compactor;
     shared_ptr<GraphType> graph;
     std::string _output_filename;
     std::ofstream _output_stream;
@@ -275,7 +268,7 @@ public:
 
     using Base::process_sequence;
 
-    DecisionNodeProcessor(shared_ptr<StreamingCompactor<GraphType>> compactor,
+    DecisionNodeProcessor(shared_ptr<cdbg::StreamingCompactor<GraphType>> compactor,
                           std::string& output_filename,
                           uint64_t fine_interval=DEFAULT_FINE_INTERVAL,
                           uint64_t medium_interval=DEFAULT_MEDIUM_INTERVAL,
@@ -294,13 +287,13 @@ public:
         _output_stream.close();
     }
 
-    void process_sequence(const Read& read) {
+    void process_sequence(const oxli::read_parsers::Read& read) {
         uint64_t n_new = graph->add_sequence(read.cleaned_seq);
         if (n_new > 0) {
             std::vector<uint32_t> decision_positions;
-            std::vector<hash_t> decision_hashes;
+            std::vector<hashing::hash_t> decision_hashes;
             std::vector<NeighborBundle> decision_neighbors;
-            std::set<hash_t> new_kmers;
+            std::set<hashing::hash_t> new_kmers;
 
             compactor->find_decision_kmers(read.cleaned_seq,
                                            decision_positions,
@@ -323,14 +316,14 @@ public:
 
 
 template <class GraphType,
-          class ParserType = FastxReader>
+          class ParserType = oxli::read_parsers::FastxReader>
 class StreamingCompactorProcessor : 
     public FileProcessor<StreamingCompactorProcessor<GraphType, ParserType>,
                          ParserType> { //template class names like modern art
 
 protected:
 
-    shared_ptr<StreamingCompactor<GraphType>> compactor;
+    shared_ptr<cdbg::StreamingCompactor<GraphType>> compactor;
     shared_ptr<GraphType> graph;
 
     typedef FileProcessor<StreamingCompactorProcessor<GraphType, ParserType>,
@@ -339,9 +332,9 @@ protected:
 public:
 
     using Base::process_sequence;
-    using EventNotifier::register_listener;
+    using events::EventNotifier::register_listener;
     
-    StreamingCompactorProcessor(shared_ptr<StreamingCompactor<GraphType>> compactor,
+    StreamingCompactorProcessor(shared_ptr<cdbg::StreamingCompactor<GraphType>> compactor,
                                 uint64_t fine_interval=DEFAULT_FINE_INTERVAL,
                                 uint64_t medium_interval=DEFAULT_MEDIUM_INTERVAL,
                                 uint64_t coarse_interval=DEFAULT_COARSE_INTERVAL)
@@ -351,7 +344,7 @@ public:
     {
     }
 
-    void process_sequence(const Read& read) {
+    void process_sequence(const oxli::read_parsers::Read& read) {
         try {
             compactor->update_sequence(read.cleaned_seq);
         } catch (InvalidCharacterException &e) {
@@ -385,7 +378,7 @@ public:
 
 
 template <class ShifterType,
-          class ParserType = FastxReader>
+          class ParserType = oxli::read_parsers::FastxReader>
 class MinimizerProcessor : public FileProcessor<MinimizerProcessor<ShifterType, ParserType>,
                                                 ParserType> {
 
@@ -418,7 +411,7 @@ public:
         _output_stream.close();
     }
 
-    void process_sequence(const Read& read) {
+    void process_sequence(const oxli::read_parsers::Read& read) {
         std::vector<typename WKMinimizer<ShifterType>::value_type> minimizers;
         minimizers = M.get_minimizers(read.cleaned_seq);
 

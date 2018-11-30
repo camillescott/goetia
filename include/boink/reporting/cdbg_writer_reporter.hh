@@ -22,9 +22,8 @@
 #include "boink/reporting/reporters.hh"
 #include "boink/reporting/report_types.hh"
 
-#include <sparsepp/sparsepp/spp.h>
+#include "sparsepp/spp.h"
 
-using namespace boink::cdbg;
 
 namespace boink {
 namespace reporting {
@@ -33,13 +32,13 @@ template <class GraphType>
 class cDBGWriter : public MultiFileReporter {
 protected:
 
-    shared_ptr<cDBG<GraphType>> cdbg;
-    cDBGFormat format;
+    shared_ptr<cdbg::cDBG<GraphType>> cdbg;
+    cdbg::cDBGFormat format;
 
 public:
 
-    cDBGWriter(shared_ptr<cDBG<GraphType>> cdbg,
-               cDBGFormat format,
+    cDBGWriter(shared_ptr<cdbg::cDBG<GraphType>> cdbg,
+               cdbg::cDBGFormat format,
                const string& output_prefix)
         : MultiFileReporter(output_prefix,
                             "cDBGWriter[" + cdbg_format_repr(format) + "]"),
@@ -48,14 +47,14 @@ public:
     {
         _cerr(this->THREAD_NAME << " reporting at COARSE interval.");
 
-        this->msg_type_whitelist.insert(boink::event_types::MSG_TIME_INTERVAL);
+        this->msg_type_whitelist.insert(events::MSG_TIME_INTERVAL);
     }
 
-    virtual void handle_msg(shared_ptr<Event> event) {
-        if (event->msg_type == boink::event_types::MSG_TIME_INTERVAL) {
-            auto _event = static_cast<TimeIntervalEvent*>(event.get());
-            if (_event->level == TimeIntervalEvent::COARSE ||
-                _event->level == TimeIntervalEvent::END) {
+    virtual void handle_msg(shared_ptr<events::Event> event) {
+        if (event->msg_type == events::MSG_TIME_INTERVAL) {
+            auto _event = static_cast<events::TimeIntervalEvent*>(event.get());
+            if (_event->level == events::TimeIntervalEvent::COARSE ||
+                _event->level == events::TimeIntervalEvent::END) {
 
                 std::ofstream& stream = this->next_stream(_event->t,
                                                           cdbg_format_repr(format));

@@ -9,7 +9,7 @@ from libc.stdint cimport uint8_t, uint32_t, uint64_t
 from libcpp.memory cimport shared_ptr
 from libcpp.string cimport string
 
-cdef extern from "boink/event_types.hh" namespace "boink::event_types" nogil:
+cdef extern from "boink/event_types.hh" namespace "boink::events" nogil:
 
     ctypedef enum event_t:
         MSG_EXIT_THREAD
@@ -28,20 +28,6 @@ cdef extern from "boink/event_types.hh" namespace "boink::event_types" nogil:
     cdef cppclass _Event "Event":
         _Event(event_t)
         _Event(event_t, void *)
-
-    ctypedef struct _StreamingCompactorReport "StreamingCompactorReport":
-        uint64_t read_n
-        uint64_t n_full
-        uint64_t n_tips
-        uint64_t n_islands
-        uint64_t n_unknown
-        uint64_t n_trivial
-        uint64_t n_dnodes
-        uint64_t n_unodes
-        uint64_t n_updates
-        uint64_t n_tags
-        uint64_t n_unique
-        double   estimated_fp
 
 
 cdef extern from "boink/events.hh" namespace "boink::events" nogil:

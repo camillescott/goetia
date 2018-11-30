@@ -128,6 +128,14 @@ def clean_folder(target):
     except OSError:
         pass
 
+def walk_ext(root, ext='.cc'):
+    result = []
+    for root, dirs, files in os.walk(root):
+        for fn in files:
+            if fn.endswith(ext):
+                result.append((root, fn))
+    return sorted(result, key=lambda p: (os.path.basename(p[0]), replace_ext(p[1], '')))
+
 '''
 *
 * Printing stuff
@@ -173,7 +181,8 @@ def title_with_actions(task):
     """return task name task actions"""
     if task.actions:
         title = "\n".join([str(action) for action in task.actions])
-        title += "\nDeps: " + ", ".join([str(dep) for dep in task.file_dep])
+        title += "\nDeps:    " + ", ".join([str(dep) for dep in task.file_dep])
+        title += "\nTargets: " + ", ".join([str(tgt) for tgt in task.targets])
     # A task that contains no actions at all
     # is used as group task
     else:
@@ -222,10 +231,10 @@ class BoinkReporter(ConsoleReporter):
 '''
 
 
-def get_gcc_includes(source, includes, pkg):
+def get_gcc_includes(source, include_directives, pkg):
     from sh import gcc
-    res = gcc(*includes, '-std=c++14', '-M', source)
-    return [os.path.abspath(token) for token in res.split() if pkg in token]
+    return flatten([ln.strip('\ ').split() for ln in \
+                   gcc(*include_directives, '-std=c++14', '-MM', source).split('\n')])[1:]
 
 
 def get_cpp_includes(filename, include_dir):

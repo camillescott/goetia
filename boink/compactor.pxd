@@ -19,8 +19,8 @@ from boink.dbg cimport *
 from boink.cdbg cimport *
 from boink.minimizers cimport _InteriorMinimizer
 from boink.prometheus cimport _Registry
-from boink.events cimport (_StreamingCompactorReport, _EventNotifier,
-                           _EventListener, EventNotifier, EventListener)
+from boink.events cimport (_EventNotifier, _EventListener,
+                           EventNotifier, EventListener)
 
 
 cdef extern from "boink/cdbg/compactor.hh" namespace "boink::cdbg" nogil:
@@ -64,7 +64,6 @@ cdef extern from "boink/cdbg/compactor.hh" namespace "boink::cdbg" nogil:
                                deque[_compact_segment]&, # new segments
                                ) except +ValueError
 
-        _StreamingCompactorReport* get_report()
 
 
 

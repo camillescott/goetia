@@ -28,7 +28,7 @@ from build_utils import (check_for_openmp,
 
 
 SCRIPTS = glob.glob(os.path.join('scripts', '*'))
-MOD_EXT = sysconfig.get_config_var('SO')
+MOD_EXT = sysconfig.get_config_var('EXT_SUFFIX')
 MODS    = glob.glob(os.path.join('boink', '*'+MOD_EXT))
 
 CLASSIFIERS = [

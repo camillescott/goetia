@@ -18,8 +18,8 @@ from boink.hashing cimport *
 
 from boink.dbg cimport *
 from boink.minimizers cimport _InteriorMinimizer
-from boink.events cimport (_StreamingCompactorReport, _EventNotifier,
-                           _EventListener, EventNotifier, EventListener)
+from boink.events cimport (_EventNotifier, _EventListener,
+                           EventNotifier, EventListener)
 
 from boink.sparsepp cimport sparse_hash_set, sparse_hash_map
 

@@ -48,6 +48,7 @@
 #define BOINK_BYTESTORAGE_HH
 
 #include <cassert>
+#include <cstring>
 #include <array>
 #include <memory>
 #include <mutex>
@@ -56,11 +57,10 @@
 #include "boink/hashing/hashing_types.hh"
 #include "boink/storage/storage.hh"
 
+#   define MAX_KCOUNT 255
 
 namespace boink {
 namespace storage {
-
-}
 
 /*
  * \class ByteStorage
@@ -82,8 +82,7 @@ class ByteStorageFileWriter;
 class ByteStorageGzFileReader;
 class ByteStorageGzFileWriter;
 
-class ByteStorage : public Storage
-{
+class ByteStorage : public Storage {
     friend class ByteStorageFile;
     friend class ByteStorageFileReader;
     friend class ByteStorageFileWriter;
@@ -117,7 +116,7 @@ public:
     KmerCountMap _bigcounts;
 
     // constructor: create an empty CountMin sketch.
-    ByteStorage(std::vector<uint64_t>& tablesizes ) :
+    ByteStorage(const std::vector<uint64_t>& tablesizes ) :
         _max_count(MAX_KCOUNT), _max_bigcount(MAX_BIGCOUNT),
         _bigcount_spin_lock(false), _tablesizes(tablesizes),
         _n_unique_kmers(0), _occupied_bins(0)
@@ -318,6 +317,7 @@ public:
 };
 
 
+}
 }
 
 #endif

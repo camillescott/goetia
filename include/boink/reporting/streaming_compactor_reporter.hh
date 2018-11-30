@@ -21,8 +21,6 @@
 #include "boink/reporting/reporters.hh"
 #include "boink/reporting/report_types.hh"
 
-using namespace boink::cdbg;
-using namespace boink::reporting::report_types;
 
 namespace boink {
 namespace reporting {
@@ -32,18 +30,18 @@ class StreamingCompactorReporter: public SingleFileReporter {
 
 protected:
 
-    shared_ptr<StreamingCompactor<GraphType>> compactor;
+    shared_ptr<cdbg::StreamingCompactor<GraphType>> compactor;
 
 public:
 
-    StreamingCompactorReporter(shared_ptr<StreamingCompactor<GraphType>> compactor,
+    StreamingCompactorReporter(shared_ptr<cdbg::StreamingCompactor<GraphType>> compactor,
                                const std::string& output_filename)
         : SingleFileReporter(output_filename, "StreamingCompactorReporter"),
           compactor(compactor)
     {    
         _cerr(this->THREAD_NAME << " reporting at FINE interval.");
 
-        this->msg_type_whitelist.insert(boink::event_types::MSG_TIME_INTERVAL);
+        this->msg_type_whitelist.insert(events::MSG_TIME_INTERVAL);
 
         _output_stream << "read_n,n_full,n_tips,n_islands,n_trivial"
                           ",n_circular,n_loops,n_dnodes,n_unodes,n_tags,"
@@ -51,11 +49,11 @@ public:
                           "n_deletes,n_circular_merges,n_unique,estimated_fp" << std::endl;
     }
 
-    virtual void handle_msg(shared_ptr<Event> event) {
-        if (event->msg_type == boink::event_types::MSG_TIME_INTERVAL) {
-            auto _event = static_cast<TimeIntervalEvent*>(event.get());
-            if (_event->level == TimeIntervalEvent::FINE ||
-                _event->level == TimeIntervalEvent::END) {
+    virtual void handle_msg(shared_ptr<events::Event> event) {
+        if (event->msg_type == events::MSG_TIME_INTERVAL) {
+            auto _event = static_cast<events::TimeIntervalEvent*>(event.get());
+            if (_event->level == events::TimeIntervalEvent::FINE ||
+                _event->level == events::TimeIntervalEvent::END) {
                 auto report = compactor->get_report();
                 _output_stream << _event->t << ","
                                << report.n_full << ","

@@ -21,7 +21,7 @@
 #include "boink/reporting/reporters.hh"
 #include "boink/reporting/report_types.hh"
 
-#include <sparsepp/sparsepp/spp.h>
+#include "sparsepp/spp.h"
 
 
 namespace boink {
@@ -42,13 +42,13 @@ public:
     {
         _cerr(this->THREAD_NAME << " reporting continuously.");
 
-        this->msg_type_whitelist.insert(boink::event_types::MSG_HISTORY_NEW);
-        this->msg_type_whitelist.insert(boink::event_types::MSG_HISTORY_SPLIT);
-        this->msg_type_whitelist.insert(boink::event_types::MSG_HISTORY_SPLIT_CIRCULAR);
-        this->msg_type_whitelist.insert(boink::event_types::MSG_HISTORY_MERGE);
-        this->msg_type_whitelist.insert(boink::event_types::MSG_HISTORY_EXTEND);
-        this->msg_type_whitelist.insert(boink::event_types::MSG_HISTORY_CLIP);
-        this->msg_type_whitelist.insert(boink::event_types::MSG_HISTORY_DELETE);
+        this->msg_type_whitelist.insert(events::MSG_HISTORY_NEW);
+        this->msg_type_whitelist.insert(events::MSG_HISTORY_SPLIT);
+        this->msg_type_whitelist.insert(events::MSG_HISTORY_SPLIT_CIRCULAR);
+        this->msg_type_whitelist.insert(events::MSG_HISTORY_MERGE);
+        this->msg_type_whitelist.insert(events::MSG_HISTORY_EXTEND);
+        this->msg_type_whitelist.insert(events::MSG_HISTORY_CLIP);
+        this->msg_type_whitelist.insert(events::MSG_HISTORY_DELETE);
 
         _output_stream << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                           "<graphml xmlns=\"http://graphml.graphdrawing.org/xmlns\" "
@@ -85,7 +85,7 @@ public:
                        << "</edge>" << std::endl;
     }
 
-    std::string add_node_edit(id_t node_id, node_meta_t meta, std::string sequence) {
+    std::string add_node_edit(id_t node_id, cdbg::node_meta_t meta, std::string sequence) {
         auto change_num = node_history[node_id].size();
         std::string id = std::to_string(node_id) + "_" + std::to_string(change_num);
         node_history[node_id].push_back(id);
@@ -93,7 +93,7 @@ public:
         return id;
     }
 
-    std::string add_new_node(id_t node_id, node_meta_t meta, std::string sequence) {
+    std::string add_new_node(id_t node_id, cdbg::node_meta_t meta, std::string sequence) {
         std::string id = std::to_string(node_id) + "_0";
         if (node_history.count(node_id) == 0) {
             node_history[node_id] = std::vector<std::string>{id};
@@ -102,13 +102,13 @@ public:
         return id;
     }
 
-    virtual void handle_msg(shared_ptr<Event> event) {
-        if (event->msg_type == boink::event_types::MSG_HISTORY_NEW) {
-            auto _event = static_cast<HistoryNewEvent*>(event.get());
+    virtual void handle_msg(shared_ptr<events::Event> event) {
+        if (event->msg_type == events::MSG_HISTORY_NEW) {
+            auto _event = static_cast<events::HistoryNewEvent*>(event.get());
             add_new_node(_event->id, _event->meta, _event->sequence);
 
-        } else if (event->msg_type == boink::event_types::MSG_HISTORY_SPLIT) {
-            auto _event = static_cast<HistorySplitEvent*>(event.get());
+        } else if (event->msg_type == events::MSG_HISTORY_SPLIT) {
+            auto _event = static_cast<events::HistorySplitEvent*>(event.get());
             
             std::string parent_id = node_history[_event->parent].back();
             std::string lid, rid;
@@ -122,8 +122,8 @@ public:
             write_edge(parent_id, lid, std::string("SPLIT"));
             write_edge(parent_id, rid, std::string("SPLIT"));
 
-        } else if (event->msg_type == boink::event_types::MSG_HISTORY_MERGE) {
-            auto _event = static_cast<HistoryMergeEvent*>(event.get());
+        } else if (event->msg_type == events::MSG_HISTORY_MERGE) {
+            auto _event = static_cast<events::HistoryMergeEvent*>(event.get());
 
             std::string l_parent_id = node_history[_event->lparent].back();
             std::string r_parent_id = node_history[_event->rparent].back();
@@ -132,22 +132,22 @@ public:
             write_edge(l_parent_id, child_id, std::string("MERGE"));
             write_edge(r_parent_id, child_id, std::string("MERGE"));
 
-        } else if (event->msg_type == boink::event_types::MSG_HISTORY_EXTEND) {
-            auto _event = static_cast<HistoryExtendEvent*>(event.get());
+        } else if (event->msg_type == events::MSG_HISTORY_EXTEND) {
+            auto _event = static_cast<events::HistoryExtendEvent*>(event.get());
 
             std::string src = node_history[_event->id].back();
             std::string dst = add_node_edit(_event->id, _event->meta, _event->sequence);
             write_edge(src, dst, std::string("EXTEND"));
 
-        } else if (event->msg_type == boink::event_types::MSG_HISTORY_CLIP) {
-            auto _event = static_cast<HistoryClipEvent*>(event.get());
+        } else if (event->msg_type == events::MSG_HISTORY_CLIP) {
+            auto _event = static_cast<events::HistoryClipEvent*>(event.get());
 
             std::string src = node_history[_event->id].back();
             std::string dst = add_node_edit(_event->id, _event->meta, _event->sequence);
             write_edge(src, dst, std::string("CLIP"));
 
-        } else if (event->msg_type == boink::event_types::MSG_HISTORY_SPLIT_CIRCULAR) {
-            auto _event = static_cast<HistorySplitCircularEvent*>(event.get());
+        } else if (event->msg_type == events::MSG_HISTORY_SPLIT_CIRCULAR) {
+            auto _event = static_cast<events::HistorySplitCircularEvent*>(event.get());
 
             std::string src = node_history[_event->id].back();
             std::string dst = add_node_edit(_event->id, _event->meta, _event->sequence);

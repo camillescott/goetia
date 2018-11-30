@@ -17,7 +17,6 @@
 #include "boink/hashing/hashing_types.hh"
 #include "boink/hashing/kmeriterator.hh"
 
-using namespace boink::hashing;
 
 namespace boink {
 
@@ -121,42 +120,42 @@ public:
 
 
 template <class ShifterType>
-class WKMinimizer : public InteriorMinimizer<hash_t>,
-                    public KmerClient {
+class WKMinimizer : public InteriorMinimizer<hashing::hash_t>,
+                    public hashing::KmerClient {
 
 public:
 
-    using InteriorMinimizer<hash_t>::InteriorMinimizer;
-    using typename InteriorMinimizer<hash_t>::value_type;
+    using InteriorMinimizer<hashing::hash_t>::InteriorMinimizer;
+    using typename InteriorMinimizer<hashing::hash_t>::value_type;
 
     WKMinimizer(int64_t window_size,
                 uint16_t K)
-        : InteriorMinimizer<hash_t>(window_size),
-          KmerClient(K) {
+        : InteriorMinimizer<hashing::hash_t>(window_size),
+          hashing::KmerClient(K) {
     }
 
     std::vector<value_type> get_minimizers(const std::string& sequence) {
-        KmerIterator<ShifterType> iter(sequence, this->_K);
+        hashing::KmerIterator<ShifterType> iter(sequence, this->_K);
         this->reset();
         
         while(!iter.done()) {
-            hash_t h = iter.next();
-            InteriorMinimizer<hash_t>::update(h);
+            hashing::hash_t h = iter.next();
+            InteriorMinimizer<hashing::hash_t>::update(h);
         }
 
-        return InteriorMinimizer<hash_t>::get_minimizers();
+        return InteriorMinimizer<hashing::hash_t>::get_minimizers();
     }
 
-    std::vector<hash_t> get_minimizer_values(const std::string& sequence) {
-        KmerIterator<ShifterType> iter(sequence, this->_K);
+    std::vector<hashing::hash_t> get_minimizer_values(const std::string& sequence) {
+        hashing::KmerIterator<ShifterType> iter(sequence, this->_K);
         this->reset();
 
         while(!iter.done()) {
-            hash_t h = iter.next();
-            InteriorMinimizer<hash_t>::update(h);
+            hashing::hash_t h = iter.next();
+            InteriorMinimizer<hashing::hash_t>::update(h);
         }
 
-        return InteriorMinimizer<hash_t>::get_minimizer_values();
+        return InteriorMinimizer<hashing::hash_t>::get_minimizer_values();
     }
 
     std::vector<std::pair<std::string, int64_t>> get_minimizer_kmers(const std::string& sequence) {

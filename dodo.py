@@ -28,16 +28,23 @@ from build_utils import (check_for_openmp,
                          render,
                          get_templates,
                          generate_cpp_params,
-                         get_gcc_includes)
+                         get_gcc_includes,
+                         walk_ext)
 
 DOIT_CONFIG  = {'verbosity': 2,
                 'reporter': BoinkReporter,
                 'default_tasks': ['build']}
 EXT_META     = yaml.load(open('extensions.yaml').read())
 
-
+#
+# General package information
+#
 PKG          = 'boink'
 VERSION      = open(os.path.join(PKG, 'VERSION')).read().strip()
+
+#
+# Cython compilation prefixes and files
+#
 MOD_EXT      = sysconfig.get_config_var('SO')
 MOD_NAMES    = [m['name'] for m in EXT_META['extensions']]
 PYX_FILES    = {m: os.path.join(PKG, '{0}.pyx'.format(m)) for m in MOD_NAMES}
@@ -49,23 +56,47 @@ PXI_FILES    = {m:[os.path.join(PKG, t+'.pxi') for t in TPL_FILES[m]] \
 PY_FILES     = list(glob.glob('boink/**/*.py', recursive=True))
 MOD_FILES    = {m:m+MOD_EXT for m in MOD_NAMES}
 
+#
+# libboink vars
+#
 INCLUDE_DIR  = os.path.join('include', PKG)
 SOURCE_DIR   = os.path.join('src', PKG)
-HEADER_FILES = [fn for fn in glob.glob('{0}/**/*.hh'.format(INCLUDE_DIR), recursive=True)]
-HEADER_NAMES = [os.path.basename(header) for header in HEADER_FILES]
-SOURCE_FILES = [fn for fn in glob.glob('{0}/**/*.cc'.format(SOURCE_DIR), recursive=True)]
-OBJECT_FILES = replace_exts(SOURCE_FILES, '.o')
+
+HEADER_FILES = walk_ext(INCLUDE_DIR, '.hh')
+HEADER_NAMES = [header for d, header in HEADER_FILES]
+
+SOURCE_FILES = [(d, f) for d, f in walk_ext(SOURCE_DIR, '.cc') \
+                if not d.endswith('benchmarks')]
+SOURCE_NAMES = [source for d, source in SOURCE_FILES]
+
+LIB_VERSION = '1'
+LIBBUILDDIR = '_libbuild'
+#LIBDIR = os.path.join('src', PKG)
+
+if sys.platform == 'darwin':
+    SHARED_EXT   = 'dylib'
+    SONAME       = 'lib{0}.{1}.{2}'.format(PKG, SHARED_EXT, LIB_VERSION)
+    SONAME_FLAGS = ['-install_name', os.path.join(PREFIX, 'lib', SONAME),
+                    '-compatibility_version', LIB_VERSION,
+                    '-current_version', LIB_VERSION]
+else:
+    SHARED_EXT   = 'so'
+    SONAME       = 'lib{0}.{1}.{2}'.format(PKG, SHARED_EXT, LIB_VERSION)
+    SONAME_FLAGS = ['-Wl,-soname={0}'.format(SONAME)]
+
+LIBBOINKSO       = os.path.join(LIBBUILDDIR, SONAME)
+LIBBOINKSHARED   = os.path.join('lib', 'lib{0}.{1}'.format(PKG, SHARED_EXT))
+LIBBOINKBUILDDIR = os.path.join(LIBBUILDDIR, PKG)
+
+OBJECT_FILES = [(os.path.join(LIBBOINKBUILDDIR, d.replace(SOURCE_DIR, '').strip('/')),
+                 replace_ext(source, '.o')) \
+                for d, source in SOURCE_FILES]
 
 DEP_MAP = resolve_dependencies(PYX_FILES,
                                PXD_FILES,
                                MOD_FILES,
                                INCLUDE_DIR,
                                PKG)
-#pprint(PXI_FILES)
-#pprint(PXD_FILES)
-#pprint(TPL_FILES)
-#pprint(DEP_MAP)
-
 
 # Start libboink compile vars
 
@@ -97,9 +128,12 @@ DEBUG_FLAGS = ['-gdwarf']
 
 CXX         = get_var('CXX', os.environ.get('CXX', 'cc'))
 INCLUDES    = ['-I', os.path.abspath('include/'), '-I.']
+
+# for anaconda
 PREFIX      = get_var('PREFIX', sysconfig.get_config_var('prefix'))
 if PREFIX is not None:
     INCLUDES += ['-I'+os.path.join(PREFIX, 'include')]
+
 WARNINGS    = ['-Wall']
 COMMON      = ['-O3', '-fPIC', '-fno-omit-frame-pointer']
 
@@ -114,7 +148,7 @@ CFLAGS      = ['-Wshadow', '-Wcast-align', '-Wstrict-prototypes']
 CFLAGS     += INCLUDES
 CFLAGS     += CPPFLAGS
 
-LDFLAGS     = ['-loxli', '-lgfakluge', '-lprometheus-cpp-pull',
+LDFLAGS     = ['-Llib', '-loxli', '-lgfakluge', '-lprometheus-cpp-pull',
                '-lprometheus-cpp-push', '-lprometheus-cpp-core',
                '-lpthread', '-lz']
 
@@ -169,22 +203,6 @@ if sys.platform == 'darwin':
     CXXFLAGS += [ '-mmacosx-version-min=10.7',
                  '-stdlib=libc++']
 
-LIB_VERSION = '1'
-LIBDIR = os.path.join('src', PKG)
-
-if sys.platform == 'darwin':
-    SHARED_EXT   = 'dylib'
-    SONAME       = 'lib{0}.{1}.{2}'.format(PKG, SHARED_EXT, LIB_VERSION)
-    SONAME_FLAGS = ['-install_name', os.path.join(PREFIX, 'lib', SONAME),
-                    '-compatibility_version', LIB_VERSION,
-                    '-current_version', LIB_VERSION]
-else:
-    SHARED_EXT   = 'so'
-    SONAME       = 'lib{0}.{1}.{2}'.format(PKG, SHARED_EXT, LIB_VERSION)
-    SONAME_FLAGS = ['-Wl,-soname={0}'.format(SONAME)]
-
-LIBBOINKSO     = os.path.join(LIBDIR, SONAME)
-LIBBOINKSHARED = os.path.join(LIBDIR, 'lib{0}.{1}'.format(PKG, SHARED_EXT))
 CXXFLAGS  += ['-DVERSION={0}'.format(VERSION)]
 
 
@@ -203,9 +221,11 @@ CYTHON_FLAGS     = ['-X', ','.join(('{0}={1}'.format(k, v) \
 for type_dict in EXT_META['types']:
     if type_dict['types'] is not None:
         type_dict['types'] = ['_'+_type for _type in type_dict['types']]
-#pprint(EXT_META)
 
 
+#
+# Compilation commands
+#
 def cxx_command(source, target):
     cmd = [ CXX ] \
           + CXXFLAGS \
@@ -237,6 +257,7 @@ def cy_cxx_command(cy_source, cy_dst):
           + INCLUDES \
           + ['-I'+sysconfig.get_config_var('INCLUDEPY')] \
           + LDFLAGS \
+          + ['-lboink'] \
           + ['-c ', cy_source] \
           + ['-o', cy_dst] \
           + CXXFLAGS
@@ -253,74 +274,155 @@ def cy_link_command(cy_object, mod):
           + ['-o', mod]
     return ' '.join(cmd)
 
+#########
+#
+# doit tasks.
+#
+#########
 
 def task_display_libboink_config():
 
     def print_config():
         print('CXX:', CXX)
-        print('SOURCES:', *SOURCE_FILES)
-        print('HEADERS:', *HEADER_FILES)
-        print('OBJECTS:', *OBJECT_FILES)
+        print('SOURCES:')
+        pprint(list((os.path.join(*source) for source in SOURCE_FILES)))
+        print('HEADERS:')
+        pprint(list((os.path.join(*header) for header in HEADER_FILES)))
+        print('OBJECTS:')
+        pprint(list((os.path.join(*obj)    for obj    in OBJECT_FILES)))
+        print('libboink:', LIBBOINKSO, LIBBOINKSHARED)
         print('Compile:', cxx_command('SOURCE.cc', 'TARGET.o'))
         print('Link:', link_command(['OBJECT_1.o', 'OBJECT_2.o',
                                      'OBJECT_N.o'], SONAME))
-    return {'actions': [print_config],
+    return {'actions':  [print_config],
             'uptodate': [False]}
 
+#
+# Tasks preparing for libboink build
+#
+def task_create_libboink_build_dirs():
+    dirs = set((directory for directory, _ in OBJECT_FILES))
+    
+    return {'title':    title_with_actions,
+            'actions':  ['mkdir -p {0}'.format(' '.join(dirs))],
+            'uptodate': [run_once]}
 
+
+def task_deploy_prometheus():
+    build_cmd   = 'mkdir -p third-party/prometheus-cpp/_build && cd third-party/prometheus-cpp/_build && '\
+                  'cmake -DBUILD_SHARED_LIBS=ON .. && make -j 4 && mkdir -p ../_deploy && make DESTDIR=../_deploy install'
+    deploy_root = 'third-party/prometheus-cpp/_deploy/usr/local'
+    libs        = ['libprometheus-cpp-core.so', 'libprometheus-cpp-pull.so', 'libprometheus-cpp-push.so']
+    #libs = [os.path.join('lib', lib) for lib in libs]
+    return {'title':    title_with_actions,
+            'targets':  [os.path.join('lib', lib) for lib in libs] +
+                        [os.path.join(deploy_root, 'lib', lib) for lib in libs],
+            'actions':  [build_cmd,
+                         'cp -r {0} {1}'.format(os.path.join(deploy_root, 'include', 'prometheus'),
+                                                'include/'),
+                         'cp -r {0}/*.so {1}'.format(os.path.join(deploy_root, 'lib'),
+                                                     'lib/')],
+            'task_dep': ['display_libboink_config'],
+            'uptodate': [run_once],
+            'clean':    [(clean_folder, ['include/prometheus']),
+                         clean_targets]}
+
+
+def task_deploy_gfakluge():
+    build_cmd  = 'cd third-party/gfakluge && make'
+    cp_lib_cmd = 'cp third-party/gfakluge/libgfakluge.a lib/'
+    cp_hpp_cmd = 'mkdir -p include/gfakluge && cp third-party/gfakluge/src/*.hpp include/gfakluge'
+
+    return {'title':    title_with_actions,
+            'actions':  [build_cmd, cp_lib_cmd, cp_hpp_cmd],
+            'targets':  ['lib/libgfakluge.a'],
+            'uptodate': [run_once],
+            'task_dep': ['display_libboink_config'],
+            'clean':    [clean_targets,
+                         (clean_folder, ['include/gfakluge'])]}
+
+
+def task_deploy_sparsepp():
+
+    return {'title':    title_with_actions,
+            'actions':  ['cp -r third-party/sparsepp/sparsepp include/'],
+            'task_dep': ['display_libboink_config'],
+            'uptodate': [run_once],
+            'clean':    [(clean_folder, ['include/sparsepp'])]}
+
+
+def task_prepare_thirdparty():
+    return {'actions':  None,
+            'task_dep': ['display_libboink_config'],
+            'task_dep': ['deploy_prometheus',
+                         'deploy_sparsepp',
+                         'deploy_gfakluge',
+                         'create_libboink_build_dirs']}
+
+#
+# Compile libboink object files
+#
+@create_after('prepare_thirdparty')
 def task_compile_libboink():
-    for source_file, object_file in zip(SOURCE_FILES, OBJECT_FILES):
+    for source, obj in zip(SOURCE_FILES, OBJECT_FILES):
+        source_file = os.path.join(*source)
+        object_file = os.path.join(*obj)
 
-        yield {'name': object_file,
-               'title': title_with_actions,
+        yield {'name':     object_file,
+               'title':    title_with_actions,
                'file_dep': get_gcc_includes(source_file, INCLUDES, PKG) + [source_file],
                'task_dep': ['display_libboink_config'],
-               'targets': [object_file],
-               'actions': [cxx_command(source_file, object_file)],
-               'clean': True}
+               'targets':  [object_file],
+               'actions':  [cxx_command(source_file, object_file)],
+               'clean':    True}
 
 
+@create_after('compile_libboink')
 def task_link_libboink():
-    link_action = link_command(OBJECT_FILES, LIBBOINKSO)
+    objects = [os.path.join(*obj) for obj in OBJECT_FILES]
+    link_action = link_command(objects, LIBBOINKSO)
     ln_action   = ' '.join(['ln -sf',
                             os.path.abspath(LIBBOINKSO),
                             os.path.abspath(LIBBOINKSHARED)])
 
-    return {'title': title_with_actions,
-            'file_dep': OBJECT_FILES,
+    return {'title':    title_with_actions,
+            'file_dep': objects,
             'task_dep': ['display_libboink_config'],
-            'targets': [LIBBOINKSO],
-            'actions': [link_action, ln_action],
-            'clean': True}
+            'targets':  [LIBBOINKSO,
+                         LIBBOINKSHARED],
+            'actions':  [link_action, ln_action],
+            'clean':    True}
 
 
 def task_boink_pc():
-    target = os.path.join(LIBDIR, '{0}.pc'.format(PKG))
-    src    = target + '.in'
+    src    = os.path.join(SOURCE_DIR, '{0}.pc.in'.format(PKG))
+    target = os.path.join(LIBBUILDDIR, replace_ext(os.path.basename(src), ''))
     cmd = "sed -e 's,@prefix@,{prefix},'  "\
           "-e 's,@VERSION@,{version},' {src} >{dst}".format(prefix=PREFIX,
                                                             version=VERSION,
                                                             src=src,
                                                             dst=target)
 
-    return {'title': title_with_actions,
+    return {'title':    title_with_actions,
             'file_dep': [src],
             'task_dep': ['display_libboink_config'],
-            'targets': [target],
-            'actions': [cmd],
-            'clean': True}
+            'targets':  [target],
+            'actions':  [cmd],
+            'clean':    True}
 
 
+@create_after('compile_libboink')
 def task_boink_ranlib():
-    target = 'lib{0}.a'.format(PKG)
+    target  = os.path.join(LIBBUILDDIR, 'lib{0}.a'.format(PKG))
+    objects = [os.path.join(*obj) for obj in OBJECT_FILES]
 
-    return {'title': title_with_actions,
-            'file_dep': OBJECT_FILES,
+    return {'title':    title_with_actions,
+            'file_dep': objects,
             'task_dep': ['display_libboink_config'],
-            'targets': [target],
-            'actions': ['ar rcs {0} {1}'.format(target, ' '.join(OBJECT_FILES)),
-                        'ranlib {0}'.format(target)],
-            'clean': True}
+            'targets':  [target],
+            'actions':  ['ar rcs {0} {1}'.format(target, ' '.join(objects)),
+                         'ranlib {0}'.format(target)],
+            'clean':    True}
 
 def task_libboink():
     return {'actions': None,

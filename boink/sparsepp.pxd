@@ -1,6 +1,6 @@
 from libcpp.pair cimport pair
 
-cdef extern from "sparsepp/sparsepp/spp.h" namespace "spp" nogil:
+cdef extern from "sparsepp/spp.h" namespace "spp" nogil:
     cdef cppclass sparse_hash_map[T, U]:
         ctypedef T key_type
         ctypedef U mapped_type

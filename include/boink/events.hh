@@ -40,8 +40,6 @@
 #   define pdebug(x) do {} while (0)
 # endif
 
-using namespace boink;
-using namespace boink::event_types;
 
 namespace boink {
 namespace events {
@@ -85,8 +83,8 @@ protected:
     std::mutex m_mutex;
     std::condition_variable m_cv;
     std::unique_ptr<ScopedThread> m_thread;
-    std::deque<shared_ptr<Event>> m_queue;
-    std::set<event_t> msg_type_whitelist;
+    std::deque<shared_ptr<events::Event>> m_queue;
+    std::set<events::event_t> msg_type_whitelist;
     bool _shutdown;
     uint64_t _to_process;
     uint64_t MAX_EVENTS;
@@ -145,7 +143,7 @@ public:
         return std::this_thread::get_id();
 	}
 
-    void notify(shared_ptr<Event> event) {
+    void notify(shared_ptr<events::Event> event) {
         //std::this_thread::sleep_for(std::chrono::milliseconds(250));
         if (msg_type_whitelist.count(event->msg_type)) {
             {
@@ -225,7 +223,7 @@ protected:
 		}
 	}
 
-    virtual void handle_msg(shared_ptr<Event> msg) {
+    virtual void handle_msg(shared_ptr<events::Event> msg) {
         pdebug("Handled no-op message");
     }
 
@@ -252,7 +250,7 @@ public:
         clear_listeners();
     }
 
-    void notify(shared_ptr<Event> event) {
+    void notify(shared_ptr<events::Event> event) {
         //pdebug("Notifying " << registered_listeners.size()
         //       << " listeners of event of type " << event->msg_type);
         for (auto listener : registered_listeners) {

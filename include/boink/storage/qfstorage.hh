@@ -56,12 +56,11 @@
 #include "boink/hashing/hashing_types.hh"
 #include "boink/storage/storage.hh"
 
+struct quotient_filter;
+typedef quotient_filter QF;
 
 namespace boink {
 namespace storage {
-
-typedef struct quotient_filter;
-typedef quotient_filter QF;
 
 /*
  * \class QFStorage

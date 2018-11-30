@@ -27,8 +27,8 @@ namespace reporting {
 using std::shared_ptr;
 
 using boink::events::EventListener;
-using boink::event_types::Event;
-using boink::event_types::TimeIntervalEvent;
+using boink::events::Event;
+using boink::events::TimeIntervalEvent;
 
 class SingleFileReporter : public EventListener {
 

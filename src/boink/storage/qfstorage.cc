@@ -47,13 +47,13 @@
 #include "boink/storage/qfstorage.hh"
 
 #include <errno.h>
+#include <cstring>
 #include <sstream> // IWYU pragma: keep
 #include <fstream>
 #include <iostream>
 
 #include "boink/boink.hh"
 #include "boink/hashing/hashing_types.hh"
-#include "zlib.h"
 #include "cqf/gqf.h"
 
 using namespace std;

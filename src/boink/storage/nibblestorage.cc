@@ -46,6 +46,7 @@
 
 #include "boink/storage/nibblestorage.hh"
 
+#include <cstring>
 #include <errno.h>
 #include <sstream> // IWYU pragma: keep
 #include <fstream>

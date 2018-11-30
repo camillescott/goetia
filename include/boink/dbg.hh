@@ -37,14 +37,14 @@ public:
 
     const uint16_t N;
     const uint64_t max_table;
-    const std::vector<uint64_t> sizes;
+    std::vector<uint64_t> sizes;
 
     typedef HashShifter shifter_type;
 	typedef AssemblerMixin<dBG<StorageType, HashShifter>> assembler_type;
     typedef hashing::KmerIterator<HashShifter> kmer_iter_type;
     
 
-    explicit dBG(uint16_t K, std::vector<uint64_t> storage_size)
+    explicit dBG(uint16_t K, const std::vector<uint64_t>& storage_size)
         : KmerClient(K),
           S(storage_size),
           hasher(K),
@@ -407,7 +407,7 @@ public:
     }
 
     void load(std::string filename) {
-        unsigned char ksize = _K;
+        uint16_t ksize = _K;
         S.load(filename, ksize);
     }
 

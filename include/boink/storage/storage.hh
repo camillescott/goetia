@@ -58,6 +58,20 @@
 
 #include "boink/hashing/hashing_types.hh"
 
+
+#   define MAX_BIGCOUNT 65535
+#   define SAVED_SIGNATURE "OXLI"
+#   define SAVED_FORMAT_VERSION 4
+#   define SAVED_COUNTING_HT 1
+#   define SAVED_HASHBITS 2
+#   define SAVED_TAGS 3
+#   define SAVED_STOPTAGS 4
+#   define SAVED_SUBSET 5
+#   define SAVED_LABELSET 6
+#   define SAVED_SMALLCOUNT 7
+#   define SAVED_QFCOUNT 8
+
+
 namespace boink {
 namespace storage {
 

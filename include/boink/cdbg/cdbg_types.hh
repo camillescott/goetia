@@ -10,6 +10,7 @@
 #ifndef BOINK_CDBG_TYPES_HH
 #define BOINK_CDBG_TYPES_HH
 
+#include <climits>
 #include <string>
 #include <iostream>
 #include <sstream>
@@ -215,7 +216,7 @@ public:
 };
 
 
-std::ostream& operator<<(std::ostream& o, const DecisionNode& dn) {
+inline std::ostream& operator<<(std::ostream& o, const DecisionNode& dn) {
 
     o << "<DNode ID/hash=" << dn.node_id << " k-mer=" << dn.sequence
       //<< " Dl=" << std::to_string(dn.left_degree())
@@ -286,7 +287,7 @@ public:
 };
 
 
-std::ostream& operator<<(std::ostream& o, const UnitigNode& un) {
+inline std::ostream& operator<<(std::ostream& o, const UnitigNode& un) {
     o << "<UNode ID=" << un.node_id
       << " left_end=" << un.left_end()
       << " right_end=" << un.right_end()

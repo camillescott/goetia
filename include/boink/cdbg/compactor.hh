@@ -25,8 +25,6 @@
 namespace boink {
 namespace cdbg {
 
-using namespace boink::event_types;
-using namespace boink::reporting::report_types;
 using namespace boink::hashing;
 
 # ifdef DEBUG_CPTR
@@ -90,7 +88,7 @@ struct compact_segment {
 };
 
 
-std::ostream& operator<<(std::ostream& os, const compact_segment& segment)
+inline std::ostream& operator<<(std::ostream& os, const compact_segment& segment)
 {
     os << "<compact_segment left flank=" << segment.left_flank
        << " left_anchor=" << segment.left_anchor
@@ -105,7 +103,7 @@ std::ostream& operator<<(std::ostream& os, const compact_segment& segment)
 
 template <class GraphType>
 class StreamingCompactor : public CompactorMixin<GraphType>,
-                           public EventNotifier {
+                           public events::EventNotifier {
 
 protected:
 
@@ -156,8 +154,8 @@ public:
         auto lock = cdbg->lock_nodes();
     }
     
-    StreamingCompactorReport get_report() {
-        StreamingCompactorReport report;
+    reporting::StreamingCompactorReport get_report() {
+        reporting::StreamingCompactorReport report;
         report.n_full            = cdbg->metrics->n_full.Value();
         report.n_tips            = cdbg->metrics->n_tips.Value();
         report.n_islands         = cdbg->metrics->n_islands.Value();
