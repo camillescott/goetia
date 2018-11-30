@@ -14,9 +14,9 @@
 #include <fstream>
 #include <iostream>
 
-#include "oxli/read_parsers.hh"
 #include "boink/boink.hh"
-#include "boink/parsing.hh"
+#include "boink/parsing/parsing.hh"
+#include "boink/parsing/readers.hh"
 #include "boink/events.hh"
 #include "boink/event_types.hh"
 #include "boink/hashing/hashing_types.hh"
@@ -57,7 +57,7 @@ public:
 
 
 template <class Derived,
-          class ParserType = oxli::read_parsers::FastxReader>
+          class ParserType = parsing::FastxReader>
 class FileProcessor : public events::EventNotifier {
 
 protected:
@@ -85,7 +85,7 @@ public:
                      const string& right_filename,
                      uint32_t min_length=0,
                      bool force_name_match=false) {
-        SplitPairedReader<ParserType> reader(left_filename,
+        parsing::SplitPairedReader<ParserType> reader(left_filename,
                                              right_filename,
                                              min_length,
                                              force_name_match);
@@ -93,12 +93,12 @@ public:
     }
 
     uint64_t process(string const &filename) {
-        oxli::read_parsers::ReadParserPtr<ParserType> parser = oxli::read_parsers::get_parser<ParserType>(filename);
+        parsing::ReadParserPtr<ParserType> parser = parsing::get_parser<ParserType>(filename);
         return process(parser);
     }
 
-    uint64_t process(SplitPairedReader<ParserType>& reader) {
-        ReadBundle bundle;
+    uint64_t process(parsing::SplitPairedReader<ParserType>& reader) {
+        parsing::ReadBundle bundle;
         
         while(!reader.is_complete()) {
             bundle = reader.next();
@@ -135,14 +135,14 @@ public:
         return _n_reads;
     }
 
-    uint64_t process(oxli::read_parsers::ReadParserPtr<ParserType>& parser) {
-        oxli::read_parsers::Read read;
+    uint64_t process(parsing::ReadParserPtr<ParserType>& parser) {
+        parsing::Read read;
 
         // Iterate through the reads and consume their k-mers.
         while (!parser->is_complete()) {
             try {
                 read = parser->get_next_read( );
-            } catch (oxli::read_parsers::NoMoreReadsAvailable) {
+            } catch (parsing::NoMoreReadsAvailable) {
                 break;
             }
 
@@ -179,7 +179,7 @@ public:
         return _n_reads;
     }
 
-    void process_sequence(ReadBundle& bundle) {
+    void process_sequence(parsing::ReadBundle& bundle) {
         if (bundle.has_left) {
             derived().process_sequence(bundle.left);
         }
@@ -210,7 +210,7 @@ private:
 
 
 template <class GraphType,
-          class ParserType = oxli::read_parsers::FastxReader>
+          class ParserType = parsing::FastxReader>
 class FileConsumer : public FileProcessor<FileConsumer<GraphType, ParserType>,
                                           ParserType> {
 
@@ -235,7 +235,7 @@ public:
 
     }
 
-    void process_sequence(const oxli::read_parsers::Read& read) {
+    void process_sequence(const parsing::Read& read) {
         auto this_n_consumed = graph->add_sequence(read.cleaned_seq);
         __sync_add_and_fetch( &_n_consumed, this_n_consumed );
     }
@@ -252,7 +252,7 @@ public:
 
 
 template <class GraphType,
-          class ParserType = oxli::read_parsers::FastxReader>
+          class ParserType = parsing::FastxReader>
 class DecisionNodeProcessor : public FileProcessor<DecisionNodeProcessor<GraphType, ParserType>,
                                                    ParserType> {
 
@@ -287,7 +287,7 @@ public:
         _output_stream.close();
     }
 
-    void process_sequence(const oxli::read_parsers::Read& read) {
+    void process_sequence(const parsing::Read& read) {
         uint64_t n_new = graph->add_sequence(read.cleaned_seq);
         if (n_new > 0) {
             std::vector<uint32_t> decision_positions;
@@ -316,7 +316,7 @@ public:
 
 
 template <class GraphType,
-          class ParserType = oxli::read_parsers::FastxReader>
+          class ParserType = parsing::FastxReader>
 class StreamingCompactorProcessor : 
     public FileProcessor<StreamingCompactorProcessor<GraphType, ParserType>,
                          ParserType> { //template class names like modern art
@@ -344,7 +344,7 @@ public:
     {
     }
 
-    void process_sequence(const oxli::read_parsers::Read& read) {
+    void process_sequence(const parsing::Read& read) {
         try {
             compactor->update_sequence(read.cleaned_seq);
         } catch (InvalidCharacterException &e) {
@@ -378,7 +378,7 @@ public:
 
 
 template <class ShifterType,
-          class ParserType = oxli::read_parsers::FastxReader>
+          class ParserType = parsing::FastxReader>
 class MinimizerProcessor : public FileProcessor<MinimizerProcessor<ShifterType, ParserType>,
                                                 ParserType> {
 
@@ -411,7 +411,7 @@ public:
         _output_stream.close();
     }
 
-    void process_sequence(const oxli::read_parsers::Read& read) {
+    void process_sequence(const parsing::Read& read) {
         std::vector<typename WKMinimizer<ShifterType>::value_type> minimizers;
         minimizers = M.get_minimizers(read.cleaned_seq);
 

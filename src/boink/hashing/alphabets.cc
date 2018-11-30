@@ -78,7 +78,7 @@ std::string revcomp(const std::string& kmer) {
 }
 
 
-hash_t hash_cyclic(const std::string& kmer, const uint64_t k) {
+hash_t hash_cyclic(const std::string& kmer, const uint16_t k) {
     CyclicHash<hash_t> hasher(k);
     for (uint16_t i = 0; i < k; ++i) {
         hasher.eat(kmer[i]);

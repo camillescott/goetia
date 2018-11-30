@@ -10,18 +10,27 @@ from libcpp cimport bool
 from libcpp.memory cimport unique_ptr
 from libcpp.string cimport string
 
-from khmer._oxli.parsing cimport CpSequence as _Sequence
 
+cdef extern from "boink/parsing/parsing.hh" namespace "boink::parsing" nogil:
 
-cdef extern from "boink/parsing.hh" namespace "boink" nogil:
+    cdef cppclass _Sequence "boink::parsing::Read":
+        string name
+        string description
+        string sequence
+        string quality
+        string cleaned_seq
 
-    cdef struct _SequenceBundle "boink::ReadBundle":
+        void reset()
+        void set_cleaned_seq()
+
+    cdef struct _SequenceBundle "boink::parsing::ReadBundle":
         bool has_left
         bool has_right
         _Sequence left
         _Sequence right
 
-    cdef cppclass _SplitPairedReader "boink::SplitPairedReader" [ParserType=*]:
+cdef extern from "boink/parsing/readers.hh" namespace "boink::parsing" nogil:
+    cdef cppclass _SplitPairedReader "boink::parsing::SplitPairedReader" [ParserType=*]:
         _SplitPairedReader(const string&,
                            const string&,
                            uint32_t,
@@ -32,6 +41,14 @@ cdef extern from "boink/parsing.hh" namespace "boink" nogil:
 
         bool is_complete() except +ValueError
         _SequenceBundle next() except +ValueError
+
+
+cdef class Sequence:
+    cdef _Sequence _obj
+
+    @staticmethod
+    cdef Sequence _wrap(_Sequence cseq)
+
 
 cdef class SplitPairedReader:
 

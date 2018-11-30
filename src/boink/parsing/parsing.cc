@@ -7,7 +7,7 @@
  * of the MIT license.  See the LICENSE file for details.
  */
 
-#include "boink/parsing.hh"
+#include "boink/parsing/parsing.hh"
 #include "utils/stringutils.h"
 
 #include <utility>
@@ -17,6 +17,27 @@
 using namespace utils;
 
 namespace boink {
+namespace parsing {
+
+
+unsigned char _to_valid_dna(const unsigned char c)
+{
+    switch(c) {
+    case 'A':
+    case 'C':
+    case 'G':
+    case 'T':
+        return c;
+    case 'a':
+    case 'c':
+    case 'g':
+    case 't':
+        return toupper(c);
+    default:
+        return 'A';
+    }
+}
+
 
 bool check_char(const char c, const std::string against) {
     for (auto ag : against) {
@@ -114,4 +135,5 @@ void filter_length(ReadBundle& bundle, uint32_t length) {
     }
 }
 
+}
 }

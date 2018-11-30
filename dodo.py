@@ -33,7 +33,9 @@ from build_utils import (check_for_openmp,
 
 DOIT_CONFIG  = {'verbosity': 2,
                 'reporter': BoinkReporter,
-                'default_tasks': ['build']}
+                'default_tasks': ['build',
+                                  'cythonize',
+                                  'render_extension_classes']}
 EXT_META     = yaml.load(open('extensions.yaml').read())
 
 #
@@ -148,9 +150,14 @@ CFLAGS      = ['-Wshadow', '-Wcast-align', '-Wstrict-prototypes']
 CFLAGS     += INCLUDES
 CFLAGS     += CPPFLAGS
 
-LDFLAGS     = ['-Llib', '-loxli', '-lgfakluge', '-lprometheus-cpp-pull',
+LDFLAGS     = ['-Wl,-rpath,{0}'.format(os.path.abspath('lib')),
+               '-Llib', '-lgfakluge', '-lprometheus-cpp-pull',
                '-lprometheus-cpp-push', '-lprometheus-cpp-core',
                '-lpthread', '-lz']
+CYLDFLAGS   = ['-Wl,-rpath,{0}'.format(os.path.abspath('lib')),
+               '-Llib', '-lboink', '-lz', '-lgfakluge', '-lprometheus-cpp-pull',
+               '-lprometheus-cpp-push', '-lprometheus-cpp-core',
+               '-lpthread', '-lz', '-lboink']
 
 CY_CFLAGS   = sysconfig.get_config_var('CFLAGS').split()
 try:
@@ -251,27 +258,18 @@ def cython_command(pyx_file):
     return ' '.join(cmd)
 
 
-def cy_cxx_command(cy_source, cy_dst):
-    cmd = [ CXX ] \
-          + CY_CFLAGS \
-          + INCLUDES \
-          + ['-I'+sysconfig.get_config_var('INCLUDEPY')] \
-          + LDFLAGS \
-          + ['-lboink'] \
-          + ['-c ', cy_source] \
-          + ['-o', cy_dst] \
-          + CXXFLAGS
-    return ' '.join(cmd)
-
-
-def cy_link_command(cy_object, mod):
+def cy_compile_command(cy_source, mod):
     PYLDSHARE = sysconfig.get_config_var('LDSHARED')
     PYLDSHARE = PYLDSHARE.split()[1:] # remove compiler invoke
-    cmd = [ CXX ] \
-          + PYLDSHARE \
-          + [cy_object] \
-          + LDFLAGS \
-          + ['-o', mod]
+    cmd = [ CXX ] + \
+          INCLUDES + \
+          ['-I'+sysconfig.get_config_var('INCLUDEPY')] + \
+          PYLDSHARE + \
+          [ cy_source, '-o', mod] + \
+          CYLDFLAGS + \
+          CY_CFLAGS + \
+          CXXFLAGS
+
     return ' '.join(cmd)
 
 #########
@@ -301,10 +299,15 @@ def task_display_libboink_config():
 # Tasks preparing for libboink build
 #
 def task_create_libboink_build_dirs():
-    dirs = set((directory for directory, _ in OBJECT_FILES))
+    dirs  = set((directory for directory, _ in OBJECT_FILES))
+    files = [os.path.join(d, 'touched') for d in dirs]
     
     return {'title':    title_with_actions,
-            'actions':  ['mkdir -p {0}'.format(' '.join(dirs))],
+            'actions':  ['mkdir -p {0}'.format(' '.join(dirs)),
+                         'touch {0}'.format(' '.join(files))],
+            'task_dep': ['display_libboink_config'],
+            'targets':  files,
+            'clean':    [clean_targets],
             'uptodate': [run_once]}
 
 
@@ -341,6 +344,18 @@ def task_deploy_gfakluge():
             'clean':    [clean_targets,
                          (clean_folder, ['include/gfakluge'])]}
 
+def task_deploy_cqf():
+    build_cmd  = 'cd third-party/cqf && make'
+    cp_hpp_cmd = 'mkdir -p include/cqf && cp third-party/cqf/gqf.h include/cqf/'
+    cp_obj_cmd = 'cp third-party/cqf/gqf.o _libbuild/'
+
+    return {'title': title_with_actions,
+            'actions': [build_cmd, cp_hpp_cmd, cp_obj_cmd],
+            'targets': ['_libbuild/gqf.o'],
+            'file_dep': ['third-party/cqf/gqf.h'],
+            'task_dep': ['display_libboink_config'],
+            'clean': [clean_targets]}
+
 
 def task_deploy_sparsepp():
 
@@ -356,6 +371,7 @@ def task_prepare_thirdparty():
             'task_dep': ['display_libboink_config'],
             'task_dep': ['deploy_prometheus',
                          'deploy_sparsepp',
+                         'deploy_cqf',
                          'deploy_gfakluge',
                          'create_libboink_build_dirs']}
 
@@ -379,7 +395,7 @@ def task_compile_libboink():
 
 @create_after('compile_libboink')
 def task_link_libboink():
-    objects = [os.path.join(*obj) for obj in OBJECT_FILES]
+    objects = [os.path.join(*obj) for obj in OBJECT_FILES]  + ['_libbuild/gqf.o']
     link_action = link_command(objects, LIBBOINKSO)
     ln_action   = ' '.join(['ln -sf',
                             os.path.abspath(LIBBOINKSO),
@@ -501,40 +517,22 @@ def task_create_build_dirs():
                       (clean_folder, [os.path.join('build', 'lib')])]}
 
 
-def task_compile_cython_cpp():
-    for mod in MOD_NAMES:
-        source = os.path.join(PKG, '{0}.cpp'.format(mod))
-        target = os.path.join(build_dir(), '{0}.o'.format(mod))
-        file_dep = []
-        for dep in DEP_MAP[mod]:
-            if dep.endswith('.hh'):
-                file_dep.append(dep)
-
-        yield { 'name': target,
-                'title': title_with_actions,
-                'task_dep': ['create_build_dirs'],
-                'file_dep': file_dep + [source],
-                'targets': [target],
-                'actions': [cy_cxx_command(source,
-                                           target)],
-                'clean': True}
-
-
 def task_build():
     for mod, mod_file in MOD_FILES.items():
-        source = os.path.join(build_dir(),
-                              '{0}.o'.format(mod))
+        source = os.path.join(PKG,
+                              '{0}.cpp'.format(mod))
         target = os.path.join(lib_dir(), mod_file)
         cp_target = os.path.join(PKG, os.path.basename(target))
 
-        yield {'name': target,
-                'title': title_with_actions,
-                'file_dep': [source],
-                'targets': [target, cp_target],
-                'actions': ['mkdir -p ' + lib_dir(),
-                            cy_link_command(source, target),
+        yield {'name':     target,
+               'title':    title_with_actions,
+               'file_dep': [source],
+               'task_dep': ['libboink'],
+               'targets':  [target, cp_target],
+               'actions':  ['mkdir -p ' + lib_dir(),
+                            cy_compile_command(source, target),
                             'cp {0} {1}'.format(target, cp_target)],
-                'clean': True}
+               'clean':    True}
 
 
 def setupcmd(cmd):

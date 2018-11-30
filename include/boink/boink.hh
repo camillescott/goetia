@@ -104,6 +104,26 @@ protected:
     const std::string _msg;
 };
 
+class InvalidStream : public BoinkFileException 
+{
+public:
+    InvalidStream()
+        : BoinkFileException("Generic InvalidStream error") {}
+    explicit InvalidStream(const std::string& msg)
+        : BoinkFileException(msg) {}
+};
+
+class StreamReadError : public BoinkFileException
+{
+public:
+    StreamReadError()
+        : BoinkFileException("Generic StreamReadError error") {}
+    explicit StreamReadError(const std::string& msg)
+        : BoinkFileException(msg) {}
+};
+
+
+
 } // boink
 
 
