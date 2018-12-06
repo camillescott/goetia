@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+import os
 import sys
 
 from boink.args import (build_dBG_args,
@@ -34,17 +35,25 @@ def parse_args():
     parser.add_argument('-i', dest='inputs', nargs='+', default=['/dev/stdin'])
 
     args = parser.parse_args()
-    return args
-
-
-def main():
-    args = parse_args()
+    def join(p):
+        return p if p is None else os.path.join(args.results_dir, p)
+    args.track_cdbg_stats =      join(args.track_cdbg_stats)
+    args.track_cdbg_components = join(args.track_cdbg_components)
+    args.track_cdbg_history =    join(args.track_cdbg_history)
+    args.save_cdbg =             join(args.save_cdbg)
 
     print_boink_intro()
     print_dBG_args(args)
     print_cdbg_args(args)
     print_interval_settings(args)
     print_prometheus_args(args)
+
+    return args
+
+
+def main():
+    args = parse_args()
+    os.makedirs(args.results_dir, exist_ok=True)
 
     instrumention = Instrumentation(args.port)
 
@@ -78,7 +87,9 @@ def main():
 
     if args.track_cdbg_components:
         components = cDBGComponentReporter.build(args.track_cdbg_components,
-                                                 compactor.cdbg)
+                                                 compactor.cdbg,
+                                                 args.component_sample_size,
+                                                 instrumention)
         processor.Notifier.register_listener(components)
 
     if args.pairing_mode == 'split':

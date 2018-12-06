@@ -28,11 +28,14 @@ cdef class StreamingCompactorReporter_Base(SingleFileReporter):
 cdef class cDBGComponentReporter(SingleFileReporter):
     pass
     @staticmethod
-    def build(str output_filename, cDBG_Base cdbg):
+    def build(str output_filename, cDBG_Base cdbg, int sample_size, Instrumentation inst):
         {% for type_bundle in type_bundles %}
         if cdbg.storage_type == "{{type_bundle.storage_type}}" and \
            cdbg.shifter_type == "{{type_bundle.shifter_type}}":
-            return cDBGComponentReporter_{{type_bundle.suffix}}(output_filename, cdbg);
+            return cDBGComponentReporter_{{type_bundle.suffix}}(output_filename,
+                                                                cdbg,
+                                                                sample_size,
+                                                                inst);
         {% endfor %}
     
         raise TypeError("Could not match cDBG template type.")
@@ -74,9 +77,12 @@ cdef class cDBGWriter_{{type_bundle.suffix}}(cDBGWriter_Base):
 
 cdef class cDBGComponentReporter_{{type_bundle.suffix}}(cDBGComponentReporter):
 
-    def __cinit__(self, str output_filename,
+    def __cinit__(self, str                         output_filename,
                         cDBG_{{type_bundle.suffix}} cdbg,
-                        *args, **kwargs):
+                        int                         sample_size,
+                        Instrumentation             inst,
+                        *args,
+                        **kwargs):
         
         self.storage_type = cdbg.storage_type
         self.shifter_type = cdbg.shifter_type
@@ -84,7 +90,9 @@ cdef class cDBGComponentReporter_{{type_bundle.suffix}}(cDBGComponentReporter):
         if type(self) is cDBGComponentReporter_{{type_bundle.suffix}}:
             self._s_this = make_shared[_cDBGComponentReporter[_dBG[{{type_bundle.params}}]]]\
                                       (cdbg._this,
-                                       _bstring(output_filename))
+                                       _bstring(output_filename),
+                                       sample_size,
+                                       inst.registry)
 
             self._this = <shared_ptr[_SingleFileReporter]>self._s_this
             self._listener = <shared_ptr[_EventListener]>self._s_this

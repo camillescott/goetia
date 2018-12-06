@@ -13,6 +13,7 @@ from boink.dbg cimport DefaultDBG
 from boink.cdbg cimport cDBGFormat, _cDBG 
 from boink.compactor cimport *
 from boink.events cimport EventListener, _EventListener
+from boink.prometheus cimport _Registry
 
 
 cdef extern from "boink/reporting/reporters.hh" namespace "boink::reporting" nogil:
@@ -36,7 +37,15 @@ cdef extern from "boink/reporting/cdbg_history_reporter.hh" namespace "boink::re
 
 cdef extern from "boink/reporting/cdbg_component_reporter.hh" namespace "boink::reporting" nogil:
     cdef cppclass _cDBGComponentReporter "boink::reporting::cDBGComponentReporter" [GraphType] (_SingleFileReporter):
-        _cDBGComponentReporter(shared_ptr[_cDBG[GraphType]], const string&)
+        _cDBGComponentReporter(shared_ptr[_cDBG[GraphType]],
+                               const string&)
+        _cDBGComponentReporter(shared_ptr[_cDBG[GraphType]],
+                               const string&,
+                               shared_ptr[_Registry])
+        _cDBGComponentReporter(shared_ptr[_cDBG[GraphType]],
+                               const string&,
+                               size_t,
+                               shared_ptr[_Registry])
 
 
 cdef class SingleFileReporter(EventListener):

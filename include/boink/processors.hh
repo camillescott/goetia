@@ -108,7 +108,7 @@ public:
             _n_reads += _bundle_count;
 
             if (counters[0].poll(_bundle_count)) {
-                 //std::cerr << "processed " << _n_reads << " sequences." << std::endl;               
+                 std::cerr << "processed " << _n_reads << " sequences." << std::endl;               
                  derived().report();
                  auto event = make_shared<events::TimeIntervalEvent>();
                  event->level = events::TimeIntervalEvent::FINE;
@@ -152,7 +152,7 @@ public:
             __sync_add_and_fetch( &_n_reads, 1 );
   
             if (counters[0].poll()) {
-                 //std::cerr << "processed " << _n_reads << " sequences." << std::endl;               
+                 std::cerr << "processed " << _n_reads << " sequences." << std::endl;               
                  derived().report();
                  auto event = make_shared<events::TimeIntervalEvent>();
                  event->level = events::TimeIntervalEvent::FINE;

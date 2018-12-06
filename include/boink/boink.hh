@@ -49,7 +49,7 @@ std::ostream& operator<<(std::ostream& os, const Container<T,A>& v)
         if (i != v.size() - 1)
             os << ", ";
     }
-    os << "]\n";
+    os << "]";
     return os;
 }
 

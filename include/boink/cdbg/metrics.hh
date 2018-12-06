@@ -14,7 +14,6 @@
 #include <iostream>
 #include <sstream>
 
-#include <prometheus/exposer.h>
 #include <prometheus/registry.h>
 
 #include "boink/cdbg/cdbg_types.hh"

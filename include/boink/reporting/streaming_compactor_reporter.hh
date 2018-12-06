@@ -45,7 +45,7 @@ public:
 
         _output_stream << "read_n,n_full,n_tips,n_islands,n_trivial"
                           ",n_circular,n_loops,n_dnodes,n_unodes,n_tags,"
-                          "n_updates,n_splits,n_merges,n_extends,n_clips"
+                          "n_updates,n_splits,n_merges,n_extends,n_clips,"
                           "n_deletes,n_circular_merges,n_unique,estimated_fp" << std::endl;
     }
 
