@@ -92,7 +92,7 @@ public:
         return samples;
     }
 
-    size_t get_n_sample() const {
+    size_t get_n_sampled() const {
         return n_sampled;
     }
 

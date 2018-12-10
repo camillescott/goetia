@@ -32,6 +32,7 @@ extensions:
     - name: minimizers
       types:
         - RollingMinType
+    - name: metrics
     - name: processors
       types:
         - GraphType
