@@ -17,6 +17,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <tuple>
 
 #include "gfakluge/gfakluge.hpp"
 #include "sparsepp/spp.h"
@@ -118,6 +119,8 @@ protected:
     // Current number of Unitigs
     uint64_t _n_unitig_nodes;
 
+    id_t     component_id_counter;
+
     shared_ptr<prometheus::Registry> pr_registry;
 
 public:
@@ -133,6 +136,7 @@ public:
           _n_updates(0),
           _unitig_id_counter(UNITIG_START_ID),
           _n_unitig_nodes(0),
+          component_id_counter(0),
           pr_registry(metrics_registry)
     {
         if(metrics_registry != nullptr) {
@@ -364,6 +368,38 @@ public:
         }
 
         return result;
+    }
+
+    spp::sparse_hash_map<id_t, std::vector<id_t>> find_connected_components() {
+        auto lock = this->lock_nodes();
+
+        spp::sparse_hash_set<id_t>                    seen;
+        spp::sparse_hash_map<id_t, std::vector<id_t>> components;
+
+        for (auto unitig_it = unodes_begin(); unitig_it != unodes_end(); unitig_it++) {
+            auto root = unitig_it->second.get();
+            if (!seen.count(root->node_id)) {
+                auto              component_nodes = traverse_breadth_first(root);
+                std::vector<id_t> component_node_ids;
+                id_t              component_id = root->component_id;
+
+                if (component_id == NULL_ID) {
+                    component_id = component_id_counter;
+                    ++component_id_counter;
+                    root->component_id = component_id;
+                }
+
+                for (auto node : component_nodes) {
+                    node->component_id = component_id;
+                    seen.insert(node->node_id);
+                    component_node_ids.push_back(node->node_id);
+                }
+
+                components[component_id] = component_node_ids;
+            }
+        }
+
+        return components;
     }
 
     node_meta_t recompute_node_meta(UnitigNode * unode) {

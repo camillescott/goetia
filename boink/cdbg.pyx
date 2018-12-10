@@ -46,6 +46,10 @@ cdef class CompactNodeView:
         return str(self)
 
     @property
+    def meta(self):
+        return _ustring(node_meta_repr(deref(self._cn_this).meta()))
+
+    @property
     def node_id(self):
         self._check_ptr()
         return deref(self._cn_this).node_id
@@ -158,10 +162,6 @@ cdef class UnitigNodeView(CompactNodeView):
     def right_end(self):
         self._check_ptr()
         return deref(self._un_this).right_end()
-
-    @property
-    def meta(self):
-        return _ustring(node_meta_repr(deref(self._un_this).meta()))
 
     def tags(self):
         self._check_ptr()

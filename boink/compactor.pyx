@@ -44,5 +44,5 @@ def display_segment_list(list segments):
 
 include "compactor.tpl.pyx.pxi"
 
-def make_streaming_compactor(dBG_Base graph, Instrumentation inst):
+def make_streaming_compactor(dBG_Base graph, Instrumentation inst=None):
     return _make_streaming_compactor(graph, inst)

@@ -11,6 +11,7 @@
 from cython.operator cimport dereference as deref
 
 from libc.stdint cimport uint64_t
+from libcpp cimport bool, nullptr_t, nullptr
 from libcpp.memory cimport make_shared
 from libcpp.string cimport string
 
@@ -28,10 +29,16 @@ cdef class StreamingCompactor_{{type_bundle.suffix}}(StreamingCompactor_Base):
 
         self.storage_type = graph.storage_type
         self.shifter_type = graph.shifter_type
+        
+        cdef shared_ptr[_Registry] registry
+        if inst is not None:
+            registry = inst.registry
+        else:
+            registry = shared_ptr[_Registry](nullptr)
 
         if type(self) is StreamingCompactor_{{type_bundle.suffix}}:
             self._this = make_shared[_StreamingCompactor[_dBG[{{type_bundle.params}}]]](graph._this,
-                                                                                        inst.registry)
+                                                                                        registry)
             self._graph = graph._this
             self.graph = graph # for reference counting
             self.cdbg = cDBG_{{type_bundle.suffix}}._wrap(deref(self._this).cdbg)
@@ -89,7 +96,7 @@ cdef class StreamingCompactor_{{type_bundle.suffix}}(StreamingCompactor_Base):
 {% endfor %}
 
 
-cdef object _make_streaming_compactor(dBG_Base graph, Instrumentation inst):
+cdef object _make_streaming_compactor(dBG_Base graph, Instrumentation inst=None):
     {% for type_bundle in type_bundles %}
     if graph.storage_type == "{{type_bundle.storage_type}}" and \
        graph.shifter_type == "{{type_bundle.shifter_type}}":

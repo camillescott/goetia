@@ -1271,3 +1271,89 @@ class TestCircularUnitigs:
         print((' ' * pivot) + loop[pivot:pivot+ksize])
         print(loop_unode.sequence)
         print((' ' * (pivot+1)) + cycled_loop_unode.sequence)
+
+
+class TestBreadthFirstTraversal:
+
+    @using_ksize(21)
+    @using_length(100)
+    def test_single_component_from_left_unode(self, ksize, length, graph, compactor,
+                                                    snp_bubble, check_fp):
+
+        (wild, snp), L, R = snp_bubble()
+        check_fp()
+
+        compactor.update_sequence(wild)
+        compactor.update_sequence(snp)
+
+        left_unode_root = compactor.cdbg.query_unode_end(graph.hash(wild[:ksize]))
+        nodes = compactor.cdbg.traverse_breadth_first(left_unode_root)
+        assert len(nodes) == 6
+
+
+    @using_ksize(21)
+    @using_length(100)
+    def test_single_component_from_right_unode(self, ksize, length, graph, compactor,
+                                                     snp_bubble, check_fp):
+
+        (wild, snp), L, R = snp_bubble()
+        check_fp()
+
+        compactor.update_sequence(wild)
+        compactor.update_sequence(snp)
+
+        root = compactor.cdbg.query_unode_end(graph.hash(wild[-ksize:]))
+        nodes = compactor.cdbg.traverse_breadth_first(root)
+        assert len(nodes) == 6
+
+    @using_ksize(21)
+    @using_length(100)
+    def test_single_component_from_dnode(self, ksize, length, graph, compactor,
+                                               snp_bubble, check_fp):
+
+        (wild, snp), L, R = snp_bubble()
+        check_fp()
+
+        compactor.update_sequence(wild)
+        compactor.update_sequence(snp)
+
+        root = compactor.cdbg.query_dnode(graph.hash(wild[L:L+ksize]))
+        nodes = compactor.cdbg.traverse_breadth_first(root)
+        assert len(nodes) == 6
+
+
+class TestFindConnectedComponents:
+
+    @using_ksize(21)
+    @using_length(100)
+    def test_single_component(self, ksize, length, graph, compactor,
+                                    snp_bubble, check_fp):
+
+        (wild, snp), L, R = snp_bubble()
+        check_fp()
+
+        compactor.update_sequence(wild)
+        compactor.update_sequence(snp)
+
+        components = compactor.cdbg.find_connected_components()
+        assert len(components) == 1
+        print(components)
+        assert len(components[0]) == 6
+        dl, dr = graph.hash(wild[L:L+ksize]), graph.hash(wild[R:R+ksize])
+        assert all((ID in components[0] for ID in (0,1,2,3,dl,dr)))
+
+    @using_ksize(21)
+    @using_length(100)
+    @pytest.mark.parametrize('n_components', [10, 50, 100])
+    def test_many_components(self, ksize, length, n_components, graph, compactor,
+                                   snp_bubble, check_fp):
+
+        for _ in range(n_components):
+            (wild, snp), L, R = snp_bubble()
+            check_fp()
+
+            compactor.update_sequence(wild)
+            compactor.update_sequence(snp)
+
+        components = compactor.cdbg.find_connected_components()
+        assert len(components) == n_components

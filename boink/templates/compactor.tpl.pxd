@@ -28,6 +28,6 @@ cdef class StreamingCompactor_{{type_bundle.suffix}}(StreamingCompactor_Base):
     cdef public EventNotifier Notifier
 {% endfor %}
 
-cdef object _make_streaming_compactor(dBG_Base graph, Instrumentation inst)
+cdef object _make_streaming_compactor(dBG_Base graph, Instrumentation inst=*)
 
 {% endblock code %}

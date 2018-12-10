@@ -158,6 +158,40 @@ cdef class cDBG_{{type_bundle.suffix}}(cDBG_Base):
 
         return left_neighbors, right_neighbors
 
+    def traverse_breadth_first(self, object node):
+        cdef CompactNodePtr root
+        if isinstance(node, CompactNodeView):
+            root = (<CompactNodeView>node)._cn_this
+        elif isinstance(node, DecisionNode):
+            root = <CompactNodePtr>deref(self._this).query_dnode(<hash_t>node.node_id)
+        elif isinstance(node, UnitigNode):
+            root = <CompactNodePtr>deref(self._this).query_unode_id(node.node_id)
+        elif is_num(node):
+            root = deref(self._this).query_cnode(node)
+        else:
+            raise TypeError('Expected CompactNode/View, or hash.')
+
+        cdef vector[CompactNodePtr] _result = deref(self._this).traverse_breadth_first(root)
+        cdef list result = []
+        cdef CompactNodePtr ptr
+        for ptr in _result:
+            if deref(ptr).meta() == DECISION:
+                result.append(DecisionNodeView._wrap(<DecisionNodePtr>ptr))
+            else:
+                result.append(UnitigNodeView._wrap(<UnitigNodePtr>ptr))
+
+        return result
+
+    def find_connected_components(self):
+        _result = deref(self._this).find_connected_components()
+        cdef dict result = {}
+        it = _result.begin()
+        while(it != _result.end()):
+            result[deref(it).first] = deref(it).second
+            princ(it)
+
+        return result
+
     def query_dnodes(self, str sequence):
         pass
 

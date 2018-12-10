@@ -114,6 +114,9 @@ cdef extern from "boink/cdbg/cdbg.hh" namespace "boink::cdbg" nogil:
         _UnitigNode * query_unode_end(hash_t)
         _UnitigNode * query_unode_id(id_t)
         pair[DecisionNodePtr, DecisionNodePtr] find_unode_neighbors(_UnitigNode*)
+
+        vector[CompactNodePtr] traverse_breadth_first(CompactNodePtr) except +ValueError
+        sparse_hash_map[id_t, vector[id_t]] find_connected_components() except +ValueError
     
         void validate(const string&) except+ OSError
         void write(const string&, cDBGFormat) except +OSError

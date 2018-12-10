@@ -75,9 +75,6 @@ private:
 
     std::shared_ptr<cdbg::cDBG<GraphType>>        cdbg;
 
-    cdbg::id_t                                    component_id_counter;
-    spp::sparse_hash_map<cdbg::id_t, uint64_t>    component_size_map;
-
     uint64_t                                      min_component;
     uint64_t                                      max_component;
 
@@ -95,7 +92,6 @@ public:
                           std::shared_ptr<prometheus::Registry>  registry = nullptr)
         : SingleFileReporter       (filename, "cDBGComponentReporter"),
           cdbg                     (cdbg),
-          component_id_counter     (0),
           min_component            (ULLONG_MAX),
           max_component            (0),
           sample_size              (sample_size),
@@ -120,7 +116,7 @@ public:
                 
                 this->recompute_components();
                 _output_stream << _event->t << ","
-                               << component_size_map.size() << ","
+                               << component_size_sample.get_n_sampled() << ","
                                << max_component << ","
                                << min_component << ","
                                << component_size_sample.get_sample_size() << ","
@@ -132,29 +128,17 @@ public:
 
     void recompute_components() {
         auto time_start = std::chrono::system_clock::now();
-        auto lock = cdbg->lock_nodes();
 
-        spp::sparse_hash_set<cdbg::id_t> seen;
-        component_size_map.clear();
         component_size_sample.clear();
-
-        for (auto unitig_it = cdbg->unodes_begin(); unitig_it != cdbg->unodes_end(); unitig_it++) {
-            auto root = unitig_it->second.get();
-            if (!seen.count(root->node_id)) {
-                auto component_nodes = cdbg->traverse_breadth_first(root);
-                cdbg::id_t component_id = (root->component_id == NULL_ID) ? ++component_id_counter : root->component_id;
-                for (auto node : component_nodes) {
-                    node->component_id = component_id;
-                    seen.insert(node->node_id);
-                }
-                component_size_map[component_id] = component_nodes.size();
-                component_size_sample.sample(component_nodes.size());
-                max_component = (component_nodes.size() > max_component) ? component_nodes.size() : max_component;
-                min_component = (component_nodes.size() < min_component) ? component_nodes.size() : min_component;
-            }
+        auto components = cdbg->find_connected_components();
+        for (auto id_comp_pair : components) {
+            size_t component_size = id_comp_pair.second.size();
+            component_size_sample.sample(component_size);
+            max_component = (component_size > max_component) ? component_size : max_component;
+            min_component = (component_size < min_component) ? component_size : min_component;
         }
 
-        ifmetrics(metrics->n_components.Set(component_size_map.size()));
+        ifmetrics(metrics->n_components.Set(components.size()));
         ifmetrics(metrics->max_component_size.Set(max_component));
         ifmetrics(metrics->min_component_size.Set(min_component));
 
