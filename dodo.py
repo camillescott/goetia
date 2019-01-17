@@ -128,7 +128,7 @@ if DEBUG_ALL:
 
 DEBUG_FLAGS = ['-gdwarf']
 
-CXX         = get_var('CXX', os.environ.get('CXX', 'cc'))
+CXX         = get_var('CXX', os.environ.get('CXX', 'c++'))
 INCLUDES    = ['-I', os.path.abspath('include/'), '-I.']
 
 # for anaconda
@@ -172,6 +172,7 @@ if DEBUG:
         CY_CFLAGS.remove('-DNDEBUG')
         CY_CFLAGS.remove('-O3')
         CXXFLAGS.remove('-O3')
+
         CY_CFLAGS.append('-O0')
         CY_CFLAGS.append('-fkeep-inline-functions')
         CXXFLAGS.append('-O0')
@@ -235,16 +236,16 @@ for type_dict in EXT_META['types']:
 #
 def cxx_command(source, target):
     cmd = [ CXX ] \
-          + CXXFLAGS \
           + LDFLAGS \
+          + CXXFLAGS \
           + ['-c -o', target, source]
     return ' '.join(cmd)
 
 
 def link_command(objects, target):
     cmd = [ CXX ] \
-          + CXXFLAGS \
           + LDFLAGS \
+          + CXXFLAGS \
           + ['-shared', '-o', target] \
           + objects
     return ' '.join(cmd)

@@ -15,6 +15,7 @@ from boink.utils cimport *
 import sys
 
 from cython.operator cimport dereference as deref
+from libcpp cimport nullptr
 from libcpp.memory cimport shared_ptr, make_shared
 
 from boink.utils cimport _bstring
@@ -87,12 +88,18 @@ cdef class cDBGComponentReporter_{{type_bundle.suffix}}(cDBGComponentReporter):
         self.storage_type = cdbg.storage_type
         self.shifter_type = cdbg.shifter_type
 
+        cdef shared_ptr[_Registry] registry
+        if inst is not None:
+            registry = inst.registry
+        else:
+            registry = shared_ptr[_Registry](nullptr)
+
         if type(self) is cDBGComponentReporter_{{type_bundle.suffix}}:
             self._s_this = make_shared[_cDBGComponentReporter[_dBG[{{type_bundle.params}}]]]\
                                       (cdbg._this,
                                        _bstring(output_filename),
                                        sample_size,
-                                       inst.registry)
+                                       registry)
 
             self._this = <shared_ptr[_SingleFileReporter]>self._s_this
             self._listener = <shared_ptr[_EventListener]>self._s_this

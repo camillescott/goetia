@@ -265,7 +265,7 @@ def print_cdbg_args(args):
 
 
 def add_prometheus_args(parser):
-    parser.add_argument('--port', default='7777',
+    parser.add_argument('--port', default=None,
                         help='Port to expose prometheus metrics.')
     return parser
 

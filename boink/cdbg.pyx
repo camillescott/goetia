@@ -10,7 +10,6 @@ from cython.operator cimport preincrement as princ
 from libcpp.memory cimport make_unique
 
 from boink.utils cimport _bstring, _ustring, make_pair
-from khmer._oxli.sequence cimport Alphabets
 
 
 cdef class CompactNodeView:

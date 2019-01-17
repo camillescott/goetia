@@ -68,7 +68,7 @@ public:
     }
 };
 
-#define ifmetrics(x) do { if (metrics != nullptr) { x; } } while (0)
+
 template <class GraphType>
 class cDBGComponentReporter : public SingleFileReporter {
 private:
@@ -88,8 +88,8 @@ public:
 
     cDBGComponentReporter(std::shared_ptr<cdbg::cDBG<GraphType>> cdbg,
                           const std::string&                     filename,
-                          size_t                                 sample_size = 10000,
-                          std::shared_ptr<prometheus::Registry>  registry = nullptr)
+                          std::shared_ptr<prometheus::Registry>  registry,
+                          size_t                                 sample_size = 10000)
         : SingleFileReporter       (filename, "cDBGComponentReporter"),
           cdbg                     (cdbg),
           min_component            (ULLONG_MAX),
@@ -101,11 +101,7 @@ public:
         this->msg_type_whitelist.insert(events::MSG_TIME_INTERVAL);
         _output_stream << "read_n,n_components,max_component,min_component,sample_size,component_size_sample" << std::endl;
 
-        if (registry != nullptr) {
-            metrics = make_unique<cDBGComponentReporterMetrics>(registry);
-        } else {
-            metrics = nullptr;
-        }
+        metrics = make_unique<cDBGComponentReporterMetrics>(registry);
     }
 
     virtual void handle_msg(std::shared_ptr<events::Event> event) {
@@ -138,12 +134,12 @@ public:
             min_component = (component_size < min_component) ? component_size : min_component;
         }
 
-        ifmetrics(metrics->n_components.Set(components.size()));
-        ifmetrics(metrics->max_component_size.Set(max_component));
-        ifmetrics(metrics->min_component_size.Set(min_component));
+        metrics->n_components.Set(components.size());
+        metrics->max_component_size.Set(max_component);
+        metrics->min_component_size.Set(min_component);
 
         auto time_elapsed = std::chrono::system_clock::now() - time_start;
-        ifmetrics(metrics->recompute_time.Observe(std::chrono::duration<double>(time_elapsed).count()));
+        metrics->recompute_time.Observe(std::chrono::duration<double>(time_elapsed).count());
     }
 };
 

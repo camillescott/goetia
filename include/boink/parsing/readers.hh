@@ -185,6 +185,37 @@ ReadParserPtr<SeqIO> get_parser(const std::string& filename);
 typedef std::shared_ptr<ReadParser<FastxReader>> FastxParserPtr;
 typedef std::weak_ptr<ReadParser<FastxReader>> WeakFastxParserPtr;
 
+/*
+class BrokenPairedReader {
+
+    std::unique_ptr<ReadParserPtr<FastxReader>> _parser;
+    uint32_t                                    _min_length;
+    bool                                        _force_single;
+    bool                                        _require_paired;
+
+    Read                                        _buffer_sequence;
+    bool                                        _buffer_full;
+
+
+    ReadBundle next() {
+        Read first, second;
+        bool is_pair;
+
+        if (!_buffer_full) {
+            try {
+                first = this->parser->get_next_read();
+            } catch (NoMoreReadsAvailable) {
+                
+            }
+
+        } else {
+            first = _buffer_sequence;
+        }
+    }
+
+};
+*/
+
 
 template <class ParserType = FastxReader>
 class SplitPairedReader {

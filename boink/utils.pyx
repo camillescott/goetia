@@ -6,6 +6,7 @@
 # of the MIT license.  See the LICENSE file for details.
 
 from cpython.version cimport PY_MAJOR_VERSION
+from math import sqrt
 
 
 cdef bytes _bstring(s):
@@ -41,4 +42,40 @@ cpdef bool is_num(object n):
     return isinstance(n, (int, long))
 
 
+cpdef bool is_prime(uint64_t n):
+    if n < 2:
+        return False
+    if n == 2:
+        return True
+    if n % 2 == 0:
+        return False
+
+    cdef uint64_t i
+    for i in range(3, sqrt(n), 2):
+        if n % i == 0:
+            return False
+
+    return True;
+
+
+cdef vector[uint64_t] get_n_primes_near_x(uint32_t n, uint64_t x):
+    cdef vector[uint64_t] primes
+    if x == 1:
+        primes.push_back(1);
+        return primes
+
+    cdef uint64_t i = x - 1
+    if i % 2 == 0:
+        i -= 1
+
+    while primes.size() != n:
+        if is_prime(i):
+            primes.push_back(i)
+
+        if i == 1:
+            break
+
+        i -= 2
+
+    return primes
 

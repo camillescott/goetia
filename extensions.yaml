@@ -40,7 +40,6 @@ extensions:
       templates:
         - processors.tpl.pxd
         - processors.tpl.pyx
-    - name: stats
     - name: utils
     - name: prometheus
     - name: parsing

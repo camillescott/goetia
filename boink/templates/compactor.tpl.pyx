@@ -25,7 +25,7 @@ cdef class StreamingCompactor_Base:
 {% for type_bundle in type_bundles %}
 cdef class StreamingCompactor_{{type_bundle.suffix}}(StreamingCompactor_Base):
 
-    def __cinit__(self, dBG_{{type_bundle.suffix}} graph, Instrumentation inst):
+    def __cinit__(self, dBG_{{type_bundle.suffix}} graph, Instrumentation inst=None):
 
         self.storage_type = graph.storage_type
         self.shifter_type = graph.shifter_type

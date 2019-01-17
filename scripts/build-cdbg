@@ -55,7 +55,8 @@ def main():
     args = parse_args()
     os.makedirs(args.results_dir, exist_ok=True)
 
-    instrumention = Instrumentation(args.port)
+    instrumention = Instrumentation(args.port,
+                                    expose=(args.port != None))
 
     graph = make_dBG(args.ksize,
                      args.max_tablesize,

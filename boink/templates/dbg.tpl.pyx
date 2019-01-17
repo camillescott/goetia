@@ -15,8 +15,8 @@ from libcpp.memory cimport make_shared
 from libcpp.string cimport string
 from libcpp.vector cimport vector
 
-from khmer._oxli.utils import get_n_primes_near_x, is_str, is_num
-from boink.utils cimport _bstring, _ustring
+from boink.utils cimport (_bstring, _ustring, get_n_primes_near_x,
+                          is_str, is_num)
 
 
 cdef class dBG_Base:

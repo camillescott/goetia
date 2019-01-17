@@ -45,9 +45,10 @@ def test_assembler_cursor_wrong_size(asm, ksize):
 
 class TestNonBranching:
 
-    def test_all_start_positions(self, ksize, linear_path, asm, consumer):
+    def test_all_start_positions(self, ksize, linear_path, asm, consume):
         # assemble entire contig, starting from wherever
         contig = linear_path()
+        consume()
 
         for start in range(0, len(contig), 150):
             if len(contig) - start < ksize:
@@ -56,9 +57,10 @@ class TestNonBranching:
             path = asm.assemble(contig[start:start + ksize])
             assert path == contig, (len(path), len(contig), start)
 
-    def test_all_left_to_beginning(self, ksize, linear_path, asm, consumer):
+    def test_all_left_to_beginning(self, ksize, linear_path, asm, consume):
         # assemble directed left
         contig = linear_path()
+        consume()
 
         for start in range(0, len(contig), 150):
             if len(contig) - start < ksize:
@@ -68,9 +70,10 @@ class TestNonBranching:
             print(path, ', ', contig[:start])
             assert path == contig[:start + ksize], start
 
-    def test_all_right_to_end(self, ksize, linear_path, asm, consumer):
+    def test_all_right_to_end(self, ksize, linear_path, asm, consume):
         # assemble directed right
         contig = linear_path()
+        consume()
 
         for start in range(0, len(contig), 150):
             if len(contig) - start < ksize:
@@ -80,8 +83,9 @@ class TestNonBranching:
             print(path, ', ', contig[:start])
             assert path == contig[start:], start
 
-    def test_circular(self, ksize, circular, asm, consumer):
+    def test_circular(self, ksize, circular, asm, consume):
         contig = circular()
+        consume()
 
         path = asm.assemble_right(contig[:ksize])
         print(path, ',', contig)
@@ -90,25 +94,29 @@ class TestNonBranching:
 
 class TestBranchingBasic:
 
-    def test_stops_at_fork(self, ksize, right_fork, asm, consumer):
+    def test_stops_at_fork(self, ksize, right_fork, asm, consume):
         (sequence, branch), S = right_fork()
+        consume()
 
         path = asm.assemble_right(sequence[:ksize])
+        print(asm.Graph.neighbors(sequence[S:S+ksize]))
         assert path == sequence[:S+ksize]
         assembled_branch = asm.assemble(branch[-ksize:])
         assert branch == assembled_branch
     
-    def test_assembles_through_fork_from_right(self, ksize, right_fork, asm, consumer):
+    def test_assembles_through_fork_from_right(self, ksize, right_fork, asm, consume):
         '''Test that we assemble through fork from the right when we haven't
         assembled the core path already.'''
         (sequence, branch), S = right_fork()
+        consume()
 
         assert sequence[:S+1] + branch == asm.assemble(branch[-ksize:])
 
 
     def test_stops_at_triple_fork(self, ksize, right_triple_fork,
-                                  asm, consumer):
+                                  asm, consume):
         (core, top, bottom), S = right_triple_fork()
+        consume()
         
         path = asm.assemble_right(core[:ksize])
         assert path == core[:S+ksize]

@@ -46,7 +46,6 @@
 #   define pdebug(x) do {} while (0)
 # endif
 
-#define ifmetrics(x) do { if (metrics != nullptr) { x; } } while (0)
 
 namespace boink {
 namespace cdbg {
@@ -128,7 +127,7 @@ public:
     shared_ptr<cDBGMetrics> metrics;
 
     cDBG(shared_ptr<GraphType> dbg,
-         shared_ptr<prometheus::Registry> metrics_registry=nullptr,
+         shared_ptr<prometheus::Registry> metrics_registry,
          uint64_t minimizer_window_size=8)
         : KmerClient(dbg->K()),
           EventNotifier(),
@@ -139,10 +138,9 @@ public:
           component_id_counter(0),
           pr_registry(metrics_registry)
     {
-        if(metrics_registry != nullptr) {
-            pr_registry = metrics_registry;
-            metrics = make_shared<cDBGMetrics>(pr_registry);
-        }
+        pr_registry = metrics_registry;
+        metrics = make_shared<cDBGMetrics>(pr_registry);
+
     }
 
     std::unique_lock<std::mutex> lock_nodes() {
@@ -460,7 +458,7 @@ public:
             notify_history_new(dnode->node_id,
                                dnode->sequence,
                                dnode->meta());
-            ifmetrics(metrics->n_dnodes.Increment());
+            metrics->n_dnodes.Increment();
             pdebug("BUILD_DNODE complete: " << *dnode);
         } else {
             pdebug("BUILD_DNODE: d-node for " << hash << " already exists.");
@@ -488,7 +486,7 @@ public:
         _unitig_id_counter++;
         _n_unitig_nodes++;
         _n_updates++;
-        ifmetrics(metrics->n_unodes.Increment());
+        metrics->n_unodes.Increment();
 
         // Link up its new tags
         unode_ptr->tags.insert(std::end(unode_ptr->tags),
@@ -502,7 +500,7 @@ public:
 
         auto unode_meta = recompute_node_meta(unode_ptr);
         unode_ptr->set_node_meta(unode_meta);
-        ifmetrics(metrics->increment_cdbg_node(unode_meta));
+        metrics->increment_cdbg_node(unode_meta);
 
         notify_history_new(id, unode_ptr->sequence, unode_ptr->meta());
         pdebug("BUILD_UNODE complete: " << *unode_ptr);
@@ -522,18 +520,18 @@ public:
                " and swap " << old_unode_end << " to " << new_unode_end);
 
         if (unode->sequence.length() == this->_K) {
-            ifmetrics(metrics->decrement_cdbg_node(unode->meta()));
+            metrics->decrement_cdbg_node(unode->meta());
             delete_unode(unode);
             pdebug("CLIP complete: deleted null unode.");
         } else {
-            ifmetrics(metrics->n_clips.Increment());
+            metrics->n_clips.Increment();
             if (clip_from == DIR_LEFT) {
                 unode->sequence = unode->sequence.substr(1);
                 unode->set_left_end(new_unode_end);
 
-                ifmetrics(metrics->decrement_cdbg_node(unode->meta()));
+                metrics->decrement_cdbg_node(unode->meta());
                 auto meta = recompute_node_meta(unode);
-                ifmetrics(metrics->increment_cdbg_node(meta));
+                metrics->increment_cdbg_node(meta);
                 unode->set_node_meta(meta);
 
                 notify_history_clip(unode->node_id, unode->sequence, unode->meta());
@@ -542,9 +540,9 @@ public:
                 unode->sequence = unode->sequence.substr(0, unode->sequence.length() - 1);
                 unode->set_right_end(new_unode_end);
 
-                ifmetrics(metrics->decrement_cdbg_node(unode->meta()));
+                metrics->decrement_cdbg_node(unode->meta());
                 auto meta = recompute_node_meta(unode);
-                ifmetrics(metrics->increment_cdbg_node(meta));
+                metrics->increment_cdbg_node(meta);
                 unode->set_node_meta(meta);
 
                 notify_history_clip(unode->node_id, unode->sequence, unode->meta());
@@ -593,10 +591,10 @@ public:
             unitig_tag_map.insert(make_pair(tag, unode));
         }
 
-        ifmetrics(metrics->n_extends.Increment());
-        ifmetrics(metrics->decrement_cdbg_node(unode->meta()));
+        metrics->n_extends.Increment();
+        metrics->decrement_cdbg_node(unode->meta());
         auto meta = recompute_node_meta(unode);
-        ifmetrics(metrics->increment_cdbg_node(meta));
+        metrics->increment_cdbg_node(meta);
         unode->set_node_meta(meta);
         ++_n_updates;
 
@@ -634,10 +632,10 @@ public:
                 unode->set_left_end(new_left_end);
                 unode->set_right_end(new_right_end);
 
-                ifmetrics(metrics->n_splits.Increment());
+                metrics->n_splits.Increment();
                 unode->set_node_meta(FULL);
-                ifmetrics(metrics->decrement_cdbg_node(CIRCULAR));
-                ifmetrics(metrics->increment_cdbg_node(FULL));
+                metrics->decrement_cdbg_node(CIRCULAR);
+                metrics->increment_cdbg_node(FULL);
                 ++_n_updates;
 
                 notify_history_split_circular(unode->node_id, unode->sequence, unode->meta());
@@ -658,10 +656,10 @@ public:
             unode->set_right_end(new_right_end);
             unode->sequence = unode->sequence.substr(0, split_at + this->_K - 1);
             
-            ifmetrics(metrics->n_splits.Increment());
-            ifmetrics(metrics->decrement_cdbg_node(unode->meta()));
+            metrics->n_splits.Increment();
+            metrics->decrement_cdbg_node(unode->meta());
             auto meta = recompute_node_meta(unode);
-            ifmetrics(metrics->increment_cdbg_node(meta));
+            metrics->increment_cdbg_node(meta);
             unode->set_node_meta(meta);
             ++_n_updates;
         }
@@ -713,8 +711,8 @@ public:
 
         if (left_unode->node_id == right_unode->node_id) {
             pdebug("MERGE: CIRCULAR! Creating circular unitig, span is " << span_sequence);
-            ifmetrics(metrics->decrement_cdbg_node(right_unode->meta()));
-            ifmetrics(metrics->n_circular_merges.Increment());
+            metrics->decrement_cdbg_node(right_unode->meta());
+            metrics->n_circular_merges.Increment();
             std::string extend = span_sequence;
             //if (n_span_kmers < this->_K - 1) {
                 pdebug("Overlap between merged sequence, trimming right " << n_span_kmers);
@@ -750,7 +748,7 @@ public:
                          left_end,
                          new_right_end,
                          new_tags);
-            ifmetrics(metrics->n_merges.Increment());
+            metrics->n_merges.Increment();
 
         }
         
@@ -766,7 +764,7 @@ public:
         if (unode != nullptr) {
             pdebug("Deleting " << *unode);
             id_t id = unode->node_id;
-            ifmetrics(metrics->decrement_cdbg_node(unode->meta()));
+            metrics->decrement_cdbg_node(unode->meta());
             for (hash_t tag: unode->tags) {
                 unitig_tag_map.erase(tag);
             }
@@ -777,8 +775,8 @@ public:
             unode = nullptr;
             _n_unitig_nodes--;
             _n_updates++;
-            ifmetrics(metrics->n_unodes.Decrement());
-            ifmetrics(metrics->n_deletes.Increment());
+            metrics->n_unodes.Decrement();
+            metrics->n_deletes.Increment();
         }
     }
 
