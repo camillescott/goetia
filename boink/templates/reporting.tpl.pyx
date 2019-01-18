@@ -98,8 +98,8 @@ cdef class cDBGComponentReporter_{{type_bundle.suffix}}(cDBGComponentReporter):
             self._s_this = make_shared[_cDBGComponentReporter[_dBG[{{type_bundle.params}}]]]\
                                       (cdbg._this,
                                        _bstring(output_filename),
-                                       sample_size,
-                                       registry)
+                                       registry,
+                                       sample_size)
 
             self._this = <shared_ptr[_SingleFileReporter]>self._s_this
             self._listener = <shared_ptr[_EventListener]>self._s_this
