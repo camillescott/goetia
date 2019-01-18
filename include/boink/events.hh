@@ -247,7 +247,7 @@ public:
 
     ~EventNotifier()
     {
-        clear_listeners();
+        stop_listeners();
     }
 
     void notify(shared_ptr<events::Event> event) {
