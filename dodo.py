@@ -142,7 +142,9 @@ COMMON      = ['-O3', '-fPIC', '-fno-omit-frame-pointer']
 CPPFLAGS    = []
 
 CXXFLAGS    = COMMON + WARNINGS
-CXXFLAGS   += ['-Wstrict-null-sentinel', '-std=c++14']
+CXXFLAGS   += ['-Wstrict-null-sentinel',
+               '-std=c++14',
+               '-frecord-gcc-switches']
 CXXFLAGS   += INCLUDES
 CXXFLAGS   += CPPFLAGS
 
