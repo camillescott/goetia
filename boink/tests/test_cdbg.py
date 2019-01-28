@@ -12,12 +12,14 @@ import pytest
 from boink.tests.utils import *
 
 from boink.compactor import display_segment_list, make_streaming_compactor
+from boink.prometheus import Instrumentation
 
 
 @pytest.fixture
 def compactor(ksize, graph, graph_type):
     _graph_type, AdapterType = graph_type
-    compactor = make_streaming_compactor(graph)
+    instrumention = Instrumentation('', expose=False)
+    compactor = make_streaming_compactor(graph, inst=instrumention)
     return compactor
 
 
@@ -751,13 +753,6 @@ class TestUnitigSplit(object):
         assert bottom_unode.sequence == bottom[:-1]
         assert bottom_unode.left_end == graph.hash(bottom[:ksize])
         assert bottom_unode.meta == 'TIP'
-
-
-    @using_ksize(7)
-    @using_length(25)
-    def test_new_decision_kmer_oriented_tip_inducer(self, ksize, length, graph, compactor,
-                                                          right_fork, check_fp):
-        (core, branch), pivot 
 
     @using_ksize(15)
     @using_length(150)

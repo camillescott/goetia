@@ -94,6 +94,35 @@ cdef class StreamingCompactorProcessor_{{type_bundle.suffix}}(FileProcessor_Base
                                       _bstring(right_filename))
 
         return deref(self._this).n_reads()
+
+
+cdef class NormalizingCompactor_{{type_bundle.suffix}}(FileProcessor_Base):
+    
+    def __cinit__(self, StreamingCompactor_{{type_bundle.suffix}} compactor,
+                        unsigned int cutoff,
+                        uint64_t fine_interval,
+                        uint64_t medium_interval,
+                        uint64_t coarse_interval):
+
+        self._this = make_shared[_NormalizingCompactor[_dBG[{{type_bundle.params}}]]](compactor._this,
+                                                                                      cutoff,
+                                                                                      fine_interval,
+                                                                                      medium_interval,
+                                                                                      coarse_interval)
+        self.Notifier = EventNotifier._wrap(<shared_ptr[_EventNotifier]>self._this)
+
+        self.storage_type = compactor.storage_type
+        self.shifter_type = compactor.shifter_type
+
+    def process(self, str input_filename, str right_filename=None):
+        if right_filename is None:
+            deref(self._this).process(_bstring(input_filename))
+        else:
+            deref(self._this).process(_bstring(input_filename),
+                                      _bstring(right_filename))
+
+        return deref(self._this).n_reads()
+
 {% endfor %}
 
 cdef object _make_file_consumer(dBG_Base graph,
@@ -139,6 +168,23 @@ cdef object _make_streaming_compactor_processor(StreamingCompactor_Base compacto
                                                                   fine_interval,
                                                                   medium_interval,
                                                                   coarse_interval)
+    {% endfor %}
+
+    raise TypeError("Invalid dBG type.")
+
+cdef object _make_normalizing_compactor(StreamingCompactor_Base compactor, 
+                                        unsigned int cutoff,
+                                        uint64_t fine_interval,
+                                        uint64_t medium_interval,
+                                        uint64_t coarse_interval):
+    {% for type_bundle in type_bundles %}
+    if compactor.storage_type == "{{type_bundle.storage_type}}" and \
+       compactor.shifter_type == "{{type_bundle.shifter_type}}":
+        return NormalizingCompactor_{{type_bundle.suffix}}(compactor,
+                                                           cutoff,
+                                                           fine_interval,
+                                                           medium_interval,
+                                                           coarse_interval)
     {% endfor %}
 
     raise TypeError("Invalid dBG type.")

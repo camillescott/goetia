@@ -209,6 +209,11 @@ def add_save_cDBG_args(parser):
     parser.add_argument('--results-dir',
                         default=default_prefix)
 
+    parser.add_argument('--normalize',
+                        type=int,
+                        nargs='?',
+                        const=10)
+
     parser.add_argument('--save-cdbg',
                         metavar='PREFIX.<format>',
                         nargs='?',

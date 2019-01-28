@@ -17,7 +17,8 @@ from boink.args import (build_dBG_args,
 from boink.dbg import make_dBG
 from boink.compactor import make_streaming_compactor
 from boink.parsing import grouper
-from boink.processors import make_streaming_compactor_processor
+from boink.processors import (make_streaming_compactor_processor,
+                              make_normalizing_compactor)
 from boink.prometheus import Instrumentation
 from boink.reporting import (make_streaming_compactor_reporter,
                              make_cdbgwriter_reporter,
@@ -65,10 +66,17 @@ def main():
                      args.n_tables,
                      storage='_' + args.storage_type)
     compactor = make_streaming_compactor(graph, instrumention)
-    processor = make_streaming_compactor_processor(compactor,
-                                                   args.fine_interval,
-                                                   args.medium_interval,
-                                                   args.coarse_interval)
+    if args.normalize is None:
+        processor = make_streaming_compactor_processor(compactor,
+                                                       args.fine_interval,
+                                                       args.medium_interval,
+                                                       args.coarse_interval)
+    else:
+        processor = make_normalizing_compactor(compactor,
+                                               args.cutoff,
+                                               args.fine_interval,
+                                               args.medium_interval,
+                                               args.coarse_interval)
 
     if args.track_cdbg_stats:
         reporter = make_streaming_compactor_reporter(args.track_cdbg_stats,

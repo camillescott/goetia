@@ -54,7 +54,7 @@ cdef extern from "boink/processors.hh" namespace "boink" nogil:
                                uint64_t)
 
     cdef cppclass _StreamingCompactorProcessor "boink::StreamingCompactorProcessor"[GraphType](_FileProcessor[_StreamingCompactorProcessor[GraphType]]):
-        _StreamingCompactorProcessor(_StreamingCompactor*,
+        _StreamingCompactorProcessor(shared_ptr[_StreamingCompactor[GraphType]],
                                      uint64_t,
                                      uint64_t,
                                      uint64_t)
@@ -66,6 +66,14 @@ cdef extern from "boink/processors.hh" namespace "boink" nogil:
                             uint64_t,
                             uint64_t,
                             uint64_t)
+
+cdef extern from "boink/normalization/diginorm.hh" namespace "boink::normalization" nogil:
+    cdef cppclass _NormalizingCompactor "boink::normalization::NormalizingCompactor"[GraphType](_FileProcessor[_NormalizingCompactor[GraphType]]):
+        _NormalizingCompactor(shared_ptr[_StreamingCompactor[GraphType]],
+                              unsigned int,
+                              uint64_t,
+                              uint64_t,
+                              uint64_t)
 
 
 cdef class FileProcessor:

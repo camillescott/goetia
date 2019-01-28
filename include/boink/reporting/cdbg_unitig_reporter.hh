@@ -70,7 +70,7 @@ public:
                 auto bin_sums = this->compute_bins();
                 auto row      = utils::StringUtils::join(bin_sums, ", ");
                 _output_stream << _event->t << ","
-                               << row << ","
+                               << row 
                                << std::endl;
             }
         }       
