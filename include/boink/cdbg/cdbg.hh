@@ -997,8 +997,7 @@ public:
                 gfa.add_link(root, l);
             }
         }
-        out << gfa << std::endl;
-
+        out << gfa;
     }
 
 
