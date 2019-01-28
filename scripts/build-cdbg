@@ -21,6 +21,7 @@ from boink.processors import make_streaming_compactor_processor
 from boink.prometheus import Instrumentation
 from boink.reporting import (make_streaming_compactor_reporter,
                              make_cdbgwriter_reporter,
+                             cDBGUnitigReporter,
                              cDBGHistoryReporter,
                              cDBGComponentReporter)
 
