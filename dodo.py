@@ -295,6 +295,8 @@ def task_display_libboink_config():
         print('Compile:', cxx_command('SOURCE.cc', 'TARGET.o'))
         print('Link:', link_command(['OBJECT_1.o', 'OBJECT_2.o',
                                      'OBJECT_N.o'], SONAME))
+        print('Compile Cython:', cy_compile_command('SOURCE.cc', 'mod.so'))
+        print('PY_LDSHARED:', sysconfig.get_config_var('LDSHARED'))
     return {'actions':  [print_config],
             'uptodate': [False]}
 

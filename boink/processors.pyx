@@ -81,3 +81,15 @@ def make_streaming_compactor_processor(StreamingCompactor_Base compactor,
                                                fine_interval,
                                                medium_interval,
                                                coarse_interval)
+
+def make_normalizing_compactor(StreamingCompactor_Base compactor,
+                               unsigned int cutoff,
+                               int fine_interval=DEFAULT_FINE_INTERVAL,
+                               int medium_interval=DEFAULT_MEDIUM_INTERVAL,
+                               int coarse_interval=DEFAULT_COARSE_INTERVAL):
+        
+    return _make_normalizing_compactor(compactor,
+                                       cutoff,
+                                       fine_interval,
+                                       medium_interval,
+                                       coarse_interval)

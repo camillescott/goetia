@@ -39,6 +39,12 @@ cdef class StreamingCompactorProcessor_{{type_bundle.suffix}}(FileProcessor_Base
     cdef readonly str output_filename
     cdef shared_ptr[_StreamingCompactorProcessor[_dBG[{{type_bundle.params}}]]] _this
 
+
+cdef class NormalizingCompactor_{{type_bundle.suffix}}(FileProcessor_Base):
+    cdef readonly str output_filename
+    cdef shared_ptr[_NormalizingCompactor[_dBG[{{type_bundle.params}}]]] _this
+
+
 {% endfor %}
 
 cdef object _make_file_consumer(dBG_Base graph,
@@ -56,5 +62,12 @@ cdef object _make_streaming_compactor_processor(StreamingCompactor_Base compacto
                                                 uint64_t fine_interval,
                                                 uint64_t medium_interval,
                                                 uint64_t coarse_interval)
+
+cdef object _make_normalizing_compactor(StreamingCompactor_Base compactor, 
+                                        unsigned int cutoff,
+                                        uint64_t fine_interval,
+                                        uint64_t medium_interval,
+                                        uint64_t coarse_interval)
+
 
 {% endblock code %}
