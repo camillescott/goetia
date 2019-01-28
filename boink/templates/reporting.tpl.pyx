@@ -41,6 +41,22 @@ cdef class cDBGComponentReporter(SingleFileReporter):
     
         raise TypeError("Could not match cDBG template type.")
 
+
+cdef class cDBGUnitigReporter(SingleFileReporter):
+    pass
+    @staticmethod
+    def build(str output_filename, cDBG_Base cdbg, list bins):
+        {% for type_bundle in type_bundles %}
+        if cdbg.storage_type == "{{type_bundle.storage_type}}" and \
+           cdbg.shifter_type == "{{type_bundle.shifter_type}}":
+            return cDBGUnitigReporter_{{type_bundle.suffix}}(output_filename,
+                                                             cdbg,
+                                                             bins);
+        {% endfor %}
+    
+        raise TypeError("Could not match cDBG template type.")
+
+
 {% for type_bundle in type_bundles %}
 
 cdef class StreamingCompactorReporter_{{type_bundle.suffix}}(StreamingCompactorReporter_Base):
@@ -100,6 +116,27 @@ cdef class cDBGComponentReporter_{{type_bundle.suffix}}(cDBGComponentReporter):
                                        _bstring(output_filename),
                                        registry,
                                        sample_size)
+
+            self._this = <shared_ptr[_SingleFileReporter]>self._s_this
+            self._listener = <shared_ptr[_EventListener]>self._s_this
+
+
+cdef class cDBGUnitigReporter_{{type_bundle.suffix}}(cDBGUnitigReporter):
+
+    def __cinit__(self, str                         output_filename,
+                        cDBG_{{type_bundle.suffix}} cdbg,
+                        list                        bins,
+                        **kwargs):
+        
+        self.storage_type = cdbg.storage_type
+        self.shifter_type = cdbg.shifter_type
+        cdef vector[size_t] _bins = bins
+
+        if type(self) is cDBGUnitigReporter_{{type_bundle.suffix}}:
+            self._s_this = make_shared[_cDBGUnitigReporter[_dBG[{{type_bundle.params}}]]]\
+                                      (cdbg._this,
+                                       _bstring(output_filename),
+                                       _bins)
 
             self._this = <shared_ptr[_SingleFileReporter]>self._s_this
             self._listener = <shared_ptr[_EventListener]>self._s_this

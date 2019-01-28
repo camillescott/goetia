@@ -35,6 +35,11 @@ cdef class cDBGComponentReporter(SingleFileReporter):
     cdef readonly object shifter_type
 
 
+cdef class cDBGUnitigReporter(SingleFileReporter):
+    cdef readonly object storage_type
+    cdef readonly object shifter_type
+
+
 {% for type_bundle in type_bundles %}
 cdef class StreamingCompactorReporter_{{type_bundle.suffix}}(StreamingCompactorReporter_Base):
     cdef shared_ptr[_StreamingCompactorReporter[_dBG[{{type_bundle.params}}]]] _s_this
@@ -44,6 +49,10 @@ cdef class cDBGWriter_{{type_bundle.suffix}}(cDBGWriter_Base):
 
 cdef class cDBGComponentReporter_{{type_bundle.suffix}}(cDBGComponentReporter):
     cdef shared_ptr[_cDBGComponentReporter[_dBG[{{type_bundle.params}}]]] _s_this
+
+cdef class cDBGUnitigReporter_{{type_bundle.suffix}}(cDBGUnitigReporter):
+    cdef shared_ptr[_cDBGUnitigReporter[_dBG[{{type_bundle.params}}]]] _s_this
+
 
 {% endfor %}
 
