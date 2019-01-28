@@ -41,6 +41,7 @@ def parse_args():
     args.track_cdbg_components = join(args.track_cdbg_components)
     args.track_cdbg_history =    join(args.track_cdbg_history)
     args.save_cdbg =             join(args.save_cdbg)
+    args.track_cdbg_unitig_bp =  join(args.track_cdbg_unitig_bp)
 
     print_boink_intro()
     print_dBG_args(args)
@@ -72,6 +73,16 @@ def main():
         reporter = make_streaming_compactor_reporter(args.track_cdbg_stats,
                                                      compactor)
         processor.Notifier.register_listener(reporter)
+
+    if args.track_cdbg_unitig_bp:
+        if args.unitig_bp_bins is None:
+            bins = [args.ksize, 100, 200, 500, 1000]
+        else:
+            bins = args.unitig_bp_bins
+        unitig_reporter = cDBGUnitigReporter.build(args.track_cdbg_unitig_bp,
+                                                   compactor.cdbg,
+                                                   bins)
+        processor.Notifier.register_listener(unitig_reporter)
 
     writers = []
     if args.save_cdbg:

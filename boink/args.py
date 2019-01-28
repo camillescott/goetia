@@ -236,6 +236,15 @@ def add_save_cDBG_args(parser):
                         type=int,
                         default=10000)
 
+    parser.add_argument('--track-cdbg-unitig-bp',
+                        metavar='FILENAME.csv',
+                        nargs='?',
+                        const='boink.cdbg.unitigs.bp.csv')
+
+    parser.add_argument('--unitig-bp-bins',
+                        nargs='+',
+                        type=int)
+
     parser.add_argument('--validate',
                         metavar='FILENAME.csv',
                         nargs='?',

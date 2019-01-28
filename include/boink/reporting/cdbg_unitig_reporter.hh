@@ -56,6 +56,7 @@ public:
         for (size_t bin = 0; bin < bins.size() - 1; bin++) {
             _output_stream << ", " << bins[bin] << "-" << bins[bin+1];
         }
+        _output_stream << ", " << bins.back() << "-Inf";
 
         _output_stream << std::endl;
     }
@@ -89,6 +90,9 @@ public:
                     bin_sums[bin_num] += seq_len;
                     break;
                 }
+            }
+            if (seq_len > bins.back()) {
+                bins[bins.size() - 1] += seq_len;
             }
         }
 
