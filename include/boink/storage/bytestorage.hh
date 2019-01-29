@@ -90,7 +90,7 @@ class ByteStorage : public Storage {
     friend class ByteStorageGzFileWriter;
     friend class CountGraph;
 protected:
-    unsigned int    _max_count;
+    count_t         _max_count;
     unsigned int    _max_bigcount;
 
     uint32_t _bigcount_spin_lock;
@@ -237,7 +237,7 @@ public:
     // get the count for the given k-mer hash.
     inline const count_t get_count(hashing::hash_t khash) const
     {
-        unsigned int	  max_count	= _max_count;
+        count_t	 max_count	= _max_count;
         count_t  min_count	= max_count; // bound count by max.
 
         // first, get the min count across all tables (standard CMS).

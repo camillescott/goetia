@@ -140,6 +140,10 @@ public:
 
         auto time_elapsed = std::chrono::system_clock::now() - time_start;
         metrics->recompute_time.Observe(std::chrono::duration<double>(time_elapsed).count());
+        _cerr("Finished recomputing components. Elapsed time: " <<
+              std::chrono::duration<double>(time_elapsed).count());
+
+
     }
 };
 

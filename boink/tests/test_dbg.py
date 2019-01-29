@@ -49,6 +49,31 @@ def test_counting_presence(graph, ksize, random_sequence):
         assert graph.get(hashval) == 2
 
 
+@using_ksize([21, 51, 101])
+@counting_backends()
+def test_counting_count(graph, ksize, random_sequence):
+    seq_kmers = list(kmers(random_sequence(), ksize))
+    for iterations in range(10):
+        for kmer in seq_kmers:
+            hashval = graph.hash(kmer)
+            assert graph.get(hashval) == iterations
+            assert graph.get(kmer)    == iterations
+            graph.add(hashval)
+
+
+@using_ksize([21, 51, 101])
+@counting_backends()
+def test_counting_count_add_sequence(graph, ksize, random_sequence):
+    seq = random_sequence()
+    seq_kmers = list(kmers(seq, ksize))
+    for iterations in range(10):
+        for kmer in seq_kmers:
+            hashval = graph.hash(kmer)
+            assert graph.get(hashval) == iterations
+            assert graph.get(kmer)    == iterations
+        graph.add_sequence(seq)
+
+
 @using_ksize([21,151])
 @oxli_backends()
 def test_n_occupied(graph, ksize):

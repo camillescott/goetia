@@ -60,7 +60,7 @@ public:
           sizes(storage::get_n_primes_near_x(N, max_table)),
           N(N),
           max_table(max_table),
-          S(sizes) 
+          S(storage::get_n_primes_near_x(N, max_table)) 
     {
     }
 

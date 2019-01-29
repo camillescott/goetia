@@ -38,6 +38,7 @@ bool median_count_at_least(const std::string&          sequence,
         }
     }
 
+
     // second loop: now check to see if we pass the threshold for each k-mer.
     if (num_cutoff_kmers >= min_req) {
         return true;
@@ -69,6 +70,7 @@ protected:
     std::unique_ptr<dBG<storage::ByteStorage,
                         typename GraphType::shifter_type>> counts;
     unsigned int                                           cutoff;
+    size_t                                                 n_seq_updates;
 
     typedef FileProcessor<NormalizingCompactor<GraphType, ParserType>,
                           ParserType> Base;
@@ -85,7 +87,9 @@ public:
                          uint64_t coarse_interval=DEFAULT_COARSE_INTERVAL)
         : Base(fine_interval, medium_interval, coarse_interval),
           compactor(compactor),
-          graph(compactor->dbg)
+          graph(compactor->dbg),
+          cutoff(cutoff),
+          n_seq_updates(0)
     {
         counts = std::make_unique<dBG<storage::ByteStorage,
                                       typename GraphType::shifter_type>>(graph->K(),
@@ -121,12 +125,12 @@ public:
                       <<  std::endl;
             throw e;
         }
+
+        ++n_seq_updates;
     }
 
     void report() {
-        //std::cerr << "\tcurrently " << compactor->cdbg->n_decision_nodes()
-        //          << " d-nodes, " << compactor->cdbg->n_unitig_nodes()
-        //          << " u-nodes." << std::endl;
+        std::cerr << "\t" << n_seq_updates << " used for cDBG updates." << std::endl;
     }
 
 };

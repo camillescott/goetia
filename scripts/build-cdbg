@@ -73,7 +73,7 @@ def main():
                                                        args.coarse_interval)
     else:
         processor = make_normalizing_compactor(compactor,
-                                               args.cutoff,
+                                               args.normalize,
                                                args.fine_interval,
                                                args.medium_interval,
                                                args.coarse_interval)
