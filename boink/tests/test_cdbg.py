@@ -27,8 +27,9 @@ class TestFindNewSegments:
 
     @using_ksize(15)
     @using_length(100)
+    @pytest.mark.benchmark(group='cdbg-segments')
     def test_fork_core_first(self, ksize, length, graph, compactor, right_fork,
-                                   check_fp):
+                                   check_fp, benchmark):
         (core, branch), pivot = right_fork()
         check_fp()
 
@@ -36,7 +37,8 @@ class TestFindNewSegments:
 
         core_segments = compactor.find_new_segments(core)
         graph.add_sequence(core)
-        branch_segments = compactor.find_new_segments(core[:pivot+1] + branch)
+        branch_segments = benchmark(compactor.find_new_segments, 
+                                    core[:pivot+1] + branch)
         graph.add_sequence(core[:pivot+1] + branch)
 
         # should be NULL - SEG - NULL
@@ -74,8 +76,9 @@ class TestFindNewSegments:
 
     @using_ksize(15)
     @using_length(100)
+    @pytest.mark.benchmark(group='cdbg-segments')
     def test_right_decision_split(self, ksize, graph, compactor, right_fork,
-                                  check_fp):
+                                  check_fp, benchmark):
         (core, branch), pivot = right_fork()
         check_fp()
 
@@ -83,7 +86,7 @@ class TestFindNewSegments:
 
         branch_segments = compactor.find_new_segments(branch)
         graph.add_sequence(branch)
-        core_segments = compactor.find_new_segments(core)
+        core_segments = benchmark(compactor.find_new_segments, core)
         graph.add_sequence(core)
 
         print('Branch Segments')
@@ -121,7 +124,9 @@ class TestFindNewSegments:
 
     @using_ksize(15)
     @using_length(100)
-    def test_merge_no_decisions(self, ksize, length, graph, compactor, linear_path, check_fp):
+    @pytest.mark.benchmark(group='cdbg-segments')
+    def test_merge_no_decisions(self, ksize, length, graph, compactor,
+                                      linear_path, check_fp, benchmark):
         sequence = linear_path()
         left = sequence[:length//2]
         right = sequence[length//2:]
@@ -149,7 +154,7 @@ class TestFindNewSegments:
         merged = left + right
         merged_new = left[-ksize+1:] + right[:ksize-1]
         assert sum(graph.get_counts(merged_new)) == 0
-        merged_segments = compactor.find_new_segments(merged)
+        merged_segments = benchmark(compactor.find_new_segments, merged)
         assert len(merged_segments) == 3
         assert merged_segments[0].is_null
         assert merged_segments[-1].is_null
@@ -162,8 +167,9 @@ class TestFindNewSegments:
 
     @using_ksize(15)
     @using_length(100)
+    @pytest.mark.benchmark(group='cdbg-segments')
     def test_right_decision_on_end(self, ksize, graph, compactor, right_fork,
-                                         check_fp):
+                                         check_fp, benchmark):
         (core, branch), pivot = right_fork()
         check_fp()
 
@@ -183,7 +189,7 @@ class TestFindNewSegments:
         assert len(lower_segments) == 3
         assert lower_segments[1].sequence == lower
 
-        test_segments = compactor.find_new_segments(test)
+        test_segments = benchmark(compactor.find_new_segments, test)
         display_segment_list(test_segments)
 
         assert test_segments[0].is_null
@@ -198,8 +204,9 @@ class TestFindNewSegments:
 
     @using_ksize(15)
     @using_length(100)
+    @pytest.mark.benchmark(group='cdbg-segments')
     def test_left_decision_on_end(self, ksize, length, graph, compactor, left_fork,
-                                        check_fp):
+                                        check_fp, benchmark):
         (core, branch), pivot = left_fork()
         check_fp()
         # pivot is start position of decision k-mer
@@ -218,7 +225,7 @@ class TestFindNewSegments:
         assert len(lower_segments) == 3
         assert lower_segments[1].sequence == lower
 
-        test_segments = compactor.find_new_segments(test)
+        test_segments = benchmark(compactor.find_new_segments, test)
         display_segment_list(test_segments)
 
         assert len(test_segments) == 4
@@ -231,31 +238,35 @@ class TestFindNewSegments:
 
     @using_ksize(15)
     @using_length(20)
+    @pytest.mark.benchmark(group='cdbg-segments')
     def test_contained_loop(self, ksize, length, graph, compactor,
-                                  circular, check_fp):
+                                  circular, check_fp, benchmark):
         sequence = circular()
         check_fp()
 
-        segments = compactor.find_new_segments(sequence)
+        segments = benchmark(compactor.find_new_segments, sequence)
         assert len(segments) == 3
         assert segments[1].left_anchor == graph.hash(sequence[:ksize])
         assert segments[1].right_anchor == graph.hash(sequence[length-1:length+ksize-1])
 
     @using_ksize(15)
     @using_length(50)
-    def test_zero_new_segments(self, ksize, length, graph, compactor, linear_path, check_fp):
+    @pytest.mark.benchmark(group='cdbg-segments')
+    def test_zero_new_segments(self, ksize, length, graph, compactor,
+                                     linear_path, check_fp, benchmark):
         sequence = linear_path()
         check_fp()
 
         compactor.update_sequence(sequence)
-        segments = compactor.find_new_segments(sequence)
+        segments = benchmark(compactor.find_new_segments, sequence)
         assert len(segments) == 0
 
 
     @using_ksize(15)
     @using_length(100)
+    @pytest.mark.benchmark(group='cdbg-segments')
     def test_two_or_more_decisions(self, ksize, length, graph, compactor,
-                                           snp_bubble, check_fp):
+                                           snp_bubble, check_fp, benchmark):
         (wild, mut), pivotL, pivotR = snp_bubble()
         print(wild)
         print(' ' * (pivotL - 1), wild[pivotL:pivotL+ksize])
@@ -269,7 +280,7 @@ class TestFindNewSegments:
         assert compactor.cdbg.n_dnodes == 0
         assert compactor.cdbg.n_unitig_ends == 3
         
-        segments = compactor.find_new_segments(mut)
+        segments = benchmark(compactor.find_new_segments, mut)
         assert len(segments) == 7
 
         assert segments[1].start == 1
@@ -1272,8 +1283,9 @@ class TestBreadthFirstTraversal:
 
     @using_ksize(21)
     @using_length(100)
+    @pytest.mark.benchmark(group='cdbg-traversal')
     def test_single_component_from_left_unode(self, ksize, length, graph, compactor,
-                                                    snp_bubble, check_fp):
+                                                    snp_bubble, check_fp, benchmark):
 
         (wild, snp), L, R = snp_bubble()
         check_fp()
@@ -1282,14 +1294,15 @@ class TestBreadthFirstTraversal:
         compactor.update_sequence(snp)
 
         left_unode_root = compactor.cdbg.query_unode_end(graph.hash(wild[:ksize]))
-        nodes = compactor.cdbg.traverse_breadth_first(left_unode_root)
+        nodes = benchmark(compactor.cdbg.traverse_breadth_first, left_unode_root)
         assert len(nodes) == 6
 
 
     @using_ksize(21)
     @using_length(100)
+    @pytest.mark.benchmark(group='cdbg-traversal')
     def test_single_component_from_right_unode(self, ksize, length, graph, compactor,
-                                                     snp_bubble, check_fp):
+                                                     snp_bubble, check_fp, benchmark):
 
         (wild, snp), L, R = snp_bubble()
         check_fp()
@@ -1298,13 +1311,14 @@ class TestBreadthFirstTraversal:
         compactor.update_sequence(snp)
 
         root = compactor.cdbg.query_unode_end(graph.hash(wild[-ksize:]))
-        nodes = compactor.cdbg.traverse_breadth_first(root)
+        nodes = benchmark(compactor.cdbg.traverse_breadth_first, root)
         assert len(nodes) == 6
 
     @using_ksize(21)
     @using_length(100)
+    @pytest.mark.benchmark(group='cdbg-traversal')
     def test_single_component_from_dnode(self, ksize, length, graph, compactor,
-                                               snp_bubble, check_fp):
+                                               snp_bubble, check_fp, benchmark):
 
         (wild, snp), L, R = snp_bubble()
         check_fp()
@@ -1313,7 +1327,7 @@ class TestBreadthFirstTraversal:
         compactor.update_sequence(snp)
 
         root = compactor.cdbg.query_dnode(graph.hash(wild[L:L+ksize]))
-        nodes = compactor.cdbg.traverse_breadth_first(root)
+        nodes = benchmark(compactor.cdbg.traverse_breadth_first, root)
         assert len(nodes) == 6
 
 
@@ -1321,8 +1335,9 @@ class TestFindConnectedComponents:
 
     @using_ksize(21)
     @using_length(100)
+    @pytest.mark.benchmark(group='cdbg-find-components')
     def test_single_component(self, ksize, length, graph, compactor,
-                                    snp_bubble, check_fp):
+                                    snp_bubble, check_fp, benchmark):
 
         (wild, snp), L, R = snp_bubble()
         check_fp()
@@ -1330,7 +1345,7 @@ class TestFindConnectedComponents:
         compactor.update_sequence(wild)
         compactor.update_sequence(snp)
 
-        components = compactor.cdbg.find_connected_components()
+        components = benchmark(compactor.cdbg.find_connected_components)
         assert len(components) == 1
         print(components)
         assert len(components[0]) == 6
@@ -1340,8 +1355,9 @@ class TestFindConnectedComponents:
     @using_ksize(21)
     @using_length(100)
     @pytest.mark.parametrize('n_components', [10, 50, 100])
+    @pytest.mark.benchmark(group='cdbg-find-components')
     def test_many_components(self, ksize, length, n_components, graph, compactor,
-                                   snp_bubble, check_fp):
+                                   snp_bubble, check_fp, benchmark):
 
         for _ in range(n_components):
             (wild, snp), L, R = snp_bubble()
@@ -1350,5 +1366,5 @@ class TestFindConnectedComponents:
             compactor.update_sequence(wild)
             compactor.update_sequence(snp)
 
-        components = compactor.cdbg.find_connected_components()
+        components = benchmark(compactor.cdbg.find_connected_components)
         assert len(components) == n_components
