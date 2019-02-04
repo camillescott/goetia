@@ -26,6 +26,7 @@ cdef class StreamingCompactor_{{type_bundle.suffix}}(StreamingCompactor_Base):
     cdef shared_ptr[_dBG[{{type_bundle.params}}]] _graph
     cdef public cDBG_{{type_bundle.suffix}} cdbg
     cdef public EventNotifier Notifier
+    cdef Instrumentation instrumentation
 {% endfor %}
 
 cdef object _make_streaming_compactor(dBG_Base graph, Instrumentation inst=*)

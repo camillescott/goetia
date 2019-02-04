@@ -27,14 +27,16 @@ cdef class StreamingCompactor_{{type_bundle.suffix}}(StreamingCompactor_Base):
 
     def __cinit__(self, dBG_{{type_bundle.suffix}} graph, Instrumentation inst=None):
 
-        self.storage_type = graph.storage_type
-        self.shifter_type = graph.shifter_type
+        self.storage_type    = graph.storage_type
+        self.shifter_type    = graph.shifter_type
+        self.instrumentation = inst
         
         cdef shared_ptr[_Registry] registry
-        if inst is not None:
-            registry = inst.registry
+        if inst is None:
+            self.instrumentation = Instrumentation(0, expose=False)
         else:
-            registry = shared_ptr[_Registry](nullptr)
+            self.instrumentation = inst
+        registry = inst.registry
 
         if type(self) is StreamingCompactor_{{type_bundle.suffix}}:
             self._this = make_shared[_StreamingCompactor[_dBG[{{type_bundle.params}}]]](graph._this,
@@ -43,6 +45,13 @@ cdef class StreamingCompactor_{{type_bundle.suffix}}(StreamingCompactor_Base):
             self.graph = graph # for reference counting
             self.cdbg = cDBG_{{type_bundle.suffix}}._wrap(deref(self._this).cdbg)
             self.Notifier = EventNotifier._wrap(<shared_ptr[_EventNotifier]>self._this)
+
+    def reset(self):
+        self.graph.reset()
+        self._this = make_shared[_StreamingCompactor[_dBG[{{type_bundle.params}}]]](self._graph,
+                                                                                    self.instrumentation.registry)
+        self.cdbg = cDBG_{{type_bundle.suffix}}._wrap(deref(self._this).cdbg)
+        self.Notifier = EventNotifier._wrap(<shared_ptr[_EventNotifier]>self._this)
 
     def find_decision_kmers(self, str sequence):
         cdef string _sequence = _bstring(sequence)
