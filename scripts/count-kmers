@@ -4,7 +4,9 @@ import argparse
 import statistics
 import sys
 
-from khmer._oxli.parsing import FastxParser
+#from khmer._oxli.parsing import FastxParser
+import screed
+
 from boink.args import (build_dBG_args, add_pairing_args)
 from boink.dbg import make_dBG
 from boink.processors import make_file_consumer
@@ -34,7 +36,7 @@ def main():
     with open(args.output_filename, 'w') as fp:
         fp.write('name\tmax\tmedian\tstart\tend\tinternal_max\n')
         for filename in args.inputs:
-            for record in FastxParser(filename):
+            for record in screed.open(filename):
                 counts = graph.get_counts(record.sequence)
                 internal = None
                 if len(counts) > 2:
