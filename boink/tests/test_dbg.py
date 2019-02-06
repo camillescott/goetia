@@ -7,6 +7,7 @@
 
 import pytest
 from boink.tests.utils import *
+from boink.processors import make_file_consumer
 
 
 @using_ksize([21, 51, 101])
@@ -118,20 +119,6 @@ def test_hash_bad_length(graph, ksize):
     # hashing of too long should ignore extra sequence
     test_kmer = 'A' * ksize
     assert graph.hash(test_kmer) == graph.hash(test_kmer + 'TTTT')
-
-
-# TODO add test for k-mer too short
-
-'''
-
-def test_hashsizes(graph):
-    # hashsizes method.
-    graph = dbg_type(5)
-    assert (graph.hashsizes() == PRIMES_1m or
-            # CQF allocates some extra slots beyond what you request
-            # exactly how many extra is an implementation detail
-            graph.hashsizes()[0] >= QF_SIZE)
-'''
 
 
 @using_ksize(5)
@@ -260,6 +247,8 @@ def test_get_kmer_hashes(graph):
     assert hashes[2] == graph.hash("GTGCGT")
 
 
+@using_ksize([21, 31, 41])
+@using_length(1000)
 def test_hashing_2(graph, linear_path, ksize):
     ''' Graph.hash uses a stand alone hasher for RollingHashShifters,
     Graph.hashes uses a KmerIterator; check that they give the same
@@ -272,124 +261,24 @@ def test_hashing_2(graph, linear_path, ksize):
         assert u == v
 
 
-'''
-def test_get_min_count(graph):
-    graph = dbg_type(6)
+@using_ksize([21, 31, 41])
+@using_length([50000, 500000])
+@pytest.mark.benchmark(group='dbg-sequence')
+@exact_backends()
+def test_n_unique(graph, random_sequence, ksize, benchmark):
+    sequence = random_sequence()
+    kmer_set = set(kmers(sequence, ksize))
+    benchmark(graph.add_sequence, sequence)
 
-    # master string, 3 k-mers
-    x = "ACGTGCGT"
-
-    graph.add("ACGTGC")  # 3
-    graph.add("ACGTGC")
-    graph.add("ACGTGC")
-
-    graph.add("CGTGCG")  # 1
-
-    graph.add("GTGCGT")  # 2
-    graph.add("GTGCGT")
-
-    counts = graph.get_kmer_counts(x)
-    assert graph.get_min_count(x) == min(counts)
-    assert graph.get_max_count(x) == max(counts)
-    med, _, _ = graph.get_median_count(x)
-    assert med == list(sorted(counts))[len(counts) // 2]
+    assert len(kmer_set) == graph.n_unique
 
 
-def test_trim_on_abundance(graph):
-    graph = dbg_type(6)
+@using_ksize([21, 31, 41])
+@using_length([50000, 500000])
+@pytest.mark.benchmark(group='dbg-sequence')
+def test_get_counts(graph, random_sequence, ksize, benchmark):
+    sequence = random_sequence()
+    graph.add_sequence(sequence)
 
-    x = "ATGGCAGTAGCAGTGAGC"
-    graph.consume(x[:10])
-
-    (y, pos) = graph.trim_on_abundance(x, 1)
-    assert pos == 10
-    assert x[:pos] == y
-
-
-def test_trim_below_abundance(graph):
-    graph = dbg_type(6)
-
-    x = "ATGGCAGTAGCAGTGAGC"
-    x_rc = screed.rc(x)
-    graph.consume(x_rc[:10])
-
-    print(len(x))
-
-    (y, pos) = graph.trim_below_abundance(x, 0)
-    assert pos == len(x) - graph.ksize() + 1
-    assert x[:pos] == y
-
-
-DNA = "AGCTTTTCATTCTGACTGCAACGGGCAATATGTCTCTGTGTGGATTAAAAAAAGAGTGTCTGATAGCAGC"
-
-
-def test_save_load(Tabletype):
-    graph = Tabletype(5)
-    graphype = type(graph)
-    savefile = utils.get_temp_filename('tablesave.out')
-
-    # test add(dna)
-    x = graph.add("ATGGC")
-    z = graph.get("ATGGC")
-    assert z == 1
-
-    graph.save(savefile)
-
-    # should we provide a single load function here? yes, probably. @CTB
-    loaded = ttype.load(savefile)
-
-    z = loaded.get('ATGGC')
-    assert z == 1
-
-
-def test_get_bigcount(Tabletype):
-    # get_bigcount should return false by default
-    tt = Tabletype(12)
-
-    assert not tt.get_use_bigcount()
-
-
-def test_set_bigcount(Tabletype):
-    supports_bigcount = [Countgraph, Counttable, CyclicCounttable]
-    tt = Tabletype(12)
-
-    if type(tt) in supports_bigcount:
-        tt.set_use_bigcount(True)
-
-        for i in range(300):
-            tt.add('G' * 12)
-        assert tt.get('G' * 12) == 300
-
-    else:
-        with pytest.raises(ValueError):
-            tt.set_use_bigcount(True)
-
-
-def test_abund_dist_A(graph):
-    A_filename = utils.get_test_data('all-A.fa')
-
-    graph = dbg_type(4)
-    tracking = Nodegraph(4, 1, 1, primes=PRIMES_1m)
-
-    graph.consume_seqfile(A_filename)
-    dist = graph.abundance_distribution(A_filename, tracking)
-
-    print(dist[:10])
-    assert sum(dist) == 1
-    assert dist[0] == 0
-
-
-def test_abund_dist_A_readparser(graph):
-    A_filename = utils.get_test_data('all-A.fa')
-    rparser = ReadParser(A_filename)
-
-    graph = dbg_type(4)
-    tracking = Nodegraph(4, 1, 1, primes=PRIMES_1m)
-
-    graph.consume_seqfile(A_filename)
-    dist = graph.abundance_distribution(rparser, tracking)
-
-    print(dist[:10])
-    assert sum(dist) == 1
-    assert dist[0] == 0
-'''
+    counts = benchmark(graph.get_counts, sequence)
+    assert all((count > 0 for count in counts))

@@ -50,3 +50,15 @@ def oxli_backends(*args):
                                        indirect=['graph_type'],
                                        ids=lambda t: t)(fixture_func)
     return wrapped
+
+
+def exact_backends(*args):
+    '''
+    Convenience wrapper to reduce verbosity of indirect parametrization
+    '''
+    def wrapped(fixture_func):
+        return pytest.mark.parametrize('graph_type', 
+                                       ['_SparseppSetStorage'],
+                                       indirect=['graph_type'],
+                                       ids=lambda t: t)(fixture_func)
+    return wrapped
