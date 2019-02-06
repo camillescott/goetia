@@ -14,7 +14,7 @@ from debruijnal_enhance_o_tron.fixtures.subgraphs import *
 from debruijnal_enhance_o_tron.fixtures.sequence import *
 from debruijnal_enhance_o_tron.fixtures.collectors import *
 
-from boink.dbg import get_dbg_type
+from boink.dbg import dBG
 
 
 def get_adapter(graph_type):
@@ -24,7 +24,7 @@ def get_adapter(graph_type):
 
 @pytest.fixture(params=['_BitStorage', '_ByteStorage', '_SparseppSetStorage'])
 def graph_type(request, ksize):
-    _graph_type = get_dbg_type(storage=request.param)
+    _graph_type = dBG.get_type(storage=request.param)
 
     class BoinkAdapter(_graph_type):
         '''Basic adapter for boink dBG.
@@ -35,7 +35,6 @@ def graph_type(request, ksize):
             self.size = starting_size
             self.n_tables = n_tables
             self.storage = request.param
-            pass
 
         def __new__(cls, ksize, starting_size, n_tables, *args, **kwargs):
             return super().__new__(cls, ksize, starting_size, n_tables,

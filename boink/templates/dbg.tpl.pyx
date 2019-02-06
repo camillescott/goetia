@@ -19,14 +19,37 @@ from boink.utils cimport (_bstring, _ustring, get_n_primes_near_x,
                           is_str, is_num)
 
 
-cdef class dBG_Base:
+cdef class dBG:
     
     def __cinit__(self, *args, **kwargs):
         self.allocated = False
 
+    @staticmethod
+    def build(int K,
+              uint64_t starting_size,
+              int n_tables,
+              str storage='_BitStorage',
+              str shifter='_DefaultShifter'):
+        {% for type_bundle in type_bundles %}
+        if storage == "{{type_bundle.storage_type}}" and \
+           shifter == "{{type_bundle.shifter_type}}":
+            return dBG_{{type_bundle.suffix}}(K, starting_size, n_tables)
+        {% endfor %}
+        raise TypeError("Invalid Storage or Shifter type: ({0},{1})".format(storage, shifter))
+
+    @staticmethod
+    def get_type(str storage='_BitStorage',
+                 str shifter='_DefaultShifter'):
+        {% for type_bundle in type_bundles %}
+        if storage == "{{type_bundle.storage_type}}" and \
+           shifter == "{{type_bundle.shifter_type}}":
+            return dBG_{{type_bundle.suffix}}
+        {% endfor %}
+        raise TypeError("Invalid Storage or Shifter type: ({0},{1})".format(storage, shifter))
+
 
 {% for type_bundle in type_bundles %}
-cdef class dBG_{{type_bundle.suffix}}(dBG_Base):
+cdef class dBG_{{type_bundle.suffix}}(dBG):
 
     def __cinit__(self, int K, uint64_t starting_size, int n_tables,
                   *args, **kwargs):
@@ -146,26 +169,5 @@ cdef class dBG_{{type_bundle.suffix}}(dBG_Base):
     def reset(self):
         deref(self._this).reset()
 {% endfor %}
-
-cdef object _make_dbg(int K, uint64_t starting_size, int n_tables,
-                      str storage='_BitStorage',
-                      str shifter='_DefaultShifter'):
-    {% for type_bundle in type_bundles %}
-    if storage == "{{type_bundle.storage_type}}" and \
-       shifter == "{{type_bundle.shifter_type}}":
-        return dBG_{{type_bundle.suffix}}(K, starting_size, n_tables)
-    {% endfor %}
-    raise TypeError("Invalid Storage or Shifter type: ({0},{1})".format(storage, shifter))
-
-
-def get_dbg_type(str storage='_BitStorage',
-                 str shifter='_DefaultShifter'):
-    {% for type_bundle in type_bundles %}
-    if storage == "{{type_bundle.storage_type}}" and \
-       shifter == "{{type_bundle.shifter_type}}":
-        return dBG_{{type_bundle.suffix}}
-    {% endfor %}
-    raise TypeError("Invalid Storage or Shifter type: ({0},{1})".format(storage, shifter))
-
 
 {% endblock code %}

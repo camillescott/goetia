@@ -24,6 +24,6 @@ cdef class Assembler_{{type_bundle.suffix}}(Assembler_Base):
     cdef readonly dBG_{{type_bundle.suffix}} Graph
 {% endfor %}
 
-cdef object _make_assembler(dBG_Base graph)
+cdef object _make_assembler(dBG graph)
 
 {% endblock code %}

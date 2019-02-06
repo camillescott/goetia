@@ -125,7 +125,7 @@ cdef class NormalizingCompactor_{{type_bundle.suffix}}(FileProcessor_Base):
 
 {% endfor %}
 
-cdef object _make_file_consumer(dBG_Base graph,
+cdef object _make_file_consumer(dBG graph,
                                 uint64_t fine_interval,
                                 uint64_t medium_interval,
                                 uint64_t coarse_interval):

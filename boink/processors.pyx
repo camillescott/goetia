@@ -48,7 +48,7 @@ cdef class MinimizerProcessor(FileProcessor):
         return deref(self._mp_this).n_reads()
 
 
-def make_file_consumer(dBG_Base graph,
+def make_file_consumer(dBG graph,
                        int fine_interval=DEFAULT_FINE_INTERVAL,
                        int medium_interval=DEFAULT_MEDIUM_INTERVAL,
                        int coarse_interval=DEFAULT_COARSE_INTERVAL):

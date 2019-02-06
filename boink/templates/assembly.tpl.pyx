@@ -79,7 +79,7 @@ cdef class Assembler_{{type_bundle.suffix}}(Assembler_Base):
 {% endfor %}
 
 
-cdef object _make_assembler(dBG_Base graph):
+cdef object _make_assembler(dBG graph):
     {% for type_bundle in type_bundles %}
     if graph.storage_type == "{{type_bundle.storage_type}}" and \
        graph.shifter_type == "{{type_bundle.shifter_type}}":

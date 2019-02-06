@@ -22,7 +22,7 @@ from boink.utils cimport *
 cdef class StreamingCompactor:
     
     @staticmethod
-    def build(dBG_Base graph, Instrumentation instrumentation=None):
+    def build(dBG graph, Instrumentation instrumentation=None):
         {% for type_bundle in type_bundles %}
         if graph.storage_type == "{{type_bundle.storage_type}}" and \
            graph.shifter_type == "{{type_bundle.shifter_type}}":
