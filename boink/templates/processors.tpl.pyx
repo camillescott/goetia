@@ -140,7 +140,7 @@ cdef object _make_file_consumer(dBG_Base graph,
 
     raise TypeError("Invalid dBG type.")
 
-cdef object _make_decision_node_processor(StreamingCompactor_Base compactor,
+cdef object _make_decision_node_processor(StreamingCompactor compactor,
                                           str filename, 
                                           uint64_t fine_interval,
                                           uint64_t medium_interval,
@@ -157,7 +157,7 @@ cdef object _make_decision_node_processor(StreamingCompactor_Base compactor,
 
     raise TypeError("Invalid dBG type.")
 
-cdef object _make_streaming_compactor_processor(StreamingCompactor_Base compactor, 
+cdef object _make_streaming_compactor_processor(StreamingCompactor compactor, 
                                                 uint64_t fine_interval,
                                                 uint64_t medium_interval,
                                                 uint64_t coarse_interval):
@@ -172,7 +172,7 @@ cdef object _make_streaming_compactor_processor(StreamingCompactor_Base compacto
 
     raise TypeError("Invalid dBG type.")
 
-cdef object _make_normalizing_compactor(StreamingCompactor_Base compactor, 
+cdef object _make_normalizing_compactor(StreamingCompactor compactor, 
                                         unsigned int cutoff,
                                         uint64_t fine_interval,
                                         uint64_t medium_interval,

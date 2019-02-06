@@ -57,7 +57,7 @@ cdef class cDBGUnitigReporter_{{type_bundle.suffix}}(cDBGUnitigReporter):
 {% endfor %}
 
 cdef object _make_streaming_compactor_reporter(str output_filename,
-                                               StreamingCompactor_Base compactor)
+                                               StreamingCompactor compactor)
 
 cdef object _make_cdbgwriter_reporter(str output_prefix,
                                       str graph_format,

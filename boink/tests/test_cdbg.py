@@ -11,15 +11,16 @@ import sys
 import pytest
 from boink.tests.utils import *
 
-from boink.compactor import display_segment_list, make_streaming_compactor
+from boink.compactor import display_segment_list, StreamingCompactor
 from boink.prometheus import Instrumentation
 
 
 @pytest.fixture
 def compactor(ksize, graph, graph_type):
     _graph_type, AdapterType = graph_type
-    instrumention = Instrumentation('', expose=False)
-    compactor = make_streaming_compactor(graph, inst=instrumention)
+    instrumentation = Instrumentation('', expose=False)
+    compactor = StreamingCompactor.build(graph,
+                                         instrumentation=instrumentation)
     return compactor
 
 

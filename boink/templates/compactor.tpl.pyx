@@ -19,11 +19,20 @@ from boink.prometheus cimport Instrumentation
 from boink.utils cimport *
 
 
-cdef class StreamingCompactor_Base:
-    pass
+cdef class StreamingCompactor:
+    
+    @staticmethod
+    def build(dBG_Base graph, Instrumentation instrumentation=None):
+        {% for type_bundle in type_bundles %}
+        if graph.storage_type == "{{type_bundle.storage_type}}" and \
+           graph.shifter_type == "{{type_bundle.shifter_type}}":
+            return StreamingCompactor_{{type_bundle.suffix}}(graph, instrumentation)
+        {% endfor %}
+
+        raise TypeError("Invalid dBG type.")
 
 {% for type_bundle in type_bundles %}
-cdef class StreamingCompactor_{{type_bundle.suffix}}(StreamingCompactor_Base):
+cdef class StreamingCompactor_{{type_bundle.suffix}}(StreamingCompactor):
 
     def __cinit__(self, dBG_{{type_bundle.suffix}} graph, Instrumentation inst=None):
 
@@ -106,15 +115,5 @@ cdef class StreamingCompactor_{{type_bundle.suffix}}(StreamingCompactor_Base):
         deref(self._this).reverse_complement_cdbg()
 
 {% endfor %}
-
-
-cdef object _make_streaming_compactor(dBG_Base graph, Instrumentation inst=None):
-    {% for type_bundle in type_bundles %}
-    if graph.storage_type == "{{type_bundle.storage_type}}" and \
-       graph.shifter_type == "{{type_bundle.shifter_type}}":
-        return StreamingCompactor_{{type_bundle.suffix}}(graph, inst)
-    {% endfor %}
-
-    raise TypeError("Invalid dBG type.")
 
 {% endblock code %}

@@ -59,7 +59,7 @@ def make_file_consumer(dBG_Base graph,
                                coarse_interval)
 
 
-def make_decision_node_processor(StreamingCompactor_Base compactor,
+def make_decision_node_processor(StreamingCompactor compactor,
                                  str output_filename,
                                  int fine_interval=DEFAULT_FINE_INTERVAL,
                                  int medium_interval=DEFAULT_MEDIUM_INTERVAL,
@@ -72,7 +72,7 @@ def make_decision_node_processor(StreamingCompactor_Base compactor,
                                          coarse_interval)
 
 
-def make_streaming_compactor_processor(StreamingCompactor_Base compactor,
+def make_streaming_compactor_processor(StreamingCompactor compactor,
                                        int fine_interval=DEFAULT_FINE_INTERVAL,
                                        int medium_interval=DEFAULT_MEDIUM_INTERVAL,
                                        int coarse_interval=DEFAULT_COARSE_INTERVAL):
@@ -82,7 +82,7 @@ def make_streaming_compactor_processor(StreamingCompactor_Base compactor,
                                                medium_interval,
                                                coarse_interval)
 
-def make_normalizing_compactor(StreamingCompactor_Base compactor,
+def make_normalizing_compactor(StreamingCompactor compactor,
                                unsigned int cutoff,
                                int fine_interval=DEFAULT_FINE_INTERVAL,
                                int medium_interval=DEFAULT_MEDIUM_INTERVAL,

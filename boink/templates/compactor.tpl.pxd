@@ -15,13 +15,13 @@ from boink.cdbg cimport *
 from boink.prometheus cimport Instrumentation
 
 
-cdef class StreamingCompactor_Base:
+cdef class StreamingCompactor:
     cdef readonly object storage_type
     cdef readonly object shifter_type
     cdef object graph
 
 {% for type_bundle in type_bundles %}
-cdef class StreamingCompactor_{{type_bundle.suffix}}(StreamingCompactor_Base):
+cdef class StreamingCompactor_{{type_bundle.suffix}}(StreamingCompactor):
     cdef shared_ptr[_StreamingCompactor[_dBG[{{type_bundle.params}}]]] _this
     cdef shared_ptr[_dBG[{{type_bundle.params}}]] _graph
     cdef public cDBG_{{type_bundle.suffix}} cdbg
@@ -29,6 +29,5 @@ cdef class StreamingCompactor_{{type_bundle.suffix}}(StreamingCompactor_Base):
     cdef Instrumentation instrumentation
 {% endfor %}
 
-cdef object _make_streaming_compactor(dBG_Base graph, Instrumentation inst=*)
 
 {% endblock code %}

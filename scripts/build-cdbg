@@ -15,7 +15,7 @@ from boink.args import (build_dBG_args,
                         print_boink_intro,
                         print_prometheus_args)
 from boink.dbg import make_dBG
-from boink.compactor import make_streaming_compactor
+from boink.compactor import StreamingCompactor
 from boink.parsing import grouper
 from boink.processors import (make_streaming_compactor_processor,
                               make_normalizing_compactor)
@@ -65,7 +65,7 @@ def main():
                      args.max_tablesize,
                      args.n_tables,
                      storage='_' + args.storage_type)
-    compactor = make_streaming_compactor(graph, instrumention)
+    compactor = StreamingCompactor.build(graph, instrumention=instrumention)
     if args.normalize is None:
         processor = make_streaming_compactor_processor(compactor,
                                                        args.fine_interval,

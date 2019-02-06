@@ -27,7 +27,7 @@ cdef class StreamingCompactorReporter_Base(SingleFileReporter):
 
 
 cdef class cDBGComponentReporter(SingleFileReporter):
-    pass
+
     @staticmethod
     def build(str output_filename, cDBG_Base cdbg, int sample_size, Instrumentation inst):
         {% for type_bundle in type_bundles %}
@@ -43,7 +43,7 @@ cdef class cDBGComponentReporter(SingleFileReporter):
 
 
 cdef class cDBGUnitigReporter(SingleFileReporter):
-    pass
+
     @staticmethod
     def build(str output_filename, cDBG_Base cdbg, list bins):
         {% for type_bundle in type_bundles %}
@@ -144,7 +144,7 @@ cdef class cDBGUnitigReporter_{{type_bundle.suffix}}(cDBGUnitigReporter):
 {% endfor %}
 
 cdef object _make_streaming_compactor_reporter(str output_filename,
-                                               StreamingCompactor_Base compactor):
+                                               StreamingCompactor compactor):
     {% for type_bundle in type_bundles %}
     if compactor.storage_type == "{{type_bundle.storage_type}}" and \
        compactor.shifter_type == "{{type_bundle.shifter_type}}":
