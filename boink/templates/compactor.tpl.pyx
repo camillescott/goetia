@@ -33,10 +33,10 @@ cdef class StreamingCompactor_{{type_bundle.suffix}}(StreamingCompactor_Base):
         
         cdef shared_ptr[_Registry] registry
         if inst is None:
-            self.instrumentation = Instrumentation(0, expose=False)
+            self.instrumentation = Instrumentation('', expose=False)
         else:
             self.instrumentation = inst
-        registry = inst.registry
+        registry = self.instrumentation.registry
 
         if type(self) is StreamingCompactor_{{type_bundle.suffix}}:
             self._this = make_shared[_StreamingCompactor[_dBG[{{type_bundle.params}}]]](graph._this,
