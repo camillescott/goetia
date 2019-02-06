@@ -20,54 +20,49 @@ from boink.utils cimport _bstring
 
 from boink.processors cimport *
 
-cdef class FileProcessor_Base(FileProcessor):
+
+cdef class FileConsumer(FileProcessor):
     cdef readonly object storage_type
     cdef readonly object shifter_type
 
+
+cdef class DecisionNodeProcessor(FileProcessor):
+    cdef readonly object storage_type
+    cdef readonly object shifter_type
+
+
+cdef class StreamingCompactorProcessor(FileProcessor):
+    cdef readonly object storage_type
+    cdef readonly object shifter_type
+
+
+cdef class NormalizingCompactor(FileProcessor):
+    cdef readonly object storage_type
+    cdef readonly object shifter_type
+
+
 {% for type_bundle in type_bundles %}
 
-cdef class FileConsumer_{{type_bundle.suffix}}(FileProcessor_Base):
+cdef class FileConsumer_{{type_bundle.suffix}}(FileConsumer):
     cdef shared_ptr[_FileConsumer[_dBG[{{type_bundle.params}}]]] _this
 
 
-cdef class DecisionNodeProcessor_{{type_bundle.suffix}}(FileProcessor_Base):
+cdef class DecisionNodeProcessor_{{type_bundle.suffix}}(DecisionNodeProcessor):
     cdef readonly str output_filename
     cdef shared_ptr[_DecisionNodeProcessor[_dBG[{{type_bundle.params}}]]] _this
 
 
-cdef class StreamingCompactorProcessor_{{type_bundle.suffix}}(FileProcessor_Base):
+cdef class StreamingCompactorProcessor_{{type_bundle.suffix}}(StreamingCompactorProcessor):
     cdef readonly str output_filename
     cdef shared_ptr[_StreamingCompactorProcessor[_dBG[{{type_bundle.params}}]]] _this
 
 
-cdef class NormalizingCompactor_{{type_bundle.suffix}}(FileProcessor_Base):
+cdef class NormalizingCompactor_{{type_bundle.suffix}}(NormalizingCompactor):
     cdef readonly str output_filename
     cdef shared_ptr[_NormalizingCompactor[_dBG[{{type_bundle.params}}]]] _this
 
 
 {% endfor %}
-
-cdef object _make_file_consumer(dBG graph,
-                                uint64_t fine_interval,
-                                uint64_t medium_interval,
-                                uint64_t coarse_interval)
-
-cdef object _make_decision_node_processor(StreamingCompactor compactor,
-                                          str filename, 
-                                          uint64_t fine_interval,
-                                          uint64_t medium_interval,
-                                          uint64_t coarse_interval)
-
-cdef object _make_streaming_compactor_processor(StreamingCompactor compactor, 
-                                                uint64_t fine_interval,
-                                                uint64_t medium_interval,
-                                                uint64_t coarse_interval)
-
-cdef object _make_normalizing_compactor(StreamingCompactor compactor, 
-                                        unsigned int cutoff,
-                                        uint64_t fine_interval,
-                                        uint64_t medium_interval,
-                                        uint64_t coarse_interval)
 
 
 {% endblock code %}

@@ -7,7 +7,7 @@
 
 import pytest
 from boink.tests.utils import *
-from boink.processors import make_file_consumer
+from boink.processors import FileConsumer
 
 
 @using_ksize([21, 51, 101])

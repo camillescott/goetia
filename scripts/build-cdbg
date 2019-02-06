@@ -17,8 +17,8 @@ from boink.args import (build_dBG_args,
 from boink.dbg import dBG
 from boink.compactor import StreamingCompactor
 from boink.parsing import grouper
-from boink.processors import (make_streaming_compactor_processor,
-                              make_normalizing_compactor)
+from boink.processors import (StreamingCompactorProcessor,
+                              NormalizingCompactor)
 from boink.prometheus import Instrumentation
 from boink.reporting import (StreamingCompactorReporter,
                              cDBGWriter,
@@ -68,12 +68,12 @@ def main():
     compactor = StreamingCompactor.build(graph,
                                          instrumentation=instrumentation)
     if args.normalize is None:
-        processor = make_streaming_compactor_processor(compactor,
-                                                       args.fine_interval,
-                                                       args.medium_interval,
-                                                       args.coarse_interval)
+        processor = StreamingCompactorProcessor.build(compactor,
+                                                      args.fine_interval,
+                                                      args.medium_interval,
+                                                      args.coarse_interval)
     else:
-        processor = make_normalizing_compactor(compactor,
+        processor = NormalizingCompactor.build(compactor,
                                                args.normalize,
                                                args.fine_interval,
                                                args.medium_interval,

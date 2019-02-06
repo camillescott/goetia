@@ -7,8 +7,8 @@
 
 import pytest
 
-from boink.dbg import make_dBG
-from boink.assembly import make_assembler
+from boink.dbg import dBG
+from boink.assembly import Assembler
 from boink.tests.utils import *
 
 
@@ -16,7 +16,7 @@ from boink.tests.utils import *
 def asm(request, ksize, graph, graph_type):
     _graph_type, AdapterType = graph_type
 
-    return make_assembler(graph)
+    return Assembler.build(graph)
 
 
 def test_assembler_type(asm):

@@ -18,11 +18,21 @@ from boink.dbg cimport *
 from boink.utils cimport *
 
 
-cdef class Assembler_Base:
-    pass
+cdef class Assembler:
+
+    @staticmethod
+    def build(dBG graph):
+        {% for type_bundle in type_bundles %}
+        if graph.storage_type == "{{type_bundle.storage_type}}" and \
+           graph.shifter_type == "{{type_bundle.shifter_type}}":
+            return Assembler_{{type_bundle.suffix}}(graph)
+        {% endfor %}
+
+        raise TypeError("Invalid dBG type.")
+
 
 {% for type_bundle in type_bundles %}
-cdef class Assembler_{{type_bundle.suffix}}(Assembler_Base):
+cdef class Assembler_{{type_bundle.suffix}}(Assembler):
 
     def __cinit__(self, dBG_{{type_bundle.suffix}} graph):
         if type(self) is Assembler_{{type_bundle.suffix}}:
@@ -77,15 +87,5 @@ cdef class Assembler_{{type_bundle.suffix}}(Assembler_Base):
 
         return deref(self._this).to_string(path)
 {% endfor %}
-
-
-cdef object _make_assembler(dBG graph):
-    {% for type_bundle in type_bundles %}
-    if graph.storage_type == "{{type_bundle.storage_type}}" and \
-       graph.shifter_type == "{{type_bundle.shifter_type}}":
-        return Assembler_{{type_bundle.suffix}}(graph)
-    {% endfor %}
-
-    raise TypeError("Invalid dBG type.")
 
 {% endblock code %}

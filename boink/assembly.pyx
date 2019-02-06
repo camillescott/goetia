@@ -14,6 +14,3 @@ from boink.dbg cimport *
 
 include "assembly.tpl.pyx.pxi"
 
-def make_assembler(dBG graph):
-    return _make_assembler(graph)
-

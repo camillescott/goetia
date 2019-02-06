@@ -13,17 +13,16 @@ from libcpp.memory cimport shared_ptr
 from boink.dbg cimport *
 
 
-cdef class Assembler_Base:
+cdef class Assembler:
     cdef readonly object storage_type
     cdef readonly object shifter_type
 
 {% for type_bundle in type_bundles %}
-cdef class Assembler_{{type_bundle.suffix}}(Assembler_Base):
+cdef class Assembler_{{type_bundle.suffix}}(Assembler):
     cdef shared_ptr[_AssemblerMixin[_dBG[{{type_bundle.params}}]]] _this
     cdef shared_ptr[_dBG[{{type_bundle.params}}]] _graph
     cdef readonly dBG_{{type_bundle.suffix}} Graph
 {% endfor %}
 
-cdef object _make_assembler(dBG graph)
 
 {% endblock code %}
