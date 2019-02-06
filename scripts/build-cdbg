@@ -20,8 +20,8 @@ from boink.parsing import grouper
 from boink.processors import (make_streaming_compactor_processor,
                               make_normalizing_compactor)
 from boink.prometheus import Instrumentation
-from boink.reporting import (make_streaming_compactor_reporter,
-                             make_cdbgwriter_reporter,
+from boink.reporting import (StreamingCompactorReporter,
+                             cDBGWriter,
                              cDBGUnitigReporter,
                              cDBGHistoryReporter,
                              cDBGComponentReporter)
@@ -58,14 +58,15 @@ def main():
     args = parse_args()
     os.makedirs(args.results_dir, exist_ok=True)
 
-    instrumention = Instrumentation(args.port,
-                                    expose=(args.port != None))
+    instrumentation = Instrumentation(args.port,
+                                      expose=(args.port != None))
 
     graph = make_dBG(args.ksize,
                      args.max_tablesize,
                      args.n_tables,
                      storage='_' + args.storage_type)
-    compactor = StreamingCompactor.build(graph, instrumention=instrumention)
+    compactor = StreamingCompactor.build(graph,
+                                         instrumentation=instrumentation)
     if args.normalize is None:
         processor = make_streaming_compactor_processor(compactor,
                                                        args.fine_interval,
@@ -79,8 +80,8 @@ def main():
                                                args.coarse_interval)
 
     if args.track_cdbg_stats:
-        reporter = make_streaming_compactor_reporter(args.track_cdbg_stats,
-                                                     compactor)
+        reporter = StreamingCompactorReporter.build(args.track_cdbg_stats,
+                                                    compactor)
         processor.Notifier.register_listener(reporter)
 
     if args.track_cdbg_unitig_bp:
@@ -96,9 +97,9 @@ def main():
     writers = []
     if args.save_cdbg:
         for cdbg_format in args.save_cdbg_format:
-            writer = make_cdbgwriter_reporter(args.save_cdbg + '.' + cdbg_format,
-                                              cdbg_format,
-                                              compactor.cdbg)
+            writer = cDBGWriter.build(args.save_cdbg + '.' + cdbg_format,
+                                      cdbg_format,
+                                      compactor.cdbg)
             processor.Notifier.register_listener(writer)
             writers.append(writer)
 

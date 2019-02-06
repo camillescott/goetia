@@ -22,8 +22,32 @@ from boink.utils cimport _bstring
 from boink.events cimport _EventListener
 
 
-cdef class StreamingCompactorReporter_Base(SingleFileReporter):
-    pass
+cdef class StreamingCompactorReporter(SingleFileReporter):
+
+    @staticmethod
+    def build(str output_filename, StreamingCompactor compactor):
+        {% for type_bundle in type_bundles %}
+        if compactor.storage_type == "{{type_bundle.storage_type}}" and \
+           compactor.shifter_type == "{{type_bundle.shifter_type}}":
+            return StreamingCompactorReporter_{{type_bundle.suffix}}(output_filename, compactor)
+        {% endfor %}
+
+        raise TypeError("Invalid dBG type.")
+
+
+cdef class cDBGWriter(MultiFileReporter):
+
+    @staticmethod
+    def build(str output_prefix,
+              str graph_format,
+              cDBG_Base cdbg):
+        {% for type_bundle in type_bundles %}
+        if cdbg.storage_type == "{{type_bundle.storage_type}}" and \
+           cdbg.shifter_type == "{{type_bundle.shifter_type}}":
+            return cDBGWriter_{{type_bundle.suffix}}(output_prefix, graph_format, cdbg)
+        {% endfor %}
+
+        raise TypeError("Invalid dBG type.")
 
 
 cdef class cDBGComponentReporter(SingleFileReporter):
@@ -59,7 +83,7 @@ cdef class cDBGUnitigReporter(SingleFileReporter):
 
 {% for type_bundle in type_bundles %}
 
-cdef class StreamingCompactorReporter_{{type_bundle.suffix}}(StreamingCompactorReporter_Base):
+cdef class StreamingCompactorReporter_{{type_bundle.suffix}}(StreamingCompactorReporter):
     
     def __cinit__(self, str output_filename, StreamingCompactor_{{type_bundle.suffix}} compactor,
                         *args, **kwargs):
@@ -72,7 +96,8 @@ cdef class StreamingCompactorReporter_{{type_bundle.suffix}}(StreamingCompactorR
         self.storage_type = compactor.storage_type
         self.shifter_type = compactor.shifter_type
 
-cdef class cDBGWriter_{{type_bundle.suffix}}(cDBGWriter_Base):
+
+cdef class cDBGWriter_{{type_bundle.suffix}}(cDBGWriter):
 
     def __cinit__(self, str output_prefix,
                         str graph_format,
@@ -143,24 +168,4 @@ cdef class cDBGUnitigReporter_{{type_bundle.suffix}}(cDBGUnitigReporter):
 
 {% endfor %}
 
-cdef object _make_streaming_compactor_reporter(str output_filename,
-                                               StreamingCompactor compactor):
-    {% for type_bundle in type_bundles %}
-    if compactor.storage_type == "{{type_bundle.storage_type}}" and \
-       compactor.shifter_type == "{{type_bundle.shifter_type}}":
-        return StreamingCompactorReporter_{{type_bundle.suffix}}(output_filename, compactor)
-    {% endfor %}
-
-    raise TypeError("Invalid dBG type.")
-
-cdef object _make_cdbgwriter_reporter(str output_prefix,
-                                      str graph_format,
-                                      cDBG_Base cdbg):
-    {% for type_bundle in type_bundles %}
-    if cdbg.storage_type == "{{type_bundle.storage_type}}" and \
-       cdbg.shifter_type == "{{type_bundle.shifter_type}}":
-        return cDBGWriter_{{type_bundle.suffix}}(output_prefix, graph_format, cdbg)
-    {% endfor %}
-
-    raise TypeError("Invalid dBG type.")
 {% endblock code %}

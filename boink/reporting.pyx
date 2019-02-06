@@ -46,8 +46,3 @@ cdef class cDBGHistoryReporter(SingleFileReporter):
 
 include "reporting.tpl.pyx.pxi"
 
-def make_streaming_compactor_reporter(str output_filename, StreamingCompactor compactor):
-    return _make_streaming_compactor_reporter(output_filename, compactor)
-
-def make_cdbgwriter_reporter(str output_prefix, str graph_format, cDBG_Base cdbg):
-    return _make_cdbgwriter_reporter(output_prefix, graph_format, cdbg)
