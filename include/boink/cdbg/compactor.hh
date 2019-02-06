@@ -947,6 +947,51 @@ public:
     uint8_t _add_neighbor_bundle(NeighborBundle& bundle) {
         return 0;    
     }
+
+    void reverse_complement_cdbg() {
+        for (auto it = cdbg->dnodes_begin(); it != cdbg->dnodes_end(); ++it) {
+            auto rc_sequence = it->second->revcomp();
+            update_sequence(rc_sequence);
+        }
+        for (auto it = cdbg->unodes_begin(); it != cdbg->unodes_end(); ++it) {
+            auto rc_sequence = it->second->revcomp();
+            update_sequence(rc_sequence);
+        }
+
+        std::vector<CompactNode*>  rc_nodes_to_delete;
+        spp::sparse_hash_set<id_t> visited;
+        for (auto it = cdbg->unodes_begin(); it != cdbg->unodes_end(); ++it) {
+            if (visited.count(it->second->node_id)) {
+                continue;
+            }
+            auto rc_node = cdbg->find_rc_cnode(it->second.get());
+            rc_nodes_to_delete.push_back(rc_node);
+            
+            visited.insert(rc_node->node_id);
+            visited.insert(it->second->node_id);
+        }
+
+        for (auto it = cdbg->dnodes_begin(); it != cdbg->dnodes_end(); ++it) {
+            if (visited.count(it->second->node_id)) {
+                continue;
+            }
+            auto rc_node = cdbg->find_rc_cnode(it->second.get());
+            if (rc_node->node_id != it->second->node_id) {
+                rc_nodes_to_delete.push_back(rc_node);
+            }
+
+            visited.insert(rc_node->node_id);
+            visited.insert(it->second->node_id);
+        }
+     
+        for (auto node : rc_nodes_to_delete) {
+            if (node->meta() == DECISION) {
+                cdbg->delete_dnode((DecisionNode*)node);
+            } else {
+                cdbg->delete_unode((UnitigNode*)node);
+            }
+        }
+    }
 };
 
 /*

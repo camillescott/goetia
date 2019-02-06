@@ -268,6 +268,15 @@ public:
         return unitig_end_map.count(end_kmer) != 0;
     }
 
+    CompactNode * find_rc_cnode(CompactNode * root) {
+
+        std::string  rc_seq  = hashing::revcomp(root->sequence.substr(0, this->_K));
+        hash_t        rc_hash = dbg->hash(rc_seq);
+        CompactNode * rc_node = query_cnode(rc_hash);
+
+        return rc_node;
+    }
+
     /* Neighbor-finding and traversal.
      *
      */
@@ -786,6 +795,20 @@ public:
             if (unode != nullptr) {
                 delete_unode(unode);
             }
+        }
+    }
+
+    void delete_dnode(DecisionNode * dnode) {
+        if (dnode != nullptr) {
+            pdebug("Deleting " << *dnode);
+            id_t id = dnode->node_id;
+            metrics->n_dnodes.Decrement();
+            metrics->n_deletes.Increment();
+            
+            decision_nodes.erase(id);
+            dnode = nullptr;
+
+            _n_updates++;
         }
     }
 

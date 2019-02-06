@@ -102,6 +102,9 @@ cdef class StreamingCompactor_{{type_bundle.suffix}}(StreamingCompactor_Base):
 
         return segments
 
+    def reverse_complement_cdbg(self):
+        deref(self._this).reverse_complement_cdbg()
+
 {% endfor %}
 
 

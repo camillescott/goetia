@@ -64,6 +64,8 @@ cdef extern from "boink/cdbg/compactor.hh" namespace "boink::cdbg" nogil:
                                deque[_compact_segment]&, # new segments
                                ) except +ValueError
 
+        void reverse_complement_cdbg()
+
 
 
 
