@@ -108,7 +108,6 @@ class StreamingCompactor : public CompactorMixin<GraphType>,
 protected:
 
     uint64_t _minimizer_window_size;
-    bool _cdbg_external;
 
 public:
 

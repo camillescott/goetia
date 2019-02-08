@@ -48,10 +48,16 @@
 
 #include <fstream>
 #include <string>
-#include <utility>  
+#include <utility>
+
+// ignore warnings from seqan
+#pragma GCC diagnostic push 
+#pragma GCC diagnostic ignored "-Wall"
 #include "seqan/seq_io.h" // IWYU pragma: keep
 #include "seqan/sequence.h" // IWYU pragma: keep
 #include "seqan/stream.h" // IWYU pragma: keep
+#pragma GCC diagnostic pop
+
 
 namespace boink
 {

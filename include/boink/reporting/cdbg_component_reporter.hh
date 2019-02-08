@@ -38,13 +38,18 @@ private:
 
     prometheus::Family<prometheus::Summary>&   recompute_time_family;
     prometheus::Summary::Quantiles             recompute_time_quantiles;
-
-    prometheus::Family<prometheus::Gauge>&     component_counts_family;
     
 public:
     using Quantile = prometheus::detail::CKMSQuantiles::Quantile;
 
     prometheus::Summary&                       recompute_time;
+
+private:
+
+    prometheus::Family<prometheus::Gauge>&     component_counts_family;
+
+public:
+
     prometheus::Gauge&                         n_components;
     prometheus::Gauge&                         max_component_size;
     prometheus::Gauge&                         min_component_size;

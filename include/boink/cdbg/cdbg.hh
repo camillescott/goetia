@@ -19,8 +19,13 @@
 #include <sstream>
 #include <tuple>
 
+// save diagnostic state
+#pragma GCC diagnostic push 
+#pragma GCC diagnostic ignored "-Wsign-compare"
+#pragma GCC diagnostic ignored "-Wchar-subscripts"
 #include "gfakluge/gfakluge.hpp"
 #include "sparsepp/spp.h"
+#pragma GCC diagnostic pop
 
 #include "boink/assembly.hh"
 #include "boink/boink.hh"

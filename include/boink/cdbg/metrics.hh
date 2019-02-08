@@ -28,7 +28,6 @@ private:
 
     std::shared_ptr<prometheus::Registry>        pr_registry;
     prometheus::Family<prometheus::Gauge>&   node_gauge_family;
-    prometheus::Family<prometheus::Counter>& op_counter_family;
 
 public:
 
@@ -40,6 +39,12 @@ public:
     prometheus::Gauge&                      n_loops;
     prometheus::Gauge&                      n_dnodes;
     prometheus::Gauge&                      n_unodes;
+
+private:
+
+    prometheus::Family<prometheus::Counter>& op_counter_family;
+
+public:
 
     prometheus::Counter&                    n_splits;
     prometheus::Counter&                    n_merges;
