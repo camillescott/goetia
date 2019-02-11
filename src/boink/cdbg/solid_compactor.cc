@@ -1,4 +1,4 @@
-/* boink/cdbg/cdbg.cc
+/* boink/cdbg/solid_compactor.cc
  *
  * Copyright (C) 2018 Camille Scott
  * All rights reserved.
@@ -7,4 +7,4 @@
  * of the MIT license.  See the LICENSE file for details.
  */
 
-#include "boink/cdbg/cdbg.hh"
+#include "boink/cdbg/solid_compactor.hh"

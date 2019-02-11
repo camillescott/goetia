@@ -31,6 +31,26 @@ cdef class StreamingCompactor:
 
         raise TypeError("Invalid dBG type.")
 
+
+cdef class SolidStreamingCompactor:
+    
+    @staticmethod
+    def build(StreamingCompactor compactor,
+              unsigned int       min_abund,
+              uint64_t           abund_table_size,
+              uint16_t           n_abund_tables):
+        {% for type_bundle in type_bundles %}
+        if compactor.storage_type == "{{type_bundle.storage_type}}" and \
+           compactor.shifter_type == "{{type_bundle.shifter_type}}":
+            return SolidStreamingCompactor_{{type_bundle.suffix}}(compactor,
+                                                                  min_abund,
+                                                                  abund_table_size,
+                                                                  n_abund_tables)
+        {% endfor %}
+
+        raise TypeError("Invalid dBG/StreamingCompactor type.")
+
+
 {% for type_bundle in type_bundles %}
 cdef class StreamingCompactor_{{type_bundle.suffix}}(StreamingCompactor):
 
@@ -113,6 +133,35 @@ cdef class StreamingCompactor_{{type_bundle.suffix}}(StreamingCompactor):
 
     def reverse_complement_cdbg(self):
         deref(self._this).reverse_complement_cdbg()
+
+
+cdef class SolidStreamingCompactor_{{type_bundle.suffix}}(SolidStreamingCompactor):
+
+    def __cinit__(self, StreamingCompactor_{{type_bundle.suffix}} compactor,
+                        unsigned int                              min_abund,
+                        uint64_t                                  abund_table_size,
+                        uint16_t                                  n_abund_tables):
+
+        self.storage_type = compactor.storage_type
+        self.shifter_type = compactor.shifter_type
+
+        if type(self) is SolidStreamingCompactor_{{type_bundle.suffix}}:
+            self._this = make_shared[_SolidStreamingCompactor[_dBG[{{type_bundle.params}}]]](compactor._this,
+                                                                                             min_abund,
+                                                                                             abund_table_size,
+                                                                                             n_abund_tables)
+            self.Notifier = EventNotifier._wrap(<shared_ptr[_EventNotifier]>self._this)
+
+    def update_sequence(self, str sequence):
+        cdef string _sequence = _bstring(sequence)
+        deref(self._this).update_sequence(_sequence)
+
+    def find_solid_segments(self, str sequence):
+        cdef string _sequence = _bstring(sequence)
+        cdef vector[pair[size_t, size_t]] segments = deref(self._this).find_solid_segments(_sequence)
+        return segments
+
+
 
 {% endfor %}
 

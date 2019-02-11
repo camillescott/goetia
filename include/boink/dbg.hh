@@ -318,27 +318,31 @@ public:
         return fp;
     }
 
-    uint64_t add_sequence(const std::string& sequence,
-                          std::vector<hashing::hash_t>& kmer_hashes,
-                          std::vector<bool>& is_new) {
+    uint64_t add_sequence(const std::string&             sequence,
+                          std::vector<hashing::hash_t>&  kmer_hashes,
+                          std::vector<storage::count_t>& counts) {
         hashing::KmerIterator<HashShifter> iter(sequence, _K);
 
-        uint64_t n_consumed = 0;
-        size_t pos = 0;
-        bool kmer_consumed;
+        uint64_t         n_consumed = 0;
+        size_t           pos = 0;
+        storage::count_t count;
+        bool             kmer_new;
         while(!iter.done()) {
             hashing::hash_t h = iter.next();
-            kmer_consumed = add(h);
+            kmer_new          = add(h);
+            count             = get(h);
+
             kmer_hashes.push_back(h);
-            is_new.push_back(kmer_consumed);
-            n_consumed += kmer_consumed;
+            counts.push_back(count);
+
+            n_consumed += kmer_new;
             ++pos;
         }
 
         return n_consumed;
     }
 
-    uint64_t add_sequence(const std::string& sequence,
+    uint64_t add_sequence(const std::string&         sequence,
                           std::set<hashing::hash_t>& new_kmers) {
         hashing::KmerIterator<HashShifter> iter(sequence, _K);
 
@@ -382,6 +386,20 @@ public:
         }
 
         return counts;
+    }
+
+    void get_counts(const std::string&             sequence,
+                    std::vector<storage::count_t>& counts,
+                    std::vector<hashing::hash_t>&  hashes) {
+
+        hashing::KmerIterator<HashShifter> iter(sequence, _K);
+
+        while(!iter.done()) {
+            hashing::hash_t h = iter.next();
+            storage::count_t result = get(h);
+            counts.push_back(result);
+            hashes.push_back(h);
+        }
     }
 
     void get_counts(const std::string& sequence,

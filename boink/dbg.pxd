@@ -77,7 +77,7 @@ cdef extern from "boink/dbg.hh" namespace "boink" nogil:
 
         uint64_t add_sequence(string&,
                               vector[hash_t]&,
-                              vector[bool]&) except +ValueError
+                              vector[count_t]&) except +ValueError
         uint64_t add_sequence(string&) except +ValueError
         vector[count_t] get_counts(string&) except +ValueError
         void get_counts(string&,

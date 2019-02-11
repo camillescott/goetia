@@ -10,6 +10,7 @@ cimport cython
 from libcpp.deque cimport deque
 from libcpp.memory cimport shared_ptr
 from libcpp.set cimport set
+from libcpp.utility cimport pair
 from libcpp.vector cimport vector
 from libc.stdint cimport uint8_t, uint32_t, uint64_t
 
@@ -66,8 +67,20 @@ cdef extern from "boink/cdbg/compactor.hh" namespace "boink::cdbg" nogil:
 
         void reverse_complement_cdbg()
 
+cdef extern from "boink/cdbg/solid_compactor.hh" namespace "boink::cdbg" nogil:
 
+    cdef cppclass _SolidStreamingCompactor "boink::cdbg::SolidStreamingCompactor" [GraphType] (_EventNotifier):
+        shared_ptr[_StreamingCompactor[GraphType]] compactor
+        shared_ptr[GraphType]                      dbg
+        unsigned int                               min_abund
 
+        _SolidStreamingCompactor(shared_ptr[_StreamingCompactor[GraphType]],
+                                 unsigned int,
+                                 uint64_t,
+                                 uint16_t)
+
+        void update_sequence(const string&)
+        vector[pair[size_t, size_t]] find_solid_segments(const string&)
 
 
 include "compactor.tpl.pxd.pxi"

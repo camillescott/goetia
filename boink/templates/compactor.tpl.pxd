@@ -20,6 +20,12 @@ cdef class StreamingCompactor:
     cdef readonly object shifter_type
     cdef object graph
 
+cdef class SolidStreamingCompactor:
+    cdef readonly object    storage_type
+    cdef readonly object    shifter_type
+    cdef StreamingCompactor compactor
+    cdef dBG                abund_filter
+
 {% for type_bundle in type_bundles %}
 cdef class StreamingCompactor_{{type_bundle.suffix}}(StreamingCompactor):
     cdef shared_ptr[_StreamingCompactor[_dBG[{{type_bundle.params}}]]] _this
@@ -27,6 +33,10 @@ cdef class StreamingCompactor_{{type_bundle.suffix}}(StreamingCompactor):
     cdef public cDBG_{{type_bundle.suffix}} cdbg
     cdef public EventNotifier Notifier
     cdef Instrumentation instrumentation
+
+cdef class SolidStreamingCompactor_{{type_bundle.suffix}}(SolidStreamingCompactor):
+    cdef shared_ptr[_SolidStreamingCompactor[_dBG[{{type_bundle.params}}]]] _this
+    cdef public EventNotifier Notifier
 {% endfor %}
 
 
