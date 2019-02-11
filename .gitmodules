@@ -10,3 +10,6 @@
 [submodule "include/prometheus-cpp"]
 	path = third-party/prometheus-cpp
 	url = https://github.com/jupp0r/prometheus-cpp
+[submodule "third-party/bbhash"]
+	path = third-party/bbhash
+	url = https://github.com/rizkg/BBHash
