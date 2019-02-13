@@ -444,6 +444,45 @@ public:
 
 };
 
+/*
+template <class StorageType,
+          class HashShifter>
+class PdBG : public hashing::KmerClient,
+             public std::enable_shared_from_this<PdBG<StorageType, HashShifter>> {
+
+    std::vector<StorageType*> partitions;
+
+public:
+
+    std::vector<uint64_t> partition_table_sizes;
+    const uint64_t        partition_n_tables;
+    const uint64_t        partition_max_table;
+ 
+    explicit PdBG(uint16_t K,
+                  std::vector<uint64_t> ukhs_hashes,
+                  uint64_t partition_max_table = 1000,
+                  uint16_t partition_n_tables  = 4)
+        : KmerClient(K),
+          ukhs_hashes(ukhs_hashes),
+          partition_table_sizes(storage::get_n_primes_near_x(partition_n_tables,
+                                                             partition_max_table)),
+          partition_n_tables(partition_n_tables),
+          partition_max_table(partition_max_table)
+    {
+        for (size_t i = 0; i < ukhs_hashes.size(); ++i) {
+            partitions.push_back(new StorageType(partition_table_sizes));
+        }
+
+        bphf = std::make_unique<boophf_t>(ukhs_hashes.size(), ukhs_hashes, 1, 1.0);
+    }
+
+    ~PdBG() {
+        for (size_t i = 0; i < ukhs_hashes.size(); ++i) {
+            delete partitions[0];
+        }
+    }
+};
+*/
 
 }
 

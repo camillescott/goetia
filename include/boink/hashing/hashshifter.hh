@@ -46,8 +46,8 @@ public:
             load(sequence);
             derived().init();
         } else {
-            for (auto c : sequence) {
-                shift_right(c);
+            for (auto cit = sequence.begin(); cit < sequence.begin() + _K; ++cit) {
+                shift_right(*cit);
             }
         }
         return get();
@@ -61,6 +61,26 @@ public:
         } else {
             for (uint16_t i = 0; i < this->_K; ++i) {
                 shift_right(sequence[i]);
+            }
+        }
+        return get();
+    }
+
+    template <typename Iterator>
+    hash_t set_cursor(const Iterator begin, const Iterator end) {
+        Iterator _begin = begin, _end = end;
+        if(!initialized) {
+            load(begin, end);
+            derived().init();
+        } else {
+            uint16_t l = 0;
+            while (_begin != _end) {
+                shift_right(*_begin);
+                ++_begin;
+                ++l;
+            }
+            if (l < this->_K) {
+                throw SequenceLengthException("Sequence must at least length K");
             }
         }
         return get();
@@ -115,6 +135,9 @@ public:
     }
 
     hash_t hash(const std::string& sequence) const {
+        if (sequence.length() < _K) {
+            throw SequenceLengthException("Sequence must at least length K");
+        }
         _validate(sequence);
         return derived()._hash(sequence);
     }
@@ -196,6 +219,17 @@ protected:
         symbol_deque.clear();
         for (uint16_t i = 0; i < this->_K; ++i) {
             symbol_deque.push_back(sequence[i]);
+        }
+    }
+
+    template <typename Iterator>
+    void load(const Iterator begin, const Iterator end) {
+        symbol_deque.clear();
+        symbol_deque.insert(symbol_deque.begin(),
+                            begin,
+                            end);
+        if (symbol_deque.size() != this->_K) {
+            throw SequenceLengthException("Sequence must be length K");
         }
     }
 

@@ -231,10 +231,22 @@ class BoinkReporter(ConsoleReporter):
 '''
 
 
-def get_gcc_includes(source, include_directives, pkg):
+def get_gcc_includes(source, include_directives, pkg, ignore=[]):
     from sh import gcc
-    return flatten([ln.strip('\ ').split() for ln in \
-                   gcc(*include_directives, '-std=c++14', '-MM', source).split('\n')])[1:]
+    includes =  flatten([ln.strip('\ ').split() for ln in \
+                        gcc(*include_directives, '-std=c++14', '-MM', '-MG', source).split('\n')])[1:]
+    if not ignore:
+        return includes
+
+    result = []
+    for include in includes:
+        skip = False
+        for path in ignore:
+            if include.startswith(path):
+                skip = True
+        if skip is False:
+            result.append(include)
+    return result
 
 
 def get_cpp_includes(filename, include_dir):

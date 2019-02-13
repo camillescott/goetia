@@ -86,6 +86,11 @@ public:
         return get();
     }
 
+    hash_t update_right(const char c) {
+        hasher.update(this->symbol_deque.front(), c);
+        return get();
+    }
+
     std::vector<shift_t> gather_left() {
         std::vector<shift_t> hashes;
         const char back = this->symbol_deque.back();
@@ -108,11 +113,6 @@ public:
             hasher.reverse_update(front, symbol);
         }
         return hashes;
-    }
-
-    hash_t update_right(const char c) {
-        hasher.update(this->symbol_deque.front(), c);
-        return get();
     }
 };
 

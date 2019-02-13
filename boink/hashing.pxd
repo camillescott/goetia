@@ -54,7 +54,7 @@ cdef extern from "boink/hashing/hashshifter.hh" namespace "boink::hashing" nogil
         uint16_t K()
 
     cdef cppclass _HashShifter "boink::hashing::HashShifter" [D,A] (_KmerClient):
-        hash_t set_cursor(string&)
+        hash_t set_cursor(string&) except +ValueError
         string get_cursor()
         void get_cursor(deque[char]&)
 
@@ -62,7 +62,7 @@ cdef extern from "boink/hashing/hashshifter.hh" namespace "boink::hashing" nogil
         bool is_valid(const string&)
 
         hash_t get()
-        hash_t hash(string&)
+        hash_t hash(string&) except +ValueError
 
         vector[shift_t] gather_left()
         vector[shift_t] gather_right()
@@ -76,6 +76,23 @@ cdef extern from "boink/hashing/rollinghashshifter.hh" namespace "boink::hashing
         _RollingHashShifter(uint16_t)
 
     ctypedef _RollingHashShifter[_DNA_SIMPLE] _DefaultShifter "boink::hashing::DefaultShifter"
+
+
+cdef extern from "boink/hashing/ukhs.hh" namespace "boink::hashing" nogil:
+    cdef cppclass _UKHS "boink::hashing::UKHS" [A] (_RollingHashShifter[A]):
+        _UKHS(uint16_t,
+              uint16_t,
+              vector[string]&) except +ValueError
+
+        bool query(uint64_t, uint64_t&)
+        uint64_t get_partition() const
+        uint64_t get_unikmer()   const
+        void reset_unikmer() except +ValueError
+
+        vector[uint64_t] get_hashes()
+
+    ctypedef _UKHS[_DNA_SIMPLE] _UKHSShifter "boink::hashing::UKHSShifter"
+
 
 cdef extern from "boink/hashing/kmeriterator.hh" namespace "boink::hashing" nogil:
     cdef cppclass _KmerIterator "boink::hashing::KmerIterator" [S] (_KmerClient):

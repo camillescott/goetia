@@ -1,4 +1,4 @@
-/* rollinghashshifter.cc
+/* ukhs.cc
  *
  * Copyright (C) 2018 Camille Scott
  * All rights reserved.
@@ -7,4 +7,4 @@
  * of the MIT license.  See the LICENSE file for details.
  */
 
-#include "boink/hashing/rollinghashshifter.hh"
+#include "boink/hashing/ukhs.hh"

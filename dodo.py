@@ -522,7 +522,11 @@ def task_create_build_dirs():
                       (clean_folder, [os.path.join('build', 'lib')])]}
 
 
+@create_after('cythonize')
 def task_build():
+    cy_includes = ['-I'+sysconfig.get_config_var('INCLUDEPY')] 
+    cy_ignore   = [sysconfig.get_config_var('INCLUDEPY')]
+
     for mod, mod_file in MOD_FILES.items():
         source = os.path.join(PKG,
                               '{0}.cpp'.format(mod))
@@ -531,7 +535,10 @@ def task_build():
 
         yield {'name':     target,
                'title':    title_with_actions,
-               'file_dep': [source],
+               'file_dep': [source] + get_gcc_includes(source,
+                                                       INCLUDES + cy_includes,
+                                                       PKG,
+                                                       ignore=cy_ignore),
                'task_dep': ['libboink'],
                'targets':  [target, cp_target],
                'actions':  ['mkdir -p ' + lib_dir(),

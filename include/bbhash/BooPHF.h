@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <math.h>
+#include <cstdint>
 
 #include <array>
 #include <unordered_map>
@@ -18,14 +19,14 @@
 #include <memory> // for make_shared
 #include <unistd.h>
 
-
+using std::uint64_t;
 
 namespace boomphf {
 
 	
-	inline u_int64_t printPt( pthread_t pt) {
+	inline uint64_t printPt( pthread_t pt) {
 	  unsigned char *ptc = (unsigned char*)(void*)(&pt);
-		u_int64_t res =0;
+		uint64_t res =0;
 	  for (size_t i=0; i<sizeof(pt); i++) {
 		  res+= (unsigned)(ptc[i]);
 	  }
@@ -39,7 +40,7 @@ namespace boomphf {
 ////////////////////////////////////////////////////////////////
 
 	
-	// iterator from disk file of u_int64_t with buffered read,   todo template
+	// iterator from disk file of uint64_t with buffered read,   todo template
 	template <typename basetype>
 	class bfile_iterator : public std::iterator<std::forward_iterator_tag, basetype>{
 	public:
