@@ -32,6 +32,10 @@ def test():
     _test()
 
 
+def unikmer_valid(uint64_t partition):
+    return partition != UINT64_MAX
+
+
 cdef class RollingHashShifter:
 
     cdef unique_ptr[_DefaultShifter] _this
@@ -65,40 +69,49 @@ cdef class RollingHashShifter:
         return deref(self._this).get()
 
 
-cdef class UKHS:
+cdef class UKHShifter:
 
-    cdef unique_ptr[_UKHSShifter] _this
+    cdef unique_ptr[_DefaultUKHSShifter] _this
 
     def __cinit__(self, uint16_t W, uint16_t K):
-        cdef vector[string] kmers = UKHS.get_kmers(W, K)
-        self._this.reset(new _UKHSShifter(W, K, kmers))
+        cdef vector[string] kmers = UKHShifter.get_kmers(W, K)
+        self._this.reset(new _DefaultUKHSShifter(W, K, kmers))
 
     def set_cursor(self, str sequence):
         deref(self._this).set_cursor(_bstring(sequence))
-        deref(self._this).reset_unikmer()
+        deref(self._this).reset_unikmers()
 
-    @property
-    def partition(self):
-        return deref(self._this).get_partition()
-
-    @property
-    def unikmer(self):
-        return deref(self._this).get_unikmer()
+    def unikmers(self):
+        cdef vector[pair[_Unikmer, int64_t]] un = deref(self._this).get_unikmers()
+        cdef list result = []
+        cdef pair[_Unikmer, int64_t] u
+        for u in un:
+            result.append((u.first.hash, u.first.partition))
+        return result
 
     @property
     def hashvalue(self):
         return deref(self._this).get()
 
     def query(self, uint64_t uhash):
-        cdef uint64_t pos = UINT64_MAX
-        cdef bool exists = deref(self._this).query(uhash, pos)
+        cdef _Unikmer unikmer = _Unikmer(uhash)
+        cdef bool exists = deref(self._this).query(unikmer)
         if exists is True:
-            return pos
+            return unikmer.partition
         else:
             return None
 
     def hash(self, str kmer):
         return deref(self._this).hash(_bstring(kmer))
+
+    def find_unikmers(self, str sequence):
+        self.set_cursor(sequence)
+        cdef bytes _sequence = _bstring(sequence[deref(self._this).K():])
+        cdef char c
+        print(_sequence)
+        for c in _sequence:
+            deref(self._this).shift_right(c)
+        return self.unikmers()
 
     @property
     def hashes(self):

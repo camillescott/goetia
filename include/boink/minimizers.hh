@@ -38,7 +38,6 @@ public:
     RollingMin(int64_t window_size)
         : _window_size(window_size),
           _current_index(0) {
-
     }
 
     void reset() {
@@ -52,6 +51,7 @@ public:
     }
 
     value_type update(T new_value) {
+
 
         if (!indices.empty() && 
             (indices.front() <= _current_index - _window_size)) {
@@ -92,12 +92,17 @@ public:
     std::pair<T, int64_t> update(T new_value) {
         auto current = RollingMin<T>::update(new_value);
         if (this->_current_index >= this->_window_size) {
-            if (minimizers.empty() ||
-                current != minimizers.back()) {
+            //if (minimizers.empty() ||
+            //    current != minimizers.back()) {
+
                 minimizers.push_back(current);
-            }
+            //}
         }
         return current;
+    }
+
+    const size_t size() const {
+        return minimizers.size();
     }
 
     std::vector<value_type> get_minimizers() const {

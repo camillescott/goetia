@@ -7,7 +7,7 @@
 
 import pytest
 from boink.tests.utils import *
-from boink.hashing import RollingHashShifter, UKHS
+from boink.hashing import RollingHashShifter, UKHShifter, unikmer_valid
 
 
 def test_rolling_hash():
@@ -54,3 +54,28 @@ def test_rolling_setcursor_seq_too_large():
     hasher.set_cursor(seq)
     assert hasher.hashvalue == 13194817695400542713
 
+
+def test_ukhs_unikmer():
+    W = 27
+    K = 7
+    seq = 'TCACCTGTGTTGTGCTACTTGCGGCGC'
+
+    hasher = UKHShifter(27, 7)
+    assert hasher.hash(seq) == 13194817695400542713
+    hasher.set_cursor(seq)
+    assert hasher.hashvalue == 13194817695400542713
+    assert hasher.unikmers() == [(5571541805904823269, 1681)]
+
+
+@using_length(1000)
+def test_ukhs_long_list(linear_path):
+    W = 27
+    K = 7
+    seq = linear_path()
+
+    hasher = UKHShifter(27, 7)
+    U = hasher.find_unikmers(seq)
+    for u, p in U:
+        assert unikmer_valid(p)
+    print(U)
+    print(len(U))

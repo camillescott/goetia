@@ -5,7 +5,7 @@
 # This software may be modified and distributed under the terms
 # of the MIT license.  See the LICENSE file for details.
 
-from libc.stdint cimport uint8_t, uint16_t, uint64_t
+from libc.stdint cimport uint8_t, uint16_t, uint64_t, int64_t
 
 from libcpp cimport bool
 from libcpp.deque cimport deque
@@ -79,19 +79,26 @@ cdef extern from "boink/hashing/rollinghashshifter.hh" namespace "boink::hashing
 
 
 cdef extern from "boink/hashing/ukhs.hh" namespace "boink::hashing" nogil:
-    cdef cppclass _UKHS "boink::hashing::UKHS" [A] (_RollingHashShifter[A]):
-        _UKHS(uint16_t,
-              uint16_t,
-              vector[string]&) except +ValueError
+    cdef cppclass _Unikmer "boink::hashing::Unikmer":
+        hash_t hash
+        uint64_t partition
 
-        bool query(uint64_t, uint64_t&)
-        uint64_t get_partition() const
-        uint64_t get_unikmer()   const
-        void reset_unikmer() except +ValueError
+        _Unikmer()
+        _Unikmer(hash_t)
+        _Unikmer(hash_t, uint64_t)
+
+    cdef cppclass _UKHShifter "boink::hashing::UKHShifter" [A] (_HashShifter[_UKHShifter[A], A]):
+        _UKHShifter(uint16_t,
+                    uint16_t,
+                    vector[string]&) except +ValueError
+
+        bool query(_Unikmer&)
+        vector[pair[_Unikmer, int64_t]] get_unikmers()   const
+        void reset_unikmers() except +ValueError
 
         vector[uint64_t] get_hashes()
 
-    ctypedef _UKHS[_DNA_SIMPLE] _UKHSShifter "boink::hashing::UKHSShifter"
+    ctypedef _UKHShifter[_DNA_SIMPLE] _DefaultUKHSShifter "boink::hashing::DefaultUKHSShifter"
 
 
 cdef extern from "boink/hashing/kmeriterator.hh" namespace "boink::hashing" nogil:

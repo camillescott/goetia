@@ -579,7 +579,6 @@ public:
         if (unode->meta() == TRIVIAL) {
             unitig_end_map.insert(make_pair(old_unode_end, unode));
         }
-        auto id = unode->node_id;
 
         assert(unode != nullptr); 
 

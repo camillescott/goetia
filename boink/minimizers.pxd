@@ -21,6 +21,7 @@ cdef extern from "boink/minimizers.hh" namespace "boink" nogil:
 
         void reset()
         const int64_t window_size()
+        const size_t size() const
 
         pair[T, int64_t] update(T)
 
