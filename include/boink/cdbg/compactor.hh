@@ -198,7 +198,7 @@ public:
                              decision_neighbors);
 
         for (auto h : hashes) {
-            dbg->add(h);
+            dbg->insert(h);
         }
     }
 
@@ -280,11 +280,11 @@ public:
         std::vector<CompactorType> segment_shifters;
         while(!kmers.done()) {
             cur_hash = kmers.next();
-            cur_new = this->dbg->get(cur_hash) == 0;
+            cur_new = this->dbg->query(cur_hash) == 0;
             cur_seen = new_kmers.count(cur_hash);
             hashes.push_back(cur_hash);
 #ifdef DEBUG_CPTR
-            counts.push_back(this->dbg->get(cur_hash));
+            counts.push_back(this->dbg->query(cur_hash));
 #endif
 
             if(cur_new && !cur_seen) {

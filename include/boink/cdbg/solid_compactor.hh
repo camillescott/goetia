@@ -75,7 +75,7 @@ public:
     std::vector<std::pair<size_t, size_t>> find_solid_segments(const std::string& sequence) {
         std::vector<hash_t>  hashes;
         std::vector<count_t> counts;
-        abund_filter->add_sequence(sequence, hashes, counts);
+        abund_filter->insert_sequence(sequence, hashes, counts);
 
         std::vector<std::pair<size_t, size_t>> segments;
         auto hashes_iter = hashes.begin();

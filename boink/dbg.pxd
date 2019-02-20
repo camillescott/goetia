@@ -58,11 +58,14 @@ cdef extern from "boink/dbg.hh" namespace "boink" nogil:
         ctypedef HashShifter shifter_type
 
         hash_t hash(string&) except +ValueError
-        bool add(hash_t)
-        bool add(string&) except +ValueError
 
-        count_t get(string&) except +ValueError
-        count_t get(hash_t)
+        const bool insert(hash_t) 
+        const bool insert(string&) except +ValueError
+        const count_t insert_and_query(hash_t) 
+        const count_t insert_and_query(string&) except +ValueError
+
+        const count_t query(string&) except +ValueError
+        const count_t query(hash_t)
 
         const string suffix(const string&)
         const string prefix(const string&)
@@ -75,12 +78,12 @@ cdef extern from "boink/dbg.hh" namespace "boink" nogil:
         vector[shift_t] right_neighbors(const string&)
         pair[vector[shift_t], vector[shift_t]] neighbors(const string&)
 
-        uint64_t add_sequence(string&,
+        uint64_t insert_sequence(string&,
                               vector[hash_t]&,
                               vector[count_t]&) except +ValueError
-        uint64_t add_sequence(string&) except +ValueError
-        vector[count_t] get_counts(string&) except +ValueError
-        void get_counts(string&,
+        uint64_t insert_sequence(string&) except +ValueError
+        vector[count_t] query_sequence(string&) except +ValueError
+        void query_sequence(string&,
                         vector[count_t]&,
                         vector[hash_t]&,
                         set[hash_t]&) except +ValueError

@@ -37,10 +37,10 @@ class TestFindNewSegments:
         print('INPUTS', core, core[:pivot+1], ' ' * (pivot + 1) + branch, sep='\n\n')
 
         core_segments = compactor.find_new_segments(core)
-        graph.add_sequence(core)
+        graph.insert_sequence(core)
         branch_segments = benchmark(compactor.find_new_segments, 
                                     core[:pivot+1] + branch)
-        graph.add_sequence(core[:pivot+1] + branch)
+        graph.insert_sequence(core[:pivot+1] + branch)
 
         # should be NULL - SEG - NULL
         print('Core Segments')
@@ -86,9 +86,9 @@ class TestFindNewSegments:
         print('INPUTS', core, core[:pivot+1], ' ' * (pivot + 1) + branch, sep='\n\n')
 
         branch_segments = compactor.find_new_segments(branch)
-        graph.add_sequence(branch)
+        graph.insert_sequence(branch)
         core_segments = benchmark(compactor.find_new_segments, core)
-        graph.add_sequence(core)
+        graph.insert_sequence(core)
 
         print('Branch Segments')
         display_segment_list(branch_segments)
@@ -136,9 +136,9 @@ class TestFindNewSegments:
         check_fp()
 
         left_segments = compactor.find_new_segments(left)
-        graph.add_sequence(left)
+        graph.insert_sequence(left)
         right_segments = compactor.find_new_segments(right)
-        graph.add_sequence(right)
+        graph.insert_sequence(right)
 
         assert len(left_segments) == 3
         assert left_segments[0].is_null
@@ -154,7 +154,7 @@ class TestFindNewSegments:
 
         merged = left + right
         merged_new = left[-ksize+1:] + right[:ksize-1]
-        assert sum(graph.get_counts(merged_new)) == 0
+        assert sum(graph.query_sequence(merged_new)) == 0
         merged_segments = benchmark(compactor.find_new_segments, merged)
         assert len(merged_segments) == 3
         assert merged_segments[0].is_null
@@ -181,9 +181,9 @@ class TestFindNewSegments:
         test = core[:pivot+ksize]
 
         upper_segments = compactor.find_new_segments(upper)
-        graph.add_sequence(upper)
+        graph.insert_sequence(upper)
         lower_segments = compactor.find_new_segments(lower)
-        graph.add_sequence(lower)
+        graph.insert_sequence(lower)
 
         assert len(upper_segments) == 3
         assert upper_segments[1].sequence == upper
@@ -217,9 +217,9 @@ class TestFindNewSegments:
         test = core[pivot:]
 
         upper_segments = compactor.find_new_segments(upper)
-        graph.add_sequence(upper)
+        graph.insert_sequence(upper)
         lower_segments = compactor.find_new_segments(lower)
-        graph.add_sequence(lower)
+        graph.insert_sequence(lower)
 
         assert len(upper_segments) == 3
         assert upper_segments[1].sequence == upper

@@ -44,9 +44,12 @@ def graph_type(request, ksize):
             if not isinstance(item, int) and len(item) < self.ksize:
                 raise ValueError()
             elif isinstance(item, int) or len(item) == self.ksize:
-                return super().add(item)
+                return super().insert(item)
             else:
-                return self.add_sequence(item)
+                return self.insert_sequence(item)
+
+        def get(self, item):
+            return self.query(item)
 
         def reset(self):
             super().reset()

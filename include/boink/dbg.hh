@@ -14,6 +14,7 @@
 #include "boink/assembly.hh"
 #include "boink/hashing/hashing_types.hh"
 #include "boink/hashing/kmeriterator.hh"
+#include "boink/hashing/ukhs.hh"
 #include "boink/storage/storage.hh"
 
 #include <algorithm>
@@ -94,45 +95,47 @@ public:
     /**
      * @Synopsis  Hash the k-mer and add it to the dBG storage.
      *
-     * @Param kmer The k-mer string.
+     * @Param kmer The k-mer.
      *
      * @Returns   True if the k-mer was new; fals otherwise.
      */
-    bool add(const std::string& kmer) {
-        return S.add(hash(kmer));
+    inline const bool insert(const std::string& kmer) {
+        return S.insert(hash(kmer));
+    }
+
+    inline const bool insert(hashing::hash_t kmer) {
+        return S.insert(kmer);
     }
 
     /**
-     * @Synopsis  Add the given hash value to the dBG storage.
+     * @Synopsis  Add the given hash value to the dBG storage and
+     *            return its count after inserion.
      *
-     * @Param kmer The hash value.
+     * @Param kmer The k-mer.
      *
-     * @Returns   True if the hash value was new; false otherwise.
+     * @Returns    Post-insertion count of the element.
      */
-    bool add(hashing::hash_t kmer) {
-        return S.add(kmer);
+    inline const storage::count_t insert_and_query(hashing::hash_t kmer) {
+        return S.insert_and_query(kmer);
+    }
+
+    inline const storage::count_t insert_and_query(const std::string& kmer) {
+        return S.insert_and_query(hash(kmer));
     }
 
     /**
      * @Synopsis  Gets the count of the given k-mer.
      *
-     * @Param kmer String with the k-mer.
+     * @Param kmer The k-mer.
      *
      * @Returns   The count of the k-mer.
      */
-    const storage::count_t get(const std::string& kmer) const {
-        return S.get_count(hash(kmer));
+    const storage::count_t query(const std::string& kmer) const {
+        return S.query(hash(kmer));
     }
 
-    /**
-     * @Synopsis  Gets the count of the given hash value.
-     *
-     * @Param hashed_kmer The hash value.
-     *
-     * @Returns   The count of the hash value.
-     */
-    const storage::count_t get(hashing::hash_t hashed_kmer) const {
-        return S.get_count(hashed_kmer);
+    const storage::count_t query(hashing::hash_t hashed_kmer) const {
+        return S.query(hashed_kmer);
     }
 
     /**
@@ -318,7 +321,7 @@ public:
         return fp;
     }
 
-    uint64_t add_sequence(const std::string&             sequence,
+    uint64_t insert_sequence(const std::string&          sequence,
                           std::vector<hashing::hash_t>&  kmer_hashes,
                           std::vector<storage::count_t>& counts) {
         hashing::KmerIterator<HashShifter> iter(sequence, _K);
@@ -326,23 +329,21 @@ public:
         uint64_t         n_consumed = 0;
         size_t           pos = 0;
         storage::count_t count;
-        bool             kmer_new;
         while(!iter.done()) {
             hashing::hash_t h = iter.next();
-            kmer_new          = add(h);
-            count             = get(h);
+            count             = insert_and_query(h);
 
             kmer_hashes.push_back(h);
             counts.push_back(count);
 
-            n_consumed += kmer_new;
+            n_consumed += (count == 1);
             ++pos;
         }
 
         return n_consumed;
     }
 
-    uint64_t add_sequence(const std::string&         sequence,
+    uint64_t insert_sequence(const std::string&      sequence,
                           std::set<hashing::hash_t>& new_kmers) {
         hashing::KmerIterator<HashShifter> iter(sequence, _K);
 
@@ -351,72 +352,86 @@ public:
         bool is_new;
         while(!iter.done()) {
             hashing::hash_t h = iter.next();
-            is_new = add(h);
-            if (is_new) {
+            if(insert(h)) {
                 new_kmers.insert(h);
+                n_consumed += is_new;
             }
-            n_consumed += is_new;
             ++pos;
         }
 
         return n_consumed;
     }
 
-    uint64_t add_sequence(const std::string& sequence) {
+    uint64_t insert_sequence(const std::string& sequence) {
         hashing::KmerIterator<HashShifter> iter(sequence, _K);
 
         uint64_t n_consumed = 0;
         while(!iter.done()) {
             hashing::hash_t h = iter.next();
-            n_consumed += add(h);
+            n_consumed += insert(h);
         }
 
         return n_consumed;
     }
 
-    std::vector<storage::count_t> get_counts(const std::string& sequence) {
+    std::vector<storage::count_t> insert_and_query_sequence(const std::string& sequence) {
         hashing::KmerIterator<HashShifter> iter(sequence, _K);
         std::vector<storage::count_t> counts(sequence.length() - _K + 1);
 
         size_t pos = 0;
         while(!iter.done()) {
             hashing::hash_t h = iter.next();
-            counts[pos] = get(h);
+            counts[pos] = S.insert_and_query(h);
             ++pos;
         }
 
         return counts;
     }
 
-    void get_counts(const std::string&             sequence,
-                    std::vector<storage::count_t>& counts,
-                    std::vector<hashing::hash_t>&  hashes) {
+    std::vector<storage::count_t> query_sequence(const std::string& sequence) {
+
+        hashing::KmerIterator<HashShifter> iter(sequence, _K);
+        std::vector<storage::count_t> counts(sequence.length() - _K + 1);
+
+        size_t pos = 0;
+        while(!iter.done()) {
+            hashing::hash_t h = iter.next();
+            counts[pos] = query(h);
+            ++pos;
+        }
+
+        return counts;
+    }
+
+    void query_sequence(const std::string&             sequence,
+                        std::vector<storage::count_t>& counts,
+                        std::vector<hashing::hash_t>&  hashes) {
 
         hashing::KmerIterator<HashShifter> iter(sequence, _K);
 
         while(!iter.done()) {
             hashing::hash_t h = iter.next();
-            storage::count_t result = get(h);
+            storage::count_t result = query(h);
             counts.push_back(result);
             hashes.push_back(h);
         }
     }
 
-    void get_counts(const std::string& sequence,
-                    std::vector<storage::count_t>& counts,
-                    std::vector<hashing::hash_t>& hashes,
-                    std::set<hashing::hash_t>& new_hashes) {
+    void query_sequence(const std::string& sequence,
+                        std::vector<storage::count_t>& counts,
+                        std::vector<hashing::hash_t>& hashes,
+                        std::set<hashing::hash_t>& new_hashes) {
 
         hashing::KmerIterator<HashShifter> iter(sequence, _K);
 
         while(!iter.done()) {
             hashing::hash_t h = iter.next();
-            storage::count_t result = get(h);
-            counts.push_back(result);
-            hashes.push_back(h);
+            auto result = query(h);
             if (result == 0) {
                 new_hashes.insert(h);
             }
+            counts.push_back(result);
+            hashes.push_back(h);
         }
     }
 
@@ -445,41 +460,65 @@ public:
 };
 
 /*
-template <class StorageType,
-          class HashShifter>
+template <class StorageType>
 class PdBG : public hashing::KmerClient,
-             public std::enable_shared_from_this<PdBG<StorageType, HashShifter>> {
+             public std::enable_shared_from_this<PdBG<StorageType>> {
 
     std::vector<StorageType*> partitions;
+    DefaultUKHSShifter        shifter;
 
 public:
+
+    typedef DefaultUKHSShifter                                    shifter_type;
+	typedef AssemblerMixin<PdBG<StorageType, DefaultUKHSShifter>> assembler_type;
+    typedef hashing::KmerIterator<DefaultUKHSShifter>             kmer_iter_type;
 
     std::vector<uint64_t> partition_table_sizes;
     const uint64_t        partition_n_tables;
     const uint64_t        partition_max_table;
+    const uint16_t        partition_K;
  
     explicit PdBG(uint16_t K,
-                  std::vector<uint64_t> ukhs_hashes,
+                  uint16_t partition_K,
                   uint64_t partition_max_table = 1000,
                   uint16_t partition_n_tables  = 4)
-        : KmerClient(K),
-          ukhs_hashes(ukhs_hashes),
-          partition_table_sizes(storage::get_n_primes_near_x(partition_n_tables,
-                                                             partition_max_table)),
-          partition_n_tables(partition_n_tables),
-          partition_max_table(partition_max_table)
+        : KmerClient            (K),
+          shifter               (K, partition_K),
+          partition_table_sizes (storage::get_n_primes_near_x(partition_n_tables,
+                                                              partition_max_table)),
+          partition_n_tables    (partition_n_tables),
+          partition_max_table   (partition_max_table),
+          partition_K           (partition_K)
     {
-        for (size_t i = 0; i < ukhs_hashes.size(); ++i) {
-            partitions.push_back(new StorageType(partition_table_sizes));
-        }
 
-        bphf = std::make_unique<boophf_t>(ukhs_hashes.size(), ukhs_hashes, 1, 1.0);
+
     }
 
     ~PdBG() {
-        for (size_t i = 0; i < ukhs_hashes.size(); ++i) {
+        for (size_t i = 0; i < shifter.n_ukhs_hashes(); ++i) {
             delete partitions[0];
         }
+    }
+
+    std::shared_ptr<PdBG<StorageType>> clone() const {
+        return std::make_shared<PdBG<StorageType>>(_K, partition_K,
+                                                   partition_max_table, partition_n_tables);
+    }
+
+    hashing::hash_t hash(const std::string& kmer) const {
+        return shifter.hash(kmer);
+    }
+
+    hashing::hash_t hash(const char * kmer) const {
+        return shifter.hash(kmer);
+    }
+
+    bool insert(const std::string& kmer) {
+        return S.insert(hash(kmer));
+    }
+
+    bool insert(hashing::hash_t kmer) {
+        return S.insert(kmer);
     }
 };
 */

@@ -152,10 +152,7 @@ public:
     // but, in the interests of efficiency and thread safety,
     // tests and mutations are being blended here against conventional
     // software engineering wisdom.
-    inline
-    count_t 
-    test_and_set_bits( hashing::hash_t khash )
-    {
+    inline const bool insert( hashing::hash_t khash ) {
         bool is_new_kmer = false;
 
         for (size_t i = 0; i < _n_tables; i++) {
@@ -181,13 +178,15 @@ public:
         return 0; // kmer already seen
     } // test_and_set_bits
 
-    inline bool add(hashing::hash_t khash)
+    inline const count_t insert_and_query(hashing::hash_t khash)
     {
-        return test_and_set_bits(khash);
+        insert(khash);
+        // presence filter, should always be 1 after insert
+        return 1;
     }
 
     // get the count for the given k-mer hash.
-    inline const count_t get_count(hashing::hash_t khash) const
+    inline const count_t query(hashing::hash_t khash) const
     {
         for (size_t i = 0; i < _n_tables; i++) {
             uint64_t bin = khash % _tablesizes[i];

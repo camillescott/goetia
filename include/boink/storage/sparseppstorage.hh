@@ -60,21 +60,22 @@ public:
 
     }
 
-    count_t test_and_set_bits(hashing::hash_t h) {
-        count_t count = get_count(h);
-        add(h);
-        return count;
+    const bool insert(hashing::hash_t h) {
+        auto result = _store.insert(h);
+        // the second in the returned pair reports that the insert
+        // took place ie the hash was new
+        return result.second;
     }
 
-    bool add(hashing::hash_t h) {
-        count_t count = get_count(h);
-        _store.insert(h);
-        return count == 0;
+    const count_t insert_and_query(hashing::hash_t h) {
+        insert(h);
+        return 1; // its a presence filter so always 1 after insert
     }
 
-    const count_t get_count(hashing::hash_t h) const {
+    const count_t query(hashing::hash_t h) const {
         return _store.count(h);
     }
+
 
     byte_t ** get_raw_tables() {
         return nullptr;

@@ -18,16 +18,16 @@ def test_presence(graph, ksize, random_sequence):
 
         hashval = graph.hash(kmer)
 
-        assert graph.get(kmer) == 0
-        assert graph.get(hashval) == 0
+        assert graph.query(kmer) == 0
+        assert graph.query(hashval) == 0
 
-        graph.add(kmer)
-        assert graph.get(kmer) == 1
-        assert graph.get(hashval) == 1
+        graph.insert(kmer)
+        assert graph.query(kmer) == 1
+        assert graph.query(hashval) == 1
 
-        graph.add(kmer)
-        assert graph.get(kmer) == 1
-        assert graph.get(hashval) == 1
+        graph.insert(kmer)
+        assert graph.query(kmer) == 1
+        assert graph.query(hashval) == 1
 
 
 @using_ksize([21, 51, 101])
@@ -38,16 +38,16 @@ def test_counting_presence(graph, ksize, random_sequence):
 
         hashval = graph.hash(kmer)
 
-        assert graph.get(kmer) == 0
-        assert graph.get(hashval) == 0
+        assert graph.query(kmer) == 0
+        assert graph.query(hashval) == 0
 
-        graph.add(kmer)
-        assert graph.get(kmer) == 1
-        assert graph.get(hashval) == 1
+        graph.insert(kmer)
+        assert graph.query(kmer) == 1
+        assert graph.query(hashval) == 1
 
-        graph.add(kmer)
-        assert graph.get(kmer) == 2
-        assert graph.get(hashval) == 2
+        graph.insert(kmer)
+        assert graph.query(kmer) == 2
+        assert graph.query(hashval) == 2
 
 
 @using_ksize([21, 51, 101])
@@ -57,9 +57,9 @@ def test_counting_count(graph, ksize, random_sequence):
     for iterations in range(10):
         for kmer in seq_kmers:
             hashval = graph.hash(kmer)
-            assert graph.get(hashval) == iterations
-            assert graph.get(kmer)    == iterations
-            graph.add(hashval)
+            assert graph.query(hashval) == iterations
+            assert graph.query(kmer)    == iterations
+            graph.insert(hashval)
 
 
 @using_ksize([21, 51, 101])
@@ -70,9 +70,9 @@ def test_counting_count_add_sequence(graph, ksize, random_sequence):
     for iterations in range(10):
         for kmer in seq_kmers:
             hashval = graph.hash(kmer)
-            assert graph.get(hashval) == iterations
-            assert graph.get(kmer)    == iterations
-        graph.add_sequence(seq)
+            assert graph.query(hashval) == iterations
+            assert graph.query(kmer)    == iterations
+        graph.insert_sequence(seq)
 
 
 @using_ksize([21,151])
@@ -84,11 +84,11 @@ def test_n_occupied(graph, ksize):
     assert graph.n_occupied == 0
     assert graph.n_unique == 0
 
-    graph.add(kmer)
+    graph.insert(kmer)
     assert graph.n_occupied == 1
     assert graph.n_unique == 1
 
-    graph.add(kmer)
+    graph.insert(kmer)
     # the CQF implementation we use can use more than one slot to represent
     # counts for a single kmer
     if not "QF" in graph.__class__.__name__:
@@ -103,6 +103,7 @@ def test_get_ksize(graph, ksize):
     assert graph.K == ksize
 
 
+@using_ksize(5)
 def test_hash(graph, ksize):
     # hashing of strings -> numbers.
     x = graph.hash("ATGGC")
@@ -125,20 +126,20 @@ def test_hash_bad_length(graph, ksize):
 def test_add_hashval(graph, ksize):
     # test add(hashval)
     x = graph.hash("ATGGC")
-    y = graph.add(x)
+    y = graph.insert(x)
     assert y
 
-    z = graph.get(x)
+    z = graph.query(x)
     assert z == 1
 
 
 @using_ksize(5)
 def test_add_dna_kmer(graph, ksize):
     # test add(dna)
-    x = graph.add("ATGGC")
+    x = graph.insert("ATGGC")
     assert x
 
-    z = graph.get("ATGGC")
+    z = graph.query("ATGGC")
     assert z == 1
 
 
@@ -146,28 +147,19 @@ def test_add_dna_kmer(graph, ksize):
 def test_get_hashval(graph, ksize):
     # test get(hashval)
     hashval = graph.hash("ATGGC")
-    graph.add(hashval)
+    graph.insert(hashval)
 
-    z = graph.get(hashval)
+    z = graph.query(hashval)
     assert z == 1
-
-
-@using_ksize(5)
-def test_get_hashval_rc(graph, ksize):
-    # fw and rc should NOT be the same on this table
-    hashval = graph.hash("ATGC")
-    rc = graph.hash("GCAT")
-
-    assert hashval != rc
 
 
 @using_ksize(5)
 def test_get_dna_kmer(graph, ksize):
     # test get(dna)
     hashval = graph.hash("ATGGC")
-    graph.add(hashval)
+    graph.insert(hashval)
 
-    z = graph.get("ATGGC")
+    z = graph.query("ATGGC")
     assert z == 1
 
 
@@ -175,18 +167,18 @@ def test_get_dna_kmer(graph, ksize):
 def test_get_bad_dna_kmer(graph, ksize):
     # test get(dna) with bad dna; should fail
     with pytest.raises(ValueError):
-        graph.get("ATYGC")
+        graph.query("ATYGC")
 
 
 @using_ksize(5)
 def test_add_sequence_and_report(graph, ksize):
     x = "ATGCCGATGCA"
-    _, report = graph.add_sequence_and_report(x)
+    _, report = graph.insert_sequence_and_report(x)
     num_kmers = sum(report)
     assert num_kmers == len(x) - ksize + 1   # num k-mers consumed
 
     for start in range(len(x) - 6 + 1):
-        assert graph.get(x[start:start + 6]) == 1
+        assert graph.query(x[start:start + 6]) == 1
 
 
 @using_ksize(5)
@@ -195,7 +187,7 @@ def test_add_sequence_bad_dna(graph):
     # consistent...
     x = "ATGCCGNTGCA"
     with pytest.raises(ValueError):
-        num_kmers = graph.add_sequence(x)
+        num_kmers = graph.insert_sequence(x)
 
 
 @using_ksize(10)
@@ -203,25 +195,25 @@ def test_add_sequence_short(graph):
     # raise error on too short when consume is run
     x = "ATGCA"
     with pytest.raises(ValueError):
-        graph.add_sequence(x)
+        graph.insert_sequence(x)
 
 
 @using_ksize(6)
 def test_get_kmer_counts(graph):
-    graph.add_sequence("AAAAAA")
-    counts = graph.get_counts("AAAAAA")
+    graph.insert_sequence("AAAAAA")
+    counts = graph.query_sequence("AAAAAA")
     print(counts)
     assert len(counts) == 1
     assert counts[0] == 1
 
-    graph.add_sequence("AAAAAA")
-    counts = graph.get_counts("AAAAAA")
+    graph.insert_sequence("AAAAAA")
+    counts = graph.query_sequence("AAAAAA")
     print(counts)
     assert len(counts) == 1
     assert counts[0] >= 1
 
-    graph.add_sequence("AAAAAT")
-    counts = graph.get_counts("AAAAAAT")
+    graph.insert_sequence("AAAAAT")
+    counts = graph.query_sequence("AAAAAAT")
     print(counts)
     assert len(counts) == 2
     assert counts[0] >= 1
@@ -233,7 +225,7 @@ def test_consume_alias(graph_type, ksize):
     _, graph_type = graph_type
     g1 = graph_type(ksize, 1000, 4)
     g2 = graph_type(ksize, 1000, 4)
-    assert g1.add_sequence('A' * (ksize + 1)) == \
+    assert g1.insert_sequence('A' * (ksize + 1)) == \
            g2.consume('A' * (ksize + 1))
 
 
@@ -268,7 +260,7 @@ def test_hashing_2(graph, linear_path, ksize):
 def test_n_unique(graph, random_sequence, ksize, benchmark):
     sequence = random_sequence()
     kmer_set = set(kmers(sequence, ksize))
-    benchmark(graph.add_sequence, sequence)
+    benchmark(graph.insert_sequence, sequence)
 
     assert len(kmer_set) == graph.n_unique
 
@@ -278,7 +270,7 @@ def test_n_unique(graph, random_sequence, ksize, benchmark):
 @pytest.mark.benchmark(group='dbg-sequence')
 def test_get_counts(graph, random_sequence, ksize, benchmark):
     sequence = random_sequence()
-    graph.add_sequence(sequence)
+    graph.insert_sequence(sequence)
 
-    counts = benchmark(graph.get_counts, sequence)
+    counts = benchmark(graph.query_sequence, sequence)
     assert all((count > 0 for count in counts))

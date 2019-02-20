@@ -586,12 +586,6 @@ public:
                << (ext_dir == DIR_LEFT ? std::string(" to LEFT") : std::string(" to RIGHT"))
                << " adding " << new_sequence << " to"
                << std::endl << *unode);
-#ifdef DEBUG_CDBG
-        //auto counts = dbg->get_counts(unode->sequence);
-        //for (auto c : counts) {
-        //    assert(c > 0);
-        //}
-#endif
         
         if (ext_dir == DIR_RIGHT) {
             unode->extend_right(new_unode_end, new_sequence);
@@ -881,7 +875,7 @@ public:
 
         for (auto it = unitig_nodes.begin(); it != unitig_nodes.end(); ++it) {
             auto unode = it->second.get();
-            auto counts = dbg->get_counts(unode->sequence);
+            auto counts = dbg->query_sequence(unode->sequence);
             if (std::any_of(counts.begin(), counts.end(), 
                             [](storage::count_t i){ return i == 0; })) {
                 out << unode->node_id << ";"

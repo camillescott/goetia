@@ -172,14 +172,7 @@ public:
     void save(std::string, uint16_t);
     void load(std::string, uint16_t&);
 
-    inline count_t test_and_set_bits(hashing::hash_t khash)
-    {
-        count_t x = get_count(khash);
-        add(khash);
-        return !x;
-    }
-
-    inline bool add(hashing::hash_t khash)
+    inline const bool insert(hashing::hash_t khash)
     {
         bool is_new_kmer = false;
         unsigned int  n_full	  = 0;
@@ -234,8 +227,17 @@ public:
         return is_new_kmer;
     }
 
+    inline const count_t insert_and_query(hashing::hash_t khash)
+    {
+        if (insert(khash)) {
+            // was new, return 1 from insert
+            return 1;
+        }
+        return query(khash);
+    }
+
     // get the count for the given k-mer hash.
-    inline const count_t get_count(hashing::hash_t khash) const
+    inline const count_t query(hashing::hash_t khash) const
     {
         count_t	 max_count	= _max_count;
         count_t  min_count	= max_count; // bound count by max.

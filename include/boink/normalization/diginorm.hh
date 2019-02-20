@@ -33,7 +33,7 @@ bool median_count_at_least(const std::string&          sequence,
     // if we have enough high-abundance k-mers to indicate success.
     for (unsigned int i = 0; i < min_req; ++i) {
         hash_t kmer = kmers->next();
-        if (counts->get(kmer) >= cutoff) {
+        if (counts->query(kmer) >= cutoff) {
             ++num_cutoff_kmers;
         }
     }
@@ -45,7 +45,7 @@ bool median_count_at_least(const std::string&          sequence,
     }
     while(!kmers->done()) {
         hash_t kmer = kmers->next();
-        if (counts->get(kmer) >= cutoff) {
+        if (counts->query(kmer) >= cutoff) {
             ++num_cutoff_kmers;
             if (num_cutoff_kmers >= min_req) {
                 return true;
@@ -103,7 +103,7 @@ public:
             return;
         }
 
-        counts->add_sequence(read.cleaned_seq);
+        counts->insert_sequence(read.cleaned_seq);
 
         try {
             compactor->update_sequence(read.cleaned_seq);

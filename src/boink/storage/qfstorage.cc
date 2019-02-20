@@ -80,15 +80,19 @@ QFStorage::~QFStorage()
 }
 
 
-bool QFStorage::add(hash_t khash)
-{
-    bool is_new = get_count(khash) == 0;
+const bool QFStorage::insert(hash_t khash) {
+    bool is_new = query(khash) == 0;
     qf_insert(cf.get(), khash % cf->range, 0, 1);
     return is_new;
 }
 
+const count_t QFStorage::insert_and_query(hash_t khash) {
+    qf_insert(cf.get(), khash % cf->range, 0, 1);
+    return query(khash);
+}
 
-const count_t QFStorage::get_count(hash_t khash) const 
+
+const count_t QFStorage::query(hash_t khash) const 
 {
     return qf_count_key_value(cf.get(), khash % cf->range, 0);
 }

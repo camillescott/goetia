@@ -173,6 +173,10 @@ public:
         return ukhs_hashes;
     }
 
+    const size_t n_ukhs_hashes() const {
+        return ukhs_hashes.size();
+    }
+
     bool query(Unikmer& unikmer) {
         unikmer.partition = ULLONG_MAX;
         unikmer.partition = bphf->lookup(unikmer.hash);

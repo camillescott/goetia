@@ -102,9 +102,11 @@ public:
     virtual void load(std::string, uint16_t&) = 0;
     virtual const uint64_t n_occupied() const = 0;
     virtual const uint64_t n_unique_kmers() const = 0;
-    virtual count_t test_and_set_bits( hashing::hash_t khash ) = 0;
-    virtual bool add(hashing::hash_t khash) = 0;
-    virtual const count_t get_count(hashing::hash_t khash) const = 0;
+
+    virtual const bool    insert(hashing::hash_t khash ) = 0;
+    virtual const count_t insert_and_query(hashing::hash_t khash) = 0;
+    virtual const count_t query(hashing::hash_t khash) const = 0;
+
     virtual byte_t ** get_raw_tables() = 0;
     virtual void reset() = 0;
 

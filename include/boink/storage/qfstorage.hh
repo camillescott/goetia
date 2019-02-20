@@ -76,17 +76,11 @@ public:
 
   ~QFStorage();
 
-  count_t test_and_set_bits(hashing::hash_t khash) {
-    count_t x = get_count(khash);
-    add(khash);
-    return !x;
-  }
-
-  //
-  bool add(hashing::hash_t khash);
+  inline const bool insert(hashing::hash_t khash);
+  inline const count_t insert_and_query(hashing::hash_t khash);
 
   // get the count for the given k-mer hash.
-  const count_t get_count(hashing::hash_t khash) const;
+  inline const count_t query(hashing::hash_t khash) const;
 
   // Accessors for protected/private table info members
   // xnslots is larger than nslots. It includes some extra slots to deal

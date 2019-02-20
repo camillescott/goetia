@@ -73,11 +73,15 @@ cdef class dBG_{{type_bundle.suffix}}(dBG):
             handled = deref(self._this).hash(_bstring(kmer))
         return handled
 
-    def add(self, object kmer):
-        return deref(self._this).add(self._handle_kmer(kmer))
+    def insert(self, object kmer):
+        return deref(self._this).insert(self._handle_kmer(kmer))
 
-    def get(self, object kmer):
-        return deref(self._this).get(self._handle_kmer(kmer))
+    def insert_and_query(self, object kmer):
+        return deref(self._this).insert_and_query(self._handle_kmer(kmer))
+
+
+    def query(self, object kmer):
+        return deref(self._this).query(self._handle_kmer(kmer))
 
     def hash(self, str kmer):
         return deref(self._this).hash(_bstring(kmer))
@@ -105,25 +109,25 @@ cdef class dBG_{{type_bundle.suffix}}(dBG):
 
         return left, right
 
-    def add_sequence_and_report(self, str sequence):
+    def insert_sequence_and_report(self, str sequence):
         cdef bytes _sequence = _bstring(sequence)
         cdef vector[hash_t] _hashes
         cdef vector[count_t] _report
-        deref(self._this).add_sequence(_sequence,
+        deref(self._this).insert_sequence(_sequence,
                                        _hashes,
                                        _report)
         return _hashes, _report
 
-    def add_sequence(self, str sequence):
+    def insert_sequence(self, str sequence):
         cdef bytes _sequence = _bstring(sequence)
-        return deref(self._this).add_sequence(_sequence)
+        return deref(self._this).insert_sequence(_sequence)
 
     # compatibility with oxli API
-    consume = add_sequence
+    consume = insert_sequence
 
-    def get_counts(self, str sequence):
+    def query_sequence(self, str sequence):
         cdef bytes _sequence = _bstring(sequence)
-        cdef list counts = deref(self._this).get_counts(_sequence)
+        cdef list counts = deref(self._this).query_sequence(_sequence)
         return counts
 
     def left_degree(self, str kmer):

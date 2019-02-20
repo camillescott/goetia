@@ -148,7 +148,7 @@ public:
     uint8_t count_nodes(const std::vector<shift_t>& nodes) {
         uint8_t n_found = 0;
         for (auto node: nodes) {
-            if(this->graph->get(node.hash)) {
+            if(this->graph->query(node.hash)) {
                 ++n_found;
             }
         }
@@ -159,7 +159,7 @@ public:
                         std::set<hash_t>&           extras) {
         uint8_t n_found = 0;
         for (auto node: nodes) {
-            if(this->graph->get(node.hash) ||
+            if(this->graph->query(node.hash) ||
                extras.count(node.hash)) {
                 ++n_found;
             }
@@ -172,7 +172,7 @@ public:
         uint8_t n_found = 0;
         for (auto node : nodes) {
             //pdebug("check " << neighbor.hash << " " << neighbor.symbol);
-            if(this->graph->get(node.hash)) {
+            if(this->graph->query(node.hash)) {
                 //pdebug("found " << neighbor.hash);
                 ++n_found;
                 if (n_found > 1) {
@@ -190,7 +190,7 @@ public:
         uint8_t n_found = 0;
         for (auto node : nodes) {
             //pdebug("check " << neighbor.hash << " " << neighbor.symbol);
-            if(this->graph->get(node.hash) ||
+            if(this->graph->query(node.hash) ||
                extra.count(node.hash)) {
                 //pdebug("found " << neighbor.hash);
                 ++n_found;
@@ -206,7 +206,7 @@ public:
     std::vector<shift_t> filter_nodes(const std::vector<shift_t>& nodes) {
         std::vector<shift_t> result;
         for (auto node : nodes) {
-            if (this->graph->get(node.hash)) {
+            if (this->graph->query(node.hash)) {
                 result.push_back(node);
             }
         }
@@ -217,7 +217,7 @@ public:
                                  std::set<hash_t>&      extra) {
         std::vector<shift_t> result;
         for (auto node : nodes) {
-            if (this->graph->get(node.hash) ||
+            if (this->graph->query(node.hash) ||
                 extra.count(node.hash)) {
                 result.push_back(node);
             }
@@ -253,7 +253,7 @@ public:
                        Path&              path) {
 
         this->set_cursor(seed);
-        if (!this->graph->get(this->get())) {
+        if (!this->graph->query(this->get())) {
             return;
         } 
         this->get_cursor(path);
@@ -274,7 +274,7 @@ public:
                         Path&              path) {
 
         this->set_cursor(seed);
-        if (!this->graph->get(this->get())) {
+        if (!this->graph->query(this->get())) {
             return;
         }
         this->get_cursor(path);
@@ -295,7 +295,7 @@ public:
                   Path&              path) {
 
         this->set_cursor(seed);
-        if (!this->graph->get(this->hash(seed))) {
+        if (!this->graph->query(this->hash(seed))) {
             return;
         }
         this->get_cursor(path);

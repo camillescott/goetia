@@ -236,7 +236,7 @@ public:
     }
 
     void process_sequence(const parsing::Read& read) {
-        auto this_n_consumed = graph->add_sequence(read.cleaned_seq);
+        auto this_n_consumed = graph->insert_sequence(read.cleaned_seq);
         __sync_add_and_fetch( &_n_consumed, this_n_consumed );
     }
 
@@ -288,7 +288,7 @@ public:
     }
 
     void process_sequence(const parsing::Read& read) {
-        uint64_t n_new = graph->add_sequence(read.cleaned_seq);
+        uint64_t n_new = graph->insert_sequence(read.cleaned_seq);
         if (n_new > 0) {
             std::vector<uint32_t> decision_positions;
             std::vector<hashing::hash_t> decision_hashes;
