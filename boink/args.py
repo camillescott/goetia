@@ -97,7 +97,6 @@ class _VersionStdErrAction(_VersionAction):
     def __call__(self, parser, namespace, values, option_string=None):
         # have to call info() directly as the version action exits
         # which means parse_args() does not get a chance to run
-        info(parser.prog, parser._citations)
         version = self.version
         if version is None:
             version = parser.version
@@ -192,7 +191,6 @@ def add_output_interval_args(parser):
     parser.add_argument('--fine-interval', type=int, default=DEFAULT_INTERVALS.FINE)
     parser.add_argument('--medium-interval', type=int, default=DEFAULT_INTERVALS.MEDIUM)
     parser.add_argument('--coarse-interval', type=int, default=DEFAULT_INTERVALS.COARSE)
-    print('*', '*' * 10, '*', sep='\n', file=sys.stderr)
 
 
 def print_interval_settings(args):
