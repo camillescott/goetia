@@ -9,6 +9,12 @@ import pytest
 from boink.tests.utils import *
 from boink.processors import FileConsumer
 
+from boink.dbg import PdBG
+
+@using_ksize(21)
+def test_K(graph, ksize):
+    assert graph.K == ksize
+
 
 @using_ksize([21, 51, 101])
 @presence_backends()
@@ -270,6 +276,30 @@ def test_n_unique(graph, random_sequence, ksize, benchmark):
 @pytest.mark.benchmark(group='dbg-sequence')
 def test_get_counts(graph, random_sequence, ksize, benchmark):
     sequence = random_sequence()
+    graph.insert_sequence(sequence)
+
+    counts = benchmark(graph.query_sequence, sequence)
+    assert all((count > 0 for count in counts))
+
+
+@using_ksize([21, 31, 41])
+@using_length([50000, 500000])
+@pytest.mark.benchmark(group='dbg-sequence')
+def test_pdbg_n_unique(random_sequence, ksize, benchmark):
+    graph = PdBG(ksize, 7)
+    sequence = random_sequence()
+    kmer_set = set(kmers(sequence, ksize))
+    benchmark(graph.insert_sequence, sequence)
+
+    assert len(kmer_set) == graph.n_unique
+
+
+@using_ksize([21, 31, 41])
+@using_length([50000, 500000])
+@pytest.mark.benchmark(group='dbg-sequence')
+def test_pdbg_get_counts(random_sequence, ksize, benchmark):
+    sequence = random_sequence()
+    graph = PdBG(ksize, 7)
     graph.insert_sequence(sequence)
 
     counts = benchmark(graph.query_sequence, sequence)

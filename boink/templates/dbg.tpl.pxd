@@ -17,6 +17,7 @@ cdef class dBG:
     cdef readonly object suffix
     cdef object allocated
 
+
 {% for type_bundle in type_bundles %}
 cdef class dBG_{{type_bundle.suffix}}(dBG):
     cdef shared_ptr[_dBG[{{type_bundle.params}}]] _this

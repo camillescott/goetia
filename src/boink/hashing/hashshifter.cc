@@ -8,3 +8,11 @@
  */
 
 #include "boink/hashing/hashshifter.hh"
+#include "boink/hashing/alphabets.hh"
+
+namespace boink {
+namespace hashing {
+
+
+}
+}

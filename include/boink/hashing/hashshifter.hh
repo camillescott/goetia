@@ -25,8 +25,9 @@ namespace hashing {
 class KmerClient {
 protected:
     const uint16_t _K;
-public:
     explicit KmerClient(uint16_t K) : _K(K) {}
+
+public:
     const uint16_t K() const { return _K; }
 };
 
@@ -35,6 +36,9 @@ template <class Derived,
           const std::string& Alphabet = DNA_SIMPLE>
 class HashShifter : public KmerClient {
 public:
+
+    typedef hashing::hash_t hash_type;
+
     static const std::string symbols;
     std::deque<char> symbol_deque;
     
@@ -125,6 +129,8 @@ public:
         if (!is_valid(sequence)) {
             std::string msg("Invalid symbol in ");
             msg += sequence;
+            msg += ", alphabet=";
+            msg += symbols;
             throw InvalidCharacterException(msg.c_str());
         }
     }
@@ -235,9 +241,9 @@ protected:
 
 };
 
+
 template<class Derived, const std::string& Alphabet>
 const std::string HashShifter<Derived, Alphabet>::symbols = Alphabet;
-
 
 
 

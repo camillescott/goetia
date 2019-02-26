@@ -105,6 +105,11 @@ protected:
     }
 
 public:
+    NibbleStorage(uint64_t max_table, uint16_t N)
+        : NibbleStorage(get_n_primes_near_x(N, max_table))
+    {
+    }
+
     NibbleStorage(const std::vector<uint64_t>& tablesizes) :
         _tablesizes{tablesizes},
         _occupied_bins{0}, _n_unique_kmers{0}
@@ -125,6 +130,10 @@ public:
             _counts = NULL;
             _n_tables = 0;
         }
+    }
+
+    std::unique_ptr<NibbleStorage> clone() const {
+        return std::make_unique<NibbleStorage>(this->_tablesizes);
     }
 
     void _allocate_counters()
@@ -237,6 +246,11 @@ public:
     {
         return _occupied_bins;
     }
+    double estimated_fp() {
+        double fp = n_occupied() / _tablesizes[0];
+        fp = pow(fp, n_tables());
+        return fp;
+    }
     void save(std::string outfilename, uint16_t ksize);
     void load(std::string infilename, uint16_t& ksize);
 
@@ -247,6 +261,10 @@ public:
 };
 
 
+template<> 
+struct is_probabilistic<NibbleStorage> { 
+      static const bool value = true;
+};
 
 }
 }

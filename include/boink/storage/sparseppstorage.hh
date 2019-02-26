@@ -14,6 +14,7 @@
 #include "boink/storage/storage.hh"
 #include "sparsepp/spp.h"
 
+#include <memory>
 #include <vector>
 
 namespace boink {
@@ -28,28 +29,32 @@ protected:
 
 public:
     
-    SparseppSetStorage(const std::vector<uint64_t>& sizes)
+    SparseppSetStorage()
     {
+    }
+
+    std::unique_ptr<SparseppSetStorage> clone() const {
+        return std::make_unique<SparseppSetStorage>();
     }
 
     void reset() {
         _store.clear();
     }
 
-    std::vector<uint64_t> get_tablesizes() const {
-        return std::vector<uint64_t>({_store.max_size()});
+    const uint64_t get_maxsize() const {
+        return _store.max_size();
     }
 
     const uint64_t n_unique_kmers() const {
         return _store.size();
     }
 
-    const uint64_t n_tables() const {
-        return 1;
+    const uint64_t n_buckets() const {
+        return _store.bucket_count();
     }
 
     const uint64_t n_occupied() const {
-        return _store.bucket_count();
+        return n_buckets();
     }
 
     void save(std::string, uint16_t ) {
@@ -82,6 +87,13 @@ public:
     }
 
 };
+
+
+template<> 
+struct is_probabilistic<SparseppSetStorage> { 
+      static const bool value = false;
+};
+
 
 }
 }

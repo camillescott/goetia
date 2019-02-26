@@ -172,7 +172,8 @@ public:
         report.n_deletes         = cdbg->metrics->n_deletes.Value();
         report.n_circular_merges = cdbg->metrics->n_circular_merges.Value();
         report.n_unique          = dbg->n_unique();
-        report.estimated_fp      = dbg->estimated_fp();
+        //report.estimated_fp      = dbg->estimated_fp();
+        report.estimated_fp      = 0;
 
         return report;
     }

@@ -10,7 +10,7 @@ from cython.operator cimport dereference as deref
 import os
 
 from libc.stdint cimport uint64_t, UINT64_MAX
-from libcpp.memory cimport unique_ptr
+from libcpp.memory cimport unique_ptr, shared_ptr, make_shared
 from libcpp.string cimport string
 from libcpp.vector cimport vector
 
@@ -72,10 +72,12 @@ cdef class RollingHashShifter:
 cdef class UKHShifter:
 
     cdef unique_ptr[_DefaultUKHSShifter] _this
+    cdef shared_ptr[_UKHS]               _ukhs
 
     def __cinit__(self, uint16_t W, uint16_t K):
         cdef vector[string] kmers = UKHShifter.get_kmers(W, K)
-        self._this.reset(new _DefaultUKHSShifter(W, K, kmers))
+        self._ukhs = make_shared[_UKHS](K, kmers)
+        self._this.reset(new _DefaultUKHSShifter(W, K, self._ukhs))
 
     def set_cursor(self, str sequence):
         deref(self._this).set_cursor(_bstring(sequence))
@@ -95,7 +97,7 @@ cdef class UKHShifter:
 
     def query(self, uint64_t uhash):
         cdef _Unikmer unikmer = _Unikmer(uhash)
-        cdef bool exists = deref(self._this).query(unikmer)
+        cdef bool exists = deref(self._this).query_unikmer(unikmer)
         if exists is True:
             return unikmer.partition
         else:
@@ -114,8 +116,12 @@ cdef class UKHShifter:
         return self.unikmers()
 
     @property
-    def hashes(self):
-        return deref(self._this).get_hashes()
+    def ukhs_hashes(self):
+        return deref(self._this).get_ukhs_hashes()
+
+    @property
+    def n_ukhs_hashes(self):
+        return deref(self._this).n_ukhs_hashes()
 
     @staticmethod
     def get_kmers(int W, int K):

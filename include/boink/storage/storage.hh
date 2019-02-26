@@ -83,6 +83,11 @@ typedef std::pair<count_t, count_t> full_count_t;
 
 typedef std::unordered_map<hashing::hash_t, count_t> KmerCountMap;
 
+template< typename T > 
+struct is_probabilistic { 
+      static const bool value = false;
+};
+
 //
 // base Storage class for hashtable-related storage of information in memory.
 //
@@ -96,10 +101,13 @@ protected:
 public:
     Storage() : _supports_bigcount(false), _use_bigcount(false) { } ;
     virtual ~Storage() { }
-    virtual std::vector<uint64_t> get_tablesizes() const = 0;
-    virtual const size_t n_tables() const = 0;
+
+    //virtual std::vector<uint64_t> get_tablesizes() const = 0;
+    //virtual const size_t n_tables() const = 0;
+
     virtual void save(std::string, uint16_t) = 0;
     virtual void load(std::string, uint16_t&) = 0;
+
     virtual const uint64_t n_occupied() const = 0;
     virtual const uint64_t n_unique_kmers() const = 0;
 

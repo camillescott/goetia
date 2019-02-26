@@ -94,7 +94,7 @@ public:
         counts = std::make_unique<dBG<storage::ByteStorage,
                                       typename GraphType::shifter_type>>(graph->K(),
                                                                          100000000,
-                                                                         graph->N);
+                                                                         4);
     }
 
     void process_sequence(const parsing::Read& read) {

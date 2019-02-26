@@ -20,11 +20,13 @@
 #include "boink/hashing/hashing_types.hh"
 #include "boink/hashing/hashshifter.hh"
 #include "boink/hashing/rollinghashshifter.hh"
+#include "boink/hashing/kmeriterator.hh"
 
 #include "rollinghash/cyclichash.h"
 
 #pragma GCC diagnostic push 
 #pragma GCC diagnostic ignored "-Wall"
+#pragma GCC diagnostic ignored "-Wunknown-pragmas"
 #include "bbhash/BooPHF.h"
 #pragma GCC diagnostic pop
 
@@ -76,59 +78,32 @@ inline std::ostream& operator<<(std::ostream& o, const Unikmer& un) {
 }
 
 
-template <const std::string& Alphabet = DNA_SIMPLE>
-class UKHShifter : public HashShifter<UKHShifter<Alphabet>,
-                                      Alphabet> {
+class UKHS : public KmerClient {
 
 protected:
 
-    typedef HashShifter<UKHShifter<Alphabet>, Alphabet> BaseShifter;
     typedef boomphf::SingleHashFunctor<uint64_t>        boophf_hasher_t;
     typedef boomphf::mphf<uint64_t, boophf_hasher_t>    boophf_t;
-    using BaseShifter::_K;
 
-    CyclicHash<hash_t> window_hasher;
-
-    uint16_t                     window_K;
-    uint16_t                     seed_K;
-
-    std::vector<uint64_t>        ukhs_hashes;
-    std::vector<uint64_t>        ukhs_revmap;
-    RollingHashShifter<Alphabet> ukhs_hasher;
-    bool                         ukhs_initialized;
-    std::unique_ptr<boophf_t>    bphf;
-
-    InteriorMinimizer<Unikmer>   minimizer;
-    bool                         ukhs_hasher_on_left;
-
-    void update_unikmer() {
-        Unikmer unikmer(ukhs_hasher.get());
-        if (query(unikmer)) {
-            minimizer.update(unikmer);
-        } else {
-            minimizer.update(Unikmer());
-        }
-    }
+    std::vector<uint64_t>          ukhs_hashes;
+    std::vector<uint64_t>          ukhs_revmap;
+    RollingHashShifter<DNA_SIMPLE> ukhs_hasher;
+    bool                           ukhs_initialized;
+    std::unique_ptr<boophf_t>      bphf;
 
 public:
 
-    explicit UKHShifter(uint16_t K,
-                        uint16_t seed_K,
-                        std::vector<std::string>& ukhs)
-        : BaseShifter                 (K),
-          window_hasher               (K),
-          window_K                    (K),
-          seed_K                      (seed_K),
-          ukhs_revmap                 (ukhs.size()),
-          ukhs_hasher                 (seed_K),
-          minimizer                   (K - seed_K + 1)
+    explicit UKHS(uint16_t K,
+                  std::vector<std::string>& ukhs)
+        : KmerClient  (K),
+          ukhs_revmap (ukhs.size()),
+          ukhs_hasher (K)
     {
-        if (ukhs.front().size() != seed_K) {
+        if (ukhs.front().size() != K) {
             throw BoinkException("K does not match k-mer size from provided UKHS");
         }
 
-        std::cerr << "Building MPHF for (W=" << K << ",K=" 
-                  << seed_K << ") UKHS with "
+        std::cerr << "Building MPHF with "
                   << ukhs.size() << " k-mers."
                   << std::endl;
 
@@ -142,6 +117,81 @@ public:
         std::cerr << "Finished building MPHF." << std::endl;
     }
 
+    bool query(Unikmer& unikmer) {
+        unikmer.partition = ULLONG_MAX;
+        unikmer.partition = bphf->lookup(unikmer.hash);
+        if (!unikmer.is_valid()) {
+            return false;
+        }
+        if (ukhs_revmap[unikmer.partition] == unikmer.hash) {
+            return true;
+        }
+        return false;
+    }
+
+    std::vector<uint64_t> get_hashes() const {
+        return ukhs_hashes;
+    }
+
+    const size_t n_hashes() const {
+        return ukhs_hashes.size();
+    }
+};
+
+
+template <const std::string& Alphabet = DNA_SIMPLE>
+class UKHShifter : public HashShifter<UKHShifter<Alphabet>,
+                                      Alphabet> {
+
+protected:
+
+    typedef HashShifter<UKHShifter<Alphabet>, Alphabet> BaseShifter;
+
+    using BaseShifter::_K;
+
+    CyclicHash<hash_t>           window_hasher;
+    RollingHashShifter<Alphabet> ukhs_hasher;
+
+    uint16_t                     window_K;
+    uint16_t                     seed_K;
+
+    InteriorMinimizer<Unikmer>   minimizer;
+    std::shared_ptr<UKHS>        ukhs;
+
+    bool                         ukhs_hasher_on_left;
+
+    void update_unikmer() {
+        Unikmer unikmer(ukhs_hasher.get());
+        if (ukhs->query(unikmer)) {
+            minimizer.update(unikmer);
+        } else {
+            minimizer.update(Unikmer());
+        }
+    }
+
+public:
+
+    typedef PartitionedHash hash_type;
+
+    explicit UKHShifter(uint16_t K,
+                        uint16_t seed_K,
+                        std::shared_ptr<UKHS> ukhs)
+        : BaseShifter   (K),
+          window_hasher (K),
+          ukhs_hasher   (seed_K),
+          window_K      (K),
+          seed_K        (seed_K),
+          minimizer     (K - seed_K + 1),
+          ukhs          (ukhs)
+    {
+
+    }
+
+    explicit UKHShifter(UKHShifter& other)
+        : UKHShifter(other.K(), other.ukhs_K(), other.get_ukhs())
+    {
+    }
+
     void init() {
         if (this->initialized) {
             return;
@@ -151,6 +201,10 @@ public:
             window_hasher.eat(c);
         }
         this->initialized = true;
+    }
+
+    const uint16_t ukhs_K() const {
+        return seed_K;
     }
 
     hash_t get() {
@@ -169,28 +223,36 @@ public:
         return tmp_hasher.hashvalue;
     }
 
-    std::vector<uint64_t> get_hashes() const {
-        return ukhs_hashes;
+    std::shared_ptr<UKHS> get_ukhs() {
+        return ukhs;
+    }
+
+    std::vector<uint64_t> get_ukhs_hashes() const {
+        return ukhs->get_hashes();
     }
 
     const size_t n_ukhs_hashes() const {
-        return ukhs_hashes.size();
-    }
-
-    bool query(Unikmer& unikmer) {
-        unikmer.partition = ULLONG_MAX;
-        unikmer.partition = bphf->lookup(unikmer.hash);
-        if (!unikmer.is_valid()) {
-            return false;
-        }
-        if (ukhs_revmap[unikmer.partition] == unikmer.hash) {
-            return true;
-        }
-        return false;
+        return ukhs->n_hashes();
     }
 
     auto get_unikmers() const {
         return minimizer.get_minimizers();
+    }
+
+    auto get_front_unikmer() const {
+        return minimizer.get_front_value();
+    }
+
+    auto get_front_partition() const {
+        return minimizer.get_front_value().partition;
+    }
+
+    auto get_back_partition() const {
+        return minimizer.get_back_value().partition;
+    }
+    
+    bool query_unikmer(Unikmer& unikmer) {
+        return ukhs->query(unikmer);
     }
 
     void reset_unikmers() {
@@ -273,9 +335,21 @@ public:
     }
 };
 
-
 typedef UKHShifter<DNA_SIMPLE> DefaultUKHSShifter;
 
+
+// specializations for KmerIterator
+
+template <>
+template <>
+typename hash_return<PartitionedHash>::type
+KmerIterator<DefaultUKHSShifter>::first<PartitionedHash>();
+
+
+template <>
+template <>
+typename hash_return<PartitionedHash>::type
+KmerIterator<DefaultUKHSShifter>::next<PartitionedHash>();
 
 }
 }

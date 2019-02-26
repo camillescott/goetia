@@ -70,11 +70,14 @@ namespace storage {
  class QFStorage : public Storage {
 protected:
     std::shared_ptr<QF> cf;
+    int _size;
 
 public:
   QFStorage(int size);
 
   ~QFStorage();
+
+  std::unique_ptr<QFStorage> clone() const;
 
   inline const bool insert(hashing::hash_t khash);
   inline const count_t insert_and_query(hashing::hash_t khash);
@@ -87,13 +90,27 @@ public:
   // with some details of how the counting is implemented
   std::vector<uint64_t> get_tablesizes() const;
   const size_t n_tables() const { return 1; }
+  
   const uint64_t n_unique_kmers() const;
   const uint64_t n_occupied() const;
+
   void save(std::string outfilename, uint16_t ksize);
   void load(std::string infilename, uint16_t &ksize);
 
   byte_t **get_raw_tables() { return nullptr; }
   void reset() {}; //nop
+
+  double estimated_fp() {
+      double fp = n_occupied() / get_tablesizes()[0];
+      fp = pow(fp, n_tables());
+      return fp;
+  }
+};
+
+
+template<> 
+struct is_probabilistic<QFStorage> { 
+      static const bool value = true;
 };
 
 }

@@ -14,11 +14,9 @@
 #include "boink/assembly.hh"
 #include "boink/hashing/hashing_types.hh"
 #include "boink/hashing/kmeriterator.hh"
-#include "boink/hashing/ukhs.hh"
 #include "boink/storage/storage.hh"
 
 #include <algorithm>
-#include <cmath>
 #include <memory>
 #include <string>
 #include <vector>
@@ -31,42 +29,34 @@ template <class StorageType,
 class dBG : public hashing::KmerClient,
             public std::enable_shared_from_this<dBG<StorageType, HashShifter>> {
 
-    StorageType S;
+protected:
+
+    std::unique_ptr<StorageType> S;
     HashShifter hasher;
 
 public:
 
-    const uint16_t N;
-    const uint64_t max_table;
-    std::vector<uint64_t> sizes;
-
-    typedef HashShifter shifter_type;
+    typedef HashShifter                                   shifter_type;
 	typedef AssemblerMixin<dBG<StorageType, HashShifter>> assembler_type;
-    typedef hashing::KmerIterator<HashShifter> kmer_iter_type;
+    typedef hashing::KmerIterator<HashShifter>            kmer_iter_type;
     
-
-    explicit dBG(uint16_t K, const std::vector<uint64_t>& storage_size)
+    template <typename... Args>
+    explicit dBG(uint16_t K, Args&&... args)
         : KmerClient(K),
-          S(storage_size),
-          hasher(K),
-          sizes(storage_size),
-          N(storage_size.size()),
-          max_table(*std::max_element(storage_size.begin(), storage_size.end()))
-    {    
+          hasher(K)
+    {
+        S = std::make_unique<StorageType>(std::forward<Args>(args)...);
     }
 
-    explicit dBG(uint16_t K, uint64_t max_table, uint16_t N)
+    explicit dBG(uint16_t K, std::unique_ptr<StorageType>& S)
         : KmerClient(K),
           hasher(K),
-          sizes(storage::get_n_primes_near_x(N, max_table)),
-          N(N),
-          max_table(max_table),
-          S(storage::get_n_primes_near_x(N, max_table)) 
+          S(std::move(S->clone()))
     {
     }
 
-    std::shared_ptr<dBG<StorageType, HashShifter>> clone() const {
-        return std::make_shared<dBG<StorageType, HashShifter>>(_K, sizes);
+    std::shared_ptr<dBG<StorageType, HashShifter>> clone() {
+        return std::make_shared<dBG<StorageType, HashShifter>>(_K, S);
     }
 
     /**
@@ -100,11 +90,11 @@ public:
      * @Returns   True if the k-mer was new; fals otherwise.
      */
     inline const bool insert(const std::string& kmer) {
-        return S.insert(hash(kmer));
+        return S->insert(hash(kmer));
     }
 
     inline const bool insert(hashing::hash_t kmer) {
-        return S.insert(kmer);
+        return S->insert(kmer);
     }
 
     /**
@@ -116,11 +106,11 @@ public:
      * @Returns    Post-insertion count of the element.
      */
     inline const storage::count_t insert_and_query(hashing::hash_t kmer) {
-        return S.insert_and_query(kmer);
+        return S->insert_and_query(kmer);
     }
 
     inline const storage::count_t insert_and_query(const std::string& kmer) {
-        return S.insert_and_query(hash(kmer));
+        return S->insert_and_query(hash(kmer));
     }
 
     /**
@@ -130,12 +120,12 @@ public:
      *
      * @Returns   The count of the k-mer.
      */
-    const storage::count_t query(const std::string& kmer) const {
-        return S.query(hash(kmer));
+    inline const storage::count_t query(const std::string& kmer) const {
+        return S->query(hash(kmer));
     }
 
-    const storage::count_t query(hashing::hash_t hashed_kmer) const {
-        return S.query(hashed_kmer);
+    inline const storage::count_t query(hashing::hash_t hashed_kmer) const {
+        return S->query(hashed_kmer);
     }
 
     /**
@@ -144,7 +134,7 @@ public:
      * @Returns   Number of unique k-mers.
      */
     uint64_t n_unique() const {
-        return S.n_unique_kmers();
+        return S->n_unique_kmers();
     }
 
     /**
@@ -153,7 +143,7 @@ public:
      * @Returns   Occupied buckets.
      */
     uint64_t n_occupied() const {
-        return S.n_occupied();
+        return S->n_occupied();
     }
 
     /**
@@ -307,7 +297,7 @@ public:
      * @Returns   
      */
     uint8_t ** get_raw() const {
-        return S.get_raw_tables();
+        return S->get_raw_tables();
     }
 
     /**
@@ -315,10 +305,11 @@ public:
      *
      * @Returns   The false-positive rate; 0 if an exact structure.
      */
-    double estimated_fp() {
-        double fp = n_occupied() / sizes[0];
-        fp = pow(fp, N);
-        return fp;
+    template<typename Dummy = double>
+    auto estimated_fp() 
+    -> std::enable_if_t<storage::is_probabilistic<StorageType>::value, Dummy>
+    {
+        return S->estimated_fp();
     }
 
     uint64_t insert_sequence(const std::string&          sequence,
@@ -330,7 +321,7 @@ public:
         size_t           pos = 0;
         storage::count_t count;
         while(!iter.done()) {
-            hashing::hash_t h = iter.next();
+            auto h = iter.next();
             count             = insert_and_query(h);
 
             kmer_hashes.push_back(h);
@@ -381,7 +372,7 @@ public:
         size_t pos = 0;
         while(!iter.done()) {
             hashing::hash_t h = iter.next();
-            counts[pos] = S.insert_and_query(h);
+            counts[pos] = S->insert_and_query(h);
             ++pos;
         }
 
@@ -436,16 +427,16 @@ public:
     }
 
     void save(std::string filename) {
-        S.save(filename, _K);
+        S->save(filename, _K);
     }
 
     void load(std::string filename) {
         uint16_t ksize = _K;
-        S.load(filename, ksize);
+        S->load(filename, ksize);
     }
 
     void reset() {
-        S.reset();
+        S->reset();
     }
 
     std::shared_ptr<hashing::KmerIterator<HashShifter>> get_hash_iter(const std::string& sequence) {
@@ -459,69 +450,6 @@ public:
 
 };
 
-/*
-template <class StorageType>
-class PdBG : public hashing::KmerClient,
-             public std::enable_shared_from_this<PdBG<StorageType>> {
-
-    std::vector<StorageType*> partitions;
-    DefaultUKHSShifter        shifter;
-
-public:
-
-    typedef DefaultUKHSShifter                                    shifter_type;
-	typedef AssemblerMixin<PdBG<StorageType, DefaultUKHSShifter>> assembler_type;
-    typedef hashing::KmerIterator<DefaultUKHSShifter>             kmer_iter_type;
-
-    std::vector<uint64_t> partition_table_sizes;
-    const uint64_t        partition_n_tables;
-    const uint64_t        partition_max_table;
-    const uint16_t        partition_K;
- 
-    explicit PdBG(uint16_t K,
-                  uint16_t partition_K,
-                  uint64_t partition_max_table = 1000,
-                  uint16_t partition_n_tables  = 4)
-        : KmerClient            (K),
-          shifter               (K, partition_K),
-          partition_table_sizes (storage::get_n_primes_near_x(partition_n_tables,
-                                                              partition_max_table)),
-          partition_n_tables    (partition_n_tables),
-          partition_max_table   (partition_max_table),
-          partition_K           (partition_K)
-    {
-
-
-    }
-
-    ~PdBG() {
-        for (size_t i = 0; i < shifter.n_ukhs_hashes(); ++i) {
-            delete partitions[0];
-        }
-    }
-
-    std::shared_ptr<PdBG<StorageType>> clone() const {
-        return std::make_shared<PdBG<StorageType>>(_K, partition_K,
-                                                   partition_max_table, partition_n_tables);
-    }
-
-    hashing::hash_t hash(const std::string& kmer) const {
-        return shifter.hash(kmer);
-    }
-
-    hashing::hash_t hash(const char * kmer) const {
-        return shifter.hash(kmer);
-    }
-
-    bool insert(const std::string& kmer) {
-        return S.insert(hash(kmer));
-    }
-
-    bool insert(hashing::hash_t kmer) {
-        return S.insert(kmer);
-    }
-};
-*/
 
 }
 

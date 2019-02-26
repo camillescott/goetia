@@ -19,6 +19,9 @@
 namespace boink {
 namespace hashing {
 
+template<class T>
+struct hash_return{ typedef T type; };
+
 
 template <class ShifterType>
 class KmerIterator : public KmerClient {
@@ -31,9 +34,13 @@ public:
 
     ShifterType * shifter;
 
-    KmerIterator(const std::string& seq, uint16_t K) :
-        KmerClient(K), _seq(seq), 
-        index(0), _initialized(false), _shifter_owner(true) {
+    KmerIterator(const std::string& seq, uint16_t K)
+        : KmerClient(K), 
+          _seq(seq), 
+          index(0), 
+          _initialized(false), 
+          _shifter_owner(true)
+    {
 
         if (_seq.length() < _K) {
             throw SequenceLengthException("Sequence must have length >= K");
@@ -41,12 +48,20 @@ public:
         shifter = new ShifterType(seq, K);
     }
 
-    KmerIterator(const std::string& seq, ShifterType * shifter) :
-        KmerClient(shifter->K()), _seq(seq),
-        index(0), _initialized(false),
-        _shifter_owner(false), shifter(shifter) {
-        
-        if(_seq.length() < _K) {
+    KmerIterator(const std::string& seq, uint16_t K, uint16_t partition_K)
+        : KmerIterator(seq, K)
+    {
+    }
+
+    KmerIterator(const std::string& seq, ShifterType * shifter)
+        : KmerClient(shifter->K()), 
+          _seq(seq),
+          index(0), 
+          _initialized(false),
+          _shifter_owner(false), 
+          shifter(shifter) 
+    {
+        if (_seq.length() < _K) {
             throw SequenceLengthException("Sequence must have length >= K");
         }
 
@@ -59,14 +74,16 @@ public:
         }
     }
 
-    hash_t first() {
+    template<class HashType = typename ShifterType::hash_type>
+    typename hash_return<HashType>::type first() {
         _initialized = true;
 
         index += 1;
         return shifter->get();
     }
 
-    hash_t next() {
+    template<class HashType = typename ShifterType::hash_type>
+    typename hash_return<HashType>::type next() {
         if (!_initialized) {
             return first();
         }

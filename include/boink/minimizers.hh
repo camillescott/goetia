@@ -117,6 +117,22 @@ public:
         return values;
     }
 
+    T get_front_value() const {
+        return minimizers.front().first;
+    }
+
+    T get_back_value() const {
+        return minimizers.back().first;
+    }
+
+    value_type get_front_minimizer() const {
+        return minimizers.front();
+    }
+
+    value_type get_back_minimizer() const {
+        return minimizers.back();
+    }
+
     void reset() {
         RollingMin<T>::reset();
         minimizers.clear();

@@ -29,6 +29,8 @@ typedef uint64_t hash_t;
 // Type for storing forward and rc hashes of a k-mer
 typedef std::pair<hash_t, hash_t> full_hash_t;
 
+typedef std::pair<hash_t, uint64_t> PartitionedHash;
+
 // Type for representing a neighbor hash with its prefix or suffix symbol
 struct shift_t {
     hash_t hash;

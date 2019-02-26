@@ -82,7 +82,7 @@ class ByteStorageFileWriter;
 class ByteStorageGzFileReader;
 class ByteStorageGzFileWriter;
 
-class ByteStorage : public Storage {
+class ByteStorage: public Storage {
     friend class ByteStorageFile;
     friend class ByteStorageFileReader;
     friend class ByteStorageFileWriter;
@@ -95,7 +95,7 @@ protected:
 
     uint32_t _bigcount_spin_lock;
     std::vector<uint64_t> _tablesizes;
-    size_t _n_tables;
+    size_t   _n_tables;
     uint64_t _n_unique_kmers;
     uint64_t _occupied_bins;
 
@@ -115,11 +115,19 @@ protected:
 public:
     KmerCountMap _bigcounts;
 
+    ByteStorage(uint64_t max_table, uint16_t N)
+        : ByteStorage(get_n_primes_near_x(N, max_table))
+    {
+    }
+
     // constructor: create an empty CountMin sketch.
     ByteStorage(const std::vector<uint64_t>& tablesizes ) :
-        _max_count(MAX_KCOUNT), _max_bigcount(MAX_BIGCOUNT),
-        _bigcount_spin_lock(false), _tablesizes(tablesizes),
-        _n_unique_kmers(0), _occupied_bins(0)
+        _max_count(MAX_KCOUNT),
+        _max_bigcount(MAX_BIGCOUNT),
+        _bigcount_spin_lock(false), 
+        _tablesizes(tablesizes),
+        _n_unique_kmers(0), 
+        _occupied_bins(0)
     {
         _supports_bigcount = true;
         _allocate_counters();
@@ -151,6 +159,10 @@ public:
         }
     }
 
+    std::unique_ptr<ByteStorage> clone() const {
+        return std::make_unique<ByteStorage>(this->_tablesizes);
+    }
+
     std::vector<uint64_t> get_tablesizes() const
     {
         return _tablesizes;
@@ -167,6 +179,12 @@ public:
     const uint64_t n_occupied() const
     {
         return _occupied_bins;
+    }
+
+    double estimated_fp() {
+        double fp = n_occupied() / _tablesizes[0];
+        fp = pow(fp, n_tables());
+        return fp;
     }
 
     void save(std::string, uint16_t);
@@ -270,6 +288,12 @@ public:
         return _counts;
     }
 
+};
+
+
+template<> 
+struct is_probabilistic<ByteStorage> { 
+      static const bool value = true;
 };
 
 // Helper classes for saving ByteStorage objs to disk & loading them.

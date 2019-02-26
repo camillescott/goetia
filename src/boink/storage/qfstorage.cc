@@ -46,6 +46,7 @@
 
 #include "boink/storage/qfstorage.hh"
 
+#include <memory>
 #include <errno.h>
 #include <cstring>
 #include <sstream> // IWYU pragma: keep
@@ -62,7 +63,8 @@ using namespace boink::storage;
 using namespace boink::hashing;
 
 
-QFStorage::QFStorage(int size) 
+QFStorage::QFStorage(int size)
+    : _size(size)
 {
     cf = std::make_shared<QF>();
     // size is the power of two to specify the number of slots in
@@ -77,6 +79,11 @@ QFStorage::QFStorage(int size)
 QFStorage::~QFStorage() 
 { 
     qf_destroy(cf.get());
+}
+
+
+std::unique_ptr<QFStorage> QFStorage::clone() const {
+    return std::make_unique<QFStorage>(_size);
 }
 
 

@@ -26,14 +26,17 @@ cdef class dBG:
 
     @staticmethod
     def build(int K,
-              uint64_t starting_size,
-              int n_tables,
+              *args,
+              #uint64_t starting_size,
+              #int n_tables,
               str storage='_BitStorage',
-              str shifter='_DefaultShifter'):
+              str shifter='_DefaultShifter',
+              **kwargs):
         {% for type_bundle in type_bundles %}
         if storage == "{{type_bundle.storage_type}}" and \
            shifter == "{{type_bundle.shifter_type}}":
-            return dBG_{{type_bundle.suffix}}(K, starting_size, n_tables)
+            return dBG_{{type_bundle.suffix}}(K, *args, **kwargs)
+
         {% endfor %}
         raise TypeError("Invalid Storage or Shifter type: ({0},{1})".format(storage, shifter))
 
@@ -51,19 +54,27 @@ cdef class dBG:
 {% for type_bundle in type_bundles %}
 cdef class dBG_{{type_bundle.suffix}}(dBG):
 
-    def __cinit__(self, int K, uint64_t starting_size, int n_tables,
+    def __cinit__(self, int K,# uint64_t starting_size, int n_tables,
                   *args, **kwargs):
-        cdef vector[uint64_t] primes
         #if type(self) is dBG_{{suffix}}:
-        if not self._this:
-            primes = get_n_primes_near_x(n_tables, starting_size)
-            self._this = make_shared[_dBG[{{type_bundle.params}}]](K, primes)
-            self._assembler = make_shared[_AssemblerMixin[_dBG[{{type_bundle.params}}]]](self._this)
-            self.allocated = True
-
         self.storage_type = "{{type_bundle.storage_type}}"
         self.shifter_type = "{{type_bundle.shifter_type}}"
         self.suffix = "{{type_bundle.suffix}}"
+
+        cdef int starting_size
+        cdef int n_tables
+        if self.storage_type in ['_BitStorage', '_ByteStorage', '_NibbleStorage']:
+            starting_size, n_tables = args
+
+        if not self._this:
+            {% if type_bundle.storage_type  in ['_BitStorage', '_ByteStorage', '_NibbleStorage'] %}
+            self._this = make_shared[_dBG[{{type_bundle.params}}]](K, starting_size, n_tables)
+            {% else %}
+            self._this = make_shared[_dBG[{{type_bundle.params}}]](K)
+            {% endif %}
+
+            self._assembler = make_shared[_AssemblerMixin[_dBG[{{type_bundle.params}}]]](self._this)
+            self.allocated = True
 
     cdef hash_t _handle_kmer(self, object kmer) except 0:
         cdef hash_t handled

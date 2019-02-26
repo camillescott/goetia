@@ -48,6 +48,7 @@
 #define BOINK_BITSTORAGE_HH
 
 #include <cassert>
+#include <cmath>
 #include <cstring>
 #include <array>
 #include <memory>
@@ -79,14 +80,21 @@ class BitStorage : public Storage
 {
 protected:
     std::vector<uint64_t> _tablesizes;
-    size_t _n_tables;
+    size_t   _n_tables;
     uint64_t _occupied_bins;
     uint64_t _n_unique_kmers;
     byte_t ** _counts;
 
 public:
+
+    BitStorage(uint64_t max_table, uint16_t N)
+        : BitStorage(get_n_primes_near_x(N, max_table))
+    {
+    }
+
     BitStorage(const std::vector<uint64_t>& tablesizes) :
-        _tablesizes(tablesizes)
+        _tablesizes(tablesizes),
+        _n_tables(tablesizes.size())
     {
         _occupied_bins = 0;
         _n_unique_kmers = 0;
@@ -105,6 +113,10 @@ public:
 
             _n_tables = 0;
         }
+    }
+
+    std::unique_ptr<BitStorage> clone() const {
+        return std::make_unique<BitStorage>(this->_tablesizes);
     }
 
     void _allocate_counters()
@@ -130,7 +142,7 @@ public:
 
     const size_t n_tables() const
     {
-        return _n_tables;
+        return _tablesizes.size();
     }
 
     void save(std::string, uint16_t ksize);
@@ -145,6 +157,12 @@ public:
     const uint64_t n_unique_kmers() const
     {
         return _n_unique_kmers;
+    }
+
+    double estimated_fp() {
+        double fp = n_occupied() / _tablesizes[0];
+        fp = pow(fp, n_tables());
+        return fp;
     }
 
     // Get and set the hashbits for the given kmer hash.
@@ -210,6 +228,11 @@ public:
     void reset();
 
     void update_from(const BitStorage&);
+};
+
+template<> 
+struct is_probabilistic<BitStorage> { 
+      static const bool value = true;
 };
 
 }

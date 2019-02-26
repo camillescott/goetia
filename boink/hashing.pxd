@@ -9,6 +9,7 @@ from libc.stdint cimport uint8_t, uint16_t, uint64_t, int64_t
 
 from libcpp cimport bool
 from libcpp.deque cimport deque
+from libcpp.memory cimport shared_ptr
 from libcpp.string cimport string
 from libcpp.utility cimport pair
 from libcpp.vector cimport vector
@@ -36,6 +37,7 @@ cdef extern from "boink/hashing/alphabets.hh" namespace "boink::hashing" nogil:
 cdef extern from "boink/hashing/hashing_types.hh" namespace "boink::hashing" nogil:
     ctypedef uint64_t hash_t
     ctypedef pair[hash_t, hash_t] full_hash_t
+    ctypedef pair[hash_t, uint64_t] PartitionedHash
 
     cdef struct shift_t:
         shift_t(hash_t, char)
@@ -54,6 +56,7 @@ cdef extern from "boink/hashing/hashshifter.hh" namespace "boink::hashing" nogil
         uint16_t K()
 
     cdef cppclass _HashShifter "boink::hashing::HashShifter" [D,A] (_KmerClient):
+        const string symbols
         hash_t set_cursor(string&) except +ValueError
         string get_cursor()
         void get_cursor(deque[char]&)
@@ -87,16 +90,21 @@ cdef extern from "boink/hashing/ukhs.hh" namespace "boink::hashing" nogil:
         _Unikmer(hash_t)
         _Unikmer(hash_t, uint64_t)
 
+    cdef cppclass _UKHS "boink::hashing::UKHS" (_KmerClient):
+        _UKHS(uint16_t, vector[string]&) except +ValueError
+        bool query(_Unikmer&)
+
     cdef cppclass _UKHShifter "boink::hashing::UKHShifter" [A] (_HashShifter[_UKHShifter[A], A]):
         _UKHShifter(uint16_t,
                     uint16_t,
-                    vector[string]&) except +ValueError
+                    shared_ptr[_UKHS]&) except +ValueError
 
-        bool query(_Unikmer&)
         vector[pair[_Unikmer, int64_t]] get_unikmers()   const
         void reset_unikmers() except +ValueError
+        bool query_unikmer(_Unikmer&)
 
-        vector[uint64_t] get_hashes()
+        vector[uint64_t] get_ukhs_hashes()
+        const size_t n_ukhs_hashes()
 
     ctypedef _UKHShifter[_DNA_SIMPLE] _DefaultUKHSShifter "boink::hashing::DefaultUKHSShifter"
 

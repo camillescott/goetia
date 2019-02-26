@@ -31,8 +31,10 @@ protected:
     using BaseShifter::_K;
 
 public:
+    using BaseShifter::symbols;
 
     //using BaseShifter::HashShifter;
+    typedef hash_t hash_type;
 
     RollingHashShifter(const std::string& start, uint16_t K)
         : BaseShifter(start, K), hasher(K)
@@ -117,8 +119,6 @@ public:
 };
 
 typedef RollingHashShifter<DNA_SIMPLE> DefaultShifter;
-
-
 
 } // hashing
 } // boink
