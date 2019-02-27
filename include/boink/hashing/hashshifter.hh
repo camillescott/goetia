@@ -90,51 +90,6 @@ public:
         return get();
     }
 
-    bool is_valid(const char c) const {
-        for (auto symbol : symbols) {
-            if (c == symbol) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    bool is_valid(const std::string& sequence) const {
-        for (auto c : sequence) {
-            if(!is_valid(c)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    bool is_valid(const char * sequence) const {
-        for (uint16_t i = 0; i < this->_K; ++i) {
-            if(!is_valid(sequence[i])) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    void _validate(const char c) const {
-        if (!this->is_valid(c)) {
-            std::string msg("Invalid symbol: ");
-            msg += c;
-            throw InvalidCharacterException(msg.c_str());
-        }
-    }
-
-    void _validate(const std::string& sequence) const {
-        if (!is_valid(sequence)) {
-            std::string msg("Invalid symbol in ");
-            msg += sequence;
-            msg += ", alphabet=";
-            msg += symbols;
-            throw InvalidCharacterException(msg.c_str());
-        }
-    }
-
     // shadowed by derived
     hash_t get() {
         return derived().get();
@@ -213,6 +168,51 @@ private:
 protected:
 
     bool initialized;
+
+    bool is_valid(const char c) const {
+        for (auto symbol : symbols) {
+            if (c == symbol) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool is_valid(const std::string& sequence) const {
+        for (auto c : sequence) {
+            if(!is_valid(c)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    bool is_valid(const char * sequence) const {
+        for (uint16_t i = 0; i < this->_K; ++i) {
+            if(!is_valid(sequence[i])) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    void _validate(const char c) const {
+        if (!this->is_valid(c)) {
+            std::string msg("Invalid symbol: ");
+            msg += c;
+            throw InvalidCharacterException(msg.c_str());
+        }
+    }
+
+    void _validate(const std::string& sequence) const {
+        if (!is_valid(sequence)) {
+            std::string msg("Invalid symbol in ");
+            msg += sequence;
+            msg += ", alphabet=";
+            msg += symbols;
+            throw InvalidCharacterException(msg.c_str());
+        }
+    }
 
     void load(const std::string& sequence) {
         symbol_deque.clear();
