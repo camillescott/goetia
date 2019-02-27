@@ -35,6 +35,11 @@ cdef class FileConsumer(FileProcessor):
                                                        medium_interval,
                                                        coarse_interval)
         {% endfor %}
+        if graph.storage_type == '_PartitionedStorage':
+            return FileConsumer_PdBG(graph,
+                                     fine_interval,
+                                     medium_interval,
+                                     coarse_interval)
 
         raise TypeError("Invalid dBG type.")
 
@@ -204,5 +209,24 @@ cdef class NormalizingCompactor_{{type_bundle.suffix}}(NormalizingCompactor):
         return deref(self._this).n_reads()
 
 {% endfor %}
+
+cdef class FileConsumer_PdBG(FileConsumer):
+
+    def __cinit__(self, PdBG graph,
+                        uint64_t fine_interval,
+                        uint64_t medium_interval,
+                        uint64_t coarse_interval):
+
+        self._this = make_shared[_FileConsumer[DefaultPdBG]](graph._this,
+                                                             fine_interval,
+                                                             medium_interval,
+                                                             coarse_interval)
+        self.storage_type = graph.storage_type
+
+    def process(self, str input_filename):
+        deref(self._this).process(_bstring(input_filename))
+
+        return (deref(self._this).n_reads(),
+                deref(self._this).n_consumed())
 
 {% endblock code %}

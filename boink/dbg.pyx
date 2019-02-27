@@ -12,6 +12,8 @@ from boink.hashing import UKHShifter
 cdef class PdBG(dBG):
 
     def __cinit__(self, int K, int partition_K, *args, **kwargs):
+        self.storage_type = '_PartitionedStorage'
+
         cdef vector[string] kmers = UKHShifter.get_kmers(K, partition_K)
         self._ukhs = make_shared[_UKHS](partition_K, kmers)
         if not self._this:

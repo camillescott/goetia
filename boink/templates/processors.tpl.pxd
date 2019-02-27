@@ -64,5 +64,10 @@ cdef class NormalizingCompactor_{{type_bundle.suffix}}(NormalizingCompactor):
 
 {% endfor %}
 
+cdef class FileConsumer_PdBG(FileConsumer):
+    cdef shared_ptr[_FileConsumer[DefaultPdBG]] _this
+
+
+
 
 {% endblock code %}

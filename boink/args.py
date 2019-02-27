@@ -55,7 +55,8 @@ DEFAULT_N_THREADS = 1
 DBG_TYPES = ['BitStorage',
              'ByteStorage',
              'NibbleStorage',
-             'SparseppSetStorage']
+             'SparseppSetStorage',
+             'PartitionedStorage']
 
 def memory_setting(label):
     """
