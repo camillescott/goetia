@@ -74,35 +74,6 @@ public:
         : BoinkException(msg) { }
 };
 
-class InvalidCharacterException : public std::exception {
-public:
-    explicit InvalidCharacterException(const std::string& msg = "Invalid character encountered.")
-        : _msg(msg) { }
-
-    virtual ~InvalidCharacterException() throw() { }
-    virtual const char* what() const throw ()
-    {
-        return _msg.c_str();
-    }
-
-protected:
-    const std::string _msg;
-};
-
-class SequenceLengthException: public std::exception {
-public:
-    explicit SequenceLengthException(const std::string& msg = "Sequence was too short.")
-        : _msg(msg) { }
-
-    virtual ~SequenceLengthException() throw() { }
-    virtual const char* what() const throw ()
-    {
-        return _msg.c_str();
-    }
-
-protected:
-    const std::string _msg;
-};
 
 class InvalidStream : public BoinkFileException 
 {

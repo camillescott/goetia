@@ -14,27 +14,19 @@
 #include <string>
 #include <vector>
 
+#include "boink/kmers/kmerclient.hh"
 #include "boink/boink.hh"
 #include "boink/hashing/alphabets.hh"
 #include "boink/hashing/hashing_types.hh"
+#include "boink/hashing/exceptions.hh"
 
 namespace boink {
 namespace hashing {
 
 
-class KmerClient {
-protected:
-    const uint16_t _K;
-    explicit KmerClient(uint16_t K) : _K(K) {}
-
-public:
-    const uint16_t K() const { return _K; }
-};
-
-
 template <class Derived,
           const std::string& Alphabet = DNA_SIMPLE>
-class HashShifter : public KmerClient {
+class HashShifter : public kmers::KmerClient {
 public:
 
     typedef hashing::hash_t hash_type;

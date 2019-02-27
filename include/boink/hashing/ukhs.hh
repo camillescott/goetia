@@ -21,6 +21,7 @@
 #include "boink/hashing/hashshifter.hh"
 #include "boink/hashing/rollinghashshifter.hh"
 #include "boink/hashing/kmeriterator.hh"
+#include "boink/kmers/kmerclient.hh"
 
 #include "rollinghash/cyclichash.h"
 
@@ -78,7 +79,7 @@ inline std::ostream& operator<<(std::ostream& o, const Unikmer& un) {
 }
 
 
-class UKHS : public KmerClient {
+class UKHS : public kmers::KmerClient {
 
 protected:
 

@@ -17,6 +17,7 @@ from libcpp.utility cimport pair
 from libcpp.string cimport string
 
 from boink.hashing cimport *
+from boink.kmers cimport *
 
 cdef extern from "boink/storage/storage.hh" namespace "boink::storage" nogil:
     # Need these for the Storage template parameter;

@@ -14,6 +14,8 @@
 
 #include "boink/boink.hh"
 #include "boink/hashing/hashshifter.hh"
+#include "boink/hashing/exceptions.hh"
+#include "boink/kmers/kmerclient.hh"
 
 
 namespace boink {
@@ -24,7 +26,7 @@ struct hash_return{ typedef T type; };
 
 
 template <class ShifterType>
-class KmerIterator : public KmerClient {
+class KmerIterator : public kmers::KmerClient {
     const std::string _seq;
     unsigned int index;
     unsigned int length;

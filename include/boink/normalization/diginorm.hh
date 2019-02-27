@@ -13,6 +13,7 @@
 #include "boink/processors.hh"
 #include "boink/dbg.hh"
 #include "boink/storage/bytestorage.hh"
+#include "boink/hashing/exceptions.hh"
 
 namespace boink {
 namespace normalization {
@@ -107,13 +108,13 @@ public:
 
         try {
             compactor->update_sequence(read.cleaned_seq);
-        } catch (InvalidCharacterException &e) {
+        } catch (hashing::InvalidCharacterException &e) {
             std::cerr << "WARNING: Bad sequence encountered at "
                       << this->_n_reads << ": "
                       << read.cleaned_seq << ", exception was "
                       << e.what() << std::endl;
             return;
-        } catch (SequenceLengthException &e) {
+        } catch (hashing::SequenceLengthException &e) {
             std::cerr << "NOTE: Skipped sequence that was too short: read "
                       << this->_n_reads << " with sequence "
                       << read.cleaned_seq 

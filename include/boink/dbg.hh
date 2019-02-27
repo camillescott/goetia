@@ -14,6 +14,7 @@
 #include "boink/assembly.hh"
 #include "boink/hashing/hashing_types.hh"
 #include "boink/hashing/kmeriterator.hh"
+#include "boink/kmers/kmerclient.hh"
 #include "boink/storage/storage.hh"
 
 #include <algorithm>
@@ -26,7 +27,7 @@ namespace boink {
 
 template <class StorageType,
           class HashShifter>
-class dBG : public hashing::KmerClient,
+class dBG : public kmers::KmerClient,
             public std::enable_shared_from_this<dBG<StorageType, HashShifter>> {
 
 protected:

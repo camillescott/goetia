@@ -31,6 +31,7 @@
 #include "boink/boink.hh"
 #include "boink/hashing/hashing_types.hh"
 #include "boink/hashing/kmeriterator.hh"
+#include "boink/kmers/kmerclient.hh"
 #include "boink/minimizers.hh"
 #include "boink/storage/storage.hh"
 
@@ -67,7 +68,7 @@ using std::pair;
 
 
 template <class GraphType>
-class cDBG : public hashing::KmerClient,
+class cDBG : public kmers::KmerClient,
              public events::EventNotifier {
 
 protected:

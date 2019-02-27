@@ -14,6 +14,7 @@ from libcpp.string cimport string
 from libcpp.utility cimport pair
 from libcpp.vector cimport vector
 
+from boink.kmers cimport *
 
 cdef extern from "boink/hashing/alphabets.hh" namespace "boink::hashing" nogil:
     # This is a hack to trick Cython into taking static const
@@ -49,11 +50,8 @@ cdef extern from "boink/hashing/hashing_types.hh" namespace "boink::hashing" nog
         const hash_t hash
         const string kmer
 
-cdef extern from "boink/hashing/hashshifter.hh" namespace "boink::hashing" nogil:
 
-    cdef cppclass _KmerClient "boink::KmerClient":
-        _KmerClient(uint16_t)
-        uint16_t K()
+cdef extern from "boink/hashing/hashshifter.hh" namespace "boink::hashing" nogil:
 
     cdef cppclass _HashShifter "boink::hashing::HashShifter" [D,A] (_KmerClient):
         const string symbols

@@ -20,7 +20,7 @@
 #include "boink/events.hh"
 #include "boink/event_types.hh"
 #include "boink/hashing/hashing_types.hh"
-
+#include "boink/hashing/exceptions.hh"
 #include "boink/cdbg/compactor.hh"
 
 
@@ -347,13 +347,13 @@ public:
     void process_sequence(const parsing::Read& read) {
         try {
             compactor->update_sequence(read.cleaned_seq);
-        } catch (InvalidCharacterException &e) {
+        } catch (hashing::InvalidCharacterException &e) {
             std::cerr << "WARNING: Bad sequence encountered at "
                       << this->_n_reads << ": "
                       << read.cleaned_seq << ", exception was "
                       << e.what() << std::endl;
             return;
-        } catch (SequenceLengthException &e) {
+        } catch (hashing::SequenceLengthException &e) {
             std::cerr << "NOTE: Skipped sequence that was too short: read "
                       << this->_n_reads << " with sequence "
                       << read.cleaned_seq 

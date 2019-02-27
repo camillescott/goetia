@@ -15,6 +15,7 @@
 #include "boink/hashing/hashing_types.hh"
 #include "boink/hashing/kmeriterator.hh"
 #include "boink/hashing/hashshifter.hh"
+#include "boink/kmers/kmerclient.hh"
 #include "boink/hashing/ukhs.hh"
 #include "boink/storage/storage.hh"
 #include "boink/storage/sparseppstorage.hh"
@@ -30,7 +31,7 @@ namespace boink {
 using storage::PartitionedStorage;
 
 template <class BaseStorageType>
-class PdBG : public hashing::KmerClient,
+class PdBG : public kmers::KmerClient,
              public std::enable_shared_from_this<PdBG<BaseStorageType>> {
 protected:
 

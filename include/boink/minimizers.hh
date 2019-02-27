@@ -16,6 +16,7 @@
 
 #include "boink/hashing/hashing_types.hh"
 #include "boink/hashing/kmeriterator.hh"
+#include "boink/kmers/kmerclient.hh"
 
 
 namespace boink {
@@ -142,7 +143,7 @@ public:
 
 template <class ShifterType>
 class WKMinimizer : public InteriorMinimizer<hashing::hash_t>,
-                    public hashing::KmerClient {
+                    public kmers::KmerClient {
 
 public:
 
@@ -152,7 +153,7 @@ public:
     WKMinimizer(int64_t window_size,
                 uint16_t K)
         : InteriorMinimizer<hashing::hash_t>(window_size),
-          hashing::KmerClient(K) {
+          kmers::KmerClient(K) {
     }
 
     std::vector<value_type> get_minimizers(const std::string& sequence) {
