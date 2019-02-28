@@ -10,7 +10,10 @@
 #ifndef BOINK_HASHSHIFTER_HH
 #define BOINK_HASHSHIFTER_HH
 
+#include <algorithm>
+#include <cstring>
 #include <deque>
+#include <iterator>
 #include <string>
 #include <vector>
 
@@ -20,6 +23,8 @@
 #include "boink/hashing/hashing_types.hh"
 #include "boink/hashing/exceptions.hh"
 
+#include "nonstd/ring_span.hpp"
+
 namespace boink {
 namespace hashing {
 
@@ -27,12 +32,18 @@ namespace hashing {
 template <class Derived,
           const std::string& Alphabet = DNA_SIMPLE>
 class HashShifter : public kmers::KmerClient {
+protected:
+
+    char *                  kmer_buffer;
+    nonstd::ring_span<char> kmer_window;
+
 public:
 
     typedef hashing::hash_t hash_type;
 
     static const std::string symbols;
-    std::deque<char> symbol_deque;
+
+    //std::deque<char> symbol_deque;
     
     hash_t set_cursor(const std::string& sequence) {
         if (sequence.length() < _K) {
@@ -107,9 +118,8 @@ public:
 
     hash_t shift_left(const char c) {
         _validate(c);
-        symbol_deque.push_front(c);
         hash_t h = derived().update_left(c);
-        symbol_deque.pop_back();
+        kmer_window.push_front(c);
         return h;
     }
 
@@ -120,31 +130,43 @@ public:
 
     hash_t shift_right(const char c) {
         _validate(c);
-        symbol_deque.push_back(c);
         hash_t h = derived().update_right(c);
-        symbol_deque.pop_front();
+        kmer_window.push_back(c);
         return h;
     }
 
     std::string get_cursor() const {
-        return std::string(symbol_deque.begin(), symbol_deque.end());
+        return std::string(kmer_buffer,
+                           kmer_buffer + this->_K);
     }
 
     void get_cursor(std::deque<char>& d) const {
-        d.insert(d.end(), symbol_deque.begin(), symbol_deque.end());
+        for (uint16_t i = 0; i < this->_K; ++i) {
+            d.push_back(kmer_buffer[i]);
+        }
     }
 
 private:
 
     HashShifter(const std::string& start, uint16_t K)
-        : KmerClient(K), initialized(false)
+        : KmerClient(K),
+          kmer_buffer(new char[K]),
+          kmer_window(kmer_buffer, kmer_buffer + K, kmer_buffer, K),
+          initialized(false)
     {
         load(start);
     }
 
     HashShifter(uint16_t K)
-        : KmerClient(K), initialized(false)
+        : KmerClient(K),
+          kmer_buffer(new char[K]),
+          kmer_window(kmer_buffer, kmer_buffer + K, kmer_buffer, K),
+          initialized(false)
     {
+    }
+
+    ~HashShifter() {
+        delete [] kmer_buffer;
     }
 
     friend Derived;
@@ -207,28 +229,21 @@ protected:
     }
 
     void load(const std::string& sequence) {
-        symbol_deque.clear();
-        symbol_deque.insert(symbol_deque.begin(),
-                            sequence.begin(),
-                            sequence.begin()+_K); 
+        sequence.copy(kmer_buffer, this->_K);
     }
 
     void load(const char * sequence) {
-        symbol_deque.clear();
-        for (uint16_t i = 0; i < this->_K; ++i) {
-            symbol_deque.push_back(sequence[i]);
-        }
+        strncpy(kmer_buffer, sequence, this->_K);
     }
 
     template <typename Iterator>
     void load(const Iterator begin, const Iterator end) {
-        symbol_deque.clear();
-        symbol_deque.insert(symbol_deque.begin(),
-                            begin,
-                            end);
-        if (symbol_deque.size() != this->_K) {
-            throw SequenceLengthException("Sequence must be length K");
-        }
+        std::copy(begin, end, kmer_buffer);
+    }
+
+    template <typename Iterator>
+    void load(const Iterator begin) {
+        std::copy_n(begin, this->_K, kmer_buffer);
     }
 
 };

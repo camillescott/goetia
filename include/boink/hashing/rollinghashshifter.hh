@@ -52,7 +52,7 @@ public:
         : BaseShifter(other.K()),
           hasher(other.K())
     {
-        other.get_cursor(this->symbol_deque);
+        this->load(other.get_cursor());
         init();
     }
 
@@ -60,7 +60,7 @@ public:
         if (this->initialized) {
             return;
         }
-        for (auto c : this->symbol_deque) {
+        for (auto c : this->kmer_window) {
             this->_validate(c);
             hasher.eat(c);
         }
@@ -84,18 +84,18 @@ public:
     }
 
     hash_t update_left(const char c) {
-        hasher.reverse_update(c, this->symbol_deque.back());
+        hasher.reverse_update(c, this->kmer_window.back());
         return get();
     }
 
     hash_t update_right(const char c) {
-        hasher.update(this->symbol_deque.front(), c);
+        hasher.update(this->kmer_window.front(), c);
         return get();
     }
 
     std::vector<shift_t> gather_left() {
         std::vector<shift_t> hashes;
-        const char back = this->symbol_deque.back();
+        const char back = this->kmer_window.back();
         for (auto symbol : Alphabet) {
             hasher.reverse_update(symbol, back);
             shift_t result(hasher.hashvalue, symbol);
@@ -108,7 +108,7 @@ public:
 
     std::vector<shift_t> gather_right() {
         std::vector<shift_t> hashes;
-        const char front = this->symbol_deque.front();
+        const char front = this->kmer_window.front();
         for (auto symbol : Alphabet) {
             hasher.update(front, symbol);
             hashes.push_back(shift_t(hasher.hashvalue, symbol));

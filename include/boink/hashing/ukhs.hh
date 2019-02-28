@@ -149,9 +149,11 @@ protected:
     typedef HashShifter<UKHShifter<Alphabet>, Alphabet> BaseShifter;
 
     using BaseShifter::_K;
+    using BaseShifter::kmer_buffer;
+    using BaseShifter::kmer_window;
 
     CyclicHash<hash_t>           window_hasher;
-    RollingHashShifter<Alphabet> ukhs_hasher;
+    CyclicHash<hash_t>           ukhs_hasher;
 
     uint16_t                     window_K;
     uint16_t                     seed_K;
@@ -162,11 +164,25 @@ protected:
     bool                         ukhs_hasher_on_left;
 
     void update_unikmer() {
-        Unikmer unikmer(ukhs_hasher.get());
+        Unikmer unikmer(ukhs_hasher.hashvalue);
         if (ukhs->query(unikmer)) {
             minimizer.update(unikmer);
         } else {
             minimizer.update(Unikmer());
+        }
+    }
+
+    void set_ukhs_hasher_left_prefix() {
+        ukhs_hasher.reset();
+        for (uint16_t i = 0; i < seed_K - 1; ++i) {
+            ukhs_hasher.eat(kmer_buffer[i]);
+        }
+    }
+
+    void set_ukhs_hasher_right_suffix() {
+        ukhs_hasher.reset();
+        for (uint16_t i = this->_K - seed_K + 1; i < this->_K; ++i) {
+            ukhs_hasher.eat(kmer_buffer[i]);
         }
     }
 
@@ -197,9 +213,9 @@ public:
         if (this->initialized) {
             return;
         }
-        for (auto c : this->symbol_deque) {
-            this->_validate(c);
-            window_hasher.eat(c);
+        for (uint16_t i = 0; i < this->_K; ++i) {
+            this->_validate(kmer_buffer[i]);
+            window_hasher.eat(kmer_buffer[i]);
         }
         this->initialized = true;
     }
@@ -258,16 +274,19 @@ public:
 
     void reset_unikmers() {
         minimizer.reset();
+        ukhs_hasher.reset();
 
-        ukhs_hasher.set_cursor(this->symbol_deque.begin(),
-                               this->symbol_deque.begin() + seed_K);
-        
-        for (auto cit = this->symbol_deque.begin() + seed_K;
-                  cit != this->symbol_deque.end(); ++cit) {
-
-            update_unikmer();
-            ukhs_hasher.shift_right(*cit);
+        for (uint16_t i = 0; i < seed_K; ++i) {
+            //ukhs_hasher.eat(kmer_buffer[i]);
+            ukhs_hasher.eat(*(kmer_window.begin() + i));
         }
+        for (uint16_t i = seed_K; i < this->_K; ++i) {
+            update_unikmer();
+            ukhs_hasher.update(*(kmer_window.begin() + i - seed_K),
+                               *(kmer_window.begin() + i));
+            //ukhs_hasher.update(kmer_buffer[i - seed_K], kmer_buffer[i]);
+        }
+
         update_unikmer();
 
         if (minimizer.size() != 1) {
@@ -281,16 +300,18 @@ public:
 
     hash_t update_left(const char c) {
         // update main window left
-        this->window_hasher.reverse_update(c, this->symbol_deque.back());
+        this->window_hasher.reverse_update(c, this->kmer_window.back());
 
         // update ukhs hasher
         if (!ukhs_hasher_on_left) {
             // if we're not on the left of the window, reset the cursor there
-            ukhs_hasher.set_cursor(this->symbol_deque.begin(), this->symbol_deque.begin() + seed_K);
+            set_ukhs_hasher_left_prefix();
+            ukhs_hasher.hash_prepend(c);
             ukhs_hasher_on_left = true;
         } else {
             // othewise just shift the new symbol on
-            ukhs_hasher.shift_left(c);
+            ukhs_hasher.reverse_update(c, *(kmer_window.begin() + seed_K - 1));
+            //ukhs_hasher.reverse_update(c, kmer_buffer[seed_K - 1]);
         }
         update_unikmer();
         return this->get();
@@ -298,14 +319,16 @@ public:
 
     hash_t update_right(const char c) {
         // update main window right
-        this->window_hasher.update(this->symbol_deque.front(), c);
+        this->window_hasher.update(this->kmer_window.front(), c);
 
         // if the ukhs hasher is on the left, reset the cursor
         if (ukhs_hasher_on_left) {
-            ukhs_hasher.set_cursor(this->symbol_deque.end() - seed_K, this->symbol_deque.end());
+            set_ukhs_hasher_right_suffix();
+            ukhs_hasher.hash_extend(c);
             ukhs_hasher_on_left = false;
         } else {
-            ukhs_hasher.shift_right(c);
+            ukhs_hasher.update(*(kmer_window.begin() + this->_K - seed_K), c);
+            //ukhs_hasher.update(kmer_buffer[this->_K-seed_K], c);
         }
         update_unikmer();
         return this->get();
@@ -313,7 +336,7 @@ public:
 
     std::vector<shift_t> gather_left() {
         std::vector<shift_t> hashes;
-        const char back = this->symbol_deque.back();
+        const char back = this->kmer_window.back();
         for (auto symbol : Alphabet) {
             window_hasher.reverse_update(symbol, back);
             shift_t result(window_hasher.hashvalue, symbol);
@@ -326,7 +349,7 @@ public:
 
     std::vector<shift_t> gather_right() {
         std::vector<shift_t> hashes;
-        const char front = this->symbol_deque.front();
+        const char front = this->kmer_window.front();
         for (auto symbol : Alphabet) {
             window_hasher.update(front, symbol);
             hashes.push_back(shift_t(window_hasher.hashvalue, symbol));

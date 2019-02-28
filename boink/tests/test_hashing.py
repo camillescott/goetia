@@ -74,8 +74,8 @@ def test_ukhs_long_list(linear_path):
     seq = linear_path()
 
     hasher = UKHShifter(27, 7)
+    print(seq[:27])
     U = hasher.find_unikmers(seq)
+    print(len(U))
     for u, p in U:
         assert unikmer_valid(p)
-    print(U)
-    print(len(U))
