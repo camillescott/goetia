@@ -7,8 +7,8 @@
 * Each instance is a rolling hash function meant to hash streams of characters.
 * Each new instance of this class comes with new random keys.
 *
-* Recommended usage to get 64-bit hash values over n-grams:
-*        CyclicHash<> hf(n);
+* Recommended usage to get L-bit hash values over n-grams:
+*        CyclicHash<> hf(n,L );
 *        for(uint32 k = 0; k<n;++k) {
 *                  unsigned char c = ... ; // grab some character
 *                  hf.eat(c); // feed it to the hasher
@@ -20,14 +20,29 @@
 *           hf.update(out,c); // update hash value
 *        }
 */
-template <typename hashvaluetype = uint64_t, typename chartype = unsigned char>
+template <typename hashvaluetype = uint32, typename chartype =  unsigned char>
 class CyclicHash {
 
 public:
     // myn is the length of the sequences, e.g., 3 means that you want to hash sequences of 3 characters
-    CyclicHash(int myn) : hashvalue(0),
-        n(myn),
+    // mywordsize is the number of bits you which to receive as hash values, e.g., 19 means that the hash values are 19-bit integers
+    CyclicHash(int myn, int mywordsize=19) : hashvalue(0),
+        n(myn), wordsize(mywordsize),
         hasher(maskfnc<hashvaluetype>(wordsize)),
+        mask1(maskfnc<hashvaluetype>(wordsize-1)),
+        myr(n%wordsize),
+        maskn(maskfnc<hashvaluetype>(wordsize-myr))
+    {
+        if(static_cast<uint>(wordsize) > 8*sizeof(hashvaluetype)) {
+            cerr<<"Can't create "<<wordsize<<"-bit hash values"<<endl;
+            throw "abord";
+        }
+    }
+
+    CyclicHash(int myn, uint32 seed1, uint32 seed2, int mywordsize=19) :
+        hashvalue(0),
+        n(myn), wordsize(mywordsize),
+        hasher(maskfnc<hashvaluetype>(wordsize), seed1, seed2),
         mask1(maskfnc<hashvaluetype>(wordsize-1)),
         myr(n%wordsize),
         maskn(maskfnc<hashvaluetype>(wordsize-myr))
@@ -119,14 +134,14 @@ public:
         return z ^ hashvalue;
     }
 
+    // prepare to process a new string, you will need to call "eat" again
+    void reset() {
+      hashvalue = 0;
+    }
 
     hashvaluetype hashvalue;
     int n;
-    // wordsize is the number of bits you which to receive as hash values,
-    // e.g., 19 means that the hash values are 19-bit integers
-    // if you change this you also need to regenerate the random integers in
-    // characterhash.h
-    static constexpr int wordsize = 64;
+    const int wordsize;
     CharacterHash<hashvaluetype,chartype> hasher;
     const hashvaluetype mask1;
     const int myr;
