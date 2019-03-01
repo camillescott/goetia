@@ -149,7 +149,6 @@ protected:
     typedef HashShifter<UKHShifter<Alphabet>, Alphabet> BaseShifter;
 
     using BaseShifter::_K;
-    using BaseShifter::kmer_buffer;
     using BaseShifter::kmer_window;
 
     CyclicHash<hash_t>           window_hasher;
@@ -175,14 +174,14 @@ protected:
     void set_ukhs_hasher_left_prefix() {
         ukhs_hasher.reset();
         for (uint16_t i = 0; i < seed_K - 1; ++i) {
-            ukhs_hasher.eat(kmer_buffer[i]);
+            ukhs_hasher.eat(*(kmer_window.begin() + i));
         }
     }
 
     void set_ukhs_hasher_right_suffix() {
         ukhs_hasher.reset();
         for (uint16_t i = this->_K - seed_K + 1; i < this->_K; ++i) {
-            ukhs_hasher.eat(kmer_buffer[i]);
+            ukhs_hasher.eat(*(kmer_window.begin() + i));
         }
     }
 
@@ -214,8 +213,8 @@ public:
             return;
         }
         for (uint16_t i = 0; i < this->_K; ++i) {
-            this->_validate(kmer_buffer[i]);
-            window_hasher.eat(kmer_buffer[i]);
+            this->_validate(*(kmer_window.begin() + i));
+            window_hasher.eat(*(kmer_window.begin() + i));
         }
         this->initialized = true;
     }
@@ -277,14 +276,12 @@ public:
         ukhs_hasher.reset();
 
         for (uint16_t i = 0; i < seed_K; ++i) {
-            //ukhs_hasher.eat(kmer_buffer[i]);
             ukhs_hasher.eat(*(kmer_window.begin() + i));
         }
         for (uint16_t i = seed_K; i < this->_K; ++i) {
             update_unikmer();
             ukhs_hasher.update(*(kmer_window.begin() + i - seed_K),
                                *(kmer_window.begin() + i));
-            //ukhs_hasher.update(kmer_buffer[i - seed_K], kmer_buffer[i]);
         }
 
         update_unikmer();
@@ -311,7 +308,6 @@ public:
         } else {
             // othewise just shift the new symbol on
             ukhs_hasher.reverse_update(c, *(kmer_window.begin() + seed_K - 1));
-            //ukhs_hasher.reverse_update(c, kmer_buffer[seed_K - 1]);
         }
         update_unikmer();
         return this->get();
@@ -328,7 +324,6 @@ public:
             ukhs_hasher_on_left = false;
         } else {
             ukhs_hasher.update(*(kmer_window.begin() + this->_K - seed_K), c);
-            //ukhs_hasher.update(kmer_buffer[this->_K-seed_K], c);
         }
         update_unikmer();
         return this->get();
