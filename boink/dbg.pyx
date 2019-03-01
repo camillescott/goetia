@@ -59,11 +59,20 @@ cdef class PdBG(dBG):
         cdef bytes _sequence = _bstring(sequence)
         return deref(self._this).insert_sequence(<string>_sequence)       
 
+    def insert_sequence_rolling(self, str sequence):
+        cdef bytes _sequence = _bstring(sequence)
+        return deref(self._this).insert_sequence_rolling(<string>_sequence)   
+
     consume = insert_sequence
 
     def query_sequence(self, str sequence):
         cdef bytes _sequence = _bstring(sequence)
         cdef list counts = deref(self._this).query_sequence(_sequence)
+        return counts
+
+    def query_sequence_rolling(self, str sequence):
+        cdef bytes _sequence = _bstring(sequence)
+        cdef list counts = deref(self._this).query_sequence_rolling(_sequence)
         return counts
 
     @property

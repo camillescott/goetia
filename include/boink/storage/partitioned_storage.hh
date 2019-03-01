@@ -127,7 +127,7 @@ public:
         if (partition < n_partitions) {
             return partitions[partition].get();
         } else {
-            throw BoinkException("Invalid storage partition.");
+            throw BoinkException("Invalid storage partition: " + std::to_string(partition));
         }
     }
 

@@ -139,8 +139,10 @@ cdef extern from "boink/pdbg.hh" namespace "boink" nogil:
         uint64_t insert_sequence(string&,
                                  vector[hash_t]&,
                                  vector[count_t]&) except +ValueError
+        uint64_t insert_sequence_rolling(string&) except +ValueError
 
         vector[count_t] query_sequence(string&) except +ValueError
+        vector[count_t] query_sequence_rolling(string&) except +ValueError
         void query_sequence(string&,
                         vector[count_t]&,
                         vector[hash_t]&,

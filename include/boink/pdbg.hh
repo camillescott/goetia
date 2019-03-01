@@ -193,6 +193,27 @@ public:
         return n_consumed;
     }
 
+    uint64_t insert_sequence_rolling(const std::string& sequence) {
+        hashing::KmerIterator<hashing::DefaultUKHSShifter> iter(sequence, &partitioner);
+
+        uint64_t n_consumed = 0;
+        hashing::PartitionedHash h = iter.next();
+        uint64_t          cur_pid       = h.second;
+        BaseStorageType * cur_partition = S->query_partition(cur_pid);
+        cur_partition->insert(h.first);
+
+        while(!iter.done()) {
+            h = iter.next();
+            if (h.second != cur_pid) {
+                h.second = cur_pid;
+                cur_partition = S->query_partition(cur_pid);
+            }
+            n_consumed += cur_partition->insert(h.first);
+        }
+
+        return n_consumed;
+    }
+
     std::vector<storage::count_t> insert_and_query_sequence(const std::string& sequence) {
 
         hashing::KmerIterator<hashing::DefaultUKHSShifter> iter(sequence, &partitioner);
@@ -217,6 +238,30 @@ public:
         while(!iter.done()) {
             hashing::PartitionedHash h = iter.next();
             counts[pos] = query(h);
+            ++pos;
+        }
+
+        return counts;
+    }
+
+    std::vector<storage::count_t> query_sequence_rolling(const std::string& sequence) {
+
+        hashing::KmerIterator<hashing::DefaultUKHSShifter> iter(sequence, &partitioner);
+        std::vector<storage::count_t> counts(sequence.length() - _K + 1);
+        
+        hashing::PartitionedHash h      = iter.next();
+        uint64_t          cur_pid       = h.second;
+        BaseStorageType * cur_partition = S->query_partition(cur_pid);
+        counts[0]                       = cur_partition->query(h.first);
+
+        size_t pos = 1;
+        while(!iter.done()) {
+            h = iter.next();
+            if (h.second != cur_pid) {
+                h.second = cur_pid;
+                cur_partition = S->query_partition(cur_pid);
+            }
+            counts[pos] = cur_partition->query(h.first);
             ++pos;
         }
 
