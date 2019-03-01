@@ -8,6 +8,7 @@
 from cython.operator cimport dereference as deref
 
 import os
+import sys
 
 from libc.stdint cimport uint64_t, UINT64_MAX
 from libcpp.memory cimport unique_ptr, shared_ptr, make_shared
@@ -127,12 +128,14 @@ cdef class UKHShifter:
     def get_kmers(int W, int K):
         valid_W = list(range(20, 210, 10))
         valid_K = list(range(7, 10))
-        W = round(W, -1)
+        W = W - (W % 10)
+
         if not W in valid_W:
             raise ValueError('Invalid UKHS window size.')
         if not K in valid_K:
             raise ValueError('Invalid UKHS K.')
 
+        print('UKHS: using W={0}, K={1}'.format(W, K), file=sys.stderr)
         filename = os.path.join(DATA_DIR,
                                 'res_{0}_{1}_4_0.txt'.format(K, W))
         kmers = []
