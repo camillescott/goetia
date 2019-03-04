@@ -401,6 +401,7 @@ def task_compile_libboink():
 @create_after('compile_libboink')
 def task_link_libboink():
     objects = [os.path.join(*obj) for obj in OBJECT_FILES]  + ['_libbuild/gqf.o']
+    objects.sort(key=lambda path: os.path.basename(path))
     link_action = link_command(objects, LIBBOINKSO)
     ln_action   = ' '.join(['ln -sf',
                             os.path.abspath(LIBBOINKSO),

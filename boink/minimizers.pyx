@@ -7,9 +7,10 @@
 
 from cython.operator cimport dereference as deref
 
-from libcpp.memory cimport make_unique
+from libcpp.memory cimport make_unique, make_shared
 
 from boink.utils cimport _bstring
+from boink.hashing import UKHShifter
 
 cdef class InteriorMinimizer:
 
@@ -60,3 +61,32 @@ cdef class WKMinimizer(InteriorMinimizer):
     def get_minimizer_kmers(self, str sequence):
         cdef string _sequence = _bstring(sequence)
         return deref(self._wk_this).get_minimizer_kmers(_sequence)
+
+
+cdef class UKHSSignature:
+
+    cdef shared_ptr[_UKHSSignature] _this
+    cdef shared_ptr[_UKHS]          _ukhs
+    cdef readonly int               K
+    cdef readonly int               bucket_K
+    cdef readonly int               bucket_size
+
+    def __cinit__(self, int K, int bucket_K, int bucket_size):
+        cdef vector[string] kmers = UKHShifter.get_kmers(K, bucket_K)
+        self._ukhs = make_shared[_UKHS](bucket_K, kmers)
+        if not self._this:
+            self._this       = make_shared[_UKHSSignature](K, bucket_K, bucket_size, self._ukhs)
+            self.K           = K
+            self.bucket_K    = bucket_K
+            self.bucket_size = bucket_size
+    
+    def insert_sequence(self, str sequence):
+        cdef bytes _sequence = _bstring(sequence)
+        return deref(self._this).insert_sequence(_sequence)       
+
+
+    @property
+    def signature(self):
+        sig = deref(self._this).get_signature()
+        return sig
+

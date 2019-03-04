@@ -7,12 +7,14 @@
 
 from libc.stdint cimport uint16_t, uint64_t, int64_t
 
-from libcpp.memory cimport unique_ptr
+from libcpp.memory cimport unique_ptr, shared_ptr
 from libcpp.string cimport string
 from libcpp.utility cimport pair
 from libcpp.vector cimport vector
 
 from boink.hashing cimport *
+from boink.kmers cimport *
+
 
 cdef extern from "boink/minimizers.hh" namespace "boink" nogil:
 
@@ -34,6 +36,16 @@ cdef extern from "boink/minimizers.hh" namespace "boink" nogil:
 
         vector[pair[hash_t, int64_t]] get_minimizers(const string&)
         vector[pair[string, int64_t]] get_minimizer_kmers(const string&)
+
+cdef extern from "boink/ukhs_signature.hh" namespace "boink::signatures" nogil:
+
+    cdef cppclass _UKHSSignature "boink::signatures::UKHSSignature" (_KmerClient):
+        _UKHSSignature(uint16_t, uint16_t, uint64_t, shared_ptr[_UKHS])
+
+        void insert(const string&) except +ValueError
+        void insert_sequence(const string&) except +ValueError
+
+        vector[vector[hash_t]] get_signature()
         
 
 cdef class InteriorMinimizer:
