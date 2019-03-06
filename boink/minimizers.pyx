@@ -90,3 +90,19 @@ cdef class UKHSSignature:
         sig = deref(self._this).get_signature()
         return sig
 
+    @property
+    def n_accepted(self):
+        return deref(self._this).get_n_accepted()
+
+    @property
+    def n_rejected(self):
+        return deref(self._this).get_n_rejected()
+
+    @property
+    def n_kmers(self):
+        return deref(self._this).get_n_kmers()
+
+    @property
+    def bucket_n_inserts(self):
+        return deref(self._this).get_bucket_n_inserts()
+

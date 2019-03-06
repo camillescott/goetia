@@ -28,34 +28,51 @@ namespace signatures {
 using boink::hashing::hash_t;
 using boink::hashing::PartitionedHash;
 
+
+class IncompatibleSignature : public BoinkException {
+public:
+    explicit IncompatibleSignature(const std::string& msg = "Incompatible signatures.")
+        : BoinkException(msg) { }
+};
+
+
 struct MinHash {
     // this based off and partially riffed from sourmash
     std::vector<hash_t> mins;
     const size_t max_size;
+    uint64_t     n_inserts;
 
     explicit MinHash(size_t max_size) 
         : max_size(max_size),
-          mins(max_size, ULLONG_MAX)
+          mins(max_size, ULLONG_MAX),
+          n_inserts(0)
     {
     }
 
-    void insert(const hash_t hash) {
+    bool insert(const hash_t hash) {
+        ++n_inserts;
         if (mins.size() == 0) {
             mins.push_back(hash);
-            return;
+            return true;
         } else if (mins.back() > hash or mins.size() < max_size) {
             auto pos = std::lower_bound(std::begin(mins), std::end(mins), hash);
 
             if (pos == mins.cend()) {
                 mins.push_back(hash);
+                return true;
             } else if (*pos != hash) {
                 mins.insert(pos, hash);
             
                 if (max_size and mins.size() > max_size) {
                     mins.pop_back();
                 }
+
+                return true;
             }
         }
+
+        return false;
+        
     }
 };
 
@@ -75,6 +92,10 @@ public:
     const uint16_t                        bucket_K;
     const uint64_t                        bucket_size;
 
+    uint64_t                              n_accepted;
+    uint64_t                              n_rejected;
+    uint64_t                              n_kmers;
+
     explicit UKHSSignature(uint16_t K,
                            uint16_t bucket_K,
                            uint64_t bucket_size,
@@ -84,7 +105,10 @@ public:
           partitioner (K, bucket_K, ukhs),
           n_buckets   (partitioner.n_ukhs_hashes()),
           bucket_K    (bucket_K),
-          bucket_size (bucket_size)
+          bucket_size (bucket_size),
+          n_accepted  (0),
+          n_rejected  (0),
+          n_kmers     (0)
     {
         for (size_t i = 0; i < n_buckets; ++i) {
             sig_buckets.push_back(
@@ -99,6 +123,7 @@ public:
     inline void insert(const std::string& kmer) {
         partitioner.set_cursor(kmer);
         partitioner.reset_unikmers();
+        ++n_kmers;
 
         insert(partitioner.get(), partitioner.get_front_partition());
     }
@@ -108,7 +133,11 @@ public:
     }
 
     inline void insert(const hash_t hash, const uint64_t bucket_id) {
-        this->query_bucket(bucket_id)->insert(hash);
+        if (this->query_bucket(bucket_id)->insert(hash)) {
+            ++n_accepted;
+        } else {
+            ++n_rejected;
+        }
     }
 
     inline void insert_sequence(const std::string& sequence) {
@@ -117,15 +146,25 @@ public:
         PartitionedHash h          = iter.next();
         uint64_t        cur_bid    = h.second;
         MinHash *       cur_bucket = this->query_bucket(cur_bid);
-        cur_bucket->insert(h.first);
+        if (cur_bucket->insert(h.first)) {
+            ++n_accepted;
+        } else {
+            ++n_rejected;
+        }
+        ++n_kmers;
 
         while(!iter.done()) {
             h = iter.next();
             if (h.second != cur_bid) {
-                h.second = cur_bid;
+                cur_bid = h.second;
                 cur_bucket = this->query_bucket(cur_bid);
             }
-            cur_bucket->insert(h.first);
+            if (cur_bucket->insert(h.first)) {
+                n_accepted++;
+            } else {
+                n_rejected++;
+            }
+            ++n_kmers;
         }
     }
 
@@ -136,6 +175,36 @@ public:
         }
 
         return signature;
+    }
+
+    std::vector<uint64_t> get_bucket_n_inserts() {
+        std::vector<uint64_t> result;
+        for (auto& bucket : sig_buckets) {
+            result.push_back(bucket->n_inserts);
+        }
+        return result;
+    }
+
+    uint64_t get_n_accepted() const {
+        return n_accepted;
+    }
+
+    uint64_t get_n_rejected() const {
+        return n_rejected;
+    }
+
+    uint64_t get_n_kmers() const {
+        return n_kmers;
+    }
+
+    std::set<hash_t> intersection(UKHSSignature * other) {
+        if (other->n_buckets != this->n_buckets or
+            other->bucket_K  != this->bucket_K or
+            other->K()       != this->K() or
+            other->n_buckets != this->n_buckets) {
+            
+            throw IncompatibleSignature("Error: Signatures not compatible");
+        }
     }
 
 protected:

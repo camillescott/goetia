@@ -205,7 +205,7 @@ public:
         while(!iter.done()) {
             h = iter.next();
             if (h.second != cur_pid) {
-                h.second = cur_pid;
+                cur_pid = h.second;
                 cur_partition = S->query_partition(cur_pid);
             }
             n_consumed += cur_partition->insert(h.first);
@@ -258,7 +258,7 @@ public:
         while(!iter.done()) {
             h = iter.next();
             if (h.second != cur_pid) {
-                h.second = cur_pid;
+                cur_pid = h.second;
                 cur_partition = S->query_partition(cur_pid);
             }
             counts[pos] = cur_partition->query(h.first);

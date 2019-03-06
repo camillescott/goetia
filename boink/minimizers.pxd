@@ -46,6 +46,10 @@ cdef extern from "boink/ukhs_signature.hh" namespace "boink::signatures" nogil:
         void insert_sequence(const string&) except +ValueError
 
         vector[vector[hash_t]] get_signature()
+        uint64_t               get_n_accepted()
+        uint64_t               get_n_rejected()
+        uint64_t               get_n_kmers()
+        vector[uint64_t]       get_bucket_n_inserts()
         
 
 cdef class InteriorMinimizer:
