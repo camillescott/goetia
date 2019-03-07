@@ -135,7 +135,6 @@ cdef class UKHShifter:
         if not K in valid_K:
             raise ValueError('Invalid UKHS K.')
 
-        print('UKHS: using W={0}, K={1}'.format(W, K), file=sys.stderr)
         filename = os.path.join(DATA_DIR,
                                 'res_{0}_{1}_4_0.txt'.format(K, W))
         kmers = []
