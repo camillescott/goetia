@@ -15,6 +15,7 @@ from boink.cdbg cimport *
 from boink.compactor cimport *
 from boink.events cimport EventNotifier, _EventNotifier, _EventListener
 from boink.utils cimport _bstring
+from boink.minimizers cimport _UKHSCountSignature
 
 
 cdef extern from "boink/processors.hh":
@@ -45,6 +46,13 @@ cdef extern from "boink/processors.hh" namespace "boink" nogil:
                       uint64_t,
                       uint64_t)
         uint64_t n_consumed()
+
+
+    cdef cppclass _UKHSCountSignatureProcessor "boink::UKHSCountSignatureProcessor" (_FileProcessor[_UKHSCountSignatureProcessor]):
+        _UKHSCountSignatureProcessor(shared_ptr[_UKHSCountSignatureProcessor],
+                                     uint64_t,
+                                     uint64_t,
+                                     uint64_t)
 
     cdef cppclass _DecisionNodeProcessor "boink::DecisionNodeProcessor"[GraphType] (_FileProcessor[_DecisionNodeProcessor[GraphType]]):
         _DecisionNodeProcessor(_StreamingCompactor*,
@@ -81,6 +89,11 @@ cdef class FileProcessor:
 
 cdef class MinimizerProcessor(FileProcessor):
     cdef shared_ptr[_MinimizerProcessor[_DefaultShifter]] _mp_this
+
+cdef class UKHSCountSignatureProcessor(FileProcessor):
+    cdef shared_ptr[_UKHSCountSignatureProcessor] _this
+
+
 
 
 include "processors.tpl.pxd.pxi"

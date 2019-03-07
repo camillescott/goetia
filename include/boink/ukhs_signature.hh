@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <set>
 #include <vector>
 
 #include "boink/boink.hh"
@@ -218,6 +219,85 @@ protected:
     }
           
 };
+
+
+class UKHSCountSignature : public kmers::KmerClient {
+
+protected:
+
+    std::shared_ptr<hashing::UKHS>        ukhs;
+    hashing::DefaultUKHSShifter           partitioner;
+
+    std::vector<size_t>                   signature;
+
+public:
+
+    const uint16_t                        bucket_K;
+
+    explicit UKHSCountSignature(uint16_t K,
+                                uint16_t bucket_K,
+                                std::shared_ptr<hashing::UKHS> ukhs)
+        : KmerClient  (K),
+          ukhs        (ukhs),
+          partitioner (K, bucket_K, ukhs),
+          signature   (partitioner.n_ukhs_hashes(), 0),
+          bucket_K    (bucket_K)
+    {
+    }
+
+    inline void insert(const std::string& kmer) {
+        partitioner.set_cursor(kmer);
+        partitioner.reset_unikmers();
+
+        increment_bucket(partitioner.get_front_partition());
+    }
+
+    inline void insert_sequence(const std::string& sequence) {
+        hashing::KmerIterator<hashing::DefaultUKHSShifter> iter(sequence, &partitioner);
+
+        while(!iter.done()) {
+            PartitionedHash h = iter.next();
+            increment_bucket(h.second);
+        }
+    }
+
+    size_t get_size() const {
+        return signature.size();
+    }
+
+    std::vector<size_t> get_signature() {
+        return signature;
+    }
+
+    uint64_t get_n_kmers() const {
+        size_t n_kmers = 0;
+        for (auto& c : signature) {
+            n_kmers += c;
+        }
+        return n_kmers;
+    }
+
+    std::set<hash_t> intersection(UKHSCountSignature * other) {
+        if (other->get_size() != this->get_size() or
+            other->bucket_K   != this->bucket_K or
+            other->K()        != this->K()) {
+            
+            throw IncompatibleSignature("Error: Signatures not compatible");
+        }
+    }
+
+protected:
+
+    MinHash * increment_bucket(uint64_t bucket_id) {
+        if (bucket_id < this->get_size()) {
+            signature[bucket_id] += 1;
+        } else {
+            throw BoinkException("Invalid UKHS bucket: " + std::to_string(bucket_id));
+        }
+    }
+          
+};
+
 
 }
 }

@@ -22,6 +22,7 @@
 #include "boink/hashing/hashing_types.hh"
 #include "boink/hashing/exceptions.hh"
 #include "boink/cdbg/compactor.hh"
+#include "boink/ukhs_signature.hh"
 
 
 #define DEFAULT_FINE_INTERVAL 10000
@@ -248,6 +249,36 @@ public:
         return _n_consumed;
     }
 
+};
+
+
+class UKHSCountSignatureProcessor : public FileProcessor<UKHSCountSignatureProcessor,
+                                                         parsing::FastxReader> {
+protected:
+
+    shared_ptr<signatures::UKHSCountSignature> signature;
+
+    typedef FileProcessor<UKHSCountSignatureProcessor, parsing::FastxReader> Base;
+
+public:
+
+    using Base::process_sequence;
+
+    UKHSCountSignatureProcessor(shared_ptr<signatures::UKHSCountSignature> signature,
+                                uint64_t fine_interval=DEFAULT_FINE_INTERVAL,
+                                uint64_t medium_interval=DEFAULT_MEDIUM_INTERVAL,
+                                uint64_t coarse_interval=DEFAULT_COARSE_INTERVAL)
+        : Base(fine_interval, medium_interval, coarse_interval),
+          signature(signature)
+    {
+    }
+
+    void process_sequence(const parsing::Read& read) {
+        signature->insert_sequence(read.cleaned_seq);
+    }
+
+    void report() {
+    }
 };
 
 

@@ -50,6 +50,16 @@ cdef extern from "boink/ukhs_signature.hh" namespace "boink::signatures" nogil:
         uint64_t               get_n_rejected()
         uint64_t               get_n_kmers()
         vector[uint64_t]       get_bucket_n_inserts()
+
+    cdef cppclass _UKHSCountSignature "boink::signatures::UKHSCountSignature" (_KmerClient):
+        _UKHSCountSignature(uint16_t, uint16_t, shared_ptr[_UKHS])
+
+        void insert(const string&) except +ValueError
+        void insert_sequence(const string&) except +ValueError
+
+        vector[size_t] get_signature()
+        size_t         get_size()
+        uint64_t       get_n_kmers()
         
 
 cdef class InteriorMinimizer:
@@ -59,3 +69,12 @@ cdef class InteriorMinimizer:
 
 cdef class WKMinimizer(InteriorMinimizer):
     cdef unique_ptr[_WKMinimizer[_DefaultShifter]] _wk_this
+
+
+cdef class UKHSCountSignature:
+
+    cdef shared_ptr[_UKHSCountSignature] _this
+    cdef shared_ptr[_UKHS]               _ukhs
+    cdef readonly int                    K
+    cdef readonly int                    bucket_K
+

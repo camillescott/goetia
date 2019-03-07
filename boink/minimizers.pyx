@@ -106,3 +106,30 @@ cdef class UKHSSignature:
     def bucket_n_inserts(self):
         return deref(self._this).get_bucket_n_inserts()
 
+
+cdef class UKHSCountSignature:
+
+    def __cinit__(self, int K, int bucket_K):
+        cdef vector[string] kmers = UKHShifter.get_kmers(K, bucket_K)
+        self._ukhs = make_shared[_UKHS](bucket_K, kmers)
+        if not self._this:
+            self._this       = make_shared[_UKHSCountSignature](K, bucket_K, self._ukhs)
+            self.K           = K
+            self.bucket_K    = bucket_K
+    
+    def insert_sequence(self, str sequence):
+        cdef bytes _sequence = _bstring(sequence)
+        return deref(self._this).insert_sequence(_sequence)       
+
+
+    @property
+    def signature(self):
+        sig = deref(self._this).get_signature()
+        return sig
+
+    @property
+    def n_kmers(self):
+        return deref(self._this).get_n_kmers()
+
+    def __len__(self):
+        return deref(self._this).get_size()

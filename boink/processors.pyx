@@ -11,6 +11,7 @@ from libcpp.memory cimport make_shared
 from boink.dbg cimport *
 from boink.cdbg cimport *
 from boink.utils cimport _bstring, _ustring
+from boink.minimizers cimport UKHSCountSignature
 
 
 class DEFAULT_INTERVALS:
@@ -47,3 +48,18 @@ cdef class MinimizerProcessor(FileProcessor):
 
         return deref(self._mp_this).n_reads()
 
+
+cdef class UKHSCountSignatureProcessor(FileProcessor):
+
+    def __cinit__(self, UKHSCountSignature signature,
+                        uint64_t fine_interval,
+                        uint64_t medium_interval,
+                        uint64_t coarse_interval):
+
+        self._this = make_shared[_UKHSCountSignatureProcessor](signature._this,
+                                                               fine_interval,
+                                                               medium_interval,
+                                                               coarse_interval)
+
+    def process(self, str input_filename):
+        deref(self._this).process(_bstring(input_filename))
