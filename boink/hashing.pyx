@@ -143,3 +143,4 @@ cdef class UKHShifter:
                 kmers.append(_bstring(line.strip()))
 
         return kmers
+
