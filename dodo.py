@@ -326,9 +326,10 @@ def task_deploy_prometheus():
             'targets':  [os.path.join('lib', lib) for lib in libs] +
                         [os.path.join(deploy_root, 'lib', lib) for lib in libs],
             'actions':  [build_cmd,
+                         'mkdir -p lib/',
                          'cp -r {0} {1}'.format(os.path.join(deploy_root, 'include', 'prometheus'),
                                                 'include/'),
-                         'cp -r {0}/*.so {1}'.format(os.path.join(deploy_root, 'lib??'),
+                         'cp -r {0}/*.so {1}'.format(os.path.join(deploy_root, 'lib'),
                                                      'lib/')],
             'task_dep': ['display_libboink_config'],
             'uptodate': [run_once],
@@ -352,11 +353,11 @@ def task_deploy_gfakluge():
 def task_deploy_cqf():
     build_cmd  = 'cd third-party/cqf && make'
     cp_hpp_cmd = 'mkdir -p include/cqf && cp third-party/cqf/gqf.h include/cqf/'
-    cp_obj_cmd = 'cp third-party/cqf/gqf.o _libbuild/'
+    cp_obj_cmd = 'mkdir -p {}/ && cp third-party/cqf/gqf.o {}/'.format(LIBBUILDDIR, LIBBUILDDIR)
 
     return {'title': title_with_actions,
             'actions': [build_cmd, cp_hpp_cmd, cp_obj_cmd],
-            'targets': ['_libbuild/gqf.o'],
+            'targets': ['{}/gqf.o'.format(LIBBUILDDIR)],
             'file_dep': ['third-party/cqf/gqf.h'],
             'task_dep': ['display_libboink_config'],
             'clean': [clean_targets]}
@@ -400,7 +401,7 @@ def task_compile_libboink():
 
 @create_after('compile_libboink')
 def task_link_libboink():
-    objects = [os.path.join(*obj) for obj in OBJECT_FILES]  + ['_libbuild/gqf.o']
+    objects = [os.path.join(*obj) for obj in OBJECT_FILES]  + ['{}/gqf.o'.format(LIBBUILDDIR)]
     objects.sort(key=lambda path: os.path.basename(path))
     link_action = link_command(objects, LIBBOINKSO)
     ln_action   = ' '.join(['ln -sf',
