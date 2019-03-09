@@ -6,10 +6,10 @@ cache:
   directories:
     - $HOME/.cache/pip
 
-branches:
-  only:
-  - master
-  - "/^v.*$/"
+# branches:
+#  only:
+#  - master
+#  - "/^v.*$/"
 
 script: pytest boink
 
