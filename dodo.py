@@ -329,7 +329,7 @@ def task_deploy_prometheus():
                          'mkdir -p lib/',
                          'cp -r {0} {1}'.format(os.path.join(deploy_root, 'include', 'prometheus'),
                                                 'include/'),
-                         'cp -r {0}/*.so {1}'.format(os.path.join(deploy_root, 'lib'),
+                         'cp -r {0}/*.so {1}'.format(os.path.join(deploy_root, 'lib*'),
                                                      'lib/')],
             'task_dep': ['display_libboink_config'],
             'uptodate': [run_once],
