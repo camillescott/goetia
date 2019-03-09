@@ -13,6 +13,7 @@ from libcpp.memory cimport shared_ptr, make_shared
 from boink.cdbg cimport *
 from boink.utils cimport _bstring
 from boink.events cimport _EventListener
+from boink.minimizers cimport UKHSCountSignature
 
 
 cdef class SingleFileReporter(EventListener):
@@ -43,6 +44,15 @@ cdef class cDBGHistoryReporter(SingleFileReporter):
             self._this = <shared_ptr[_SingleFileReporter]>self._h_this
             self._listener = <shared_ptr[_EventListener]>self._h_this
 
+cdef class UKHSSignatureReporter(SingleFileReporter):
+
+
+    def __cinit__(self, str output_filename, UKHSCountSignature signature):
+        if type(self) is UKHSSignatureReporter:
+            self._uk_this = make_shared[_UKHSSignatureReporter](signature._this,
+                                                                _bstring(output_filename))
+            self._this = <shared_ptr[_SingleFileReporter]>self._uk_this
+            self._listener = <shared_ptr[_EventListener]>self._uk_this
 
 include "reporting.tpl.pyx.pxi"
 

@@ -308,6 +308,10 @@ public:
         return S->n_occupied();
     }
 
+    uint64_t n_partitions() const {
+        return S->n_partition_stores();
+    }
+
     const std::string suffix(const std::string& kmer) {
         return kmer.substr(kmer.length() - this->_K + 1);
     }

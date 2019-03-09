@@ -8,6 +8,7 @@ import sys
 from boink.args       import add_output_interval_args
 from boink.minimizers import UKHSCountSignature
 from boink.processors import UKHSCountSignatureProcessor
+from boink.reporting  import UKHSSignatureReporter
 
 perr = functools.partial(print, file=sys.stderr)
 
@@ -15,6 +16,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-W', type=int, default=31)
     parser.add_argument('-K', type=int, default=9)
+    parser.add_argument('--streaming-output',
+                        nargs='?')
     parser.add_argument('-o', type=argparse.FileType('w'), default=sys.stdout)
     parser.add_argument('inputs', nargs='+')
     add_output_interval_args(parser)
@@ -29,6 +32,11 @@ def main():
                                            args.fine_interval,
                                            args.medium_interval,
                                            args.coarse_interval)
+        if args.streaming_output:
+            reporter = UKHSSignatureReporter(args.streaming_output,
+                                             gen)
+            proc.Notifier.register_listener(reporter)
+
         proc.process(filename)
         perr('Done.')
 

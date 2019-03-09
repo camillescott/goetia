@@ -23,6 +23,9 @@
 #include "boink/kmers/kmerclient.hh"
 #include "boink/hashing/ukhs.hh"
 
+#include "boink/pdbg.hh"
+#include "boink/storage/bitstorage.hh"
+
 namespace boink {
 namespace signatures {
 
@@ -228,7 +231,8 @@ protected:
     std::shared_ptr<hashing::UKHS>        ukhs;
     hashing::DefaultUKHSShifter           partitioner;
 
-    std::vector<size_t>                   signature;
+    //std::vector<size_t>                   signature;
+    std::shared_ptr<PdBG<storage::BitStorage>> signature;
 
 public:
 
@@ -240,38 +244,49 @@ public:
         : KmerClient  (K),
           ukhs        (ukhs),
           partitioner (K, bucket_K, ukhs),
-          signature   (partitioner.n_ukhs_hashes(), 0),
+          //signature   (partitioner.n_ukhs_hashes(), 0),
           bucket_K    (bucket_K)
     {
+        signature = std::make_shared<PdBG<storage::BitStorage>>(K,
+                                                                bucket_K,
+                                                                ukhs,
+                                                                100000,
+                                                                4);
     }
 
     inline void insert(const std::string& kmer) {
-        partitioner.set_cursor(kmer);
-        partitioner.reset_unikmers();
+        //partitioner.set_cursor(kmer);
+        //partitioner.reset_unikmers();
 
-        increment_bucket(partitioner.get_front_partition());
+        //increment_bucket(partitioner.get_front_partition());
+        signature->insert(kmer);
     }
 
     inline void insert_sequence(const std::string& sequence) {
+        /*
         hashing::KmerIterator<hashing::DefaultUKHSShifter> iter(sequence, &partitioner);
 
         while(!iter.done()) {
             PartitionedHash h = iter.next();
             increment_bucket(h.second);
         }
+        */
+        signature->insert_sequence(sequence);
     }
 
     size_t get_size() const {
-        return signature.size();
+        //return signature.size();
+        return signature->n_partitions();
     }
 
     std::vector<size_t> get_signature() {
-        return signature;
+        //return signature;
+        return signature->get_partition_counts();
     }
 
     uint64_t get_n_kmers() const {
         size_t n_kmers = 0;
-        for (auto& c : signature) {
+        for (auto& c : signature->get_partition_counts()) {
             n_kmers += c;
         }
         return n_kmers;
@@ -288,13 +303,15 @@ public:
 
 protected:
 
-    MinHash * increment_bucket(uint64_t bucket_id) {
+    /*
+    void increment_bucket(uint64_t bucket_id) {
         if (bucket_id < this->get_size()) {
             signature[bucket_id] += 1;
         } else {
             throw BoinkException("Invalid UKHS bucket: " + std::to_string(bucket_id));
         }
     }
+    */
           
 };
 

@@ -1,4 +1,4 @@
-/* cdbg_history_reporter.hh
+/* ukhs_signature_reporter.cc
  *
  * Copyright (C) 2018 Camille Scott
  * All rights reserved.
@@ -7,4 +7,4 @@
  * of the MIT license.  See the LICENSE file for details.
  */
 
-#include "boink/reporting/cdbg_history_reporter.hh"
+#include "boink/reporting/ukhs_signature_reporter.hh"

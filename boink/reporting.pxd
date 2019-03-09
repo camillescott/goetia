@@ -13,6 +13,7 @@ from boink.dbg cimport DefaultDBG
 from boink.cdbg cimport cDBGFormat, _cDBG 
 from boink.compactor cimport *
 from boink.events cimport EventListener, _EventListener
+from boink.minimizers cimport _UKHSCountSignature
 from boink.prometheus cimport _Registry
 
 
@@ -34,6 +35,10 @@ cdef extern from "boink/reporting/cdbg_writer_reporter.hh" namespace "boink::rep
 cdef extern from "boink/reporting/cdbg_history_reporter.hh" namespace "boink::reporting" nogil:
     cdef cppclass _cDBGHistoryReporter "boink::reporting::cDBGHistoryReporter" (_SingleFileReporter):
         _cDBGHistoryReporter(const string&)
+
+cdef extern from "boink/reporting/ukhs_signature_reporter.hh" namespace "boink::reporting" nogil:
+    cdef cppclass _UKHSSignatureReporter "boink::reporting::UKHSSignatureReporter" (_SingleFileReporter):
+        _UKHSSignatureReporter(shared_ptr[_UKHSCountSignature], const string&)
 
 cdef extern from "boink/reporting/cdbg_component_reporter.hh" namespace "boink::reporting" nogil:
     cdef cppclass _cDBGComponentReporter "boink::reporting::cDBGComponentReporter" [GraphType] (_SingleFileReporter):
@@ -64,5 +69,9 @@ cdef class MultiFileReporter(EventListener):
 
 cdef class cDBGHistoryReporter(SingleFileReporter):
     cdef shared_ptr[_cDBGHistoryReporter] _h_this
+
+
+cdef class UKHSSignatureReporter(SingleFileReporter):
+    cdef shared_ptr[_UKHSSignatureReporter] _uk_this
 
 include "reporting.tpl.pxd.pxi"

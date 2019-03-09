@@ -60,6 +60,7 @@ cdef class UKHSCountSignatureProcessor(FileProcessor):
                                                                fine_interval,
                                                                medium_interval,
                                                                coarse_interval)
+        self.Notifier = EventNotifier._wrap(<shared_ptr[_EventNotifier]>self._this)
 
     def process(self, str input_filename):
         deref(self._this).process(_bstring(input_filename))

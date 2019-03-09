@@ -104,18 +104,23 @@ public:
             throw BoinkException("K does not match k-mer size from provided UKHS");
         }
 
-        std::cerr << "Building MPHF with "
-                  << ukhs.size() << " k-mers."
-                  << std::endl;
+        //std::cerr << "Building MPHF with "
+        //          << ukhs.size() << " k-mers."
+        //          << std::endl;
 
         for (auto unikmer : ukhs) {
             ukhs_hashes.push_back(ukhs_hasher.hash(unikmer));
         }
-        bphf = std::make_unique<boophf_t>(ukhs_hashes.size(), ukhs_hashes, 1, 2.0);
+        bphf = std::make_unique<boophf_t>(ukhs_hashes.size(),
+                                          ukhs_hashes,
+                                          1,
+                                          2.0,
+                                          false,
+                                          false);
         for (auto unikmer_hash : ukhs_hashes) {
             ukhs_revmap[bphf->lookup(unikmer_hash)] = unikmer_hash;
         }
-        std::cerr << "Finished building MPHF." << std::endl;
+        //std::cerr << "Finished building MPHF." << std::endl;
     }
 
     bool query(Unikmer& unikmer) {
