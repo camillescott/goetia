@@ -1,0 +1,32 @@
+language: python
+os: linux
+dist: xenial
+
+cache:
+  directories:
+    - $HOME/.cache/pip
+
+# branches:
+#  only:
+#  - master
+#  - "/^v.*$/"
+
+script: pytest boink
+
+install:
+  - pip install numpy jinja2 doit pyyaml cython sh pandas
+  - git submodule update --init --remote --recursive 
+  - doit
+  - pip install .  
+  - pip install pytest-benchmark
+  - pip install git+https://github.com/camillescott/debruijnal-enhance-o-tron.git
+  - pip install git+https://github.com/dib-lab/khmer.git
+
+jobs:
+  include:
+    - &check
+      stage: check # do a pre-screen to make sure this is even worth testing
+      python: 3.7
+
+stages:
+  - check

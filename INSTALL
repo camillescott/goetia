@@ -1,0 +1,11 @@
+$ git clone https://github.com/camilescott/boink.git && cd boink
+$ pip install numpy jinja2 doit pyyaml cython sh pandas
+$ git submodule update --init --remote --recursive 
+$ doit
+$ pip install .
+
+for tests:
+$ pip install pytest-benchmark
+$ pip install git+https://github.com/camillescott/debruijnal-enhance-o-tron.git
+$ pip install git+https://github.com/dib-lab/khmer.git
+$ pytest boink
