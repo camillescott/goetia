@@ -423,11 +423,11 @@ def task_link_libboink():
 def task_boink_pc():
     src    = os.path.join(SOURCE_DIR, '{0}.pc.in'.format(PKG))
     target = os.path.join(LIBBUILDDIR, replace_ext(os.path.basename(src), ''))
-    cmd = "sed -e 's,@prefix@,{prefix},'  "\
-          "-e 's,@VERSION@,{version},' {src} >{dst}".format(prefix=PREFIX,
-                                                            version=VERSION,
-                                                            src=src,
-                                                            dst=target)
+    cmd = ("sed -e 's,@prefix@,{prefix},'  "
+           "-e 's,@VERSION@,{version},' {src} >{dst}".format(prefix=PREFIX,
+                                                             version=VERSION,
+                                                             src=src,
+                                                             dst=target))
 
     return {'title':    title_with_actions,
             'file_dep': [src],
