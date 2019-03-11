@@ -1,0 +1,27 @@
+# Source and deps
+
+$ git clone https://github.com/camillescott/boink.git && cd boink
+$ pip install numpy jinja2 doit pyyaml cython sh pandas
+$ git submodule update --init --remote --recursive 
+
+## On macOS:
+$ brew install gcc@8
+
+# Building deps with doit
+
+## On macOS
+$ doit -n 4 CXX=g++-8 build
+
+## On linux:
+
+$ doit -n 4 build
+
+# Build python package
+$ pip install .
+
+# Tests
+
+$ pip install pytest-benchmark
+$ pip install git+https://github.com/camillescott/debruijnal-enhance-o-tron.git
+$ pip install git+https://github.com/dib-lab/khmer.git
+$ pytest boink
