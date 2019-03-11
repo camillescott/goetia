@@ -5,8 +5,11 @@ import functools
 import os
 import sys
 
-from boink.args       import add_output_interval_args
+from boink.args       import (add_output_interval_args,
+                              add_pairing_args,
+                              print_interval_settings)
 from boink.minimizers import UKHSCountSignature
+from boink.parsing    import grouper
 from boink.processors import UKHSCountSignatureProcessor
 from boink.reporting  import UKHSSignatureReporter
 
@@ -21,11 +24,18 @@ def main():
     parser.add_argument('-o', type=argparse.FileType('w'), default=sys.stdout)
     parser.add_argument('inputs', nargs='+')
     add_output_interval_args(parser)
+    add_pairing_args(parser)
 
     args = parser.parse_args()
+    print_interval_settings(args)
 
-    for filename in args.inputs:
-        perr('Build signature for {0} with W={1}, W={2}...'.format(filename, args.W, args.K))
+    if args.pairing_mode == 'split':
+        _samples = grouper(2, args.inputs)
+    else:
+        _samples = args.inputs
+
+    for sample in _samples:
+        perr('Build signature for {0} with W={1}, W={2}...'.format(sample, args.W, args.K))
 
         gen = UKHSCountSignature(args.W, args.K)
         proc = UKHSCountSignatureProcessor(gen,
@@ -37,10 +47,14 @@ def main():
                                              gen)
             proc.Notifier.register_listener(reporter)
 
-        proc.process(filename)
-        perr('Done.')
+        if args.pairing_mode == 'split':
+            proc.process(*sample)
+            gen.save(args.o, os.path.basename(sample[0]))
+        else:
+            proc.process(sample)
+            gen.save(args.o, os.path.basename(sample))
 
-        gen.save(args.o, os.path.basename(filename))
+        perr('Done.')
 
 if __name__ == '__main__':
     main()

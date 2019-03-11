@@ -62,5 +62,9 @@ cdef class UKHSCountSignatureProcessor(FileProcessor):
                                                                coarse_interval)
         self.Notifier = EventNotifier._wrap(<shared_ptr[_EventNotifier]>self._this)
 
-    def process(self, str input_filename):
-        deref(self._this).process(_bstring(input_filename))
+    def process(self, str input_filename, str right_filename=None):
+        if right_filename is None:
+            deref(self._this).process(_bstring(input_filename))
+        else:
+            deref(self._this).process(_bstring(input_filename),
+                                      _bstring(right_filename))
