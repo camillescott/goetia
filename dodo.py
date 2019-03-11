@@ -75,6 +75,14 @@ LIB_VERSION = '1'
 LIBBUILDDIR = '_libbuild'
 #LIBDIR = os.path.join('src', PKG)
 
+CXX         = get_var('CXX', os.environ.get('CXX', 'c++'))
+INCLUDES    = ['-I', os.path.abspath('include/'), '-I.']
+
+# for anaconda
+PREFIX      = get_var('PREFIX', sysconfig.get_config_var('prefix'))
+if PREFIX is not None:
+    INCLUDES += ['-I'+os.path.join(PREFIX, 'include')]
+
 if sys.platform == 'darwin':
     SHARED_EXT   = 'dylib'
     SONAME       = 'lib{0}.{1}.{2}'.format(PKG, SHARED_EXT, LIB_VERSION)
@@ -127,14 +135,6 @@ if DEBUG_ALL:
     DEBUG_EVENTS = True
 
 DEBUG_FLAGS = ['-gdwarf']
-
-CXX         = get_var('CXX', os.environ.get('CXX', 'c++'))
-INCLUDES    = ['-I', os.path.abspath('include/'), '-I.']
-
-# for anaconda
-PREFIX      = get_var('PREFIX', sysconfig.get_config_var('prefix'))
-if PREFIX is not None:
-    INCLUDES += ['-I'+os.path.join(PREFIX, 'include')]
 
 WARNINGS    = ['-Wall']
 COMMON      = ['-O3', '-fPIC', '-fno-omit-frame-pointer']
@@ -210,8 +210,7 @@ if COLOR:
     CXXFLAGS += ['-fdiagnostics-color']
 
 if sys.platform == 'darwin':
-    CXXFLAGS += [ '-mmacosx-version-min=10.7',
-                 '-stdlib=libc++']
+    CXXFLAGS += [ '-mmacosx-version-min=10.7' ]
 
 CXXFLAGS  += ['-DVERSION={0}'.format(VERSION)]
 
@@ -295,7 +294,8 @@ def task_display_libboink_config():
         print('Compile:', cxx_command('SOURCE.cc', 'TARGET.o'))
         print('Link:', link_command(['OBJECT_1.o', 'OBJECT_2.o',
                                      'OBJECT_N.o'], SONAME))
-        print('Compile Cython:', cy_compile_command('SOURCE.cc', 'mod.so'))
+        print('Compile Cython:', cy_compile_command('SOURCE.cc',
+                                                    'mod.{}'.format(SHARED_EXT)))
         print('PY_LDSHARED:', sysconfig.get_config_var('LDSHARED'))
     return {'actions':  [print_config],
             'uptodate': [False]}
@@ -320,7 +320,9 @@ def task_deploy_prometheus():
     build_cmd   = 'mkdir -p third-party/prometheus-cpp/_build && cd third-party/prometheus-cpp/_build && '\
                   'cmake -DBUILD_SHARED_LIBS=ON .. && make -j 4 && mkdir -p ../_deploy && make DESTDIR=../_deploy install'
     deploy_root = 'third-party/prometheus-cpp/_deploy/usr/local'
-    libs        = ['libprometheus-cpp-core.so', 'libprometheus-cpp-pull.so', 'libprometheus-cpp-push.so']
+    libs        = ['libprometheus-cpp-core.{}'.format(SHARED_EXT),
+                   'libprometheus-cpp-pull.{}'.format(SHARED_EXT),
+                   'libprometheus-cpp-push.{}'.format(SHARED_EXT)]
     #libs = [os.path.join('lib', lib) for lib in libs]
     return {'title':    title_with_actions,
             'targets':  [os.path.join('lib', lib) for lib in libs] +
@@ -329,7 +331,8 @@ def task_deploy_prometheus():
                          'mkdir -p lib/',
                          'cp -r {0} {1}'.format(os.path.join(deploy_root, 'include', 'prometheus'),
                                                 'include/'),
-                         'cp -r {0}/*.so {1}'.format(os.path.join(deploy_root, 'lib*'),
+                         'cp -r {0}/*.{1} {2}'.format(os.path.join(deploy_root, 'lib*'),
+                                                     SHARED_EXT,
                                                      'lib/')],
             'task_dep': ['display_libboink_config'],
             'uptodate': [run_once],
@@ -420,11 +423,11 @@ def task_link_libboink():
 def task_boink_pc():
     src    = os.path.join(SOURCE_DIR, '{0}.pc.in'.format(PKG))
     target = os.path.join(LIBBUILDDIR, replace_ext(os.path.basename(src), ''))
-    cmd = "sed -e 's,@prefix@,{prefix},'  "\
-          "-e 's,@VERSION@,{version},' {src} >{dst}".format(prefix=PREFIX,
-                                                            version=VERSION,
-                                                            src=src,
-                                                            dst=target)
+    cmd = ("sed -e 's,@prefix@,{prefix},'  "
+           "-e 's,@VERSION@,{version},' {src} >{dst}".format(prefix=PREFIX,
+                                                             version=VERSION,
+                                                             src=src,
+                                                             dst=target))
 
     return {'title':    title_with_actions,
             'file_dep': [src],
@@ -482,7 +485,7 @@ def task_render_extension_classes():
 CLEAN_ACTIONS = \
 [
     'rm -f {0}/*.cpp'.format(PKG),
-    'rm -f {0}/*.so'.format(PKG),
+    'rm -f {0}/*.{1}'.format(PKG, SHARED_EXT),
     'find ./ -type d -name __pycache__ -exec rm -rf {} +',
     'find ./{0}/ -type f -name *{1} -exec rm -f {{}} +'.format(PKG, MOD_EXT),
     'find ./{0}/ -type f -name *.pyc -exec rm -f {{}} +'.format(PKG),
