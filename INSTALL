@@ -1,6 +1,6 @@
 # Source and deps
 
-$ git clone https://github.com/camilescott/boink.git && cd boink
+$ git clone https://github.com/camillescott/boink.git && cd boink
 $ pip install numpy jinja2 doit pyyaml cython sh pandas
 $ git submodule update --init --remote --recursive 
 
