@@ -10,6 +10,7 @@
 #ifndef BOINK_PROCESSORS_HH
 #define BOINK_PROCESSORS_HH
 
+#include <tuple>
 #include <memory>
 #include <fstream>
 #include <iostream>
@@ -66,6 +67,93 @@ protected:
     std::array<IntervalCounter, 3> counters;
     uint64_t _n_reads;
 
+    std::tuple<bool, bool, bool, bool> _advance(parsing::SplitPairedReader<ParserType>& reader) {
+        parsing::ReadBundle bundle;
+
+        while(!reader.is_complete()) {
+            bundle = reader.next();
+            derived().process_sequence(bundle);
+
+            int _bundle_count = bundle.has_left + bundle.has_right;
+            _n_reads += _bundle_count;
+
+            auto tick_result = _notify_tick(_bundle_count);
+            bool end = false;
+            if (_ticked(tick_result)) {
+                return std::tuple_cat(tick_result, std::tie(end));
+            }
+        }
+
+        return std::make_tuple(false, false, false, true);
+    }
+
+    std::tuple<bool, bool, bool, bool> _advance(parsing::ReadParserPtr<ParserType>& parser) {
+        parsing::Read read;
+
+        // Iterate through the reads and consume their k-mers.
+        while (!parser->is_complete()) {
+            try {
+                read = parser->get_next_read( );
+            } catch (parsing::NoMoreReadsAvailable) {
+                break;
+            }
+
+            read.set_clean_seq();
+            derived().process_sequence(read);
+
+            __sync_add_and_fetch( &_n_reads, 1 );
+              auto tick_result = _notify_tick(1);
+
+            bool end = false;
+            if (_ticked(tick_result)) {
+                return std::tuple_cat(tick_result, std::tie(end));
+            }
+
+        }
+        return std::make_tuple(false, false, false, true);
+    }
+
+    bool _ticked(std::tuple<bool, bool, bool> tick_tup) {
+        return std::get<0>(tick_tup) || std::get<1>(tick_tup) || std::get<2>(tick_tup);
+    }
+
+    std::tuple<bool, bool, bool> _notify_tick(uint64_t n_ticks) {
+        bool _fine = false, _medium = false, _coarse = false;
+        if (counters[0].poll(n_ticks)) {
+             std::cerr << "processed " << _n_reads << " sequences." << std::endl;               
+             derived().report();
+             auto event = make_shared<events::TimeIntervalEvent>();
+             event->level = events::TimeIntervalEvent::FINE;
+             event->t = _n_reads;
+             notify(event);
+             _fine = true;
+        }
+        if (counters[1].poll(n_ticks)) {
+             auto event = make_shared<events::TimeIntervalEvent>();
+             event->level = events::TimeIntervalEvent::MEDIUM;
+             event->t = _n_reads;
+             notify(event);
+             _medium = true;
+        }
+        if (counters[2].poll(n_ticks)) {
+             auto event = make_shared<events::TimeIntervalEvent>();
+             event->level = events::TimeIntervalEvent::COARSE;
+             event->t = _n_reads;
+             notify(event);
+             _coarse = true;
+        }
+
+        return std::make_tuple(_fine, _medium, _coarse);
+    }
+
+    void _notify_stop() {
+        auto event = make_shared<events::TimeIntervalEvent>();
+        event->level = events::TimeIntervalEvent::END;
+        event->t = _n_reads;
+        notify(event);
+    }
+
+
 public:
 
     using events::EventNotifier::register_listener;
@@ -99,85 +187,25 @@ public:
     }
 
     uint64_t process(parsing::SplitPairedReader<ParserType>& reader) {
-        parsing::ReadBundle bundle;
-        
-        while(!reader.is_complete()) {
-            bundle = reader.next();
-            derived().process_sequence(bundle);
-
-            int _bundle_count = bundle.has_left + bundle.has_right;
-            _n_reads += _bundle_count;
-
-            if (counters[0].poll(_bundle_count)) {
-                 std::cerr << "processed " << _n_reads << " sequences." << std::endl;               
-                 derived().report();
-                 auto event = make_shared<events::TimeIntervalEvent>();
-                 event->level = events::TimeIntervalEvent::FINE;
-                 event->t = _n_reads;
-                 notify(event);
-            }
-            if (counters[1].poll(_bundle_count)) {
-                 auto event = make_shared<events::TimeIntervalEvent>();
-                 event->level = events::TimeIntervalEvent::MEDIUM;
-                 event->t = _n_reads;
-                 notify(event);
-            }
-            if (counters[2].poll(_bundle_count)) {
-                 auto event = make_shared<events::TimeIntervalEvent>();
-                 event->level = events::TimeIntervalEvent::COARSE;
-                 event->t = _n_reads;
-                 notify(event);
+        bool _fine, _medium, _coarse, _end;
+        while(1) {
+            std::tie(_fine, _medium, _coarse, _end) = _advance(reader);
+            if (_end) {
+                break;
             }
         }
-        auto event = make_shared<events::TimeIntervalEvent>();
-        event->level = events::TimeIntervalEvent::END;
-        event->t = _n_reads;
-        notify(event);
-        return _n_reads;
+        _notify_stop();
     }
 
     uint64_t process(parsing::ReadParserPtr<ParserType>& parser) {
-        parsing::Read read;
-
-        // Iterate through the reads and consume their k-mers.
-        while (!parser->is_complete()) {
-            try {
-                read = parser->get_next_read( );
-            } catch (parsing::NoMoreReadsAvailable) {
+        bool _fine, _medium, _coarse, _end;
+        while(1) {
+            std::tie(_fine, _medium, _coarse, _end) = _advance(parser);
+            if (_end) {
                 break;
             }
-
-            read.set_clean_seq();
-            derived().process_sequence(read);
-
-            __sync_add_and_fetch( &_n_reads, 1 );
-  
-            if (counters[0].poll()) {
-                 std::cerr << "processed " << _n_reads << " sequences." << std::endl;               
-                 derived().report();
-                 auto event = make_shared<events::TimeIntervalEvent>();
-                 event->level = events::TimeIntervalEvent::FINE;
-                 event->t = _n_reads;
-                 notify(event);
-            }
-            if (counters[1].poll()) {
-                 auto event = make_shared<events::TimeIntervalEvent>();
-                 event->level = events::TimeIntervalEvent::MEDIUM;
-                 event->t = _n_reads;
-                 notify(event);
-            }
-            if (counters[2].poll()) {
-                 auto event = make_shared<events::TimeIntervalEvent>();
-                 event->level = events::TimeIntervalEvent::COARSE;
-                 event->t = _n_reads;
-                 notify(event);
-            }
         }
-        auto event = make_shared<events::TimeIntervalEvent>();
-        event->level = events::TimeIntervalEvent::END;
-        event->t = _n_reads;
-        notify(event);
-        return _n_reads;
+        _notify_stop();
     }
 
     void process_sequence(parsing::ReadBundle& bundle) {
