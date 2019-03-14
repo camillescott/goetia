@@ -123,6 +123,13 @@ public:
         //std::cerr << "Finished building MPHF." << std::endl;
     }
 
+    uint64_t query_revmap(uint64_t partition) {
+        if (partition > ukhs_revmap.size()) {
+            return ULLONG_MAX;
+        }
+        return ukhs_revmap[partition];
+    }
+
     bool query(Unikmer& unikmer) {
         unikmer.partition = ULLONG_MAX;
         unikmer.partition = bphf->lookup(unikmer.hash);
@@ -133,6 +140,10 @@ public:
             return true;
         }
         return false;
+    }
+
+    uint64_t hash_unikmer(const std::string& kmer) {
+        return ukhs_hasher.hash(kmer);
     }
 
     std::vector<uint64_t> get_hashes() const {
