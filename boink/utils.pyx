@@ -6,7 +6,10 @@
 # of the MIT license.  See the LICENSE file for details.
 
 from cpython.version cimport PY_MAJOR_VERSION
+
 from math import sqrt
+import os
+import re
 
 
 cdef bytes _bstring(s):
@@ -78,4 +81,18 @@ cdef vector[uint64_t] get_n_primes_near_x(uint32_t n, uint64_t x):
         i -= 2
 
     return primes
+
+
+def find_common_basename(a, b):
+    # it ain't elegant but it works
+    a = os.path.basename(a)
+    b = os.path.basename(b)
+    for i in range(len(b), 0, -1):
+        if a.find(b[:i]) != -1:
+            return a[:i].strip('._-')
+
+
+def remove_fx_suffix(fn):
+    return re.sub(r'(?:fq|FQ|fastq|FASTQ|fa|FA|fasta|FASTA)$', '', fn).strip('._-')
+
 

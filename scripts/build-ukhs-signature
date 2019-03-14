@@ -12,8 +12,10 @@ from boink.minimizers import UKHSCountSignature
 from boink.parsing    import grouper
 from boink.processors import UKHSCountSignatureProcessor
 from boink.reporting  import UKHSSignatureReporter
+from boink.utils      import find_common_basename, remove_fx_suffix
 
 perr = functools.partial(print, file=sys.stderr)
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -21,6 +23,7 @@ def main():
     parser.add_argument('-K', type=int, default=9)
     parser.add_argument('--streaming-output',
                         nargs='?')
+    parser.add_argument('--name', nargs='*')
     parser.add_argument('-o', type=argparse.FileType('w'), default=sys.stdout)
     parser.add_argument('inputs', nargs='+')
     add_output_interval_args(parser)
@@ -30,11 +33,18 @@ def main():
     print_interval_settings(args)
 
     if args.pairing_mode == 'split':
-        _samples = grouper(2, args.inputs)
+        _samples = list(grouper(2, args.inputs))
+        _names   = [find_common_basename(remove_fx_suffix(l), remove_fx_suffix(r)) for l, r in _samples]
     else:
         _samples = args.inputs
+        _names   = [os.path.basename(remove_fx_suffix(s)) for s in _samples]
 
-    for sample in _samples:
+    if args.name:
+        if len(args.name) != len(_samples):
+            raise RuntimeError('Number of names must match number of samples.')
+        _names = args.name
+
+    for sample, name in zip(_samples, _names):
         perr('Build signature for {0} with W={1}, W={2}...'.format(sample, args.W, args.K))
 
         gen = UKHSCountSignature(args.W, args.K)
@@ -49,11 +59,10 @@ def main():
 
         if args.pairing_mode == 'split':
             proc.process(*sample)
-            gen.save(args.o, os.path.basename(sample[0]))
         else:
             proc.process(sample)
-            gen.save(args.o, os.path.basename(sample))
-
+        
+        gen.save(args.o, name)
         perr('Done.')
 
 if __name__ == '__main__':
