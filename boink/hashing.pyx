@@ -74,11 +74,19 @@ cdef class UKHShifter:
 
     cdef unique_ptr[_DefaultUKHSShifter] _this
     cdef shared_ptr[_UKHS]               _ukhs
+    cdef dict                            unikmer_map
 
     def __cinit__(self, uint16_t W, uint16_t K):
         cdef vector[string] kmers = UKHShifter.get_kmers(W, K)
         self._ukhs = make_shared[_UKHS](K, kmers)
         self._this.reset(new _DefaultUKHSShifter(W, K, self._ukhs))
+
+        self.unikmer_map = {}
+        cdef uint64_t uhash
+        cdef string   kmer
+        for kmer in kmers:
+            uhash = deref(self._ukhs).hash_unikmer(kmer)
+            self.unikmer_map[uhash] = kmer
 
     def set_cursor(self, str sequence):
         deref(self._this).set_cursor(_bstring(sequence))
@@ -95,6 +103,10 @@ cdef class UKHShifter:
     @property
     def hashvalue(self):
         return deref(self._this).get()
+
+    def get_unikmer_string(self, uint64_t unikmer_bin):
+        cdef uint64_t uhash = deref(self._ukhs).query_revmap(unikmer_bin)
+        return self.unikmer_map[uhash]
 
     def query(self, uint64_t uhash):
         cdef _Unikmer unikmer = _Unikmer(uhash)
@@ -127,7 +139,7 @@ cdef class UKHShifter:
     @staticmethod
     def get_kmers(int W, int K):
         valid_W = list(range(20, 210, 10))
-        valid_K = list(range(7, 10))
+        valid_K = list(range(7, 11))
         W = W - (W % 10)
 
         if not W in valid_W:

@@ -91,6 +91,8 @@ cdef extern from "boink/hashing/ukhs.hh" namespace "boink::hashing" nogil:
     cdef cppclass _UKHS "boink::hashing::UKHS" (_KmerClient):
         _UKHS(uint16_t, vector[string]&) except +ValueError
         bool query(_Unikmer&)
+        uint64_t query_revmap(uint64_t)
+        uint64_t hash_unikmer(const string&) except +ValueError
 
     cdef cppclass _UKHShifter "boink::hashing::UKHShifter" [A] (_HashShifter[_UKHShifter[A], A]):
         _UKHShifter(uint16_t,
