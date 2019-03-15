@@ -7,7 +7,7 @@
 
 from libc.stdint cimport uint16_t, uint32_t, uint64_t, int64_t
 from libcpp cimport bool
-from libcpp.memory cimport unique_ptr
+from libcpp.memory cimport unique_ptr, shared_ptr
 from libcpp.string cimport string
 
 
@@ -30,7 +30,20 @@ cdef extern from "boink/parsing/parsing.hh" namespace "boink::parsing" nogil:
         _Sequence right
 
 cdef extern from "boink/parsing/readers.hh" namespace "boink::parsing" nogil:
-    cdef cppclass _SplitPairedReader "boink::parsing::SplitPairedReader" [ParserType=*]:
+
+    cdef cppclass _ReadParser "boink::parsing::ReadParser" [ParserType]:
+        _ReadParser(unique_ptr[ParserType])
+        _Sequence get_next_read() except +ValueError
+        bool is_complete()        except +ValueError
+
+    cdef cppclass _FastxReader "boink::parsing::FastxReader":
+        _FastxReader()
+        _FastxReader(const string&)
+        _Sequence get_next_read() except +ValueError
+        bool is_complete()        except +ValueError
+
+
+    cdef cppclass _SplitPairedReader "boink::parsing::SplitPairedReader" [ParserType]:
         _SplitPairedReader(const string&,
                            const string&,
                            uint32_t,
@@ -42,6 +55,8 @@ cdef extern from "boink/parsing/readers.hh" namespace "boink::parsing" nogil:
         bool is_complete() except +ValueError
         _SequenceBundle next() except +ValueError
 
+    shared_ptr[_ReadParser[_FastxReader]] get_parser[_FastxReader](const string&)
+
 
 cdef class Sequence:
     cdef _Sequence _obj
@@ -52,7 +67,7 @@ cdef class Sequence:
 
 cdef class SplitPairedReader:
 
-    cdef unique_ptr[_SplitPairedReader] _this
+    cdef unique_ptr[_SplitPairedReader[_FastxReader]] _this
     cdef readonly int min_length
     cdef readonly bool force_name_match
 

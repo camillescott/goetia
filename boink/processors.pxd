@@ -14,6 +14,7 @@ from boink.dbg cimport *
 from boink.cdbg cimport *
 from boink.compactor cimport *
 from boink.events cimport EventNotifier, _EventNotifier, _EventListener
+from boink.parsing cimport _ReadParser, _FastxReader, _SplitPairedReader
 from boink.utils cimport _bstring
 from boink.minimizers cimport _UKHSCountSignature
 
@@ -30,6 +31,12 @@ cdef extern from "boink/processors.hh" namespace "boink" nogil:
         _FileProcessor(uint64_t, uint64_t, uint64_t)
         _FileProcessor()
 
+        cppclass interval_state:
+            bool fine
+            bool medium
+            bool coarse
+            bool end
+
         uint64_t process(...) except +ValueError
         uint64_t process(const string&) except +ValueError
         uint64_t process_paired "process"(const string&, const string&) except +ValueError
@@ -37,6 +44,9 @@ cdef extern from "boink/processors.hh" namespace "boink" nogil:
                          const string&,
                          uint32_t,
                          bool) except +ValueError
+
+        interval_state advance_paired "advance" (_SplitPairedReader[_FastxReader]&) except +ValueError
+        interval_state advance(shared_ptr[_ReadParser[_FastxReader]]&) except +ValueError
 
         uint64_t n_reads() const
 

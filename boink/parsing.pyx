@@ -114,10 +114,10 @@ cdef class SplitPairedReader:
 
     def __init__(self, str left_filename, str right_filename,
                        int min_length=0, bool force_name_match=False):
-        self._this = make_unique[_SplitPairedReader](_bstring(left_filename),
-                                                     _bstring(right_filename),
-                                                     min_length,
-                                                     force_name_match)
+        self._this = make_unique[_SplitPairedReader[_FastxReader]](_bstring(left_filename),
+                                                                   _bstring(right_filename),
+                                                                   min_length,
+                                                                   force_name_match)
 
     def __iter__(self):
         cdef _SequenceBundle bundle

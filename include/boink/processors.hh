@@ -62,63 +62,37 @@ template <class Derived,
           class ParserType = parsing::FastxReader>
 class FileProcessor : public events::EventNotifier {
 
+public:
+
+    struct interval_state {
+        bool fine;
+        bool medium;
+        bool coarse;
+        bool end;
+
+        interval_state()
+            : fine(false), medium(false), coarse(false), end(false)
+        {
+        }
+
+        interval_state(bool fine, bool medium, bool coarse, bool end)
+            : fine(fine), medium(medium), coarse(coarse), end(end)
+        {
+        }
+    };
+
 protected:
 
     std::array<IntervalCounter, 3> counters;
     uint64_t _n_reads;
 
-    std::tuple<bool, bool, bool, bool> _advance(parsing::SplitPairedReader<ParserType>& reader) {
-        parsing::ReadBundle bundle;
-
-        while(!reader.is_complete()) {
-            bundle = reader.next();
-            derived().process_sequence(bundle);
-
-            int _bundle_count = bundle.has_left + bundle.has_right;
-            _n_reads += _bundle_count;
-
-            auto tick_result = _notify_tick(_bundle_count);
-            bool end = false;
-            if (_ticked(tick_result)) {
-                return std::tuple_cat(tick_result, std::tie(end));
-            }
-        }
-
-        return std::make_tuple(false, false, false, true);
+    bool _ticked(interval_state tick) {
+        return tick.fine || tick.medium || tick.coarse || tick.end;
     }
 
-    std::tuple<bool, bool, bool, bool> _advance(parsing::ReadParserPtr<ParserType>& parser) {
-        parsing::Read read;
+    interval_state _notify_tick(uint64_t n_ticks) {
+        interval_state result;
 
-        // Iterate through the reads and consume their k-mers.
-        while (!parser->is_complete()) {
-            try {
-                read = parser->get_next_read( );
-            } catch (parsing::NoMoreReadsAvailable) {
-                break;
-            }
-
-            read.set_clean_seq();
-            derived().process_sequence(read);
-
-            __sync_add_and_fetch( &_n_reads, 1 );
-              auto tick_result = _notify_tick(1);
-
-            bool end = false;
-            if (_ticked(tick_result)) {
-                return std::tuple_cat(tick_result, std::tie(end));
-            }
-
-        }
-        return std::make_tuple(false, false, false, true);
-    }
-
-    bool _ticked(std::tuple<bool, bool, bool> tick_tup) {
-        return std::get<0>(tick_tup) || std::get<1>(tick_tup) || std::get<2>(tick_tup);
-    }
-
-    std::tuple<bool, bool, bool> _notify_tick(uint64_t n_ticks) {
-        bool _fine = false, _medium = false, _coarse = false;
         if (counters[0].poll(n_ticks)) {
              std::cerr << "processed " << _n_reads << " sequences." << std::endl;               
              derived().report();
@@ -126,24 +100,25 @@ protected:
              event->level = events::TimeIntervalEvent::FINE;
              event->t = _n_reads;
              notify(event);
-             _fine = true;
+             result.fine = true;
         }
         if (counters[1].poll(n_ticks)) {
              auto event = make_shared<events::TimeIntervalEvent>();
              event->level = events::TimeIntervalEvent::MEDIUM;
              event->t = _n_reads;
              notify(event);
-             _medium = true;
+             result.medium = true;
         }
         if (counters[2].poll(n_ticks)) {
              auto event = make_shared<events::TimeIntervalEvent>();
              event->level = events::TimeIntervalEvent::COARSE;
              event->t = _n_reads;
              notify(event);
-             _coarse = true;
+             result.coarse = true;
         }
 
-        return std::make_tuple(_fine, _medium, _coarse);
+        result.end = false;
+        return result;
     }
 
     void _notify_stop() {
@@ -187,25 +162,25 @@ public:
     }
 
     uint64_t process(parsing::SplitPairedReader<ParserType>& reader) {
-        bool _fine, _medium, _coarse, _end;
         while(1) {
-            std::tie(_fine, _medium, _coarse, _end) = _advance(reader);
-            if (_end) {
+            auto state = advance(reader);
+            if (state.end) {
                 break;
             }
         }
-        _notify_stop();
+
+        return _n_reads;
     }
 
     uint64_t process(parsing::ReadParserPtr<ParserType>& parser) {
-        bool _fine, _medium, _coarse, _end;
         while(1) {
-            std::tie(_fine, _medium, _coarse, _end) = _advance(parser);
-            if (_end) {
+            auto state = advance(parser);
+            if (state.end) {
                 break;
             }
         }
-        _notify_stop();
+
+        return _n_reads;
     }
 
     void process_sequence(parsing::ReadBundle& bundle) {
@@ -215,6 +190,52 @@ public:
         if (bundle.has_right) {
             derived().process_sequence(bundle.right);
         }
+    }
+
+    interval_state advance(parsing::SplitPairedReader<ParserType>& reader) {
+        parsing::ReadBundle bundle;
+
+        while(!reader.is_complete()) {
+            bundle = reader.next();
+            derived().process_sequence(bundle);
+
+            int _bundle_count = bundle.has_left + bundle.has_right;
+            _n_reads += _bundle_count;
+
+            auto tick_result = _notify_tick(_bundle_count);
+            if (_ticked(tick_result)) {
+                return tick_result;
+            }
+        }
+        _notify_stop();
+        return interval_state(false, false, false, true);
+    }
+
+    interval_state advance(parsing::ReadParserPtr<ParserType>& parser) {
+        parsing::Read read;
+
+        // Iterate through the reads and consume their k-mers.
+        while (!parser->is_complete()) {
+            try {
+                read = parser->get_next_read( );
+            } catch (parsing::NoMoreReadsAvailable) {
+                break;
+            }
+
+            read.set_clean_seq();
+            derived().process_sequence(read);
+
+            __sync_add_and_fetch( &_n_reads, 1 );
+              auto tick_result = _notify_tick(1);
+
+            bool end = false;
+            if (_ticked(tick_result)) {
+                return tick_result;
+            }
+
+        }
+        _notify_stop();
+        return interval_state(false, false, false, true);
     }
 
     uint64_t n_reads() const {

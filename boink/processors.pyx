@@ -12,6 +12,7 @@ from boink.dbg cimport *
 from boink.cdbg cimport *
 from boink.utils cimport _bstring, _ustring
 from boink.minimizers cimport UKHSCountSignature
+from boink.parsing cimport get_parser
 
 
 class DEFAULT_INTERVALS:
@@ -68,3 +69,27 @@ cdef class UKHSCountSignatureProcessor(FileProcessor):
         else:
             deref(self._this).process(_bstring(input_filename),
                                       _bstring(right_filename))
+
+    def chunked_process(self, str input_filename, str right_filename=None):
+        cdef shared_ptr[_ReadParser[_FastxReader]]       p_single
+        cdef _SplitPairedReader[_FastxReader] *          p_paired
+        cdef _UKHSCountSignatureProcessor.interval_state state
+        
+        if right_filename is None:
+            p_single = get_parser[_FastxReader](_bstring(input_filename))
+            while True:
+                state = deref(self._this).advance(p_single)
+                if state.end:
+                    return state.fine, state.medium, state.coarse, state.end
+                else:
+                    yield state.fine, state.medium, state.coarse, state.end
+        else:
+            p_paired = new _SplitPairedReader[_FastxReader](_bstring(input_filename),
+                                                            _bstring(right_filename))
+
+            while True:
+                state = deref(self._this).advance_paired(deref(p_paired))
+                if state.end:
+                    return state.fine, state.medium, state.coarse, state.end
+                else:
+                    yield state.fine, state.medium, state.coarse, state.end
