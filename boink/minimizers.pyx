@@ -11,6 +11,7 @@ from libcpp.memory cimport make_unique, make_shared
 
 from boink.utils cimport _bstring
 from boink.hashing import UKHShifter
+from numpy import zeros
 
 cdef class InteriorMinimizer:
 
@@ -124,7 +125,13 @@ cdef class UKHSCountSignature:
 
     @property
     def signature(self):
-        sig = deref(self._this).get_signature()
+        sig = zeros(len(self))
+        cdef vector[size_t] raw = deref(self._this).get_signature()
+        cdef size_t count
+        cdef size_t i = 0
+        for count in raw:
+            sig[i] = count
+            i += 1
         return sig
 
     @property
