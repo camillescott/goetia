@@ -80,9 +80,9 @@ cdef class UKHSCountSignatureProcessor(FileProcessor):
             while True:
                 state = deref(self._this).advance(p_single)
                 if state.end:
-                    return state.fine, state.medium, state.coarse, state.end
+                    return deref(self._this).n_reads(), state.fine, state.medium, state.coarse, state.end
                 else:
-                    yield state.fine, state.medium, state.coarse, state.end
+                    yield deref(self._this).n_reads(), state.fine, state.medium, state.coarse, state.end
         else:
             p_paired = new _SplitPairedReader[_FastxReader](_bstring(input_filename),
                                                             _bstring(right_filename))
@@ -90,6 +90,6 @@ cdef class UKHSCountSignatureProcessor(FileProcessor):
             while True:
                 state = deref(self._this).advance_paired(deref(p_paired))
                 if state.end:
-                    return state.fine, state.medium, state.coarse, state.end
+                    return deref(self._this).n_reads(), state.fine, state.medium, state.coarse, state.end
                 else:
-                    yield state.fine, state.medium, state.coarse, state.end
+                    yield deref(self._this).n_reads(), state.fine, state.medium, state.coarse, state.end

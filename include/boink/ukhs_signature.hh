@@ -255,32 +255,18 @@ public:
     }
 
     inline void insert(const std::string& kmer) {
-        //partitioner.set_cursor(kmer);
-        //partitioner.reset_unikmers();
-
-        //increment_bucket(partitioner.get_front_partition());
         signature->insert(kmer);
     }
 
     inline void insert_sequence(const std::string& sequence) {
-        /*
-        hashing::KmerIterator<hashing::DefaultUKHSShifter> iter(sequence, &partitioner);
-
-        while(!iter.done()) {
-            PartitionedHash h = iter.next();
-            increment_bucket(h.second);
-        }
-        */
         signature->insert_sequence(sequence);
     }
 
     size_t get_size() const {
-        //return signature.size();
         return signature->n_partitions();
     }
 
     std::vector<size_t> get_signature() {
-        //return signature;
         return signature->get_partition_counts();
     }
 
@@ -300,19 +286,6 @@ public:
             throw IncompatibleSignature("Error: Signatures not compatible");
         }
     }
-
-protected:
-
-    /*
-    void increment_bucket(uint64_t bucket_id) {
-        if (bucket_id < this->get_size()) {
-            signature[bucket_id] += 1;
-        } else {
-            throw BoinkException("Invalid UKHS bucket: " + std::to_string(bucket_id));
-        }
-    }
-    */
-          
 };
 
 

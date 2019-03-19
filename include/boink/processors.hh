@@ -94,7 +94,7 @@ protected:
         interval_state result;
 
         if (counters[0].poll(n_ticks)) {
-             std::cerr << "processed " << _n_reads << " sequences." << std::endl;               
+             //std::cerr << "processed " << _n_reads << " sequences." << std::endl;               
              derived().report();
              auto event = make_shared<events::TimeIntervalEvent>();
              event->level = events::TimeIntervalEvent::FINE;
