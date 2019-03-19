@@ -30,14 +30,18 @@ class TextBlock:
 
     def draw(self, term, x, shift_y=None):
         out = term.stream
-
+        
         if shift_y:
-            out.write(term.move_down * shift_y)
+            buf = term.move_down * shift_y
+        else:
+            buf = ''
 
         for line in self.text:
-            out.write(term.move_x(x))
-            out.write(line)
-            out.write(term.move_down)
+            buf += term.move_x(x)
+            buf += line
+            buf += term.move_down
+        
+        out.write(buf)
 
 
 class DraffStreamFrame:
