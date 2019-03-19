@@ -158,6 +158,7 @@ class DraffStreamFrame:
                     xpos += self.distance_figure.width + 5
                 self.hist_block(distances).draw(term, xpos, 1)
 
+
 class DraffRunner:
 
     def __init__(self):
@@ -170,9 +171,9 @@ class DraffRunner:
         parser = self.subparsers.add_parser(name)
         parser.add_argument('-W', type=int, default=31)
         parser.add_argument('-K', type=int, default=9)
-        parser.add_argument('--name', nargs='*')
-        parser.add_argument('-o', type=argparse.FileType('w'), default=sys.stdout)
-        parser.add_argument('inputs', nargs='+')
+        parser.add_argument('--prefix', nargs='*')
+        parser.add_argument('--merge')
+        parser.add_argument('-i', '--inputs', nargs='+', required=True)
 
         add_pairing_args(parser)
         add_output_interval_args(parser)
@@ -186,19 +187,25 @@ class DraffRunner:
 
     def iter_inputs(self, args):
         if args.pairing_mode == 'split':
-            _samples = list(grouper(2, args.inputs))
-            _names   = [find_common_basename(remove_fx_suffix(l),
-                                             remove_fx_suffix(r)) for l, r in _samples]
+            _samples  = list(grouper(2, args.inputs))
+            _prefixes = [find_common_basename(remove_fx_suffix(l),
+                                              remove_fx_suffix(r)) for l, r in _samples]
         else:
-            _samples = [(s, ) for s in args.inputs]
-            _names   = [os.path.basename(remove_fx_suffix(s)) for s, in _samples]
+            _samples  = [(s, ) for s in args.inputs]
+            _prefixes = [os.path.basename(remove_fx_suffix(s)) for s, in _samples]
 
-        if args.name:
-            if len(args.name) != len(_samples):
-                raise RuntimeError('Number of names must match number of samples.')
-            _names = args.name
+        if args.merge:
+            _prefixes = [args.merge] * len(_samples)
 
-        yield from zip(_samples, _names)
+        if args.prefix:
+            if args.merge:
+                pass
+            else:
+                if len(args.prefix) != len(_samples):
+                    raise RuntimeError('Number of names must match number of samples.')
+                _prefixes = args.prefix
+
+        yield from zip(_samples, _prefixes)
 
 
 class DraffStream:
@@ -221,53 +228,100 @@ class DraffStream:
 
         dfunc = getattr(dmetrics, args.distance_metric)
 
-        for sample, name in self.runner.iter_inputs(args):
-            frame.draw(messages=[term.red + 'Initializig signature for {}'.format(name)], draw_dist_plot=False)
+        if args.merge:
+            frame.draw(messages=[term.red + 'Initializig signature for {}...'.format(args.merge)], 
+                       draw_dist_plot=False)
             sig_gen = UKHSCountSignature(args.W, args.K)
             processor = UKHSCountSignatureProcessor(sig_gen,
                                                     args.fine_interval,
                                                     args.medium_interval,
                                                     args.coarse_interval)
-            saturated   = False
-            signatures  = []
-            distances   = []
-            distances_t = []
-            stdevs      = []
 
-            for state in processor.chunked_process(*sample):
-                n_reads, is_fine, is_medium, is_coarse, is_done = state
-                if is_fine:
-                    signatures.append(sig_gen.signature)
+            for sample, prefix in self.runner.iter_inputs(args):
+                frame.draw(messages=['Started processing on {sample}'.format(sample)], draw_dist_plot=False)
 
-                    if len(signatures) > 1:
-                        distances.append(dfunc(signatures[-2], signatures[-1]))
-                        distances_t.append(n_reads)
-                    
-                    if len(distances) >= args.distance_window:
-                        stdev = np.std(distances[-args.distance_window:])
-                        stdevs.append(stdev)
-                        if len(stdevs) >= args.distance_window and \
-                                all((d < args.stdev_cutoff for d in stdevs[-args.distance_window:])):
-                            
-                           #self._print(term.move_down * (self.runner.name_block_height + 20), term.bold, 
-                           #            name, 'reached saturation at {:,} reads.'.format(n_reads)
-                           saturated = True
-                           break
+                n_reads, distances, distances_t, stdevs, saturated = self.process_sample(sig_gen, processor, sample, frame,
+                                                                                         dfunc, args.distance_window, args.stdev_cutoff)
+                if saturated:
+                    msgs = [term.green
+                            + '{name} reached saturation at read {n:,} in sample {sample}.'.format(name=prefix, 
+                                                                                                   n=n_reads,
+                                                                                                   sample=sample)
+                            + term.normal]
+                else:
+                    msgs = [term.red   + '{name} didn\'t saturate at {sample}; {n:,} reads in sample.'.format(name=name, 
+                                                                                                              sample=sample,
+                                                                                                              n=n_reads) + term.normal]
+                frame.draw(n_reads, distances[-1], stdevs[-1], distances, distances_t, messages=msgs)
 
-                        frame.draw(n_reads, distances[-1], stdevs[-1], distances, distances_t)
+                if saturated:
+                    break
 
-            if saturated:
-                msgs = [term.green + '{name} reached saturation at {n:,} reads.'.format(name=name, n=n_reads) + term.normal]
-            else:
-                msgs = [term.red   + '{name} didn\'t saturate; {n:,} reads in sample.'.format(name=name, n=n_reads) + term.normal]
+            self.save_distances(args.merge, distances, distances_t)
+            args.save_signature(args.merge, sig_gen)
 
-            frame.draw(n_reads, distances[-1], stdevs[-1], distances, distances_t, messages=msgs)
-            with open(name + '.distances.csv', 'w') as fp:
-                print('t', ',', 'distance', file=fp)
-                for t, distance in zip(distances_t, distances):
-                    print(t, ',', distance, file=fp)
+        else:
+            for sample, prefix in self.runner.iter_inputs(args):
+                frame.draw(messages=[term.red + 'Initializig signature for {}...'.format(prefix)], 
+                           draw_dist_plot=False)
+                sig_gen = UKHSCountSignature(args.W, args.K)
+                processor = UKHSCountSignatureProcessor(sig_gen,
+                                                        args.fine_interval,
+                                                        args.medium_interval,
+                                                        args.coarse_interval)
+
+                n_reads, distances, distances_t, stdevs,  saturated = self.process_sample(sig_gen, processor, sample, frame,
+                                                                                          dfunc, args.distance_window, args.stdev_cutoff)
+
+                if saturated:
+                    msgs = [term.green + '{name} reached saturation at {n:,} reads.'.format(name=prefix, n=n_reads) + term.normal]
+                else:
+                    msgs = [term.red   + '{name} didn\'t saturate; {n:,} reads in sample.'.format(name=prefix, n=n_reads) + term.normal]
+
+                frame.draw(n_reads, distances[-1], stdevs[-1], distances, distances_t, messages=msgs)
+
+                self.save_distances(prefix, distances, distances_t)
+                self.save_signature(prefix, sig_gen)
 
         self._print(term.move_down)
+
+    def process_sample(self, sig_gen, processor, sample, frame, dfunc, distance_window, stdev_cutoff):
+        saturated   = False
+        signatures  = []
+        distances   = []
+        distances_t = []
+        stdevs      = []
+
+        for state in processor.chunked_process(*sample):
+            n_reads, is_fine, is_medium, is_coarse, is_done = state
+            if is_fine:
+                signatures.append(sig_gen.signature)
+
+                if len(signatures) > 1:
+                    distances.append(dfunc(signatures[-2], signatures[-1]))
+                    distances_t.append(n_reads)
+                
+                if len(distances) >= distance_window:
+                    stdev = np.std(distances[-distance_window:])
+                    stdevs.append(stdev)
+                    if len(stdevs) >= distance_window and \
+                            all((d < stdev_cutoff for d in stdevs[-distance_window:])):
+                        
+                       return n_reads, distances, distances_t, stdevs, True
+
+                    frame.draw(n_reads, distances[-1], stdevs[-1], distances, distances_t)
+
+        return n_reads, distances, distances_t, stdevs, False
+
+    def save_distances(self, prefix, distances, distances_t):
+        with open(prefix + '.distances.csv', 'w') as fp:
+            print('t', ',', 'distance', file=fp)
+            for t, distance in zip(distances_t, distances):
+                print(t, ',', distance, file=fp)
+
+    def save_signature(self, prefix, sig_gen):
+        with open(prefix + '.draffsig.json', 'w') as fp:
+            sig_gen.save(fp, prefix)
 
 
 def run_draff():

@@ -141,13 +141,17 @@ cdef class UKHSCountSignature:
     def __len__(self):
         return deref(self._this).get_size()
 
+    def to_dict(self, name):
+        data = {'signature': self.signature.tolist(),
+                'W'        : self.K,
+                'K'        : self.bucket_K,
+                'size'     : len(self),
+                'name'     : name}
+        return data
+
     def save(self, stream, name):
         import json
 
-        data = [{'signature': self.signature,
-                 'W'        : self.K,
-                 'K'        : self.bucket_K,
-                 'size'     : len(self),
-                 'name'     : name}]
+        data = [self.to_dict(name)]
 
         json.dump(data, stream)
