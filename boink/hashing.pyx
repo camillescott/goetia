@@ -138,6 +138,8 @@ cdef class UKHShifter:
 
     @staticmethod
     def get_kmers(int W, int K):
+        import gzip
+
         valid_W = list(range(20, 210, 10))
         valid_K = list(range(7, 11))
         W = W - (W % 10)
@@ -148,9 +150,9 @@ cdef class UKHShifter:
             raise ValueError('Invalid UKHS K.')
 
         filename = os.path.join(DATA_DIR,
-                                'res_{0}_{1}_4_0.txt'.format(K, W))
+                                'res_{0}_{1}_4_0.txt.gz'.format(K, W))
         kmers = []
-        with open(filename) as fp:
+        with gzip.open(filename) as fp:
             for line in fp:
                 kmers.append(_bstring(line.strip()))
 
