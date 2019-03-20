@@ -25,6 +25,8 @@
 #include "boink/cdbg/compactor.hh"
 #include "boink/ukhs_signature.hh"
 
+#include "sourmash/kmer_min_hash.hh"
+
 
 #define DEFAULT_FINE_INTERVAL 10000
 #define DEFAULT_MEDIUM_INTERVAL 100000
@@ -324,6 +326,37 @@ public:
 
     void process_sequence(const parsing::Read& read) {
         signature->insert_sequence(read.cleaned_seq);
+    }
+
+    void report() {
+    }
+};
+
+
+
+class SourmashSignatureProcessor : public FileProcessor<SourmashSignatureProcessor,
+                                                        parsing::FastxReader> {
+
+protected:
+
+    KmerMinHash * signature;
+    typedef FileProcessor<SourmashSignatureProcessor, parsing::FastxReader> Base;
+
+public:
+
+    using Base::process_sequence;
+
+    SourmashSignatureProcessor(KmerMinHash * signature,
+                               uint64_t fine_interval=DEFAULT_FINE_INTERVAL,
+                               uint64_t medium_interval=DEFAULT_MEDIUM_INTERVAL,
+                               uint64_t coarse_interval=DEFAULT_COARSE_INTERVAL)
+        : Base(fine_interval, medium_interval, coarse_interval),
+          signature(signature)
+    {
+    }
+
+    void process_sequence(const parsing::Read& read) {
+        signature->add_sequence(read.cleaned_seq.c_str(), false);
     }
 
     void report() {

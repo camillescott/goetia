@@ -18,6 +18,8 @@ from boink.parsing cimport _ReadParser, _FastxReader, _SplitPairedReader
 from boink.utils cimport _bstring
 from boink.minimizers cimport _UKHSCountSignature
 
+from sourmash._minhash cimport KmerMinHash
+
 
 cdef extern from "boink/processors.hh":
     cdef uint64_t DEFAULT_FINE_INTERVAL
@@ -64,6 +66,12 @@ cdef extern from "boink/processors.hh" namespace "boink" nogil:
                                      uint64_t,
                                      uint64_t)
 
+    cdef cppclass _SourmashSignatureProcessor "boink::SourmashSignatureProcessor" (_FileProcessor[_SourmashSignatureProcessor]):
+        _SourmashSignatureProcessor(KmerMinHash *,
+                                    uint64_t,
+                                    uint64_t,
+                                    uint64_t)
+
     cdef cppclass _DecisionNodeProcessor "boink::DecisionNodeProcessor"[GraphType] (_FileProcessor[_DecisionNodeProcessor[GraphType]]):
         _DecisionNodeProcessor(_StreamingCompactor*,
                                string &,
@@ -103,6 +111,8 @@ cdef class MinimizerProcessor(FileProcessor):
 cdef class UKHSCountSignatureProcessor(FileProcessor):
     cdef shared_ptr[_UKHSCountSignatureProcessor] _this
 
+cdef class SourmashSignatureProcessor(FileProcessor):
+    cdef shared_ptr[_SourmashSignatureProcessor] _this
 
 
 

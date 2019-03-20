@@ -14,6 +14,8 @@ from boink.utils cimport _bstring, _ustring
 from boink.minimizers cimport UKHSCountSignature
 from boink.parsing cimport get_parser
 
+from sourmash._minhash cimport MinHash
+
 
 class DEFAULT_INTERVALS:
     FINE   = DEFAULT_FINE_INTERVAL
@@ -74,6 +76,51 @@ cdef class UKHSCountSignatureProcessor(FileProcessor):
         cdef shared_ptr[_ReadParser[_FastxReader]]       p_single
         cdef _SplitPairedReader[_FastxReader] *          p_paired
         cdef _UKHSCountSignatureProcessor.interval_state state
+        
+        if right_filename is None:
+            p_single = get_parser[_FastxReader](_bstring(input_filename))
+            while True:
+                state = deref(self._this).advance(p_single)
+                if state.end:
+                    return deref(self._this).n_reads(), state.fine, state.medium, state.coarse, state.end
+                else:
+                    yield deref(self._this).n_reads(), state.fine, state.medium, state.coarse, state.end
+        else:
+            p_paired = new _SplitPairedReader[_FastxReader](_bstring(input_filename),
+                                                            _bstring(right_filename))
+
+            while True:
+                state = deref(self._this).advance_paired(deref(p_paired))
+                if state.end:
+                    return deref(self._this).n_reads(), state.fine, state.medium, state.coarse, state.end
+                else:
+                    yield deref(self._this).n_reads(), state.fine, state.medium, state.coarse, state.end
+
+
+cdef class SourmashSignatureProcessor(FileProcessor):
+
+    def __cinit__(self, MinHash signature,
+                        uint64_t fine_interval,
+                        uint64_t medium_interval,
+                        uint64_t coarse_interval):
+
+        self._this = make_shared[_SourmashSignatureProcessor](signature._this.get(),
+                                                              fine_interval,
+                                                              medium_interval,
+                                                              coarse_interval)
+        self.Notifier = EventNotifier._wrap(<shared_ptr[_EventNotifier]>self._this)
+
+    def process(self, str input_filename, str right_filename=None):
+        if right_filename is None:
+            deref(self._this).process(_bstring(input_filename))
+        else:
+            deref(self._this).process(_bstring(input_filename),
+                                      _bstring(right_filename))
+
+    def chunked_process(self, str input_filename, str right_filename=None):
+        cdef shared_ptr[_ReadParser[_FastxReader]]      p_single
+        cdef _SplitPairedReader[_FastxReader] *         p_paired
+        cdef _SourmashSignatureProcessor.interval_state state
         
         if right_filename is None:
             p_single = get_parser[_FastxReader](_bstring(input_filename))

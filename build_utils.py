@@ -218,6 +218,7 @@ class BoinkReporter(ConsoleReporter):
         self.write(text(major_divider('TASK FAILURE'), TermCodes.FAIL))
         err = text(result['exception'].get_name(), TermCodes.FAIL)
         tsk = text(result['task'].name, TermCodes.HEADER)
+        self.write(result['task'].title())
         msg = '%s - taskid:%s\n' % (err, tsk)
         self.write(msg)
         if write_exception:

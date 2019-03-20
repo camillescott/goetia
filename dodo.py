@@ -76,7 +76,7 @@ LIBBUILDDIR = '_libbuild'
 #LIBDIR = os.path.join('src', PKG)
 
 CXX         = get_var('CXX', os.environ.get('CXX', 'c++'))
-INCLUDES    = ['-I', os.path.abspath('include/'), '-I.']
+INCLUDES    = ['-I' + os.path.abspath('include/'), '-I.', '-I' + os.path.abspath('include/sourmash/')]
 
 # for anaconda
 PREFIX      = get_var('PREFIX', sysconfig.get_config_var('prefix'))
@@ -353,6 +353,7 @@ def task_deploy_gfakluge():
             'clean':    [clean_targets,
                          (clean_folder, ['include/gfakluge'])]}
 
+
 def task_deploy_cqf():
     build_cmd  = 'cd third-party/cqf && make'
     cp_hpp_cmd = 'mkdir -p include/cqf && cp third-party/cqf/gqf.h include/cqf/'
@@ -362,6 +363,20 @@ def task_deploy_cqf():
             'actions': [build_cmd, cp_hpp_cmd, cp_obj_cmd],
             'targets': ['{}/gqf.o'.format(LIBBUILDDIR)],
             'file_dep': ['third-party/cqf/gqf.h'],
+            'task_dep': ['display_libboink_config'],
+            'clean': [clean_targets]}
+
+
+def task_deploy_smhasher():
+    build_cmd = [CXX, '-Ithird-party/smhasher/'] + CXXFLAGS + \
+                ['-c', 'third-party/smhasher/MurmurHash3.cc', '-o', 'third-party/smhasher/MurmurHash3.o']
+    cp_hpp_cmd = 'mkdir -p include/smhasher && cp third-party/smhasher/MurmurHash3.h include/smhasher/'
+    cp_obj_cmd = 'mkdir -p {}/ && cp third-party/smhasher/MurmurHash3.o {}/'.format(LIBBUILDDIR, LIBBUILDDIR)
+
+    return {'title': title_with_actions,
+            'actions': [' '.join(build_cmd), cp_hpp_cmd, cp_obj_cmd],
+            'targets': ['{}/MurmurHash3.o'.format(LIBBUILDDIR)],
+            'file_dep': ['third-party/smhasher/MurmurHash3.h'],
             'task_dep': ['display_libboink_config'],
             'clean': [clean_targets]}
 
@@ -380,6 +395,7 @@ def task_prepare_thirdparty():
             'task_dep': ['display_libboink_config'],
             'task_dep': ['deploy_prometheus',
                          'deploy_sparsepp',
+                         'deploy_smhasher',
                          'deploy_cqf',
                          'deploy_gfakluge',
                          'create_libboink_build_dirs']}
@@ -404,7 +420,8 @@ def task_compile_libboink():
 
 @create_after('compile_libboink')
 def task_link_libboink():
-    objects = [os.path.join(*obj) for obj in OBJECT_FILES]  + ['{}/gqf.o'.format(LIBBUILDDIR)]
+    objects = [os.path.join(*obj) for obj in OBJECT_FILES] \
+              + ['{}/gqf.o'.format(LIBBUILDDIR), '{}/MurmurHash3.o'.format(LIBBUILDDIR)]
     objects.sort(key=lambda path: os.path.basename(path))
     link_action = link_command(objects, LIBBOINKSO)
     ln_action   = ' '.join(['ln -sf',
@@ -479,7 +496,6 @@ def task_render_extension_classes():
         dbg_types = OrderedDict(storage_type=types['StorageType'],
                                 shifter_type=types['ShifterType'])
         yield jinja_render_task(mod_name, dbg_types)
-
 
 
 CLEAN_ACTIONS = \
