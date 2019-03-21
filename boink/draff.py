@@ -216,7 +216,7 @@ class DraffStream:
         self.parser.add_argument('--distance-metric', default='cosine')
         self.parser.add_argument('--distance-output', nargs='?')
         self.parser.add_argument('--stdev-cutoff', default=0.00001, type=float)
-        self.parser.add_argument('--distance-window', default=5)
+        self.parser.add_argument('--distance-window', default=5, type=int)
 
         self.term   = term
         self._print = functools.partial(print, end='')
