@@ -16,6 +16,7 @@
 #include "boink/hashing/kmeriterator.hh"
 #include "boink/kmers/kmerclient.hh"
 #include "boink/storage/storage.hh"
+#include "boink/storage/sparseppstorage.hh"
 
 #include <algorithm>
 #include <memory>
@@ -24,6 +25,9 @@
 
 namespace boink {
 
+namespace storage {
+    class SparseppSetStorage;
+}
 
 template <class StorageType,
           class HashShifter>

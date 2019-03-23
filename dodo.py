@@ -152,14 +152,23 @@ CFLAGS      = ['-Wshadow', '-Wcast-align', '-Wstrict-prototypes']
 CFLAGS     += INCLUDES
 CFLAGS     += CPPFLAGS
 
-LDFLAGS     = ['-Wl,-rpath,{0}'.format(os.path.abspath('lib')),
-               '-Llib', '-lgfakluge', '-lprometheus-cpp-pull',
-               '-lprometheus-cpp-push', '-lprometheus-cpp-core',
-               '-lpthread', '-lz']
-CYLDFLAGS   = ['-Wl,-rpath,{0}'.format(os.path.abspath('lib')),
-               '-Llib', '-lboink', '-lz', '-lgfakluge', '-lprometheus-cpp-pull',
-               '-lprometheus-cpp-push', '-lprometheus-cpp-core',
-               '-lpthread', '-lz', '-lboink']
+LDFLAGS     = []
+if PREFIX is not None:
+    LDFLAGS += ['-Wl,-rpath,{0}'.format(os.path.join(PREFIX, 'lib')),
+                '-L'+os.path.join(PREFIX, 'lib')]
+LDFLAGS     += ['-Wl,-rpath,{0}'.format(os.path.abspath('lib')),
+                '-Llib', '-lgfakluge', '-lprometheus-cpp-pull',
+                '-lprometheus-cpp-push', '-lprometheus-cpp-core',
+                '-lpthread', '-lz']
+
+CYLDFLAGS     = []
+if PREFIX is not None:
+    CYLDFLAGS += ['-Wl,-rpath,{0}'.format(os.path.join(PREFIX, 'lib')),
+                  '-L'+os.path.join(PREFIX, 'lib')]
+CYLDFLAGS   += ['-Wl,-rpath,{0}'.format(os.path.abspath('lib')),
+                '-Llib', '-lboink', '-lz', '-lgfakluge', '-lprometheus-cpp-pull',
+                '-lprometheus-cpp-push', '-lprometheus-cpp-core',
+                '-lpthread', '-lz', '-lboink']
 
 CY_CFLAGS   = sysconfig.get_config_var('CFLAGS').split()
 try:
