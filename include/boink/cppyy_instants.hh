@@ -4,6 +4,7 @@
 #include "boink/hashing/hashshifter.hh"
 #include "boink/hashing/kmeriterator.hh"
 #include "boink/hashing/rollinghashshifter.hh"
+#include "boink/hashing/ukhs.hh"
 
 #include "boink/assembly.hh"
 
@@ -15,6 +16,8 @@
 #include "boink/storage/bytestorage.hh"
 #include "boink/storage/nibblestorage.hh"
 #include "boink/storage/qfstorage.hh"
+
+#include "boink/ukhs_signature.hh"
 
 #include <set>
 
@@ -58,21 +61,14 @@ template class boink::hashing::KmerIterator<boink::hashing::RollingHashShifter>;
 // dBG storage specializations
 //
 
-
-// SparseppSetStorage
-template class boink::dBG<boink::storage::SparseppSetStorage, 
-                          boink::hashing::RollingHashShifter>;
-template class std::enable_shared_from_this<boink::dBG<boink::storage::SparseppSetStorage, 
-                                                       boink::hashing::RollingHashShifter>>;
-template class boink::AssemblerMixin<boink::dBG<boink::storage::SparseppSetStorage,
-                                                boink::hashing::RollingHashShifter>>;
-
 // BitStorage
 template class boink::dBG<boink::storage::BitStorage,
                           boink::hashing::RollingHashShifter>;
 template class std::enable_shared_from_this<boink::dBG<boink::storage::BitStorage,
                                             boink::hashing::RollingHashShifter>>;
 template class boink::AssemblerMixin<boink::dBG<boink::storage::BitStorage,
+                                                 boink::hashing::RollingHashShifter>>;
+template class boink::CompactorMixin<boink::dBG<boink::storage::BitStorage,
                                                  boink::hashing::RollingHashShifter>>;
 
 // ByteStorage
@@ -82,6 +78,8 @@ template class std::enable_shared_from_this<boink::dBG<boink::storage::ByteStora
                                             boink::hashing::RollingHashShifter>>;
 template class boink::AssemblerMixin<boink::dBG<boink::storage::ByteStorage,
                                                  boink::hashing::RollingHashShifter>>;
+template class boink::CompactorMixin<boink::dBG<boink::storage::ByteStorage,
+                                                 boink::hashing::RollingHashShifter>>;
 
 // NibbleStorage
 template class boink::dBG<boink::storage::NibbleStorage,
@@ -89,6 +87,8 @@ template class boink::dBG<boink::storage::NibbleStorage,
 template class std::enable_shared_from_this<boink::dBG<boink::storage::NibbleStorage,
                                             boink::hashing::RollingHashShifter>>;
 template class boink::AssemblerMixin<boink::dBG<boink::storage::NibbleStorage,
+                                                 boink::hashing::RollingHashShifter>>;
+template class boink::CompactorMixin<boink::dBG<boink::storage::NibbleStorage,
                                                  boink::hashing::RollingHashShifter>>;
 
 // QFStorage
@@ -98,3 +98,16 @@ template class std::enable_shared_from_this<boink::dBG<boink::storage::QFStorage
                                             boink::hashing::RollingHashShifter>>;
 template class boink::AssemblerMixin<boink::dBG<boink::storage::QFStorage,
                                                  boink::hashing::RollingHashShifter>>;
+template class boink::CompactorMixin<boink::dBG<boink::storage::QFStorage,
+                                                 boink::hashing::RollingHashShifter>>;
+
+// SparseppSetStorage
+template class boink::dBG<boink::storage::SparseppSetStorage,
+                          boink::hashing::RollingHashShifter>;
+template class std::enable_shared_from_this<boink::dBG<boink::storage::SparseppSetStorage,
+                                            boink::hashing::RollingHashShifter>>;
+template class boink::AssemblerMixin<boink::dBG<boink::storage::SparseppSetStorage,
+                                                 boink::hashing::RollingHashShifter>>;
+template class boink::CompactorMixin<boink::dBG<boink::storage::SparseppSetStorage,
+                                                 boink::hashing::RollingHashShifter>>;
+

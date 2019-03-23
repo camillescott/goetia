@@ -2,11 +2,13 @@
     <selection>
         <!-- <namespace pattern="boink::*"/> -->
         <class pattern="boink::storage::*Storage"/>
-        <class name="boink::hashing::RollingHashShifter"/>
+        <class pattern="boink::hashing::*"/>
+
         <class pattern="boink::dBG<*, *>"/>
+        <class pattern="boink::AssemblerMixin<*>"/>
+        <class pattern="boink::CompactorMixin<*>"/>
 
         <class pattern="std::pair<*,*>"/>
-
         <class pattern="std::enable_shared_from_this<*>" />
         <class pattern="std::vector<*>" />
         <class pattern="std::vector<*>::iterator" />
