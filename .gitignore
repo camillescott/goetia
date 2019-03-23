@@ -124,3 +124,4 @@ src/boink/benchmark_oxli_consume
 include/gfakluge/
 include/prometheus/
 include/sparsepp/
+include/smhasher/
