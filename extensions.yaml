@@ -70,8 +70,7 @@ types:
       composites: 
         - AlphabetType
       types:
-        - DefaultShifter
-#        - RollingHashShifter
+        - RollingHashShifter
     - name: AlphabetType
       composites: null
       types:

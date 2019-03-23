@@ -52,7 +52,7 @@ cdef class WKMinimizer(InteriorMinimizer):
     
     def __cinit__(self, int64_t window_size, uint16_t ksize, *args, **kwargs):
         if type(self) is WKMinimizer:
-            self._wk_this = make_unique[_WKMinimizer[_DefaultShifter]](window_size, ksize)
+            self._wk_this = make_unique[_WKMinimizer[_RollingHashShifter]](window_size, ksize)
             self._this = <_InteriorMinimizer[hash_t]*>self._wk_this.get()
 
     def get_minimizers(self, str sequence):

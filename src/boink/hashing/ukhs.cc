@@ -15,7 +15,7 @@ namespace hashing {
 template <>
 template <>
 typename hash_return<PartitionedHash>::type
-KmerIterator<DefaultUKHSShifter>::first<PartitionedHash>() {
+KmerIterator<UKHShifter>::first<PartitionedHash>() {
     _initialized = true;
     index += 1;
     shifter->reset_unikmers();
@@ -26,7 +26,7 @@ KmerIterator<DefaultUKHSShifter>::first<PartitionedHash>() {
 template <>
 template <>
 typename hash_return<PartitionedHash>::type
-KmerIterator<DefaultUKHSShifter>::next<PartitionedHash>() {
+KmerIterator<UKHShifter>::next<PartitionedHash>() {
     if (!_initialized) {
         return this->first<PartitionedHash>();
     }

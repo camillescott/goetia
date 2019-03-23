@@ -40,7 +40,7 @@ cdef class MinimizerProcessor(FileProcessor):
                         uint64_t coarse_interval):
 
         cdef string _output_filename = _bstring(output_filename)
-        self._mp_this = make_shared[_MinimizerProcessor[_DefaultShifter]](window_size,
+        self._mp_this = make_shared[_MinimizerProcessor[_RollingHashShifter]](window_size,
                                                                          ksize,
                                                                          _output_filename,
                                                                          fine_interval,

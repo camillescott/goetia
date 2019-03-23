@@ -86,7 +86,7 @@ class UKHSSignature : public kmers::KmerClient {
 protected:
 
     std::shared_ptr<hashing::UKHS>        ukhs;
-    hashing::DefaultUKHSShifter           partitioner;
+    hashing::UKHShifter           partitioner;
 
     std::vector<std::unique_ptr<MinHash>> sig_buckets;
 
@@ -145,7 +145,7 @@ public:
     }
 
     inline void insert_sequence(const std::string& sequence) {
-        hashing::KmerIterator<hashing::DefaultUKHSShifter> iter(sequence, &partitioner);
+        hashing::KmerIterator<hashing::UKHShifter> iter(sequence, &partitioner);
 
         PartitionedHash h          = iter.next();
         uint64_t        cur_bid    = h.second;
@@ -229,7 +229,7 @@ class UKHSCountSignature : public kmers::KmerClient {
 protected:
 
     std::shared_ptr<hashing::UKHS>        ukhs;
-    hashing::DefaultUKHSShifter           partitioner;
+    hashing::UKHShifter           partitioner;
 
     //std::vector<size_t>                   signature;
     std::shared_ptr<PdBG<storage::BitStorage>> signature;

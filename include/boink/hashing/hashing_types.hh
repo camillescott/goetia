@@ -58,8 +58,13 @@ inline std::ostream& operator<<(std::ostream& os, const shift_t& shift)
 
 // A k-mer string and its hash value.
 struct kmer_t {
-    const hash_t hash;
-    const std::string kmer;
+    hash_t hash;
+    std::string kmer;
+
+    kmer_t() :
+        hash(0)
+    {
+    }
 
     kmer_t(const hash_t hash, const std::string kmer) :
         hash(hash),

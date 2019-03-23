@@ -20,7 +20,7 @@ from boink.metadata import DATA_DIR
 
 
 cdef void _test():
-    cdef _DefaultShifter * shifter = new _DefaultShifter(4)
+    cdef _RollingHashShifter * shifter = new _RollingHashShifter(4)
     print(deref(shifter).set_cursor(_bstring('AAAA')))
     print(deref(shifter).get_cursor())
     print(deref(shifter).shift_left(b'C'))
@@ -39,10 +39,10 @@ def unikmer_valid(uint64_t partition):
 
 cdef class RollingHashShifter:
 
-    cdef unique_ptr[_DefaultShifter] _this
+    cdef unique_ptr[_RollingHashShifter] _this
 
     def __cinit__(self, uint16_t k):
-        self._this.reset(new _DefaultShifter(k))
+        self._this.reset(new _RollingHashShifter(k))
 
     def set_cursor(self, str kmer):
         deref(self._this).set_cursor(_bstring(kmer))
@@ -72,14 +72,14 @@ cdef class RollingHashShifter:
 
 cdef class UKHShifter:
 
-    cdef unique_ptr[_DefaultUKHSShifter] _this
-    cdef shared_ptr[_UKHS]               _ukhs
-    cdef dict                            unikmer_map
+    cdef unique_ptr[_UKHSShifter] _this
+    cdef shared_ptr[_UKHS]        _ukhs
+    cdef dict                     unikmer_map
 
     def __cinit__(self, uint16_t W, uint16_t K):
         cdef vector[string] kmers = UKHShifter.get_kmers(W, K)
         self._ukhs = make_shared[_UKHS](K, kmers)
-        self._this.reset(new _DefaultUKHSShifter(W, K, self._ukhs))
+        self._this.reset(new _UKHSShifter(W, K, self._ukhs))
 
         self.unikmer_map = {}
         cdef uint64_t uhash

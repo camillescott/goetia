@@ -21,11 +21,9 @@ namespace boink {
 namespace hashing {
 
 
-template <const std::string& Alphabet = DNA_SIMPLE>
-class RollingHashShifter : public HashShifter<RollingHashShifter<Alphabet>,
-                                              Alphabet> {
+class RollingHashShifter : public HashShifter<RollingHashShifter> {
 protected:
-    typedef HashShifter<RollingHashShifter<Alphabet>, Alphabet> BaseShifter;
+    typedef HashShifter<RollingHashShifter> BaseShifter;
 
     CyclicHash<hash_t> hasher;
     using BaseShifter::_K;
@@ -36,7 +34,8 @@ public:
     //using BaseShifter::HashShifter;
     typedef hash_t hash_type;
 
-    RollingHashShifter(const std::string& start, uint16_t K)
+    RollingHashShifter(const std::string& start,
+                       uint16_t K)
         : BaseShifter(start, K), hasher(K)
     {    
         init();
@@ -96,7 +95,7 @@ public:
     std::vector<shift_t> gather_left() {
         std::vector<shift_t> hashes;
         const char back = this->kmer_window.back();
-        for (auto symbol : Alphabet) {
+        for (auto symbol : symbols) {
             hasher.reverse_update(symbol, back);
             shift_t result(hasher.hashvalue, symbol);
             hashes.push_back(result);
@@ -109,7 +108,7 @@ public:
     std::vector<shift_t> gather_right() {
         std::vector<shift_t> hashes;
         const char front = this->kmer_window.front();
-        for (auto symbol : Alphabet) {
+        for (auto symbol : symbols) {
             hasher.update(front, symbol);
             hashes.push_back(shift_t(hasher.hashvalue, symbol));
             hasher.reverse_update(front, symbol);
@@ -118,7 +117,6 @@ public:
     }
 };
 
-typedef RollingHashShifter<DNA_SIMPLE> DefaultShifter;
 
 } // hashing
 } // boink

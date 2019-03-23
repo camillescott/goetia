@@ -29,6 +29,7 @@
 namespace boink {
 
 using storage::PartitionedStorage;
+using hashing::UKHShifter;
 
 template <class BaseStorageType>
 class PdBG : public kmers::KmerClient,
@@ -37,13 +38,13 @@ protected:
 
     std::unique_ptr<PartitionedStorage<BaseStorageType>>       S;
     std::shared_ptr<hashing::UKHS>                             ukhs;
-    hashing::DefaultUKHSShifter                                partitioner;
+    UKHShifter                                partitioner;
 
 public:
 
-    typedef hashing::DefaultUKHSShifter                        shifter_type;
+    typedef UKHShifter                        shifter_type;
 	typedef AssemblerMixin<PdBG<BaseStorageType>>              assembler_type;
-    typedef hashing::KmerIterator<hashing::DefaultUKHSShifter> kmer_iter_type;
+    typedef hashing::KmerIterator<UKHShifter> kmer_iter_type;
     typedef BaseStorageType                                    base_storage_type;
 
     const uint16_t partition_K;
@@ -85,7 +86,7 @@ public:
 
     std::vector<hashing::hash_t> get_hashes(const std::string& sequence) {
 
-        hashing::KmerIterator<hashing::DefaultUKHSShifter> iter(sequence, &partitioner);
+        hashing::KmerIterator<UKHShifter> iter(sequence, &partitioner);
         std::vector<hashing::hash_t> kmer_hashes;
 
         while(!iter.done()) {
@@ -142,7 +143,7 @@ public:
                              std::vector<hashing::hash_t>&  kmer_hashes,
                              std::vector<storage::count_t>& counts) {
 
-        hashing::KmerIterator<hashing::DefaultUKHSShifter> iter(sequence, &partitioner);
+        hashing::KmerIterator<UKHShifter> iter(sequence, &partitioner);
 
         uint64_t         n_consumed = 0;
         size_t           pos = 0;
@@ -164,7 +165,7 @@ public:
     uint64_t insert_sequence(const std::string&      sequence,
                           std::set<hashing::hash_t>& new_kmers) {
 
-        hashing::KmerIterator<hashing::DefaultUKHSShifter> iter(sequence, &partitioner);
+        hashing::KmerIterator<UKHShifter> iter(sequence, &partitioner);
 
         uint64_t n_consumed = 0;
         size_t pos = 0;
@@ -182,7 +183,7 @@ public:
     }
 
     uint64_t insert_sequence(const std::string& sequence) {
-        hashing::KmerIterator<hashing::DefaultUKHSShifter> iter(sequence, &partitioner);
+        hashing::KmerIterator<UKHShifter> iter(sequence, &partitioner);
 
         uint64_t n_consumed = 0;
         while(!iter.done()) {
@@ -194,7 +195,7 @@ public:
     }
 
     uint64_t insert_sequence_rolling(const std::string& sequence) {
-        hashing::KmerIterator<hashing::DefaultUKHSShifter> iter(sequence, &partitioner);
+        hashing::KmerIterator<UKHShifter> iter(sequence, &partitioner);
 
         uint64_t n_consumed = 0;
         hashing::PartitionedHash h = iter.next();
@@ -216,7 +217,7 @@ public:
 
     std::vector<storage::count_t> insert_and_query_sequence(const std::string& sequence) {
 
-        hashing::KmerIterator<hashing::DefaultUKHSShifter> iter(sequence, &partitioner);
+        hashing::KmerIterator<UKHShifter> iter(sequence, &partitioner);
         std::vector<storage::count_t> counts(sequence.length() - _K + 1);
 
         size_t pos = 0;
@@ -231,7 +232,7 @@ public:
 
     std::vector<storage::count_t> query_sequence(const std::string& sequence) {
 
-        hashing::KmerIterator<hashing::DefaultUKHSShifter> iter(sequence, &partitioner);
+        hashing::KmerIterator<UKHShifter> iter(sequence, &partitioner);
         std::vector<storage::count_t> counts(sequence.length() - _K + 1);
 
         size_t pos = 0;
@@ -246,7 +247,7 @@ public:
 
     std::vector<storage::count_t> query_sequence_rolling(const std::string& sequence) {
 
-        hashing::KmerIterator<hashing::DefaultUKHSShifter> iter(sequence, &partitioner);
+        hashing::KmerIterator<UKHShifter> iter(sequence, &partitioner);
         std::vector<storage::count_t> counts(sequence.length() - _K + 1);
         
         hashing::PartitionedHash h      = iter.next();
@@ -272,7 +273,7 @@ public:
                         std::vector<storage::count_t>& counts,
                         std::vector<hashing::hash_t>&  hashes) {
 
-        hashing::KmerIterator<hashing::DefaultUKHSShifter> iter(sequence, &partitioner);
+        hashing::KmerIterator<UKHShifter> iter(sequence, &partitioner);
 
         while(!iter.done()) {
             hashing::PartitionedHash h = iter.next();
@@ -287,7 +288,7 @@ public:
                         std::vector<hashing::hash_t>& hashes,
                         std::set<hashing::hash_t>& new_hashes) {
 
-        hashing::KmerIterator<hashing::DefaultUKHSShifter> iter(sequence, &partitioner);
+        hashing::KmerIterator<UKHShifter> iter(sequence, &partitioner);
 
         while(!iter.done()) {
             hashing::PartitionedHash h = iter.next();
@@ -398,9 +399,9 @@ public:
         S->reset();
     }
 
-    std::shared_ptr<hashing::KmerIterator<hashing::DefaultUKHSShifter>> 
+    std::shared_ptr<hashing::KmerIterator<UKHShifter>> 
     get_hash_iter(const std::string& sequence) {
-        return std::make_shared<hashing::KmerIterator<hashing::DefaultUKHSShifter>>(sequence, &partitioner);
+        return std::make_shared<hashing::KmerIterator<UKHShifter>>(sequence, &partitioner);
     }
 
     /*

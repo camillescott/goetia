@@ -106,7 +106,7 @@ cdef class FileProcessor:
     cdef public EventNotifier Notifier
 
 cdef class MinimizerProcessor(FileProcessor):
-    cdef shared_ptr[_MinimizerProcessor[_DefaultShifter]] _mp_this
+    cdef shared_ptr[_MinimizerProcessor[_RollingHashShifter]] _mp_this
 
 cdef class UKHSCountSignatureProcessor(FileProcessor):
     cdef shared_ptr[_UKHSCountSignatureProcessor] _this

@@ -79,11 +79,11 @@ public:
 
   std::unique_ptr<QFStorage> clone() const;
 
-  inline const bool insert(hashing::hash_t khash);
-  inline const count_t insert_and_query(hashing::hash_t khash);
+  const bool insert(hashing::hash_t khash);
+  const count_t insert_and_query(hashing::hash_t khash);
 
   // get the count for the given k-mer hash.
-  inline const count_t query(hashing::hash_t khash) const;
+  const count_t query(hashing::hash_t khash) const;
 
   // Accessors for protected/private table info members
   // xnslots is larger than nslots. It includes some extra slots to deal

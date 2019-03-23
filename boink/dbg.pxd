@@ -106,7 +106,6 @@ cdef extern from "boink/dbg.hh" namespace "boink" nogil:
 
         shared_ptr[_KmerIterator[HashShifter]] get_hash_iter(string&)
 
-    ctypedef _dBG[_BitStorage, _DefaultShifter] DefaultDBG
 
 cdef extern from "boink/pdbg.hh" namespace "boink" nogil:
     cdef cppclass _PdBG "boink::PdBG" [BaseStorageType] (_KmerClient):
@@ -156,7 +155,7 @@ cdef extern from "boink/pdbg.hh" namespace "boink" nogil:
         void load(string)
         void reset()
 
-        shared_ptr[_KmerIterator[_DefaultUKHSShifter]] get_hash_iter(string&)
+        shared_ptr[_KmerIterator[_UKHSShifter]] get_hash_iter(string&)
 
     ctypedef _PdBG[_SparseppSetStorage] DefaultPdBG
         

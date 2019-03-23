@@ -53,8 +53,7 @@ cdef extern from "boink/hashing/hashing_types.hh" namespace "boink::hashing" nog
 
 cdef extern from "boink/hashing/hashshifter.hh" namespace "boink::hashing" nogil:
 
-    cdef cppclass _HashShifter "boink::hashing::HashShifter" [D,A] (_KmerClient):
-        const string symbols
+    cdef cppclass _HashShifter "boink::hashing::HashShifter" [D] (_KmerClient):
         hash_t set_cursor(string&) except +ValueError
         string get_cursor()
         void get_cursor(deque[char]&)
@@ -72,11 +71,10 @@ cdef extern from "boink/hashing/hashshifter.hh" namespace "boink::hashing" nogil
         hash_t shift_right(const char)
 
 cdef extern from "boink/hashing/rollinghashshifter.hh" namespace "boink::hashing" nogil:
-    cdef cppclass _RollingHashShifter "boink::hashing::RollingHashShifter" [A] (_HashShifter[_RollingHashShifter[A], A]):
+    cdef cppclass _RollingHashShifter "boink::hashing::RollingHashShifter" (_HashShifter[_RollingHashShifter]):
         _RollingHashShifter(string&, uint16_t)
         _RollingHashShifter(uint16_t)
 
-    ctypedef _RollingHashShifter[_DNA_SIMPLE] _DefaultShifter "boink::hashing::DefaultShifter"
 
 
 cdef extern from "boink/hashing/ukhs.hh" namespace "boink::hashing" nogil:
@@ -94,8 +92,8 @@ cdef extern from "boink/hashing/ukhs.hh" namespace "boink::hashing" nogil:
         uint64_t query_revmap(uint64_t)
         uint64_t hash_unikmer(const string&) except +ValueError
 
-    cdef cppclass _UKHShifter "boink::hashing::UKHShifter" [A] (_HashShifter[_UKHShifter[A], A]):
-        _UKHShifter(uint16_t,
+    cdef cppclass _UKHSShifter "boink::hashing::UKHShifter" (_HashShifter[_UKHSShifter]):
+        _UKHSShifter(uint16_t,
                     uint16_t,
                     shared_ptr[_UKHS]&) except +ValueError
 
@@ -105,8 +103,6 @@ cdef extern from "boink/hashing/ukhs.hh" namespace "boink::hashing" nogil:
 
         vector[uint64_t] get_ukhs_hashes()
         const size_t n_ukhs_hashes()
-
-    ctypedef _UKHShifter[_DNA_SIMPLE] _DefaultUKHSShifter "boink::hashing::DefaultUKHSShifter"
 
 
 cdef extern from "boink/hashing/kmeriterator.hh" namespace "boink::hashing" nogil:

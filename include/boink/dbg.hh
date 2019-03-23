@@ -49,6 +49,19 @@ public:
         S = std::make_unique<StorageType>(std::forward<Args>(args)...);
     }
 
+    // Wonky template foo to make sure this constructor is only emitted if
+    // StorageType is SparseeppSetStorage. In most cases the above variadic
+    // constructor works fine, but cppyy doesn't resolve the overload correctly
+    // when no extra arguments are given.
+    template<typename U = StorageType>
+    explicit dBG(uint16_t K,
+                 typename std::enable_if_t<std::is_same<U, boink::storage::SparseppSetStorage>::value, U*> = 0)
+        : KmerClient(K),
+          hasher(K)
+    {
+        S = std::make_unique<StorageType>();
+    }
+
     explicit dBG(uint16_t K, std::unique_ptr<StorageType>& S)
         : KmerClient(K),
           hasher(K),

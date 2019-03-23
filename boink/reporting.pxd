@@ -9,7 +9,6 @@ from libc.stdint cimport uint8_t, uint32_t, uint64_t
 from libcpp.memory cimport shared_ptr
 from libcpp.string cimport string
 
-from boink.dbg cimport DefaultDBG
 from boink.cdbg cimport cDBGFormat, _cDBG 
 from boink.compactor cimport *
 from boink.events cimport EventListener, _EventListener

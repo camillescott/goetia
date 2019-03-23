@@ -30,7 +30,7 @@ cdef class dBG:
               #uint64_t starting_size,
               #int n_tables,
               str storage='_BitStorage',
-              str shifter='_DefaultShifter',
+              str shifter='_RollingHashShifter',
               **kwargs):
         {% for type_bundle in type_bundles %}
         if storage == "{{type_bundle.storage_type}}" and \
@@ -42,7 +42,7 @@ cdef class dBG:
 
     @staticmethod
     def get_type(str storage='_BitStorage',
-                 str shifter='_DefaultShifter'):
+                 str shifter='_RollingHashShifter'):
         {% for type_bundle in type_bundles %}
         if storage == "{{type_bundle.storage_type}}" and \
            shifter == "{{type_bundle.shifter_type}}":

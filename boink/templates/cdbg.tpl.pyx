@@ -228,7 +228,7 @@ cdef class cDBG_{{type_bundle.suffix}}(cDBG_Base):
 {% endfor %}
 
 def get_cdbg_type(str storage='_BitStorage',
-                  str shifter='_DefaultShifter'):
+                  str shifter='_RollingHashShifter'):
     {% for type_bundle in type_bundles %}
     if storage == "{{type_bundle.storage_type}}" and \
        shifter == "{{type_bundle.shifter_type}}":

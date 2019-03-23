@@ -88,7 +88,7 @@ protected:
 
     std::vector<uint64_t>          ukhs_hashes;
     std::vector<uint64_t>          ukhs_revmap;
-    RollingHashShifter<DNA_SIMPLE> ukhs_hasher;
+    RollingHashShifter             ukhs_hasher;
     bool                           ukhs_initialized;
     std::unique_ptr<boophf_t>      bphf;
 
@@ -156,13 +156,11 @@ public:
 };
 
 
-template <const std::string& Alphabet = DNA_SIMPLE>
-class UKHShifter : public HashShifter<UKHShifter<Alphabet>,
-                                      Alphabet> {
+class UKHShifter : public HashShifter<UKHShifter> {
 
 protected:
 
-    typedef HashShifter<UKHShifter<Alphabet>, Alphabet> BaseShifter;
+    typedef HashShifter<UKHShifter> BaseShifter;
 
     using BaseShifter::_K;
     using BaseShifter::kmer_window;
@@ -202,6 +200,8 @@ protected:
     }
 
 public:
+
+    using BaseShifter::symbols;
 
     typedef PartitionedHash hash_type;
 
@@ -348,7 +348,7 @@ public:
     std::vector<shift_t> gather_left() {
         std::vector<shift_t> hashes;
         const char back = this->kmer_window.back();
-        for (auto symbol : Alphabet) {
+        for (auto symbol : symbols) {
             window_hasher.reverse_update(symbol, back);
             shift_t result(window_hasher.hashvalue, symbol);
             hashes.push_back(result);
@@ -361,7 +361,7 @@ public:
     std::vector<shift_t> gather_right() {
         std::vector<shift_t> hashes;
         const char front = this->kmer_window.front();
-        for (auto symbol : Alphabet) {
+        for (auto symbol : symbols) {
             window_hasher.update(front, symbol);
             hashes.push_back(shift_t(window_hasher.hashvalue, symbol));
             window_hasher.reverse_update(front, symbol);
@@ -370,7 +370,6 @@ public:
     }
 };
 
-typedef UKHShifter<DNA_SIMPLE> DefaultUKHSShifter;
 
 
 // specializations for KmerIterator
@@ -378,13 +377,13 @@ typedef UKHShifter<DNA_SIMPLE> DefaultUKHSShifter;
 template <>
 template <>
 typename hash_return<PartitionedHash>::type
-KmerIterator<DefaultUKHSShifter>::first<PartitionedHash>();
+KmerIterator<UKHShifter>::first<PartitionedHash>();
 
 
 template <>
 template <>
 typename hash_return<PartitionedHash>::type
-KmerIterator<DefaultUKHSShifter>::next<PartitionedHash>();
+KmerIterator<UKHShifter>::next<PartitionedHash>();
 
 }
 }

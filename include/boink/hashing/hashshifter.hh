@@ -29,8 +29,7 @@ namespace boink {
 namespace hashing {
 
 
-template <class Derived,
-          const std::string& Alphabet = DNA_SIMPLE>
+template <class Derived>
 class HashShifter : public kmers::KmerClient {
 protected:
 
@@ -41,7 +40,7 @@ public:
 
     typedef hashing::hash_t hash_type;
 
-    static const std::string symbols;
+    const std::string& symbols;
 
     //std::deque<char> symbol_deque;
     
@@ -148,20 +147,25 @@ public:
 
 private:
 
-    HashShifter(const std::string& start, uint16_t K)
+    HashShifter(const std::string& start,
+                uint16_t K,
+                const std::string& alphabet=DNA_SIMPLE)
         : KmerClient(K),
           kmer_buffer(new char[K]),
           kmer_window(kmer_buffer, kmer_buffer + K, kmer_buffer, K),
-          initialized(false)
+          initialized(false),
+          symbols(alphabet)
     {
         load(start);
     }
 
-    HashShifter(uint16_t K)
+    HashShifter(uint16_t K,
+                const std::string& alphabet=DNA_SIMPLE)
         : KmerClient(K),
           kmer_buffer(new char[K]),
           kmer_window(kmer_buffer, kmer_buffer + K, kmer_buffer, K),
-          initialized(false)
+          initialized(false),
+          symbols(alphabet)
     {
     }
 
@@ -249,8 +253,8 @@ protected:
 };
 
 
-template<class Derived, const std::string& Alphabet>
-const std::string HashShifter<Derived, Alphabet>::symbols = Alphabet;
+//template<class Derived, const std::string& Alphabet>
+//const std::string HashShifter<Derived, Alphabet>::symbols = Alphabet;
 
 
 
