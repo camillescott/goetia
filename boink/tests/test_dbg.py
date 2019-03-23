@@ -177,6 +177,15 @@ def test_get_bad_dna_kmer(graph, ksize):
 
 
 @using_ksize(5)
+def test_neighbors(graph, ksize):
+    s = "ATGCCGATGCA"
+    graph.insert_sequence(s)
+    l, r = graph.neighbors(s[:5])
+    assert len(l) == 1
+    assert len(r) == 1
+
+
+@using_ksize(5)
 def test_add_sequence_and_report(graph, ksize):
     x = "ATGCCGATGCA"
     _, report = graph.insert_sequence_and_report(x)
