@@ -1,0 +1,19 @@
+<lcgdict>
+    <selection>
+        <!-- <namespace pattern="boink::*"/> -->
+        <class pattern="boink::storage::*Storage"/>
+        <class name="boink::hashing::RollingHashShifter"/>
+        <class pattern="boink::dBG<*, *>"/>
+
+        <class pattern="std::pair<*,*>"/>
+
+        <class pattern="std::enable_shared_from_this<*>" />
+        <class pattern="std::vector<*>" />
+        <class pattern="std::vector<*>::iterator" />
+        <function name="__gnu_cxx::operator=="/>
+        <function name="__gnu_cxx::operator!="/>
+    </selection>        
+    <exclusion>
+        <class pattern="boink::hashing::HashShifter*"/>
+    </exclusion>
+</lcgdict>
