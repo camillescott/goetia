@@ -236,6 +236,7 @@ protected:
 public:
 
     std::vector<hash_t> tags;
+    std::vector<size_t> tag_positions;
 
     UnitigNode(id_t node_id,
                hash_t left_end,

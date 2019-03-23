@@ -111,10 +111,10 @@ protected:
 
 public:
 
-    using ShifterType = typename GraphType::shifter_type;
+    using ShifterType   = typename GraphType::shifter_type;
     using CompactorType = CompactorMixin<GraphType>;
     using MinimizerType = WKMinimizer<ShifterType>;
-    using cDBGType = cDBG<GraphType>;
+    using cDBGType      = cDBG<GraphType>;
 
     using CompactorType::filter_nodes;
     using CompactorType::find_left_kmers;
@@ -995,6 +995,51 @@ public:
 };
 
 /*
+template <class GraphType>
+class TaggedStreamingCompactor : public StreamingCompactor<GraphType> {
+
+public:
+
+    using BaseType      = StreamingCompactor<GraphType>;
+    using ShifterType   = typename GraphType::shifter_type;
+    using CompactorType = StreamingCompactor<GraphType>;
+    using MinimizerType = WKMinimizer<ShifterType>;
+    using cDBGType      = cDBG<GraphType>;
+
+    using BaseType::filter_nodes;
+    using BaseType::find_left_kmers;
+    using BaseType::find_right_kmers;
+    using BaseType::gather_left;
+    using BaseType::gather_right;
+    using BaseType::compactify_left;
+    using BaseType::compactify_right;
+    using BaseType::get_decision_neighbors;
+    using BaseType::dbg;
+    using BaseType::cdbg;
+
+    typedef ShifterType   shifter_type;
+    typedef GraphType     graph_type;
+    typedef MinimizerType minimizer_type;
+    typedef cDBGType      cdbg_type;
+
+    TaggedStreamingCompactor(shared_ptr<GraphType> dbg,
+                             shared_ptr<prometheus::Registry> pr_registry,
+                             uint64_t minimizer_window_size=8)
+        : StreamingCompactor(dbg, pr_registry, minimizer_window_size)
+    {
+    }
+
+    bool find_unode_from_dnode(kmer_t root,
+                               NeighborBundle& neighbors,
+                               std::set<hash_t>& new_kmers,
+                               std::set<hash_t>& induced_decision_kmer_hashes,
+                               std::set<hash_t>& processed) {
+
+    }
+};
+
+
+
 template <class GraphType>
 class AsyncStreamingCompactor : public StreamingCompactor<GraphType>,
                                 public EventNotifier {
