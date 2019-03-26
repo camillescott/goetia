@@ -7,6 +7,10 @@
         <class pattern="boink::dBG<*, *>"/>
         <class pattern="boink::AssemblerMixin<*>"/>
         <class pattern="boink::CompactorMixin<*>"/>
+        <class pattern="boink::*Processor<*>"/>
+		<class pattern="boink::parsing::*"/>
+		<class pattern="ParserFactory<*>"/>
+		
 
         <class pattern="std::pair<*,*>"/>
         <class pattern="std::enable_shared_from_this<*>" />
@@ -17,5 +21,9 @@
     </selection>        
     <exclusion>
         <class pattern="boink::hashing::HashShifter*"/>
+        <class pattern="prometheus::*"/>
+        <class pattern="std::vector<prometheus::*>"/>
+		<class pattern="std::vector<boink::CompactorMixin<*>>"/>
+		<class pattern="std::shared_ptr<boink::parsing::ReadParser<boink::parsing::FastxReader>>"/>
     </exclusion>
 </lcgdict>

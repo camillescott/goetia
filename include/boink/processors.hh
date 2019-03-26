@@ -60,28 +60,27 @@ public:
 };
 
 
+struct interval_state {
+	bool fine;
+	bool medium;
+	bool coarse;
+	bool end;
+
+	interval_state()
+		: fine(false), medium(false), coarse(false), end(false)
+	{
+	}
+
+	interval_state(bool fine, bool medium, bool coarse, bool end)
+		: fine(fine), medium(medium), coarse(coarse), end(end)
+	{
+	}
+};
+
+
 template <class Derived,
           class ParserType = parsing::FastxReader>
 class FileProcessor : public events::EventNotifier {
-
-public:
-
-    struct interval_state {
-        bool fine;
-        bool medium;
-        bool coarse;
-        bool end;
-
-        interval_state()
-            : fine(false), medium(false), coarse(false), end(false)
-        {
-        }
-
-        interval_state(bool fine, bool medium, bool coarse, bool end)
-            : fine(fine), medium(medium), coarse(coarse), end(end)
-        {
-        }
-    };
 
 protected:
 

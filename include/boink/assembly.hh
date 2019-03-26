@@ -96,35 +96,35 @@ public:
         seen.clear();
     }
 
-    uint8_t degree_left() {
+    size_t degree_left() {
         auto neighbors = this->gather_left();
         return count_nodes(neighbors);
     }
 
-    uint8_t degree_right() {
+    size_t degree_right() {
         auto neighbors = this->gather_right();
         return count_nodes(neighbors);
     }
 
-    uint8_t degree() {
+    size_t degree() {
         return degree_left() + degree_right();
     }
 
-    uint8_t degree_left(std::set<hash_t>& extras) {
+    size_t degree_left(std::set<hash_t>& extras) {
         auto neighbors = this->gather_left();
         return count_nodes(neighbors, extras);
     }
 
-    uint8_t degree_right(std::set<hash_t>& extras) {
+    size_t degree_right(std::set<hash_t>& extras) {
         auto neighbors = this->gather_right();
         return count_nodes(neighbors, extras);
     }
 
-    uint8_t degree(std::set<hash_t>& extras) {
+    size_t degree(std::set<hash_t>& extras) {
         return degree_left(extras) + degree_right(extras);
     }
 
-    uint8_t get_left(shift_t& result) {
+    size_t get_left(shift_t& result) {
         std::vector<shift_t> neighbors = this->gather_left();
         auto n_left = reduce_nodes(neighbors, result);
 
@@ -134,7 +134,7 @@ public:
         return n_left;
     }
 
-    uint8_t get_right(shift_t& result) {
+    size_t get_right(shift_t& result) {
         std::vector<shift_t> neighbors = this->gather_right();
         auto n_right = reduce_nodes(neighbors, result);
 
@@ -145,7 +145,7 @@ public:
     }
 
 
-    uint8_t count_nodes(const std::vector<shift_t>& nodes) {
+    size_t count_nodes(const std::vector<shift_t>& nodes) {
         uint8_t n_found = 0;
         for (auto node: nodes) {
             if(this->graph->query(node.hash)) {
@@ -155,7 +155,7 @@ public:
         return n_found;
     }
 
-    uint8_t count_nodes(const std::vector<shift_t>& nodes,
+    size_t count_nodes(const std::vector<shift_t>& nodes,
                         std::set<hash_t>&           extras) {
         uint8_t n_found = 0;
         for (auto node: nodes) {
@@ -167,7 +167,7 @@ public:
         return n_found;
     }
 
-    uint8_t reduce_nodes(const std::vector<shift_t>& nodes,
+    size_t reduce_nodes(const std::vector<shift_t>& nodes,
                          shift_t&                    result) {
         uint8_t n_found = 0;
         for (auto node : nodes) {
@@ -184,7 +184,7 @@ public:
         return n_found;
     }
 
-    uint8_t reduce_nodes(const std::vector<shift_t>& nodes,
+    size_t reduce_nodes(const std::vector<shift_t>& nodes,
                          shift_t&                    result,
                          std::set<hash_t>&           extra) {
         uint8_t n_found = 0;
@@ -352,12 +352,13 @@ public:
 
     std::string compactify(const std::string& seed) {
         Path path;
+		std::set<hash_t> mask;
         this->set_cursor(seed);
         this->get_cursor(path);
         hash_t end_hash;
-        compactify_left(path, end_hash);
+        compactify_left(path, end_hash, mask);
         this->set_cursor(seed);
-        compactify_right(path, end_hash);
+        compactify_right(path, end_hash, mask);
 
         return this->to_string(path);
     }

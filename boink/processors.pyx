@@ -75,7 +75,7 @@ cdef class UKHSCountSignatureProcessor(FileProcessor):
     def chunked_process(self, str input_filename, str right_filename=None):
         cdef shared_ptr[_ReadParser[_FastxReader]]       p_single
         cdef _SplitPairedReader[_FastxReader] *          p_paired
-        cdef _UKHSCountSignatureProcessor.interval_state state
+        cdef interval_state state
         
         if right_filename is None:
             p_single = get_parser[_FastxReader](_bstring(input_filename))
@@ -120,7 +120,7 @@ cdef class SourmashSignatureProcessor(FileProcessor):
     def chunked_process(self, str input_filename, str right_filename=None):
         cdef shared_ptr[_ReadParser[_FastxReader]]      p_single
         cdef _SplitPairedReader[_FastxReader] *         p_paired
-        cdef _SourmashSignatureProcessor.interval_state state
+        cdef interval_state state
         
         if right_filename is None:
             p_single = get_parser[_FastxReader](_bstring(input_filename))

@@ -29,15 +29,15 @@ cdef extern from "boink/processors.hh":
 
 cdef extern from "boink/processors.hh" namespace "boink" nogil:
 
+    cdef cppclass interval_state:
+        bool fine
+        bool medium
+        bool coarse
+        bool end
+
     cdef cppclass _FileProcessor "boink::FileProcessor" [Derived] (_EventNotifier):
         _FileProcessor(uint64_t, uint64_t, uint64_t)
         _FileProcessor()
-
-        cppclass interval_state:
-            bool fine
-            bool medium
-            bool coarse
-            bool end
 
         uint64_t process(...) except +ValueError
         uint64_t process(const string&) except +ValueError
