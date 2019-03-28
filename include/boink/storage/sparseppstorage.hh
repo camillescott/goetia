@@ -12,7 +12,8 @@
 
 #include "boink/hashing/hashing_types.hh"
 #include "boink/storage/storage.hh"
-#include "sparsepp/spp.h"
+
+#include <sparsepp/spp.h>
 
 #include <memory>
 #include <vector>

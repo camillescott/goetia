@@ -23,7 +23,7 @@
 #include "boink/hashing/hashing_types.hh"
 #include "boink/hashing/exceptions.hh"
 
-#include "nonstd/ring_span.hpp"
+#include "boink/ring_span.hpp"
 
 namespace boink {
 namespace hashing {
