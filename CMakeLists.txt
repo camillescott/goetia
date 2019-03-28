@@ -14,10 +14,18 @@ add_library(cqf OBJECT
 )
 target_include_directories(cqf PRIVATE include/cqf)
 
+
+add_library(smhasher OBJECT
+            src/smhasher/MurmurHash3.cc
+)
+target_include_directories(smhasher PRIVATE include/smhasher)
+
+
 add_custom_target(gfakluge
                   COMMAND make
                   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/third-party/gfakluge
 )
+
 
 add_library(boink SHARED
     src/boink/storage/partitioned_storage.cc
@@ -59,6 +67,7 @@ add_library(boink SHARED
     src/boink/parsing/parsing.cc
     src/boink/minimizers.cc
     $<TARGET_OBJECTS:cqf>    
+    $<TARGET_OBJECTS:smhasher>
 )
 
 set_target_properties(boink PROPERTIES
@@ -81,16 +90,14 @@ target_link_libraries(boink
 add_dependencies(boink gfakluge)
 
 
-target_include_directories(boink PUBLIC third-party/sparsepp/)
-target_include_directories(boink PUBLIC third-party/rollinghash/)
 target_include_directories(boink PUBLIC third-party/gfakluge/src/)
 
 target_include_directories(boink PRIVATE third-party/)
-target_include_directories(boink PRIVATE third-party/gfakluge/)
 
 configure_file(src/boink/boink.pc.in boink.pc @ONLY)
 target_include_directories(boink PRIVATE include/)
 target_include_directories(boink PUBLIC include/boink)
+
 
 install(TARGETS boink
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -101,7 +108,10 @@ install(DIRECTORY include/boink/
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/boink
 )
 
-
 install(FILES ${CMAKE_BINARY_DIR}/boink.pc
         DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig
+)
+
+install(FILES third-party/gfakluge/src/gfakluge.hpp third-party/gfakluge/src/pliib.hpp
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
