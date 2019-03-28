@@ -24,7 +24,7 @@
 #pragma GCC diagnostic ignored "-Wsign-compare"
 #pragma GCC diagnostic ignored "-Wchar-subscripts"
 #include <gfakluge.hpp>
-#include <sparsepp/spp.h>
+#include "boink/storage/sparsepp/spp.h"
 #pragma GCC diagnostic pop
 
 #include "boink/assembly.hh"

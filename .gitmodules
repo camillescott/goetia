@@ -4,9 +4,6 @@
 [submodule "third-party/gfakluge"]
 	path = third-party/gfakluge
 	url = git@github.com:camillescott/gfakluge.git
-[submodule "third-party/sparsepp"]
-	path = third-party/sparsepp
-	url = https://github.com/greg7mdp/sparsepp
 [submodule "third-party/prometheus-cpp"]
 	path = third-party/prometheus-cpp
 	url = https://github.com/jupp0r/prometheus-cpp
