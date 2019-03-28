@@ -13,7 +13,7 @@
 #include "boink/hashing/hashing_types.hh"
 #include "boink/storage/storage.hh"
 
-#include "boink/storage/sparsepp/sparsepp/spp.h"
+#include "boink/storage/sparsepp/spp.h"
 
 #include <memory>
 #include <vector>

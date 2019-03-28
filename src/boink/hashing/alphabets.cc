@@ -43,7 +43,7 @@
  */
 
 #include "boink/hashing/alphabets.hh"
-#include "rollinghash/cyclichash.h"
+#include "boink/hashing/rollinghash/cyclichash.h"
 
 #define tbl \
   "                                                                "\

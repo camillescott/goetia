@@ -24,8 +24,7 @@
 #include "boink/event_types.hh"
 #include "boink/reporting/reporters.hh"
 #include "boink/reporting/report_types.hh"
-
-#include "sparsepp/spp.h"
+#include "boink/storage/sparsepp/spp.h"
 
 
 namespace boink {
