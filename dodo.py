@@ -22,21 +22,15 @@ from build_utils import (check_for_openmp,
 			 title_with_actions,
                          replace_ext,
                          replace_exts,
-                         resolve_dependencies,
                          isfile_filter,
                          flatten,
-                         render,
-                         get_templates,
-                         generate_cpp_params,
                          get_gcc_includes,
                          walk_ext)
 
 DOIT_CONFIG  = {'verbosity': 2,
                 'reporter': BoinkReporter,
-                'default_tasks': ['build',
-                                  'cythonize',
-                                  'render_extension_classes']}
-EXT_META     = yaml.load(open('extensions.yaml').read())
+                'default_tasks': ['libboink',
+                                  ]}
 
 #
 # General package information
@@ -44,19 +38,8 @@ EXT_META     = yaml.load(open('extensions.yaml').read())
 PKG          = 'boink'
 VERSION      = open(os.path.join(PKG, 'VERSION')).read().strip()
 
-#
-# Cython compilation prefixes and files
-#
 MOD_EXT      = sysconfig.get_config_var('SO')
-MOD_NAMES    = [m['name'] for m in EXT_META['extensions']]
-PYX_FILES    = {m: os.path.join(PKG, '{0}.pyx'.format(m)) for m in MOD_NAMES}
-PXD_FILES    = isfile_filter(replace_exts(PYX_FILES, '.pxd'))
-TPL_FILES    = {m['name']:m['templates'] for m in EXT_META['extensions'] \
-                if 'templates' in m} 
-PXI_FILES    = {m:[os.path.join(PKG, t+'.pxi') for t in TPL_FILES[m]] \
-                for m in TPL_FILES}
 PY_FILES     = list(glob.glob('boink/**/*.py', recursive=True))
-MOD_FILES    = {m:m+MOD_EXT for m in MOD_NAMES}
 
 #
 # libboink vars
@@ -101,12 +84,6 @@ LIBBOINKBUILDDIR = os.path.join(LIBBUILDDIR, PKG)
 OBJECT_FILES = [(os.path.join(LIBBOINKBUILDDIR, d.replace(SOURCE_DIR, '').strip('/')),
                  replace_ext(source, '.o')) \
                 for d, source in SOURCE_FILES]
-
-DEP_MAP = resolve_dependencies(PYX_FILES,
-                               PXD_FILES,
-                               MOD_FILES,
-                               INCLUDE_DIR,
-                               PKG)
 
 # Start libboink compile vars
 
@@ -161,31 +138,12 @@ LDFLAGS     += ['-Wl,-rpath,{0}'.format(os.path.abspath('lib')),
                 '-lprometheus-cpp-push', '-lprometheus-cpp-core',
                 '-lpthread', '-lz']
 
-CYLDFLAGS     = []
-if PREFIX is not None:
-    CYLDFLAGS += ['-Wl,-rpath,{0}'.format(os.path.join(PREFIX, 'lib')),
-                  '-L'+os.path.join(PREFIX, 'lib')]
-CYLDFLAGS   += ['-Wl,-rpath,{0}'.format(os.path.abspath('lib')),
-                '-Llib', '-lboink', '-lz', '-lgfakluge', '-lprometheus-cpp-pull',
-                '-lprometheus-cpp-push', '-lprometheus-cpp-core',
-                '-lpthread', '-lz', '-lboink']
-
-CY_CFLAGS   = sysconfig.get_config_var('CFLAGS').split()
-try:
-    CY_CFLAGS.remove('-g')
-except ValueError:
-    pass
 
 if DEBUG:
     CXXFLAGS += DEBUG_FLAGS
     CFLAGS   += DEBUG_FLAGS
     try:
-        CY_CFLAGS.remove('-DNDEBUG')
-        CY_CFLAGS.remove('-O3')
         CXXFLAGS.remove('-O3')
-
-        CY_CFLAGS.append('-O0')
-        CY_CFLAGS.append('-fkeep-inline-functions')
         CXXFLAGS.append('-O0')
         CXXFLAGS.append('-fkeep-inline-functions')
     except ValueError:
@@ -224,22 +182,6 @@ if sys.platform == 'darwin':
 CXXFLAGS  += ['-DVERSION={0}'.format(VERSION)]
 
 
-CYTHON_DIRECTIVES = \
-{
-    'embedsignature': True,
-    'c_string_type': 'unicode',
-    'c_string_encoding': 'utf8'
-}
-CYTHON_FLAGS     = ['-X', ','.join(('{0}={1}'.format(k, v) \
-                                    for (k, v) in CYTHON_DIRECTIVES.items())),
-                    '-3',
-                    '--line-directives',
-                    '--cplus']
-
-for type_dict in EXT_META['types']:
-    if type_dict['types'] is not None:
-        type_dict['types'] = ['_'+_type for _type in type_dict['types']]
-
 
 #
 # Compilation commands
@@ -261,27 +203,6 @@ def link_command(objects, target):
     return ' '.join(cmd)
 
 
-def cython_command(pyx_file):
-    cmd = [ 'cython' ] \
-          + ['-I include/'] \
-          + CYTHON_FLAGS \
-          + [pyx_file]
-    return ' '.join(cmd)
-
-
-def cy_compile_command(cy_source, mod):
-    PYLDSHARE = sysconfig.get_config_var('LDSHARED')
-    PYLDSHARE = PYLDSHARE.split()[1:] # remove compiler invoke
-    cmd = [ CXX ] + \
-          INCLUDES + \
-          ['-I'+sysconfig.get_config_var('INCLUDEPY')] + \
-          PYLDSHARE + \
-          [ cy_source, '-o', mod] + \
-          CYLDFLAGS + \
-          CY_CFLAGS + \
-          CXXFLAGS
-
-    return ' '.join(cmd)
 
 #########
 #
@@ -303,8 +224,6 @@ def task_display_libboink_config():
         print('Compile:', cxx_command('SOURCE.cc', 'TARGET.o'))
         print('Link:', link_command(['OBJECT_1.o', 'OBJECT_2.o',
                                      'OBJECT_N.o'], SONAME))
-        print('Compile Cython:', cy_compile_command('SOURCE.cc',
-                                                    'mod.{}'.format(SHARED_EXT)))
         print('PY_LDSHARED:', sysconfig.get_config_var('LDSHARED'))
     return {'actions':  [print_config],
             'uptodate': [False]}
@@ -482,99 +401,6 @@ def task_libboink():
                          'compile_libboink',
                          'boink_pc',
                          'boink_ranlib']}
-
-
-def jinja_render_task(mod_prefix, type_dict):
-
-    pxd_tpl, pxd_dst, pyx_tpl, pyx_dst = get_templates(mod_prefix)
-    type_bundles, _ = generate_cpp_params(type_dict)
-
-    return {'name': '{0}_types'.format(mod_prefix),
-            'actions': [(render, [pxd_tpl, pxd_dst,
-                                  pyx_tpl, pyx_dst,
-                                  type_bundles])],
-            'targets': [pxd_dst, pyx_dst],
-            'file_dep': [os.path.join(PKG, 'templates', pxd_tpl.name),
-                         os.path.join(PKG, 'templates', pyx_tpl.name)],
-            'clean': True}
-
-
-def task_render_extension_classes():
-    types = {t['name']: t['types'] for t in EXT_META['types']}
-    for mod_name, tpl_file in TPL_FILES.items():
-        dbg_types = OrderedDict(storage_type=types['StorageType'],
-                                shifter_type=types['ShifterType'])
-        yield jinja_render_task(mod_name, dbg_types)
-
-
-CLEAN_ACTIONS = \
-[
-    'rm -f {0}/*.cpp'.format(PKG),
-    'rm -f {0}/*.{1}'.format(PKG, SHARED_EXT),
-    'find ./ -type d -name __pycache__ -exec rm -rf {} +',
-    'find ./{0}/ -type f -name *{1} -exec rm -f {{}} +'.format(PKG, MOD_EXT),
-    'find ./{0}/ -type f -name *.pyc -exec rm -f {{}} +'.format(PKG),
-    'find ./{0}/ -type f -name *.cpp -exec rm -f {{}} +'.format(PKG),
-    'rm -rf build dist {0}.egg-info'.format(PKG)
-]
-
-
-def task_cythonize():
-
-    for mod, source in PYX_FILES.items():
-        file_dep = []
-        for dep in DEP_MAP[mod]:
-            dep_name = os.path.basename(dep).split('.')[0]
-            if dep.endswith('.pxd') or dep.endswith('.pyx'):
-                file_dep.append(dep)
-            if dep_name in TPL_FILES:
-                file_dep.extend(PXI_FILES[dep_name])
-        if mod in TPL_FILES:
-            file_dep.extend(PXI_FILES[mod])
-
-        target = replace_ext(source, '.cpp')
-        yield { 'name': target,
-                'title': title_with_actions,
-                'file_dep': file_dep + [source],
-                'targets': [target],
-                'actions': ['mkdir -p ' + build_dir(),
-                            cython_command(source)],
-                'clean': True}
-
-def task_create_build_dirs():
-    return {'title': title_with_actions,
-            'targets': [build_dir(), lib_dir()],
-            'actions': ['mkdir -p {0}'.format(build_dir()),
-                        'mkdir -p {0}'.format(lib_dir())],
-            'uptodate': [run_once],
-            'clean': [(clean_folder, [build_dir()]),
-                      (clean_folder, [lib_dir()]),
-                      (clean_folder, [os.path.join('build', 'lib')])]}
-
-
-@create_after('cythonize')
-def task_build():
-    cy_includes = ['-I'+sysconfig.get_config_var('INCLUDEPY')] 
-    cy_ignore   = [sysconfig.get_config_var('INCLUDEPY')]
-
-    for mod, mod_file in MOD_FILES.items():
-        source = os.path.join(PKG,
-                              '{0}.cpp'.format(mod))
-        target = os.path.join(lib_dir(), mod_file)
-        cp_target = os.path.join(PKG, os.path.basename(target))
-
-        yield {'name':     target,
-               'title':    title_with_actions,
-               'file_dep': [source] + get_gcc_includes(source,
-                                                       INCLUDES + cy_includes,
-                                                       PKG,
-                                                       ignore=cy_ignore),
-               'task_dep': ['libboink'],
-               'targets':  [target, cp_target],
-               'actions':  ['mkdir -p ' + lib_dir(),
-                            cy_compile_command(source, target),
-                            'cp {0} {1}'.format(target, cp_target)],
-               'clean':    True}
 
 
 def setupcmd(cmd):
