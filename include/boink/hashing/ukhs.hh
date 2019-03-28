@@ -12,6 +12,7 @@
 
 #include <climits>
 #include <iostream>
+#include <memory>
 #include <utility>
 
 #include "boink/boink.hh"
@@ -25,11 +26,16 @@
 
 #include "rollinghash/cyclichash.h"
 
-#pragma GCC diagnostic push 
-#pragma GCC diagnostic ignored "-Wall"
-#pragma GCC diagnostic ignored "-Wunknown-pragmas"
-#include "bbhash/BooPHF.h"
-#pragma GCC diagnostic pop
+
+namespace boomphf {
+
+template <typename Item>
+class SingleHashFunctor;
+
+template <typename elem_t, typename Hasher_t>
+class mphf;
+
+}
 
 namespace boink {
 namespace hashing {
@@ -95,33 +101,7 @@ protected:
 public:
 
     explicit UKHS(uint16_t K,
-                  std::vector<std::string>& ukhs)
-        : KmerClient  (K),
-          ukhs_revmap (ukhs.size()),
-          ukhs_hasher (K)
-    {
-        if (ukhs.front().size() != K) {
-            throw BoinkException("K does not match k-mer size from provided UKHS");
-        }
-
-        //std::cerr << "Building MPHF with "
-        //          << ukhs.size() << " k-mers."
-        //          << std::endl;
-
-        for (auto unikmer : ukhs) {
-            ukhs_hashes.push_back(ukhs_hasher.hash(unikmer));
-        }
-        bphf = std::make_unique<boophf_t>(ukhs_hashes.size(),
-                                          ukhs_hashes,
-                                          1,
-                                          2.0,
-                                          false,
-                                          false);
-        for (auto unikmer_hash : ukhs_hashes) {
-            ukhs_revmap[bphf->lookup(unikmer_hash)] = unikmer_hash;
-        }
-        //std::cerr << "Finished building MPHF." << std::endl;
-    }
+                  std::vector<std::string>& ukhs);
 
     uint64_t query_revmap(uint64_t partition) {
         if (partition > ukhs_revmap.size()) {
@@ -130,17 +110,7 @@ public:
         return ukhs_revmap[partition];
     }
 
-    bool query(Unikmer& unikmer) {
-        unikmer.partition = ULLONG_MAX;
-        unikmer.partition = bphf->lookup(unikmer.hash);
-        if (!unikmer.is_valid()) {
-            return false;
-        }
-        if (ukhs_revmap[unikmer.partition] == unikmer.hash) {
-            return true;
-        }
-        return false;
-    }
+    bool query(Unikmer& unikmer);
 
     uint64_t hash_unikmer(const std::string& kmer) {
         return ukhs_hasher.hash(kmer);
