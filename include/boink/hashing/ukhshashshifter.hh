@@ -20,11 +20,8 @@
 namespace boink {
 namespace hashing {
 
-template <std::string& Alphabet = DNA_SIMPLE>
-class UKHSHashShifter : public RollingHashShifter<Alphabet> {
-
-
-};
 
 }
 }
+
+#endif

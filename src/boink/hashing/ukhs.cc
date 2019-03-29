@@ -48,6 +48,8 @@ UKHS::UKHS(uint16_t K,
     //std::cerr << "Finished building MPHF." << std::endl;
 }
 
+UKHS::~UKHS() = default;
+
 bool UKHS::query(Unikmer& unikmer) {
     unikmer.partition = ULLONG_MAX;
     unikmer.partition = bphf->lookup(unikmer.hash);
