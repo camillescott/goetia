@@ -148,8 +148,8 @@ cppyy_add_bindings(
    "boink" "0.1" "Camille Scott" "cswel@ucdavis.edu"
    LICENSE "MIT"
    LANGUAGE_STANDARD "14"
-   SELECTION_XML boink_select.xml
-   INTERFACE_FILE include/boink/interface.hh
+   SELECTION_XML ${CMAKE_CURRENT_SOURCE_DIR}/boink_select.xml
+   INTERFACE_FILE ${CMAKE_CURRENT_SOURCE_DIR}/include/boink/interface.hh
    INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
                 ${CMAKE_CURRENT_SOURCE_DIR}/include
                 ${CMAKE_CURRENT_SOURCE_DIR}/third-party

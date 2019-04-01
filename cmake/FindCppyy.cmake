@@ -23,7 +23,7 @@
 # standard syntax, e.g.  find_package(Cppyy 4.19)
 #
 
-find_program(Cppyy_EXECUTABLE NAMES rootcling)
+find_program(Cppyy_EXECUTABLE NAMES genreflex)
 message(${Cppyy_EXECUTABLE})
 execute_process(COMMAND cling-config --cmake OUTPUT_VARIABLE CPYY_MODULE_PATH OUTPUT_STRIP_TRAILING_WHITESPACE)
 
@@ -223,7 +223,7 @@ function(cppyy_add_bindings pkg pkg_version author author_email)
   set(lib_name "${pkg_namespace}${pkg_simplename}Cppyy")
   set(lib_file ${CMAKE_SHARED_LIBRARY_PREFIX}${lib_name}${CMAKE_SHARED_LIBRARY_SUFFIX})
   set(cpp_file ${CMAKE_CURRENT_BINARY_DIR}/${pkg_simplename}.cpp)
-  set(pcm_file ${pkg_dir}/${pkg_simplename}_rdict.pcm)
+  set(pcm_file ${pkg_dir}/${CMAKE_SHARED_LIBRARY_PREFIX}${lib_name}_rdict.pcm)
   set(rootmap_file ${pkg_dir}/${pkg_simplename}.rootmap)
   set(extra_map_file ${pkg_dir}/${pkg_simplename}.map)
   #
@@ -249,14 +249,14 @@ function(cppyy_add_bindings pkg pkg_version author author_email)
   if("${ARG_INTERFACE_FILE}" STREQUAL "")
       message(SEND_ERROR "No Interface specified")
   endif()
-  list(APPEND genreflex_args ${ARG_INTERFACE_FILE})
+  list(APPEND genreflex_args "${ARG_INTERFACE_FILE}")
   if(NOT "${ARG_SELECTION_XML}" STREQUAL "")
-      list(APPEND genreflex_args "--selection" ${ARG_SELECTION_XML})
+      list(APPEND genreflex_args "--selection=${ARG_SELECTION_XML}")
   endif()
 
-  list(APPEND genreflex_args "-o" ${cpp_file})
-  list(APPEND genreflex_args "--rootmap" ${rootmap_file})
-  list(APPEND genreflex_args "-l" ${pcm_file})
+  list(APPEND genreflex_args "-o" "${cpp_file}")
+  list(APPEND genreflex_args "--rootmap" "${rootmap_file}")
+  list(APPEND genreflex_args "-l" "${lib_file}")
 
   foreach(dir ${ARG_INCLUDE_DIRS})
     list(APPEND genreflex_args "-I${dir}")
@@ -273,9 +273,11 @@ function(cppyy_add_bindings pkg pkg_version author author_email)
   #
   file(MAKE_DIRECTORY ${pkg_dir})
   add_custom_command(OUTPUT ${cpp_file} ${rootmap_file} ${pcm_file}
-    COMMAND genreflex ${genreflex_args} ${genreflex_cxxflags} WORKING_DIRECTORY ${pkg_dir})
+    COMMAND ${Cppyy_EXECUTABLE} ${genreflex_args} ${genreflex_cxxflags}
+    WORKING_DIRECTORY ${pkg_dir}
+  )
   #
-  message(genreflex ${genreflex_args} ${genreflex_cxxflags})
+  message("genreflex " "${genreflex_args}" "${genreflex_cxxflags}")
   message(${cpp_file} ${rootmap_file} ${pcm_file})
   # Compile/link.
   #
@@ -283,7 +285,7 @@ function(cppyy_add_bindings pkg pkg_version author author_email)
   set_property(TARGET ${lib_name} PROPERTY VERSION ${version})
   set_property(TARGET ${lib_name} PROPERTY CXX_STANDARD ${ARG_LANGUAGE_STANDARD})
   set_property(TARGET ${lib_name} PROPERTY LIBRARY_OUTPUT_DIRECTORY ${pkg_dir})
-  target_include_directories(${lib_name} PRIVATE ${Cppyy_INCLUDE_DIRS} ${ARG_H_DIRS} ${ARG_INCLUDE_DIRS})
+  target_include_directories(${lib_name} PRIVATE ${Cppyy_INCLUDE_DIRS} ${ARG_INCLUDE_DIRS})
   target_compile_options(${lib_name} PRIVATE ${ARG_COMPILE_OPTIONS})
   target_link_libraries(${lib_name} ${ARG_LINK_LIBRARIES})
   #

@@ -30,8 +30,6 @@
 #include "boink/pdbg.hh"
 #include "boink/assembly.hh"
 
-#include "boink/signatures/signatures.hh"
-
 #include "boink/reporting/cdbg_writer_reporter.hh"
 #include "boink/reporting/report_types.hh"
 #include "boink/reporting/ukhs_signature_reporter.hh"
