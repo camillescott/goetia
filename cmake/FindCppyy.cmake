@@ -31,7 +31,6 @@ if(genreflex_EXEC)
   # Cppyy_DIR.
   #
   set(Cppyy_DIR ${CPYY_MODULE_PATH}/../)
-  message(${Cppyy_DIR})
   #
   # Cppyy_INCLUDE_DIRS.
   #
