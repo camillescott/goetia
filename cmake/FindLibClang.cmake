@@ -17,14 +17,14 @@
 # Python support for clang might not be available for Python3. We need to
 # find what we have.
 #
-function(_find_libclang_filename python_executable filename)
+find_library(LibClang_LIBRARY libclang-7.so PATH_SUFFIXES x86_64-linux-gnu)
+function(_find_libclang_python python_executable)
     #
     # Prefer python3 explicitly or implicitly over python2.
     #
     foreach(exe IN ITEMS python3 python python2)
         execute_process(
-            COMMAND ${exe} -c "from clang.cindex import Config; Config().lib; print(Config().get_filename())"
-            OUTPUT_VARIABLE lib
+            COMMAND ${exe} -c "from clang.cindex import Config; Config.set_library_file(\"${LibClang_LIBRARY}\"); Config().lib; print(Config().get_filename())"
             ERROR_VARIABLE _stderr
             RESULT_VARIABLE _rc
             OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -34,14 +34,9 @@ function(_find_libclang_filename python_executable filename)
         endif()
     endforeach()
     set(${python_executable} "${pyexe}" PARENT_SCOPE)
-    set(${filename} "${lib}" PARENT_SCOPE)
-endfunction(_find_libclang_filename)
+endfunction(_find_libclang_python)
 
-
-_find_libclang_filename(LibClang_PYTHON_EXECUTABLE _filename)
-message("libclang: " ${_filename})
-find_library(LibClang_LIBRARY ${_filename})
-
+_find_libclang_python(LibClang_PYTHON_EXECUTABLE)
 if(LibClang_LIBRARY)
     set(LibClang_LIBRARY ${LibClang_LIBRARY})
     string(REGEX REPLACE ".*clang-\([0-9]+.[0-9]+\).*" "\\1" LibClang_VERSION_TMP "${LibClang_LIBRARY}")

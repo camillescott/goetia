@@ -23,11 +23,10 @@
 # standard syntax, e.g.  find_package(Cppyy 4.19)
 #
 
-find_program(Cppyy_EXECUTABLE NAMES genreflex)
-message(${Cppyy_EXECUTABLE})
+find_program(genreflex_EXEC NAMES genreflex)
 execute_process(COMMAND cling-config --cmake OUTPUT_VARIABLE CPYY_MODULE_PATH OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-if(Cppyy_EXECUTABLE)
+if(genreflex_EXEC)
   #
   # Cppyy_DIR.
   #
@@ -38,7 +37,6 @@ if(Cppyy_EXECUTABLE)
   #
   #get_filename_component(Cppyy_INCLUDE_DIRS ${Cppyy_DIR} DIRECTORY)
   set(Cppyy_INCLUDE_DIRS ${Cppyy_DIR}include)
-  message("Cppyy_INCLUDE_DIRS:" ${Cppyy_INCLUDE_DIRS})
   #
   # Cppyy_VERSION.
   #
@@ -52,7 +50,7 @@ endif()
 include(FindPackageHandleStandardArgs)
 FIND_PACKAGE_HANDLE_STANDARD_ARGS(
     Cppyy
-    REQUIRED_VARS Cppyy_EXECUTABLE Cppyy_DIR Cppyy_INCLUDE_DIRS
+    REQUIRED_VARS genreflex_EXEC Cppyy_DIR Cppyy_INCLUDE_DIRS
     VERSION_VAR Cppyy_VERSION)
 
 mark_as_advanced(Cppyy_VERSION)
@@ -204,8 +202,8 @@ mark_as_advanced(Cppyy_VERSION)
 #
 function(cppyy_add_bindings pkg pkg_version author author_email)
   set(simple_args URL LICENSE LANGUAGE_STANDARD)
-  set(list_args INTERFACE_FILE SELECTION_XML COMPILE_OPTIONS INCLUDE_DIRS LINK_LIBRARIES 
-      EXTRA_PYTHONS)
+  set(list_args INTERFACE_FILE HEADERS SELECTION_XML COMPILE_OPTIONS INCLUDE_DIRS LINK_LIBRARIES 
+      EXTRA_PYTHONS GENERATE_OPTIONS)
   cmake_parse_arguments(
     ARG
     ""
@@ -242,8 +240,9 @@ function(cppyy_add_bindings pkg pkg_version author author_email)
   if("${ARG_LANGUAGE_STANDARD}" STREQUAL "")
     set(ARG_LANGUAGE_STANDARD "14")
   endif()
+
   #
-  # Make H_FILES with absolute paths.
+  # Set up genreflex args.
   #
   set(genreflex_args)
   if("${ARG_INTERFACE_FILE}" STREQUAL "")
@@ -261,27 +260,48 @@ function(cppyy_add_bindings pkg pkg_version author author_email)
   foreach(dir ${ARG_INCLUDE_DIRS})
     list(APPEND genreflex_args "-I${dir}")
   endforeach(dir)
-  #
-  # Set up args.
-  #
+
   set(genreflex_cxxflags "--cxxflags")
   list(APPEND genreflex_cxxflags "-std=c++${ARG_LANGUAGE_STANDARD}")
 
-
-  #
-  # Run rootcling, specifying the generated output.
-  #
+  # run genreflex
   file(MAKE_DIRECTORY ${pkg_dir})
   add_custom_command(OUTPUT ${cpp_file} ${rootmap_file} ${pcm_file}
-    COMMAND ${Cppyy_EXECUTABLE} ${genreflex_args} ${genreflex_cxxflags}
+    COMMAND ${genreflex_EXEC} ${genreflex_args} ${genreflex_cxxflags}
     WORKING_DIRECTORY ${pkg_dir}
   )
+
   #
-  message("genreflex " "${genreflex_args}" "${genreflex_cxxflags}")
-  message(${cpp_file} ${rootmap_file} ${pcm_file})
+  # Set up generator args.
+  #
+  list(APPEND ARG_GENERATE_OPTIONS "-std=c++${ARG_LANGUAGE_STANDARD}")
+  foreach(dir ${ARG_INCLUDE_DIRS})
+    list(APPEND ARG_GENERATE_OPTIONS "-I${dir}")
+  endforeach(dir)
+  #
+  # Run generator. First check dependencies. TODO: temporary hack: rather
+  # than an external dependency, enable libclang in the local build.
+  #
+  find_package(LibClang REQUIRED)
+  get_filename_component(Cppyygen_EXECUTABLE ${genreflex_EXEC} DIRECTORY)
+  set(Cppyygen_EXECUTABLE ${Cppyygen_EXECUTABLE}/cppyy-generator)
+  #
+  # Set up arguments for cppyy-generator.
+  #
+  set(generator_args)
+  foreach(arg IN LISTS ARG_GENERATE_OPTIONS)
+    string(REGEX REPLACE "^-" "\\\\-" arg ${arg})
+    list(APPEND generator_args ${arg})
+  endforeach()
+
+  add_custom_command(OUTPUT ${extra_map_file}
+      COMMAND ${LibClang_PYTHON_EXECUTABLE} ${Cppyygen_EXECUTABLE} --libclang ${LibClang_LIBRARY} --flags "\"${generator_args}\""
+      ${extra_map_file} ${ARG_HEADERS} WORKING_DIRECTORY ${pkg_dir}
+  )
+  #
   # Compile/link.
   #
-  add_library(${lib_name} SHARED ${cpp_file} ${pcm_file} ${rootmap_file} )
+  add_library(${lib_name} SHARED ${cpp_file} ${pcm_file} ${rootmap_file} ${extra_map_file})
   set_property(TARGET ${lib_name} PROPERTY VERSION ${version})
   set_property(TARGET ${lib_name} PROPERTY CXX_STANDARD ${ARG_LANGUAGE_STANDARD})
   set_property(TARGET ${lib_name} PROPERTY LIBRARY_OUTPUT_DIRECTORY ${pkg_dir})

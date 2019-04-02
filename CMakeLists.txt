@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.9)
 project(boink VERSION 0.1 DESCRIPTION "streaming cDBG and dBG sketching algorithms")
-include(boink_headers.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/boink_headers.cmake)
 include(GNUInstallDirs)
 include_directories($ENV{CONDA_PREFIX}/include)
 
@@ -125,36 +125,18 @@ install(FILES third-party/gfakluge/src/gfakluge.hpp third-party/gfakluge/src/pli
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
-#cppyy_add_bindings(
-#   "boink" "0.1" "Camille Scott" "cswel@ucdavis.edu"
-#   LICENSE "MIT"
-#   LANGUAGE_STANDARD "14"
-#   GENERATE_OPTIONS "-D__PIC__;-Wno-macro-redefined"
-#   LINKDEFS boink_linkdef.h
-#   INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
-#                ${CMAKE_CURRENT_SOURCE_DIR}/include
-#                ${CMAKE_CURRENT_SOURCE_DIR}/third-party
-#                ${CMAKE_CURRENT_SOURCE_DIR}/third-party/gfakluge/src
-#                ${ZLIB_INCLUDE_DIRS}
-#                ${PROMETHEUS_INCLUDE_DIRS}
-#
-#   LINK_LIBRARIES boink
-#   H_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include/boink
-#   H_FILES ${BOINK_HEADER_NAMES}
-#)
-
-
 cppyy_add_bindings(
    "boink" "0.1" "Camille Scott" "cswel@ucdavis.edu"
    LICENSE "MIT"
    LANGUAGE_STANDARD "14"
-   SELECTION_XML ${CMAKE_CURRENT_SOURCE_DIR}/boink_select.xml
+   SELECTION_XML  ${CMAKE_CURRENT_SOURCE_DIR}/boink_select.xml
    INTERFACE_FILE ${CMAKE_CURRENT_SOURCE_DIR}/include/boink/interface.hh
-   INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
-                ${CMAKE_CURRENT_SOURCE_DIR}/include
-                ${CMAKE_CURRENT_SOURCE_DIR}/third-party
-                ${CMAKE_CURRENT_SOURCE_DIR}/third-party/gfakluge/src
-                ${ZLIB_INCLUDE_DIRS}
-                ${PROMETHEUS_INCLUDE_DIRS}
+   HEADERS        ${BOINK_HEADERS}
+   INCLUDE_DIRS   ${CMAKE_CURRENT_SOURCE_DIR}
+                  ${CMAKE_CURRENT_SOURCE_DIR}/include
+                  ${CMAKE_CURRENT_SOURCE_DIR}/third-party
+                  ${CMAKE_CURRENT_SOURCE_DIR}/third-party/gfakluge/src
+                  ${ZLIB_INCLUDE_DIRS}
+                  ${PROMETHEUS_INCLUDE_DIRS}
    LINK_LIBRARIES boink
 )
