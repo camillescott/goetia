@@ -1,6 +1,0 @@
-recursive-include boink *.so *.pxd *.pyx *.pxi
-include build_utils.py
-include dodo.py
-include extensions.yaml
-include boink/VERSION
-include boink/data/*.txt.gz

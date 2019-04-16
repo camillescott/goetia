@@ -5,6 +5,7 @@
         <class pattern="boink::hashing::*"/>
 
         <class pattern="boink::dBG<*, *>"/>
+        <class pattern="boink::PdBG<*>"/>
         <class pattern="boink::AssemblerMixin<*>"/>
         <class pattern="boink::CompactorMixin<*>"/>
         <class pattern="boink::*Processor<*>"/>

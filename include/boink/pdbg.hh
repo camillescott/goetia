@@ -223,7 +223,7 @@ public:
         size_t pos = 0;
         while(!iter.done()) {
             hashing::PartitionedHash h = iter.next();
-            counts[pos] = S->insert_and_query(h);
+            counts[pos] = insert_and_query(h);
             ++pos;
         }
 
