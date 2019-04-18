@@ -83,9 +83,9 @@ public:
     
     NormalizingCompactor(shared_ptr<cdbg::StreamingCompactor<GraphType>> compactor,
                          unsigned int cutoff,
-                         uint64_t fine_interval=DEFAULT_FINE_INTERVAL,
-                         uint64_t medium_interval=DEFAULT_MEDIUM_INTERVAL,
-                         uint64_t coarse_interval=DEFAULT_COARSE_INTERVAL)
+                         uint64_t fine_interval   = DEFAULT_INTERVALS::FINE,
+                         uint64_t medium_interval = DEFAULT_INTERVALS::MEDIUM,
+                         uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE)
         : Base(fine_interval, medium_interval, coarse_interval),
           compactor(compactor),
           graph(compactor->dbg),

@@ -7,4 +7,4 @@
  * of the MIT license.  See the LICENSE file for details.
  */
 
-#include "boink/ukhs_signature.hh"
+#include "boink/signatures/ukhs_signature.hh"

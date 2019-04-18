@@ -40,11 +40,12 @@ import textwrap
 from argparse import _VersionAction
 from collections import namedtuple
 
-from boink.cdbg import cDBG_Base
-from boink.metadata import __version__, CUR_TIME
+from boink import __version__
+from boink.serialization import cDBGSerialization
+from boink.metadata import CUR_TIME
 from boink.parsing import PAIRING_MODES
-from boink.processors import DEFAULT_INTERVALS
-                              
+from boink import types
+from boink import libboink
 
 
 DEFAULT_K = 31
@@ -52,11 +53,6 @@ DEFAULT_N_TABLES = 4
 DEFAULT_MAX_TABLESIZE = 1e8
 DEFAULT_N_THREADS = 1
 
-DBG_TYPES = ['BitStorage',
-             'ByteStorage',
-             'NibbleStorage',
-             'SparseppSetStorage',
-             'PartitionedStorage']
 
 def memory_setting(label):
     """
@@ -147,12 +143,20 @@ def build_dBG_args(descr=None, epilog=None, parser=None):
     if parser is None:
         parser = BoinkArgumentParser(description=descr, epilog=epilog)
 
+    DBG_TYPES    = [t[0].__name__ for t in types.storage_types]
+    DEFAULT_ARGS = {t[0].__name__ : t[1] for t in types.storage_types}
+
+    class dBGArgAction(argparse.Action):
+        def __call__(self, parser, namespace, values, option_string=None):
+            pass
+
     parser.add_argument('-k', '--ksize', type=int, default=DEFAULT_K,
                         help='k-mer size to use')
 
     help = ('number of tables to use in k-mer countgraph' if expert_help
             else argparse.SUPPRESS)
-    parser.add_argument('--storage-type', default='BitStorage',
+    parser.add_argument('--storage-type',
+                        default=DBG_TYPES[0],
                         choices=DBG_TYPES)
     parser.add_argument('--n_tables', '-N', type=int,
                         default=DEFAULT_N_TABLES,
@@ -189,9 +193,9 @@ def print_dBG_args(args):
 
 
 def add_output_interval_args(parser):
-    parser.add_argument('--fine-interval', type=int, default=DEFAULT_INTERVALS.FINE)
-    parser.add_argument('--medium-interval', type=int, default=DEFAULT_INTERVALS.MEDIUM)
-    parser.add_argument('--coarse-interval', type=int, default=DEFAULT_INTERVALS.COARSE)
+    parser.add_argument('--fine-interval', type=int, default=libboink.DEFAULT_INTERVALS.FINE)
+    parser.add_argument('--medium-interval', type=int, default=libboink.DEFAULT_INTERVALS.MEDIUM)
+    parser.add_argument('--coarse-interval', type=int, default=libboink.DEFAULT_INTERVALS.COARSE)
 
 
 def print_interval_settings(args):
@@ -219,7 +223,7 @@ def add_save_cDBG_args(parser):
                         const='boink.cdbg.graph')
     parser.add_argument('--save-cdbg-format',
                         nargs='+',
-                        choices=cDBG_Base.SAVE_FORMATS,
+                        choices=cDBGSerialization.FORMATS,
                         default=['gfa1'])
 
     parser.add_argument('--track-cdbg-stats',

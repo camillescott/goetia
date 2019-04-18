@@ -43,9 +43,8 @@ from collections import namedtuple
 from boink.cdbg import cDBG_Base
 from boink.metadata import __version__, CUR_TIME
 from boink.parsing import PAIRING_MODES
-from boink.processors import DEFAULT_INTERVALS
                               
-
+from boink.libboink import DEFAULT_INTERVALS
 
 DEFAULT_K = 31
 DEFAULT_N_TABLES = 4

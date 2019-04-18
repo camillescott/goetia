@@ -1,7 +1,13 @@
 import os
 import cppyy
 from .initializor import initialize
-initialize('@CPPYY_PKG@', '@CPPYY_LIB_SO@', '@CPPYY_MAP@', noisy=True)
+
+__version__ = '@PROJECT_VERSION@'
+
+
+initialize('@CPPYY_PKG@', '@CPPYY_LIB_SO@', '@CPPYY_MAP@')
 del initialize
 
 @NAMESPACE_INJECTIONS@
+
+from boink import boink as libboink

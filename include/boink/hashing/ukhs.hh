@@ -105,6 +105,11 @@ public:
 
     ~UKHS();
 
+    static std::shared_ptr<UKHS> build(uint16_t K,
+                                 std::vector<std::string>& ukhs) {
+        return std::make_shared<UKHS>(K, ukhs);
+    }
+
     uint64_t query_revmap(uint64_t partition) {
         if (partition > ukhs_revmap.size()) {
             return ULLONG_MAX;

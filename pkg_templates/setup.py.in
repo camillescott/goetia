@@ -122,6 +122,11 @@ SETUP_METADATA = \
         'clean':       cppyy_clean,
         'bdist_wheel': cppyy_bdist_wheel,
     },
+    'entry_points': {
+        'console_scripts': [
+            'draff = boink.draff:run_draff'
+        ]
+    }
 }
 
 setup(**SETUP_METADATA)

@@ -3,7 +3,6 @@ from boink.metadata import DATA_DIR
 
 
 def pythonize_boink_hashing(klass, name):
-    print(klass, name)
     if name == 'UKHS':
 
         def get_kmers(W, K):

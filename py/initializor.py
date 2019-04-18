@@ -53,7 +53,7 @@ def add_pythonizations(py_files, noisy=False):
                 continue
             tokens = name.split('_')
             if len(tokens) > 1:
-                namespace = '.'.join(tokens[1:])
+                namespace = '::'.join(tokens[1:])
                 if noisy:
                     print('added pythonization', func, 'to', namespace)
                 if namespace == 'gbl':

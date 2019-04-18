@@ -33,7 +33,6 @@ set(_headers
     include/boink/reporting/reporters.hh
     include/boink/reporting/report_types.hh
     include/boink/reporting/streaming_compactor_reporter.hh
-    include/boink/reporting/ukhs_signature_reporter.hh
     include/boink/storage/bitstorage.hh
     include/boink/storage/bytestorage.hh
     include/boink/storage/nibblestorage.hh
@@ -41,7 +40,7 @@ set(_headers
     include/boink/storage/qfstorage.hh
     include/boink/storage/sparseppstorage.hh
     include/boink/storage/storage.hh
-    include/boink/ukhs_signature.hh
+    include/boink/signatures/ukhs_signature.hh
 )
 
 set(_sources
@@ -56,7 +55,6 @@ set(_sources
     src/boink/metrics.cc
     src/boink/events.cc
     src/boink/reporting/cdbg_writer_reporter.cc
-    src/boink/reporting/ukhs_signature_reporter.cc
     src/boink/reporting/report_types.cc
     src/boink/reporting/cdbg_unitig_reporter.cc
     src/boink/reporting/cdbg_history_reporter.cc
@@ -69,7 +67,7 @@ set(_sources
     src/boink/hashing/rollinghashshifter.cc
     src/boink/hashing/ukhs.cc
     src/boink/hashing/hashing_types.cc
-    src/boink/ukhs_signature.cc
+    src/boink/signatures/ukhs_signature.cc
     src/boink/assembly.cc
     src/boink/dbg.cc
     src/boink/pdbg.cc

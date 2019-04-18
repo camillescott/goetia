@@ -23,16 +23,20 @@
 #include "boink/hashing/hashing_types.hh"
 #include "boink/hashing/exceptions.hh"
 #include "boink/cdbg/compactor.hh"
-#include "boink/ukhs_signature.hh"
 
-
-#define DEFAULT_FINE_INTERVAL 10000
-#define DEFAULT_MEDIUM_INTERVAL 100000
-#define DEFAULT_COARSE_INTERVAL 1000000
 
 class KmerMinHash;
 
 namespace boink {
+
+struct DEFAULT_INTERVALS {
+
+    constexpr static unsigned long FINE = 10000;
+    constexpr static unsigned long MEDIUM = 100000;
+    constexpr static unsigned long COARSE = 1000000;
+
+};
+
 
 class IntervalCounter {
 
@@ -135,9 +139,9 @@ public:
     using events::EventNotifier::register_listener;
     using events::EventNotifier::notify;
 
-    FileProcessor(uint64_t fine_interval=DEFAULT_FINE_INTERVAL,
-                  uint64_t medium_interval=DEFAULT_MEDIUM_INTERVAL,
-                  uint64_t coarse_interval=DEFAULT_COARSE_INTERVAL)
+    FileProcessor(uint64_t fine_interval   = DEFAULT_INTERVALS::FINE,
+                  uint64_t medium_interval = DEFAULT_INTERVALS::MEDIUM,
+                  uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE)
         :  events::EventNotifier(),
            counters ({{ fine_interval, 
                         medium_interval,
@@ -278,9 +282,9 @@ public:
     using Base::process_sequence;
     
     FileConsumer(shared_ptr<GraphType> graph,
-                 uint64_t fine_interval=DEFAULT_FINE_INTERVAL,
-                 uint64_t medium_interval=DEFAULT_MEDIUM_INTERVAL,
-                 uint64_t coarse_interval=DEFAULT_COARSE_INTERVAL)
+                 uint64_t fine_interval   = DEFAULT_INTERVALS::FINE,
+                 uint64_t medium_interval = DEFAULT_INTERVALS::MEDIUM,
+                 uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE)
         : Base(fine_interval, medium_interval, coarse_interval),
           graph(graph), _n_consumed(0) {
 
@@ -302,35 +306,6 @@ public:
 };
 
 
-class UKHSCountSignatureProcessor : public FileProcessor<UKHSCountSignatureProcessor,
-                                                         parsing::FastxReader> {
-protected:
-
-    shared_ptr<signatures::UKHSCountSignature> signature;
-
-    typedef FileProcessor<UKHSCountSignatureProcessor, parsing::FastxReader> Base;
-
-public:
-
-    using Base::process_sequence;
-
-    UKHSCountSignatureProcessor(shared_ptr<signatures::UKHSCountSignature> signature,
-                                uint64_t fine_interval=DEFAULT_FINE_INTERVAL,
-                                uint64_t medium_interval=DEFAULT_MEDIUM_INTERVAL,
-                                uint64_t coarse_interval=DEFAULT_COARSE_INTERVAL)
-        : Base(fine_interval, medium_interval, coarse_interval),
-          signature(signature)
-    {
-    }
-
-    void process_sequence(const parsing::Read& read) {
-        signature->insert_sequence(read.cleaned_seq);
-    }
-
-    void report() {
-    }
-};
-
 
 class SourmashSignatureProcessor : public FileProcessor<SourmashSignatureProcessor,
                                                         parsing::FastxReader> {
@@ -345,9 +320,9 @@ public:
     using Base::process_sequence;
 
     SourmashSignatureProcessor(KmerMinHash * signature,
-                               uint64_t fine_interval=DEFAULT_FINE_INTERVAL,
-                               uint64_t medium_interval=DEFAULT_MEDIUM_INTERVAL,
-                               uint64_t coarse_interval=DEFAULT_COARSE_INTERVAL);
+                               uint64_t fine_interval   = DEFAULT_INTERVALS::FINE,
+                               uint64_t medium_interval = DEFAULT_INTERVALS::MEDIUM,
+                               uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE);
 
     void process_sequence(const parsing::Read& read);
 
@@ -374,9 +349,9 @@ public:
 
     DecisionNodeProcessor(shared_ptr<cdbg::StreamingCompactor<GraphType>> compactor,
                           std::string& output_filename,
-                          uint64_t fine_interval=DEFAULT_FINE_INTERVAL,
-                          uint64_t medium_interval=DEFAULT_MEDIUM_INTERVAL,
-                          uint64_t coarse_interval=DEFAULT_COARSE_INTERVAL)
+                          uint64_t fine_interval   = DEFAULT_INTERVALS::FINE,
+                          uint64_t medium_interval = DEFAULT_INTERVALS::MEDIUM,
+                          uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE)
         : Base(fine_interval, medium_interval, coarse_interval),
           compactor(compactor),
           graph(compactor->dbg),
@@ -439,9 +414,9 @@ public:
     using events::EventNotifier::register_listener;
     
     StreamingCompactorProcessor(shared_ptr<cdbg::StreamingCompactor<GraphType>> compactor,
-                                uint64_t fine_interval=DEFAULT_FINE_INTERVAL,
-                                uint64_t medium_interval=DEFAULT_MEDIUM_INTERVAL,
-                                uint64_t coarse_interval=DEFAULT_COARSE_INTERVAL)
+                                uint64_t fine_interval   = DEFAULT_INTERVALS::FINE,
+                                uint64_t medium_interval = DEFAULT_INTERVALS::MEDIUM,
+                                uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE)
         : Base(fine_interval, medium_interval, coarse_interval),
           compactor(compactor),
           graph(compactor->dbg)
@@ -501,9 +476,9 @@ public:
     MinimizerProcessor(int32_t window_size,
                        uint16_t K,
                        const std::string& output_filename,
-                       uint64_t fine_interval=DEFAULT_FINE_INTERVAL,
-                       uint64_t medium_interval=DEFAULT_MEDIUM_INTERVAL,
-                       uint64_t coarse_interval=DEFAULT_COARSE_INTERVAL)
+                       uint64_t fine_interval   = DEFAULT_INTERVALS::FINE,
+                       uint64_t medium_interval = DEFAULT_INTERVALS::MEDIUM,
+                       uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE)
         : Base(fine_interval, medium_interval, coarse_interval),
           M(window_size, K),
           _output_filename(output_filename),

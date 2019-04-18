@@ -38,7 +38,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_LINK_WHAT_YOU_USE TRUE)
 if(NOT CMAKE_BUILD_TYPE) 
-    set(CMAKE_BUILD_TYPE Debug)
+    set(CMAKE_BUILD_TYPE Release)
 endif(NOT CMAKE_BUILD_TYPE)
 
 #
@@ -47,7 +47,7 @@ endif(NOT CMAKE_BUILD_TYPE)
 #
 add_library(cqf OBJECT
             src/cqf/gqf.c 
-)
+
 target_include_directories(cqf PUBLIC include/cqf)
 
 #
@@ -82,7 +82,7 @@ set_target_properties(boink PROPERTIES
                       VERSION ${PROJECT_VERSION}
                       SOVERSION 1
 )
-set_target_properties(boink PROPERTIES PUBLIC_HEADER ${LIB_HEADERS})
+#set_target_properties(boink PROPERTIES PUBLIC_HEADER ${LIB_HEADERS})
 target_include_directories(boink
                            PUBLIC
                            ${CMAKE_SOURCE_DIR}/include

@@ -10,12 +10,13 @@ import scipy
 import numpy as np
 from scipy.spatial import distance as dmetrics
 
+from cppyy.gbl import std
+
 from boink.args import (add_output_interval_args, 
                         add_pairing_args)
-from boink.minimizers import UKHSCountSignature
-from boink.processors import UKHSCountSignatureProcessor
-from boink.parsing import grouper
-from boink.utils  import find_common_basename, remove_fx_suffix
+from boink.data import load_ukhs
+from boink import libboink
+from boink.utils import find_common_basename, remove_fx_suffix, grouper
 
 
 class TextBlock:
@@ -228,11 +229,17 @@ class DraffStream:
 
         dfunc = getattr(dmetrics, args.distance_metric)
 
+        frame.draw(messages=[term.read + 'Initializing UKHS({},{})...'.format(args.W, args.K)],
+                   draw_dist_plot=False)
+        ukhs = load_ukhs(args.W, args.K)
+        storage_t = getattr(libboink.storage, 'BitStorage')
+        signature_t = libboink.signatures.UnikmerSignature[storage_t]
+
         if args.merge:
-            frame.draw(messages=[term.red + 'Initializig signature for {}...'.format(args.merge)], 
+            frame.draw(messages=[term.red + 'Initializing signature for {}...'.format(args.merge)], 
                        draw_dist_plot=False)
-            sig_gen = UKHSCountSignature(args.W, args.K)
-            processor = UKHSCountSignatureProcessor(sig_gen,
+            sig_gen = signature_t.Signature.build(args.W, args.K, ukhs, 100000, 4)
+            processor = signature_t.Processor.build(sig_gen,
                                                     args.fine_interval,
                                                     args.medium_interval,
                                                     args.coarse_interval)
@@ -241,7 +248,7 @@ class DraffStream:
                 frame.draw(messages=['Started processing on {sample}'.format(sample)], draw_dist_plot=False)
 
                 n_reads, distances, distances_t, stdevs, saturated = self.process_sample(sig_gen, processor, sample, frame,
-                                                                                         dfunc, args.distance_window, args.stdev_cutoff)
+                                                                                        dfunc, args.distance_window, args.stdev_cutoff)
                 if saturated:
                     msgs = [term.green
                             + '{name} reached saturation at read {n:,} in sample {sample}.'.format(name=prefix, 
@@ -262,10 +269,10 @@ class DraffStream:
 
         else:
             for sample, prefix in self.runner.iter_inputs(args):
-                frame.draw(messages=[term.red + 'Initializig signature for {}...'.format(prefix)], 
+                frame.draw(messages=[term.red + 'Initializing signature for {}...'.format(prefix)], 
                            draw_dist_plot=False)
-                sig_gen = UKHSCountSignature(args.W, args.K)
-                processor = UKHSCountSignatureProcessor(sig_gen,
+                sig_gen = signature_t.Signature.build(args.W, args.K, ukhs.__smartptr__(), 100000, 4)
+                processor = signature_t.Processor.build(sig_gen,
                                                         args.fine_interval,
                                                         args.medium_interval,
                                                         args.coarse_interval)
@@ -292,9 +299,8 @@ class DraffStream:
         distances_t = []
         stdevs      = []
 
-        for state in processor.chunked_process(*sample):
-            n_reads, is_fine, is_medium, is_coarse, is_done = state
-            if is_fine:
+        for n_reads, state in processor.chunked_process(*sample):
+            if state.fine:
                 signatures.append(sig_gen.signature)
 
                 if len(signatures) > 1:
