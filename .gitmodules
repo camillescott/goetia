@@ -10,3 +10,6 @@
 [submodule "include/bbhash"]
 	path = include/bbhash
 	url = https://github.com/rizkg/BBHash
+[submodule "prometheus-cpp"]
+	url = https://github.com/camillescott/prometheus-cpp
+	branch = devel
