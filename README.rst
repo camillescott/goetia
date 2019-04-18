@@ -7,6 +7,7 @@ pip install -r requirements.txt
 
 git clone https://github.com/camillescott/boink
 cd boink
+git submodule update --init --recursive
 git checkout cppyy
 
 mkdir build; cd build
