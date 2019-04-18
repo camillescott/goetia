@@ -1,14 +1,15 @@
 For this repository with anaconda:
+```
+conda create -n libboink python=3 cmake cxx-compiler c-compiler clangdev libcxx libstdcxx-ng libgcc-ng pytest numpy scipy
+conda activate libboink
+pip install cppyy clang
+pip install -r requirements.txt
 
-    conda create -n libboink python=3 cmake cxx-compiler c-compiler clangdev libcxx libstdcxx-ng libgcc-ng pytest numpy scipy
-    conda activate libboink
-    pip install cppyy clang
-    pip install -r requirements.txt
+git clone https://github.com/camillescott/boink
+cd boink
+git checkout cppyy
 
-    git clone https://github.com/camillescott/boink
-    cd boink
-    git checkout cppyy
-
-    mkdir build; cd build
-    cmake ..
-    make install
+mkdir build; cd build
+cmake ..
+make install
+```
