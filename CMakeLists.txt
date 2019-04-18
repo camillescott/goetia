@@ -47,7 +47,7 @@ endif(NOT CMAKE_BUILD_TYPE)
 #
 add_library(cqf OBJECT
             src/cqf/gqf.c 
-
+)
 target_include_directories(cqf PUBLIC include/cqf)
 
 #
