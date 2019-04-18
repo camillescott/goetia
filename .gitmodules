@@ -12,4 +12,4 @@
 	url = https://github.com/rizkg/BBHash
 [submodule "include/prometheus-cpp"]
 	path = third-party/prometheus-cpp
-	url = https://github.com/jupp0r/prometheus-cpp
+	url = https://github.com/camillescott/prometheus-cpp
