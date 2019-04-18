@@ -4,12 +4,9 @@
 [submodule "third-party/gfakluge"]
 	path = third-party/gfakluge
 	url = git@github.com:camillescott/gfakluge.git
-[submodule "third-party/prometheus-cpp"]
-	path = third-party/prometheus-cpp
-	url = https://github.com/jupp0r/prometheus-cpp
 [submodule "include/bbhash"]
 	path = include/bbhash
 	url = https://github.com/rizkg/BBHash
-[submodule "prometheus-cpp"]
+[submodule "third-party/prometheus-cpp"]
 	url = https://github.com/camillescott/prometheus-cpp
 	branch = devel
