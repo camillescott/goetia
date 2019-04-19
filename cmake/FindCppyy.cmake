@@ -191,6 +191,8 @@ endfunction(cppyy_generate_init)
 #   PKG_SRC_DIR         Top-level directory containing any package files you want. This tree
 #                       will be entirely copied in the resulting package directory.
 #
+#   TESTS_DIR           Directory containing tests.
+#
 #   
 #
 #   GENERATE_OPTIONS option
@@ -226,7 +228,7 @@ endfunction(cppyy_generate_init)
 #
 function(cppyy_add_bindings pkg pkg_version author author_email)
     set(simple_args URL LICENSE LICENSE_FILE LANGUAGE_STANDARD INTERFACE_FILE
-        SELECTION_XML README_FILE PKG_SRC_DIR)
+        SELECTION_XML README_FILE PKG_SRC_DIR TESTS_DIR)
     set(list_args HEADERS  COMPILE_OPTIONS INCLUDE_DIRS LINK_LIBRARIES 
         GENERATE_OPTIONS NAMESPACES EXTRA_PKG_FILES)
     cmake_parse_arguments(
@@ -421,6 +423,16 @@ function(cppyy_add_bindings pkg pkg_version author author_email)
     file(COPY ${PKG_SRC_DIR}/
          DESTINATION ${pkg_dir} USE_SOURCE_PERMISSIONS
          PATTERN ".*" EXCLUDE)
+
+    #
+    # Copy tests
+    # 
+
+    if(NOT "${ARG_TESTS_DIR}" STREQUAL "")
+        file(COPY ${ARG_TESTS_DIR}
+            DESTINATION ${CMAKE_BINARY_DIR}/ USE_SOURCE_PERMISSIONS
+        )
+    endif()
 
     #
     # Kinda ugly: you'e not really supposed to glob like this. Oh well. Using this to set
