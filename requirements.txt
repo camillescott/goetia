@@ -1,3 +1,5 @@
 plotille
 pyfiglet
 blessings
+cppyy
+clang
