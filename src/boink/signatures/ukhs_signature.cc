@@ -8,3 +8,22 @@
  */
 
 #include "boink/signatures/ukhs_signature.hh"
+
+#include "boink/storage/nibblestorage.hh"
+#include "boink/storage/bitstorage.hh"
+#include "boink/storage/storage.hh"
+#include "boink/storage/qfstorage.hh"
+#include "boink/storage/bytestorage.hh"
+#include "boink/storage/partitioned_storage.hh"
+#include "boink/storage/sparseppstorage.hh"
+
+
+using namespace boink;
+using namespace boink::signatures;
+
+
+template class boink::signatures::UnikmerSignature<boink::storage::BitStorage>;
+template class boink::signatures::UnikmerSignature<boink::storage::ByteStorage>;
+template class boink::signatures::UnikmerSignature<boink::storage::NibbleStorage>;
+template class boink::signatures::UnikmerSignature<boink::storage::QFStorage>;
+template class boink::signatures::UnikmerSignature<boink::storage::SparseppSetStorage>;

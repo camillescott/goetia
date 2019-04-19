@@ -131,7 +131,7 @@ template class boink::StreamingCompactorProcessor<boink::dBG<boink::storage::Bit
                                                              boink::hashing::RollingHashShifter>>;
 
 //Signatures
-template class boink::signatures::UnikmerSignature<boink::storage::BitStorage>;
+extern template class boink::signatures::UnikmerSignature<boink::storage::BitStorage>;
 
 /*
  * ByteStorage  declarations
@@ -164,7 +164,7 @@ template class boink::StreamingCompactorProcessor<boink::dBG<boink::storage::Byt
                                                              boink::hashing::RollingHashShifter>>;
 
 //Signatures
-template class boink::signatures::UnikmerSignature<boink::storage::ByteStorage>;
+extern template class boink::signatures::UnikmerSignature<boink::storage::ByteStorage>;
 
 /*
  * NibbleStorage  declarations
@@ -197,7 +197,7 @@ template class boink::StreamingCompactorProcessor<boink::dBG<boink::storage::Nib
                                                              boink::hashing::RollingHashShifter>>;
 
 //Signatures
-template class boink::signatures::UnikmerSignature<boink::storage::NibbleStorage>;
+extern template class boink::signatures::UnikmerSignature<boink::storage::NibbleStorage>;
 
 /*
  * QFStorage  declarations
@@ -230,7 +230,7 @@ template class boink::StreamingCompactorProcessor<boink::dBG<boink::storage::QFS
                                                              boink::hashing::RollingHashShifter>>;
 
 //Signatures
-template class boink::signatures::UnikmerSignature<boink::storage::QFStorage>;
+extern template class boink::signatures::UnikmerSignature<boink::storage::QFStorage>;
 
 /*
  * SparseppSetStorage  declarations
@@ -263,4 +263,4 @@ template class boink::StreamingCompactorProcessor<boink::dBG<boink::storage::Spa
                                                              boink::hashing::RollingHashShifter>>;
 
 //Signatures
-template class boink::signatures::UnikmerSignature<boink::storage::SparseppSetStorage>;
+extern template class boink::signatures::UnikmerSignature<boink::storage::SparseppSetStorage>;

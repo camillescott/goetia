@@ -40,10 +40,10 @@ struct DEFAULT_INTERVALS {
 
 class IntervalCounter {
 
+public:
+
     uint64_t interval;
     uint64_t counter;
-
-public:
 
     IntervalCounter(uint64_t interval)
         : interval(interval),
@@ -147,7 +147,8 @@ public:
                         medium_interval,
                         coarse_interval }}),
           _n_reads(0) {
-
+        
+        //std::cout << counters[0].counter << " " << counters[1].counter << std::endl;
     }
 
     uint64_t process(const string& left_filename,
@@ -229,11 +230,11 @@ public:
 
             read.set_clean_seq();
             derived().process_sequence(read);
+ 
 
             __sync_add_and_fetch( &_n_reads, 1 );
-              auto tick_result = _notify_tick(1);
+            auto tick_result = _notify_tick(1);
 
-            bool end = false;
             if (_ticked(tick_result)) {
                 return tick_result;
             }

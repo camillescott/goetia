@@ -137,9 +137,9 @@ struct UnikmerSignature {
         using Base::process_sequence;
 
         Processor(std::shared_ptr<Signature> signature,
-                  uint64_t fine_interval   = DEFAULT_INTERVALS::FINE,
-                  uint64_t medium_interval = DEFAULT_INTERVALS::MEDIUM,
-                  uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE)
+                  uint64_t fine_interval   ,
+                  uint64_t medium_interval ,
+                  uint64_t coarse_interval )
             : Base(fine_interval, medium_interval, coarse_interval),
               signature(signature)
         {
