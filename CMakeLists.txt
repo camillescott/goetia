@@ -148,7 +148,7 @@ cppyy_add_bindings(
    LANGUAGE_STANDARD "14"
    SELECTION_XML  ${CMAKE_SOURCE_DIR}/boink_select.xml
    INTERFACE_FILE ${CMAKE_SOURCE_DIR}/include/boink/interface.hh
-   PKG_SRC_DIR    ${CMAKE_SOURCE_DIR}/py
+   PKG_SRC_DIR    ${CMAKE_SOURCE_DIR}/boink
    TESTS_DIR      ${CMAKE_SOURCE_DIR}/tests
    HEADERS        ${LIB_HEADERS}
    INCLUDE_DIRS   ${CMAKE_CURRENT_SOURCE_DIR}/include
