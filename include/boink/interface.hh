@@ -89,178 +89,147 @@ STLTYPES_EXPLICIT_INSTANTIATION_DECL(vector, boink::hashing::kmer_t)
 
 template class std::pair<boink::hashing::shift_t, boink::hashing::shift_t>;
 
+extern
 template class boink::hashing::KmerIterator<boink::hashing::RollingHashShifter>;
 
-template <typename ReaderType=boink::parsing::FastxReader>
-struct ParserFactory {
-	static std::shared_ptr<boink::parsing::ReadParser<boink::parsing::FastxReader>> build(const std::string& filename) {
-		return boink::parsing::get_parser<boink::parsing::FastxReader>(filename);
-	}
-};
-
-template struct ParserFactory<boink::parsing::FastxReader>;
-
-/*
- * BitStorage  declarations
- */
-
-// dBG
+extern
 template class boink::dBG<boink::storage::BitStorage,
                           boink::hashing::RollingHashShifter>;
-template class std::enable_shared_from_this<boink::dBG<boink::storage::BitStorage,
-                                            boink::hashing::RollingHashShifter>>;
-
-// PdBG
-template class boink::PdBG<boink::storage::BitStorage>;
-template class std::enable_shared_from_this<boink::PdBG<boink::storage::BitStorage>>;
-
-// Assemblers, Compactors
-template class boink::AssemblerMixin<boink::dBG<boink::storage::BitStorage,
-                                                 boink::hashing::RollingHashShifter>>;
-template class boink::CompactorMixin<boink::dBG<boink::storage::BitStorage,
-                                                 boink::hashing::RollingHashShifter>>;
-template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::BitStorage,
-                                               boink::hashing::RollingHashShifter>>;
-
-//Processors
-template class boink::FileConsumer<boink::dBG<boink::storage::BitStorage,
-                                              boink::hashing::RollingHashShifter>>;
-template class boink::DecisionNodeProcessor<boink::dBG<boink::storage::BitStorage,
-                                                       boink::hashing::RollingHashShifter>>;
-template class boink::StreamingCompactorProcessor<boink::dBG<boink::storage::BitStorage,
-                                                             boink::hashing::RollingHashShifter>>;
-
-//Signatures
-extern template class boink::signatures::UnikmerSignature<boink::storage::BitStorage>;
-
-/*
- * ByteStorage  declarations
- */
-
-// dBG
+extern
 template class boink::dBG<boink::storage::ByteStorage,
                           boink::hashing::RollingHashShifter>;
-template class std::enable_shared_from_this<boink::dBG<boink::storage::ByteStorage,
-                                            boink::hashing::RollingHashShifter>>;
-
-// PdBG
-template class boink::PdBG<boink::storage::ByteStorage>;
-template class std::enable_shared_from_this<boink::PdBG<boink::storage::ByteStorage>>;
-
-// Assemblers, Compactors
-template class boink::AssemblerMixin<boink::dBG<boink::storage::ByteStorage,
-                                                 boink::hashing::RollingHashShifter>>;
-template class boink::CompactorMixin<boink::dBG<boink::storage::ByteStorage,
-                                                 boink::hashing::RollingHashShifter>>;
-template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::ByteStorage,
-                                               boink::hashing::RollingHashShifter>>;
-
-//Processors
-template class boink::FileConsumer<boink::dBG<boink::storage::ByteStorage,
-                                              boink::hashing::RollingHashShifter>>;
-template class boink::DecisionNodeProcessor<boink::dBG<boink::storage::ByteStorage,
-                                                       boink::hashing::RollingHashShifter>>;
-template class boink::StreamingCompactorProcessor<boink::dBG<boink::storage::ByteStorage,
-                                                             boink::hashing::RollingHashShifter>>;
-
-//Signatures
-extern template class boink::signatures::UnikmerSignature<boink::storage::ByteStorage>;
-
-/*
- * NibbleStorage  declarations
- */
-
-// dBG
+extern
 template class boink::dBG<boink::storage::NibbleStorage,
                           boink::hashing::RollingHashShifter>;
-template class std::enable_shared_from_this<boink::dBG<boink::storage::NibbleStorage,
-                                            boink::hashing::RollingHashShifter>>;
-
-// PdBG
-template class boink::PdBG<boink::storage::NibbleStorage>;
-template class std::enable_shared_from_this<boink::PdBG<boink::storage::NibbleStorage>>;
-
-// Assemblers, Compactors
-template class boink::AssemblerMixin<boink::dBG<boink::storage::NibbleStorage,
-                                                 boink::hashing::RollingHashShifter>>;
-template class boink::CompactorMixin<boink::dBG<boink::storage::NibbleStorage,
-                                                 boink::hashing::RollingHashShifter>>;
-template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::NibbleStorage,
-                                               boink::hashing::RollingHashShifter>>;
-
-//Processors
-template class boink::FileConsumer<boink::dBG<boink::storage::NibbleStorage,
-                                              boink::hashing::RollingHashShifter>>;
-template class boink::DecisionNodeProcessor<boink::dBG<boink::storage::NibbleStorage,
-                                                       boink::hashing::RollingHashShifter>>;
-template class boink::StreamingCompactorProcessor<boink::dBG<boink::storage::NibbleStorage,
-                                                             boink::hashing::RollingHashShifter>>;
-
-//Signatures
-extern template class boink::signatures::UnikmerSignature<boink::storage::NibbleStorage>;
-
-/*
- * QFStorage  declarations
- */
-
-// dBG
+extern
 template class boink::dBG<boink::storage::QFStorage,
                           boink::hashing::RollingHashShifter>;
-template class std::enable_shared_from_this<boink::dBG<boink::storage::QFStorage,
-                                            boink::hashing::RollingHashShifter>>;
-
-// PdBG
-template class boink::PdBG<boink::storage::QFStorage>;
-template class std::enable_shared_from_this<boink::PdBG<boink::storage::QFStorage>>;
-
-// Assemblers, Compactors
-template class boink::AssemblerMixin<boink::dBG<boink::storage::QFStorage,
-                                                 boink::hashing::RollingHashShifter>>;
-template class boink::CompactorMixin<boink::dBG<boink::storage::QFStorage,
-                                                 boink::hashing::RollingHashShifter>>;
-template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::QFStorage,
-                                               boink::hashing::RollingHashShifter>>;
-
-//Processors
-template class boink::FileConsumer<boink::dBG<boink::storage::QFStorage,
-                                              boink::hashing::RollingHashShifter>>;
-template class boink::DecisionNodeProcessor<boink::dBG<boink::storage::QFStorage,
-                                                       boink::hashing::RollingHashShifter>>;
-template class boink::StreamingCompactorProcessor<boink::dBG<boink::storage::QFStorage,
-                                                             boink::hashing::RollingHashShifter>>;
-
-//Signatures
-extern template class boink::signatures::UnikmerSignature<boink::storage::QFStorage>;
-
-/*
- * SparseppSetStorage  declarations
- */
-
-// dBG
+extern
 template class boink::dBG<boink::storage::SparseppSetStorage,
                           boink::hashing::RollingHashShifter>;
-template class std::enable_shared_from_this<boink::dBG<boink::storage::SparseppSetStorage,
-                                            boink::hashing::RollingHashShifter>>;
 
-// PdBG
+
+extern
+template class boink::PdBG<boink::storage::BitStorage>;
+extern
+template class boink::PdBG<boink::storage::ByteStorage>;
+extern
+template class boink::PdBG<boink::storage::NibbleStorage>;
+extern
+template class boink::PdBG<boink::storage::QFStorage>;
+extern
 template class boink::PdBG<boink::storage::SparseppSetStorage>;
-template class std::enable_shared_from_this<boink::PdBG<boink::storage::SparseppSetStorage>>;
 
-// Assemblers, Compactors
+
+extern
+template class boink::AssemblerMixin<boink::dBG<boink::storage::BitStorage,
+                                                boink::hashing::RollingHashShifter>>;
+extern
+template class boink::AssemblerMixin<boink::dBG<boink::storage::ByteStorage,
+                                                boink::hashing::RollingHashShifter>>;
+extern
+template class boink::AssemblerMixin<boink::dBG<boink::storage::NibbleStorage,
+                                                boink::hashing::RollingHashShifter>>;
+extern
+template class boink::AssemblerMixin<boink::dBG<boink::storage::QFStorage,
+                                                boink::hashing::RollingHashShifter>>;
+extern
 template class boink::AssemblerMixin<boink::dBG<boink::storage::SparseppSetStorage,
-                                                 boink::hashing::RollingHashShifter>>;
+                                                boink::hashing::RollingHashShifter>>;
+
+
+extern
+template class boink::CompactorMixin<boink::dBG<boink::storage::BitStorage,
+                                                boink::hashing::RollingHashShifter>>;
+extern
+template class boink::CompactorMixin<boink::dBG<boink::storage::ByteStorage,
+                                                boink::hashing::RollingHashShifter>>;
+extern
+template class boink::CompactorMixin<boink::dBG<boink::storage::NibbleStorage,
+                                                boink::hashing::RollingHashShifter>>;
+extern
+template class boink::CompactorMixin<boink::dBG<boink::storage::QFStorage,
+                                                boink::hashing::RollingHashShifter>>;
+extern
 template class boink::CompactorMixin<boink::dBG<boink::storage::SparseppSetStorage,
-                                                 boink::hashing::RollingHashShifter>>;
+                                                boink::hashing::RollingHashShifter>>;
+
+
+extern
+template class boink::FileConsumer<boink::dBG<boink::storage::BitStorage,
+                                              boink::hashing::RollingHashShifter>>;
+extern
+template class boink::FileConsumer<boink::dBG<boink::storage::ByteStorage,
+                                              boink::hashing::RollingHashShifter>>;
+extern
+template class boink::FileConsumer<boink::dBG<boink::storage::NibbleStorage,
+                                              boink::hashing::RollingHashShifter>>;
+extern
+template class boink::FileConsumer<boink::dBG<boink::storage::QFStorage,
+                                              boink::hashing::RollingHashShifter>>;
+extern
+template class boink::FileConsumer<boink::dBG<boink::storage::SparseppSetStorage,
+                                              boink::hashing::RollingHashShifter>>;
+
+
+extern
+template class boink::DecisionNodeProcessor<boink::dBG<boink::storage::BitStorage,
+                                                       boink::hashing::RollingHashShifter>>;
+extern
+template class boink::DecisionNodeProcessor<boink::dBG<boink::storage::ByteStorage,
+                                                       boink::hashing::RollingHashShifter>>;
+extern
+template class boink::DecisionNodeProcessor<boink::dBG<boink::storage::NibbleStorage,
+                                                       boink::hashing::RollingHashShifter>>;
+extern
+template class boink::DecisionNodeProcessor<boink::dBG<boink::storage::QFStorage,
+                                                       boink::hashing::RollingHashShifter>>;
+extern
+template class boink::DecisionNodeProcessor<boink::dBG<boink::storage::SparseppSetStorage,
+                                                       boink::hashing::RollingHashShifter>>;
+
+
+extern
+template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::BitStorage,
+                                               boink::hashing::RollingHashShifter>>;
+extern
+template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::ByteStorage,
+                                               boink::hashing::RollingHashShifter>>;
+extern
+template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::NibbleStorage,
+                                               boink::hashing::RollingHashShifter>>;
+extern
+template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::QFStorage,
+                                               boink::hashing::RollingHashShifter>>;
+extern
 template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::SparseppSetStorage,
                                                boink::hashing::RollingHashShifter>>;
 
-//Processors
-template class boink::FileConsumer<boink::dBG<boink::storage::SparseppSetStorage,
-                                              boink::hashing::RollingHashShifter>>;
-template class boink::DecisionNodeProcessor<boink::dBG<boink::storage::SparseppSetStorage,
-                                                       boink::hashing::RollingHashShifter>>;
+
+extern
+template class boink::StreamingCompactorProcessor<boink::dBG<boink::storage::BitStorage,
+                                                             boink::hashing::RollingHashShifter>>;
+extern
+template class boink::StreamingCompactorProcessor<boink::dBG<boink::storage::ByteStorage,
+                                                             boink::hashing::RollingHashShifter>>;
+extern
+template class boink::StreamingCompactorProcessor<boink::dBG<boink::storage::NibbleStorage,
+                                                             boink::hashing::RollingHashShifter>>;
+extern
+template class boink::StreamingCompactorProcessor<boink::dBG<boink::storage::QFStorage,
+                                                             boink::hashing::RollingHashShifter>>;
+extern
 template class boink::StreamingCompactorProcessor<boink::dBG<boink::storage::SparseppSetStorage,
                                                              boink::hashing::RollingHashShifter>>;
 
-//Signatures
-extern template class boink::signatures::UnikmerSignature<boink::storage::SparseppSetStorage>;
+
+extern
+template class boink::signatures::UnikmerSignature<boink::storage::BitStorage>;
+extern
+template class boink::signatures::UnikmerSignature<boink::storage::ByteStorage>;
+extern
+template class boink::signatures::UnikmerSignature<boink::storage::NibbleStorage>;
+extern
+template class boink::signatures::UnikmerSignature<boink::storage::QFStorage>;
+extern
+template class boink::signatures::UnikmerSignature<boink::storage::SparseppSetStorage>;

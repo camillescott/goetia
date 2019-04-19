@@ -14,7 +14,6 @@
 #include "boink/storage/storage.hh"
 #include "boink/storage/qfstorage.hh"
 #include "boink/storage/bytestorage.hh"
-#include "boink/storage/partitioned_storage.hh"
 #include "boink/storage/sparseppstorage.hh"
 
 
