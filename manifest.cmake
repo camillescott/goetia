@@ -5,7 +5,6 @@ set(_headers
     include/boink/cdbg/cdbg_types.hh
     include/boink/cdbg/compactor.hh
     include/boink/cdbg/metrics.hh
-    include/boink/cdbg/solid_compactor.hh
     include/boink/dbg.hh
     include/boink/events.hh
     include/boink/event_types.hh
@@ -21,18 +20,11 @@ set(_headers
     include/boink/kmers/kmerclient.hh
     include/boink/metrics.hh
     include/boink/minimizers.hh
-    include/boink/normalization/diginorm.hh
     include/boink/parsing/parsing.hh
     include/boink/parsing/readers.hh
     include/boink/pdbg.hh
     include/boink/processors.hh
-    include/boink/reporting/cdbg_component_reporter.hh
-    include/boink/reporting/cdbg_history_reporter.hh
-    include/boink/reporting/cdbg_unitig_reporter.hh
-    include/boink/reporting/cdbg_writer_reporter.hh
     include/boink/reporting/reporters.hh
-    include/boink/reporting/report_types.hh
-    include/boink/reporting/streaming_compactor_reporter.hh
     include/boink/storage/bitstorage.hh
     include/boink/storage/bytestorage.hh
     include/boink/storage/nibblestorage.hh
@@ -40,6 +32,7 @@ set(_headers
     include/boink/storage/qfstorage.hh
     include/boink/storage/sparseppstorage.hh
     include/boink/storage/storage.hh
+    include/boink/storage/storage_types.hh
     include/boink/signatures/ukhs_signature.hh
 )
 
@@ -54,13 +47,7 @@ set(_sources
     src/boink/processors.cc
     src/boink/metrics.cc
     src/boink/events.cc
-    src/boink/reporting/cdbg_writer_reporter.cc
-    src/boink/reporting/report_types.cc
-    src/boink/reporting/cdbg_unitig_reporter.cc
-    src/boink/reporting/cdbg_history_reporter.cc
     src/boink/reporting/reporters.cc
-    src/boink/reporting/cdbg_component_reporter.cc
-    src/boink/reporting/streaming_compactor_reporter.cc
     src/boink/hashing/hashshifter.cc
     src/boink/hashing/alphabets.cc
     src/boink/hashing/kmeriterator.cc
@@ -71,14 +58,12 @@ set(_sources
     src/boink/assembly.cc
     src/boink/dbg.cc
     src/boink/pdbg.cc
-    src/boink/normalization/diginorm.cc
     src/boink/boink.cc
     src/boink/event_types.cc
     src/boink/cdbg/metrics.cc
     src/boink/cdbg/cdbg_types.cc
     src/boink/cdbg/cdbg.cc
     src/boink/cdbg/compactor.cc
-    src/boink/cdbg/solid_compactor.cc
     src/boink/parsing/readers.cc
     src/boink/parsing/parsing.cc
     src/boink/minimizers.cc

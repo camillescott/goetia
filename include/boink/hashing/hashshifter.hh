@@ -45,6 +45,7 @@ public:
     //std::deque<char> symbol_deque;
     
     hash_t set_cursor(const std::string& sequence) {
+        std::cout << "string overload" << std::endl;
         if (sequence.length() < _K) {
             throw SequenceLengthException("Sequence must at least length K");
         }
@@ -60,6 +61,7 @@ public:
     }
 
     hash_t set_cursor(const char * sequence) {
+        std::cout << "char overload" << std::endl;
         // less safe! does not check length
         if(!initialized) {
             load(sequence);

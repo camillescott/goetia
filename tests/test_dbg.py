@@ -6,8 +6,7 @@
 # of the MIT license.  See the LICENSE file for details.
 
 import pytest
-from .utils import *
-#from boink.processors import FileConsumer
+from utils import *
 
 from boink.data import load_ukhs
 from cppyy.gbl import std
@@ -80,7 +79,7 @@ def test_counting_count_add_sequence(graph, ksize, random_sequence):
 
 @using_ksize([21,51,81])
 def test_get_ksize(graph, ksize):
-    assert graph.K() == ksize
+    assert graph.K == ksize
 
 
 @using_ksize(5)

@@ -14,12 +14,11 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "boink/boink.hh"
 #include "boink/events.hh"
 #include "boink/event_types.hh"
-#include "boink/cdbg/cdbg.hh"
-#include "boink/cdbg/compactor.hh"
 
 namespace boink {
 namespace reporting {

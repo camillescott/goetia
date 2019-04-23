@@ -32,20 +32,19 @@ using storage::PartitionedStorage;
 using hashing::UKHShifter;
 
 template <class BaseStorageType>
-class PdBG : public kmers::KmerClient,
-             public std::enable_shared_from_this<PdBG<BaseStorageType>> {
+class PdBG : public kmers::KmerClient {
 protected:
 
     std::unique_ptr<PartitionedStorage<BaseStorageType>>       S;
     std::shared_ptr<hashing::UKHS>                             ukhs;
-    UKHShifter                                partitioner;
+    UKHShifter                                                 partitioner;
 
 public:
 
     typedef UKHShifter                        shifter_type;
-	typedef AssemblerMixin<PdBG<BaseStorageType>>              assembler_type;
+	typedef Traverse<PdBG<BaseStorageType>>   traversal_type;
     typedef hashing::KmerIterator<UKHShifter> kmer_iter_type;
-    typedef BaseStorageType                                    base_storage_type;
+    typedef BaseStorageType                   base_storage_type;
 
     const uint16_t partition_K;
  
@@ -403,13 +402,6 @@ public:
     get_hash_iter(const std::string& sequence) {
         return std::make_shared<hashing::KmerIterator<UKHShifter>>(sequence, &partitioner);
     }
-
-    /*
-    std::shared_ptr<assembler_type> get_assembler() {
-        auto ptr = this->shared_from_this();
-        return std::make_shared<assembler_type>(ptr, partitioner);
-    }
-    */
 
     std::vector<size_t> get_partition_counts() {
         return S->get_partition_counts();

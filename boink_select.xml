@@ -2,17 +2,15 @@
     <selection>
         <!-- <namespace pattern="boink::*"/> -->
         <class pattern="boink::storage::*Storage"/>
-        <class pattern="boink::hashing::*"/>
         <class pattern="boink::signatures::*"/>
+        <namespace pattern="boink::cdbg::*"/>
+        <namespace pattern="boink::hashing::*"/>
 
         <class pattern="boink::dBG<*, *>"/>
         <class pattern="boink::PdBG<*>"/>
-        <class pattern="boink::AssemblerMixin<*>"/>
-        <class pattern="boink::CompactorMixin<*>"/>
         <class pattern="boink::*Processor"/>
         <class pattern="boink::*Processor<*>"/>
 		<class pattern="boink::parsing::*"/>
-        <class pattern="ParserFactory<*>"/>
 
         <class name="boink::DEFAULT_INTERVALS"/>
 

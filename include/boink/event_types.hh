@@ -13,13 +13,11 @@
 #include <string>
 
 #include "boink/boink.hh"
-#include "boink/cdbg/cdbg_types.hh"
 
 
 namespace boink {
 namespace events {
 
-using boink::cdbg::node_meta_t;
 
 /* All event types. 
  */
@@ -64,85 +62,6 @@ struct Event {
     const event_t msg_type;
 };
 
-/* cDBG history events. These all encode the sequence of the new node,
- * the parents (if necessary), the children (if necessary), and related node
- * meta.
- */
-
-struct HistoryNewEvent : public Event {
-    HistoryNewEvent()
-        : Event(MSG_HISTORY_NEW)
-    {}
-
-    std::string sequence;
-    id_t id;
-    node_meta_t meta;
-};
-
-
-struct HistoryMergeEvent : public Event {
-    HistoryMergeEvent()
-        : Event(MSG_HISTORY_MERGE)
-    {}
-
-    std::string sequence;
-    id_t lparent, rparent, child;
-    node_meta_t meta;
-};
-
-
-struct HistoryExtendEvent : public Event {
-    HistoryExtendEvent()
-        : Event(MSG_HISTORY_EXTEND)
-    {}
-
-    id_t id;
-    std::string sequence;
-    node_meta_t meta;
-};
-
-
-struct HistoryDeleteEvent : public Event {
-    HistoryDeleteEvent()
-        : Event(MSG_HISTORY_DELETE)
-    {}
-
-    id_t id;
-    node_meta_t meta;
-};
-
-
-struct HistoryClipEvent : public Event {
-    HistoryClipEvent()
-        : Event(MSG_HISTORY_CLIP)
-    {}
-
-    id_t id;
-    std::string sequence;
-    node_meta_t meta;
-};
-
-
-struct HistorySplitEvent : public Event {
-    HistorySplitEvent()
-        : Event(MSG_HISTORY_SPLIT)
-    {}
-
-    id_t parent, lchild, rchild;
-    node_meta_t lmeta, rmeta;
-    std::string lsequence, rsequence;
-};
-
-
-struct HistorySplitCircularEvent : public Event {
-    HistorySplitCircularEvent ()
-        : Event(MSG_HISTORY_SPLIT_CIRCULAR)
-    {}
-
-    id_t id;
-    std::string sequence;
-    node_meta_t meta;
-};
 
 /* Used for output timekeeping.
  *

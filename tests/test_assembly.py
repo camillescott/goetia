@@ -7,26 +7,17 @@
 
 import pytest
 
-from boink.dbg import dBG
-from boink.assembly import Assembler
-from boink.tests.utils import *
+from boink import libboink
+from boink.assembly import Assembler, STATES
+
+from utils import *
 
 
 @pytest.fixture
-def asm(request, ksize, graph, graph_type):
-    _graph_type, AdapterType = graph_type
+def asm(request, ksize, graph):
 
-    return Assembler.build(graph)
+    return Assembler(graph)
 
-
-def test_assembler_type(asm):
-
-    assert asm.storage_type == asm.Graph.storage_type
-    assert asm.shifter_type == asm.Graph.shifter_type
-
-    _, _, asm_suffix = type(asm).__name__.partition('_')
-
-    assert asm_suffix == asm.Graph.suffix 
 
 
 def test_assembler_cursor(asm, ksize):
@@ -39,11 +30,11 @@ def test_assembler_cursor(asm, ksize):
 def test_assembler_cursor_wrong_size(asm, ksize):
     seed = 'A' * (ksize - 1)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         asm.cursor = seed
 
 
-class TestNonBranching:
+class TestLinear:
 
     def test_all_start_positions(self, ksize, linear_path, asm, consume):
         # assemble entire contig, starting from wherever
@@ -54,72 +45,91 @@ class TestNonBranching:
             if len(contig) - start < ksize:
                 continue
             asm.clear_seen()
-            path = asm.assemble(contig[start:start + ksize])
+            path, (lstate, lend), (rstate, rend) = asm.assemble(contig[start:start + ksize])
             assert path == contig, (len(path), len(contig), start)
+            assert lstate == rstate == STATES.STOP_FWD
 
-    def test_all_left_to_beginning(self, ksize, linear_path, asm, consume):
+    @using_ksize(9)
+    @using_length(81)
+    def test_all_left_to_beginning(self, ksize, length, linear_path, asm, consume):
         # assemble directed left
         contig = linear_path()
         consume()
 
-        for start in range(0, len(contig), 150):
+        for start in range(0, len(contig), length // 5):
             if len(contig) - start < ksize:
                 continue
             asm.clear_seen()
-            path = asm.assemble_left(contig[start:start + ksize])
-            print(path, ', ', contig[:start])
+            path, (state, end) = asm.assemble_left(contig[start:start + ksize])
             assert path == contig[:start + ksize], start
+            assert state == STATES.STOP_FWD
 
-    def test_all_right_to_end(self, ksize, linear_path, asm, consume):
+    @using_ksize(9)
+    @using_length(81)
+    def test_all_right_to_end(self, ksize, length, linear_path, asm, consume):
         # assemble directed right
         contig = linear_path()
         consume()
 
-        for start in range(0, len(contig), 150):
+        for start in range(0, len(contig), length // 5):
             if len(contig) - start < ksize:
                 continue
             asm.clear_seen()
-            path = asm.assemble_right(contig[start:start + ksize])
-            print(path, ', ', contig[:start])
+            path, (state, end) = asm.assemble_right(contig[start:start + ksize])
             assert path == contig[start:], start
+            assert state == STATES.STOP_FWD
 
     def test_circular(self, ksize, circular, asm, consume):
         contig = circular()
         consume()
 
-        path = asm.assemble_right(contig[:ksize])
+        path, (state, end) = asm.assemble_right(contig[:ksize])
         print(path, ',', contig)
         assert path == contig[:len(path)]
+        assert state == STATES.STOP_SEEN
 
+class TestDecisions:
 
-class TestBranchingBasic:
-
-    def test_stops_at_fork(self, ksize, right_fork, asm, consume):
+    def test_decision_fwd(self, ksize, right_fork, asm, graph, consume):
         (sequence, branch), S = right_fork()
         consume()
 
-        path = asm.assemble_right(sequence[:ksize])
-        print(asm.Graph.neighbors(sequence[S:S+ksize]))
+        path, (state, end) = asm.assemble_right(sequence[:ksize])
+        assert state == STATES.DECISION_FWD
         assert path == sequence[:S+ksize]
-        assembled_branch = asm.assemble(branch[-ksize:])
+        assert end == graph.hash(sequence[S:S+ksize])
+
+        assembled_branch, (lstate, lend), (rstate, rend) = asm.assemble(branch[-ksize:])
         assert branch == assembled_branch
+
     
-    def test_assembles_through_fork_from_right(self, ksize, right_fork, asm, consume):
+    def test_decision_rc(self, ksize, right_fork, asm, graph, consume):
         '''Test that we assemble through fork from the right when we haven't
         assembled the core path already.'''
         (sequence, branch), S = right_fork()
         consume()
+        
+        path, (lstate, lend), (rstate, rend) = asm.assemble(branch[-ksize:])
 
-        assert sequence[:S+1] + branch == asm.assemble(branch[-ksize:])
+        assert branch == path
+        assert graph.left_degree(path[:ksize]) == 1
+        assert graph.right_degree(path[:ksize]) == 1
+        assert lstate == STATES.DECISION_RC
+        assert lend == graph.hash(branch[:ksize])
+        assert rstate == STATES.STOP_FWD
+        assert rend == graph.hash(branch[-ksize:])
 
 
-    def test_stops_at_triple_fork(self, ksize, right_triple_fork,
-                                  asm, consume):
+    def test_triple_decision_fwd(self, ksize, right_triple_fork,
+                                 asm, consume):
         (core, top, bottom), S = right_triple_fork()
         consume()
         
-        path = asm.assemble_right(core[:ksize])
+        path, (state, end) = asm.assemble_right(core[:ksize])
         assert path == core[:S+ksize]
         
-        assert top == asm.assemble(top[-ksize:])
-        assert bottom == asm.assemble(bottom[-ksize:])
+        path, (lstate, lend), (rstate, rend) = asm.assemble(top[-ksize:])
+        assert top == path
+
+        path, (lstate, lend), (rstate, rend) = asm.assemble(bottom[-ksize:])
+        assert bottom == path

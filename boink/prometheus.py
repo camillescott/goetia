@@ -6,6 +6,7 @@
 # of the MIT license.  See the LICENSE file for details.
 
 import socket
+from cppyy import gbl
 from cppyy.gbl import std
 
 def is_port_in_use(port):

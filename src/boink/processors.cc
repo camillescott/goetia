@@ -7,16 +7,14 @@
  * of the MIT license.  See the LICENSE file for details.
  */
 
+
+
+#include "boink/boink.hh"
 #include "boink/processors.hh"
 
 #include "boink/dbg.hh"
 #include "boink/hashing/rollinghashshifter.hh"
-#include "boink/storage/nibblestorage.hh"
-#include "boink/storage/bitstorage.hh"
-#include "boink/storage/storage.hh"
-#include "boink/storage/qfstorage.hh"
-#include "boink/storage/bytestorage.hh"
-#include "boink/storage/sparseppstorage.hh"
+#include "boink/storage/storage_types.hh"
 
 #include "sourmash/kmer_min_hash.hh"
 
@@ -52,28 +50,4 @@ template class boink::FileConsumer<boink::dBG<boink::storage::QFStorage,
                                               boink::hashing::RollingHashShifter>>;
 template class boink::FileConsumer<boink::dBG<boink::storage::SparseppSetStorage,
                                               boink::hashing::RollingHashShifter>>;
-
-
-template class boink::DecisionNodeProcessor<boink::dBG<boink::storage::BitStorage,
-                                                       boink::hashing::RollingHashShifter>>;
-template class boink::DecisionNodeProcessor<boink::dBG<boink::storage::ByteStorage,
-                                                       boink::hashing::RollingHashShifter>>;
-template class boink::DecisionNodeProcessor<boink::dBG<boink::storage::NibbleStorage,
-                                                       boink::hashing::RollingHashShifter>>;
-template class boink::DecisionNodeProcessor<boink::dBG<boink::storage::QFStorage,
-                                                       boink::hashing::RollingHashShifter>>;
-template class boink::DecisionNodeProcessor<boink::dBG<boink::storage::SparseppSetStorage,
-                                                       boink::hashing::RollingHashShifter>>;
-
-
-template class boink::StreamingCompactorProcessor<boink::dBG<boink::storage::BitStorage,
-                                                             boink::hashing::RollingHashShifter>>;
-template class boink::StreamingCompactorProcessor<boink::dBG<boink::storage::ByteStorage,
-                                                             boink::hashing::RollingHashShifter>>;
-template class boink::StreamingCompactorProcessor<boink::dBG<boink::storage::NibbleStorage,
-                                                             boink::hashing::RollingHashShifter>>;
-template class boink::StreamingCompactorProcessor<boink::dBG<boink::storage::QFStorage,
-                                                             boink::hashing::RollingHashShifter>>;
-template class boink::StreamingCompactorProcessor<boink::dBG<boink::storage::SparseppSetStorage,
-                                                             boink::hashing::RollingHashShifter>>;
 

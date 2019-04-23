@@ -8,3 +8,6 @@
  */
 
 #include "boink/minimizers.hh"
+#include "boink/hashing/rollinghashshifter.hh"
+
+template class boink::WKMinimizer<boink::hashing::RollingHashShifter>;

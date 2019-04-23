@@ -11,12 +11,7 @@
 
 #include "boink/dbg.hh"
 #include "boink/hashing/rollinghashshifter.hh"
-#include "boink/storage/nibblestorage.hh"
-#include "boink/storage/bitstorage.hh"
-#include "boink/storage/storage.hh"
-#include "boink/storage/qfstorage.hh"
-#include "boink/storage/bytestorage.hh"
-#include "boink/storage/sparseppstorage.hh"
+#include "boink/storage/storage_types.hh"
 
 
 template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::BitStorage,

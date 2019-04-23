@@ -52,7 +52,7 @@ struct DecisionKmerHash {
     }
 };
 
-struct  DecisionKmerComp {
+struct DecisionKmerComp {
     bool operator()(const DecisionKmer& a, const DecisionKmer& b) {
         return a.first.hash < b.first.hash;
     }
@@ -61,500 +61,495 @@ struct  DecisionKmerComp {
 typedef std::set<DecisionKmer, DecisionKmerComp> DecisionKmerSet;
 typedef std::unordered_set<DecisionKmer, DecisionKmerHash> DecisionKmerUSet;
 
+namespace TraversalState {
 
-template<class GraphType>
-class AssemblerMixin : public GraphType::shifter_type {
+    enum State {
+        STOP_FWD,
+        STOP_RC,
+        DECISION_FWD,
+        DECISION_RC,
+        STOP_SEEN,
+        STOP_MASKED,
+        BAD_SEED
+    };
+}
 
-protected:
-
-    std::set<hash_t> seen;
-
-public:
+template <class GraphType>
+struct Traverse {
 
     using BaseShifter = typename GraphType::shifter_type;
-    using BaseShifter::_K;
-
+    
     typedef GraphType graph_type;
     typedef BaseShifter shifter_type;
 
-    std::shared_ptr<GraphType> graph;
 
-    AssemblerMixin(std::shared_ptr<GraphType> graph,
-                   BaseShifter                const& shifter)
-        : BaseShifter(shifter),
-          graph(graph)
-    {
-    }
+    typedef TraversalState::State State;
+    typedef std::pair<State, hashing::hash_t> EndState;
 
-    AssemblerMixin(std::shared_ptr<GraphType> graph)
-        : BaseShifter(graph->K()),
-          graph(graph)
-    {
-    }
+    class dBG: public BaseShifter {
 
-    void clear_seen() {
-        seen.clear();
-    }
+    protected:
 
-    size_t degree_left() {
-        auto neighbors = this->gather_left();
-        return count_nodes(neighbors);
-    }
+        std::set<hash_t> seen;
 
-    size_t degree_right() {
-        auto neighbors = this->gather_right();
-        return count_nodes(neighbors);
-    }
+    public:
 
-    size_t degree() {
-        return degree_left() + degree_right();
-    }
+        using BaseShifter::set_cursor;
+        using BaseShifter::get_cursor;
+        using BaseShifter::get;
+        using BaseShifter::hash;
+        using BaseShifter::gather_left;
+        using BaseShifter::gather_right;
+        using BaseShifter::shift_left;
+        using BaseShifter::shift_right;
 
-    size_t degree_left(std::set<hash_t>& extras) {
-        auto neighbors = this->gather_left();
-        return count_nodes(neighbors, extras);
-    }
+        std::shared_ptr<GraphType> graph;
 
-    size_t degree_right(std::set<hash_t>& extras) {
-        auto neighbors = this->gather_right();
-        return count_nodes(neighbors, extras);
-    }
-
-    size_t degree(std::set<hash_t>& extras) {
-        return degree_left(extras) + degree_right(extras);
-    }
-
-    size_t get_left(shift_t& result) {
-        std::vector<shift_t> neighbors = this->gather_left();
-        auto n_left = reduce_nodes(neighbors, result);
-
-        if (n_left == 1) {
-            this->shift_left(result.symbol);
+        dBG(BaseShifter const& shifter)
+            : BaseShifter(shifter)
+        {
         }
-        return n_left;
-    }
 
-    size_t get_right(shift_t& result) {
-        std::vector<shift_t> neighbors = this->gather_right();
-        auto n_right = reduce_nodes(neighbors, result);
-
-        if (n_right == 1) {
-            this->shift_right(result.symbol);
+        dBG(uint16_t K)
+            : BaseShifter(K)
+        {
         }
-        return n_right;
-    }
 
+        static std::shared_ptr<dBG> build(uint16_t K) {
+            return std::make_shared<dBG>(K);
+        }
 
-    size_t count_nodes(const std::vector<shift_t>& nodes) {
-        uint8_t n_found = 0;
-        for (auto node: nodes) {
-            if(this->graph->query(node.hash)) {
-                ++n_found;
+        static std::shared_ptr<dBG> build(BaseShifter const& shifter) {
+            return std::make_shared<dBG>(shifter);
+        }
+
+        void clear_seen() {
+            seen.clear();
+        }
+
+        size_t degree_left(GraphType * graph) {
+            auto neighbors = this->gather_left();
+            return count_nodes(graph, neighbors);
+        }
+
+        size_t degree_right(GraphType * graph) {
+            auto neighbors = this->gather_right();
+            return count_nodes(graph, neighbors);
+        }
+
+        size_t degree(GraphType * graph) {
+            return degree_left(graph) + degree_right(graph);
+        }
+
+        size_t degree_left(GraphType * graph,
+                           std::set<hash_t>& extras) {
+            auto neighbors = this->gather_left();
+            return count_nodes(graph, neighbors, extras);
+        }
+
+        size_t degree_right(GraphType * graph,
+                            std::set<hash_t>& extras) {
+            auto neighbors = this->gather_right();
+            return count_nodes(graph, neighbors, extras);
+        }
+
+        size_t degree(GraphType * graph,
+                      std::set<hash_t>& extras) {
+            return degree_left(graph, extras) + degree_right(graph, extras);
+        }
+
+        size_t get_left(GraphType * graph,
+                        shift_t& result) {
+            std::vector<shift_t> neighbors = this->gather_left();
+            auto n_left = reduce_nodes(graph, neighbors, result);
+
+            if (n_left == 1) {
+                this->shift_left(result.symbol);
             }
+            return n_left;
         }
-        return n_found;
-    }
 
-    size_t count_nodes(const std::vector<shift_t>& nodes,
-                        std::set<hash_t>&           extras) {
-        uint8_t n_found = 0;
-        for (auto node: nodes) {
-            if(this->graph->query(node.hash) ||
-               extras.count(node.hash)) {
-                ++n_found;
+        size_t get_right(GraphType * graph,
+                         shift_t& result) {
+            std::vector<shift_t> neighbors = this->gather_right();
+            auto n_right = reduce_nodes(graph, neighbors, result);
+
+            if (n_right == 1) {
+                this->shift_right(result.symbol);
             }
+            return n_right;
         }
-        return n_found;
-    }
 
-    size_t reduce_nodes(const std::vector<shift_t>& nodes,
-                         shift_t&                    result) {
-        uint8_t n_found = 0;
-        for (auto node : nodes) {
-            //pdebug("check " << neighbor.hash << " " << neighbor.symbol);
-            if(this->graph->query(node.hash)) {
-                //pdebug("found " << neighbor.hash);
-                ++n_found;
-                if (n_found > 1) {
-                    return n_found;
+
+        size_t count_nodes(GraphType *                 graph,
+                           const std::vector<shift_t>& nodes) {
+            uint8_t n_found = 0;
+            for (auto node: nodes) {
+                if(graph->query(node.hash)) {
+                    ++n_found;
                 }
-                result = node;
             }
+            return n_found;
         }
-        return n_found;
-    }
 
-    size_t reduce_nodes(const std::vector<shift_t>& nodes,
-                         shift_t&                    result,
-                         std::set<hash_t>&           extra) {
-        uint8_t n_found = 0;
-        for (auto node : nodes) {
-            //pdebug("check " << neighbor.hash << " " << neighbor.symbol);
-            if(this->graph->query(node.hash) ||
-               extra.count(node.hash)) {
-                //pdebug("found " << neighbor.hash);
-                ++n_found;
-                if (n_found > 1) {
-                    return n_found;
+        size_t count_nodes(GraphType *                 graph,
+                           const std::vector<shift_t>& nodes,
+                           std::set<hash_t>&           extras) {
+            uint8_t n_found = 0;
+            for (auto node: nodes) {
+                if(graph->query(node.hash) ||
+                   extras.count(node.hash)) {
+                    ++n_found;
                 }
-                result = node;
             }
+            return n_found;
         }
-        return n_found;
-    }
 
-    std::vector<shift_t> filter_nodes(const std::vector<shift_t>& nodes) {
-        std::vector<shift_t> result;
-        for (auto node : nodes) {
-            if (this->graph->query(node.hash)) {
-                result.push_back(node);
+        size_t reduce_nodes(GraphType *                 graph,
+                            const std::vector<shift_t>& nodes,
+                            shift_t&                    result) {
+            uint8_t n_found = 0;
+            for (auto node : nodes) {
+                if(graph->query(node.hash)) {
+                    ++n_found;
+                    if (n_found > 1) {
+                        return n_found;
+                    }
+                    result = node;
+                }
             }
+            return n_found;
         }
-        return result;
-    }
 
-    std::vector<shift_t> filter_nodes(const std::vector<shift_t>& nodes,
-                                 std::set<hash_t>&      extra) {
-        std::vector<shift_t> result;
-        for (auto node : nodes) {
-            if (this->graph->query(node.hash) ||
-                extra.count(node.hash)) {
-                result.push_back(node);
+        size_t reduce_nodes(GraphType *                 graph,
+                            const std::vector<shift_t>& nodes,
+                             shift_t&                   result,
+                             std::set<hash_t>&          extra) {
+            uint8_t n_found = 0;
+            for (auto node : nodes) {
+                if(graph->query(node.hash) ||
+                   extra.count(node.hash)) {
+                    ++n_found;
+                    if (n_found > 1) {
+                        return n_found;
+                    }
+                    result = node;
+                }
             }
+            return n_found;
         }
-        return result;
-    }
 
-    std::vector<kmer_t> find_left_kmers() {
-        auto root = this->get_cursor();
-        auto filtered = filter_nodes(this->gather_left());
-        return graph->build_left_kmers(filtered, root);
-    }
-
-    std::vector<kmer_t> find_right_kmers() {
-        auto root = this->get_cursor();
-        auto filtered = filter_nodes(this->gather_right());
-        return graph->build_right_kmers(filtered, root);
-    }
-
-    std::vector<kmer_t> find_left_kmers(std::set<hash_t>& extras) {
-        auto root = this->get_cursor();
-        auto filtered = filter_nodes(this->gather_left(), extras);
-        return graph->build_left_kmers(filtered, root);
-    }
-
-    std::vector<kmer_t> find_right_kmers(std::set<hash_t>& extras) {
-        auto root = this->get_cursor();
-        auto filtered = filter_nodes(this->gather_right(), extras);
-        return graph->build_right_kmers(filtered, root);
-    }
-
-    void assemble_left(const std::string& seed,
-                       Path&              path) {
-
-        this->set_cursor(seed);
-        if (!this->graph->query(this->get())) {
-            return;
-        } 
-        this->get_cursor(path);
-        assemble_left(path);
-    }
-
-    void assemble_left(Path& path) {
-        seen.insert(this->get());
-
-        shift_t next;
-        while (get_left(next) && !seen.count(next.hash)) {
-            path.push_front(next.symbol);
-            seen.insert(next.hash);
-        }
-    }
-
-    void assemble_right(const std::string& seed,
-                        Path&              path) {
-
-        this->set_cursor(seed);
-        if (!this->graph->query(this->get())) {
-            return;
-        }
-        this->get_cursor(path);
-        assemble_right(path);
-    }
-
-    void assemble_right(Path& path) {
-        seen.insert(this->get());
-
-        shift_t next;
-        while (get_right(next) && !seen.count(next.hash)) {
-            path.push_back(next.symbol);
-            seen.insert(next.hash);
-        }
-    }
-
-    void assemble(const std::string& seed,
-                  Path&              path) {
-
-        this->set_cursor(seed);
-        if (!this->graph->query(this->hash(seed))) {
-            return;
-        }
-        this->get_cursor(path);
-        assemble_left(path);
-        this->set_cursor(seed);
-        assemble_right(path);
-    }
-                  
-    std::string to_string(Path& path) {
-        return std::string(path.begin(), path.end());
-    }
-};
-
-
-template<class GraphType>
-AssemblerMixin<GraphType> make_assembler(std::shared_ptr<GraphType> graph) {
-    return AssemblerMixin<GraphType>(graph);
-}
-
-
-template<class GraphType>
-class CompactorMixin : public AssemblerMixin<GraphType> {
-
-public:
-
-    using BaseShifter = typename GraphType::shifter_type;
-    using BaseShifter::_K;
-    using AssemblerType = AssemblerMixin<GraphType>;
-    using AssemblerType::seen;
-    using AssemblerType::get_left;
-    using AssemblerType::get_right;
-    using AssemblerType::degree_left;
-    using AssemblerType::degree_right;
-    using AssemblerType::count_nodes;
-    using AssemblerType::filter_nodes;
-    using AssemblerType::find_left_kmers;
-    using AssemblerType::find_right_kmers;
-    using AssemblerType::gather_left;
-    using AssemblerType::gather_right;
-
-    typedef AssemblerType assembler_type;
-    typedef BaseShifter shifter_type;
-
-    CompactorMixin(std::shared_ptr<GraphType> graph,
-                   BaseShifter           const& shifter)
-        : AssemblerType(graph, shifter)
-    {
-    }
-
-    CompactorMixin(std::shared_ptr<GraphType> graph)
-        : AssemblerType(graph)
-    {
-    }
-
-    std::string compactify(const std::string& seed) {
-        Path path;
-		std::set<hash_t> mask;
-        this->set_cursor(seed);
-        this->get_cursor(path);
-        hash_t end_hash;
-        compactify_left(path, end_hash, mask);
-        this->set_cursor(seed);
-        compactify_right(path, end_hash, mask);
-
-        return this->to_string(path);
-    }
-
-    void compactify_right(Path&             path,
-                          hash_t&           end_hash,
-                          std::set<hash_t>& mask) {
-
-        end_hash = this->get();
-        this->seen.clear();
-        this->seen.insert(this->get());
-        
-        shift_t next;
-        uint8_t n_right;
-        while (1) {
-            if (degree_left() > 1) {
-                path.pop_back();
-                return;
+        std::vector<shift_t> filter_nodes(GraphType * graph,
+                                          const std::vector<shift_t>& nodes) {
+            std::vector<shift_t> result;
+            for (auto node : nodes) {
+                if (graph->query(node.hash)) {
+                    result.push_back(node);
+                }
             }
+            return result;
+        }
 
-            n_right = this->reduce_nodes(this->gather_right(),
-                                         next);
-            if (n_right > 1) {
-                path.pop_back();
-                return;
+        std::vector<shift_t> filter_nodes(GraphType *                 graph,
+                                          const std::vector<shift_t>& nodes,
+                                          std::set<hash_t>&           extra) {
+            std::vector<shift_t> result;
+            for (auto node : nodes) {
+                if (graph->query(node.hash) ||
+                    extra.count(node.hash)) {
+                    result.push_back(node);
+                }
             }
+            return result;
+        }
 
-            if (n_right == 0) {
+        std::vector<kmer_t> find_left_kmers(GraphType * graph) {
+            auto root = this->get_cursor();
+            auto filtered = filter_nodes(graph, this->gather_left());
+            return graph->build_left_kmers(filtered, root);
+        }
+
+        std::vector<kmer_t> find_right_kmers(GraphType * graph) {
+            auto root = this->get_cursor();
+            auto filtered = filter_nodes(graph, this->gather_right());
+            return graph->build_right_kmers(filtered, root);
+        }
+
+        std::vector<kmer_t> find_left_kmers(GraphType *       graph,
+                                            std::set<hash_t>& extras) {
+            auto root = this->get_cursor();
+            auto filtered = filter_nodes(graph, this->gather_left(), extras);
+            return graph->build_left_kmers(filtered, root);
+        }
+
+        std::vector<kmer_t> find_right_kmers(GraphType *       graph,
+                                             std::set<hash_t>& extras) {
+            auto root = this->get_cursor();
+            auto filtered = filter_nodes(graph, this->gather_right(), extras);
+            return graph->build_right_kmers(filtered, root);
+        }
+
+        EndState traverse_left(GraphType *        graph,
+                               const std::string& seed,
+                               Path&              path,
+                               std::set<hash_t>&  mask) {
+
+            this->set_cursor(seed);
+            if (!graph->query(this->get())) {
+                return {State::BAD_SEED, this->get()};
+            } 
+            this->get_cursor(path);
+            return traverse_left(graph, path, mask);
+        }
+
+        EndState traverse_left(GraphType * graph,
+                               Path&       path,
+                               std::set<hash_t>& mask) {
+
+            auto end_hash = this->get();
+            this->seen.clear();
+            this->seen.insert(this->get());
+
+            shift_t next;
+            uint8_t n_left;
+            while (1) {
+                if (degree_right(graph) > 1) {
+                    pdebug("Stop: reverse d-node");
+                    path.pop_front();
+                    return {State::DECISION_RC, end_hash};
+                }
+
+                n_left = this->reduce_nodes(graph,
+                                            this->gather_left(),
+                                            next);
                 end_hash = this->get();
-                return;
-            }
 
-            if (this->seen.count(next.hash) ||
-                mask.count(next.hash)) {
-                end_hash = this->get();
-                return;
-            }
+                if (n_left > 1) {
+                    pdebug("Stop: forward d-node");
+                    return {State::DECISION_FWD, end_hash};
+                }
 
-            end_hash = this->get();
-            this->shift_right(next.symbol);
-            path.push_back(next.symbol);
-            this->seen.insert(next.hash);
+                if (n_left == 0) {
+                    pdebug("Stop: no neighbors.");
+                    return {State::STOP_FWD, end_hash};
+                }
+
+                if (this->seen.count(next.hash)) {
+                    pdebug("Stop: hit seen k-mer.");
+                    return {State::STOP_SEEN, end_hash};       
+                       
+                }
+                if (mask.count(next.hash)) {
+                    pdebug("Stop: hit masked k-mer.");
+                    return {State::STOP_MASKED, end_hash};     
+                }
+                
+                this->shift_left(next.symbol);
+                path.push_front(next.symbol);
+                this->seen.insert(next.hash);
+            }
         }
-    }
 
-    void compactify_left(Path&             path,
-                         hash_t&           end_hash,
-                         std::set<hash_t>& mask) {
+        EndState traverse_right(GraphType *        graph,
+                                const std::string& seed,
+                                Path&              path,
+                                std::set<hash_t>&  mask) {
 
-        end_hash = this->get();
-        this->seen.clear();
-        this->seen.insert(this->get());
-
-        shift_t next;
-        uint8_t n_left;
-        while (1) {
-            if (degree_right() > 1) {
-                pdebug("Stop: reverse d-node");
-                path.pop_front();
-                return;
+            this->set_cursor(seed);
+            if (!graph->query(this->get())) {
+                return {State::BAD_SEED, this->get()};
             }
+            this->get_cursor(path);
+            return traverse_right(graph, path, mask);
+        }
 
-            n_left = this->reduce_nodes(this->gather_left(),
-                                        next);
-            if (n_left > 1) {
-                pdebug("Stop: forward d-node");
-                path.pop_front();
-                return;
-            }
+        EndState traverse_right(GraphType *       graph,
+                                Path&             path,
+                                std::set<hash_t>& mask) {
 
-            if (n_left == 0) {
-                pdebug("Stop: no neighbors.");
-                end_hash = this->get();
-                return;
-            }
-
-            if (this->seen.count(next.hash) ||
-                mask.count(next.hash)) {
-                pdebug("Stop: hit seen k-mer or masked k-mer.");
-                end_hash = this->get();
-                return;
-            }
+            auto end_hash = this->get();
+            this->seen.clear();
+            this->seen.insert(this->get());
             
-            end_hash = this->get();
-            this->shift_left(next.symbol);
-            path.push_front(next.symbol);
-            this->seen.insert(next.hash);
-        }
-    }
+            shift_t next;
+            uint8_t n_right;
+            while (1) {
+                if (degree_left(graph) > 1) {
+                    path.pop_back();
+                    return {State::DECISION_RC, end_hash};
+                }
 
-    bool is_decision_kmer(const std::string& node,
-                          uint8_t& degree) {
-        this->set_cursor(node);
-        return is_decision_kmer(degree);
-    }
+                n_right = this->reduce_nodes(graph,
+                                             this->gather_right(),
+                                             next);
+                end_hash = this->get();
 
-    bool is_decision_kmer(const std::string& node) {
-        this->set_cursor(node);
-        return this->degree_left() > 1 || this->degree_right() > 1;
-    }
+                if (n_right > 1) {
+                    return {State::DECISION_FWD, end_hash};
+                }
 
-    bool is_decision_kmer(uint8_t& degree) {
-        uint8_t ldegree, rdegree;
-        ldegree = this->degree_left();
-        rdegree = this->degree_right();
-        degree = ldegree + rdegree;
-        return ldegree > 1 || rdegree > 1;
-    }
+                if (n_right == 0) {
+                    return {State::STOP_FWD, end_hash};
+                }
 
-    void find_decision_kmers(const std::string&           sequence,
-                             std::vector<uint32_t>&       decision_positions,
-                             std::vector<hash_t>&         decision_hashes,
-                             std::vector<NeighborBundle>& decision_neighbors) {
+                if (this->seen.count(next.hash)) {
+                    pdebug("Stop: hit seen k-mer.");
+                    return {State::STOP_SEEN, end_hash};       
+                       
+                }
+                if (mask.count(next.hash)) {
+                    pdebug("Stop: hit masked k-mer.");
+                    return {State::STOP_MASKED, end_hash};     
+                }
 
-        hashing::KmerIterator<AssemblerType> iter(sequence, this);
-        size_t pos = 0;
-        while(!iter.done()) {
-            hash_t h = iter.next();
-            NeighborBundle neighbors;
-            if (get_decision_neighbors(iter.shifter,
-                                       neighbors)) {
-
-                decision_neighbors.push_back(neighbors);
-                decision_positions.push_back(pos);
-                decision_hashes.push_back(h);
+                this->shift_right(next.symbol);
+                path.push_back(next.symbol);
+                this->seen.insert(next.hash);
             }
-        
-            ++pos;
-       }
-    }
-
-    bool get_decision_neighbors(const std::string& root,
-                                NeighborBundle&    result,
-                                std::set<hash_t>&  union_nodes) {
-        return get_decision_neighbors(this, root, result, union_nodes);
-    }
-
-    bool get_decision_neighbors(NeighborBundle&   result,
-                                std::set<hash_t>& union_nodes) {
-        return get_decision_neighbors(this, result, union_nodes);
-    }
-
-    bool get_decision_neighbors(AssemblerType*     shifter,
-                                const std::string& root,
-                                NeighborBundle&    result,
-                                std::set<hash_t>&  union_nodes) {
-        shifter->set_cursor(root);
-        return get_decision_neighbors(shifter, result, union_nodes);
-    }
-
-    bool get_decision_neighbors(AssemblerType*    shifter,
-                                NeighborBundle&   result,
-                                std::set<hash_t>& union_nodes) {
-
-        auto left_kmers = shifter->find_left_kmers(union_nodes);
-        auto right_kmers = shifter->find_right_kmers(union_nodes);
-        
-        if (left_kmers.size() > 1 || right_kmers.size() > 1) {
-            result = std::make_pair(left_kmers, right_kmers);
-            return true;
-        } else {
-            return false;
         }
-    }
 
-    bool get_decision_neighbors(const std::string& root,
-                                NeighborBundle&    result) {
-        return get_decision_neighbors(this, root, result);
-    }
+        std::pair<EndState, EndState> traverse(GraphType *        graph,
+                                               const std::string& seed,
+                                               Path&              path,
+                                               std::set<hash_t>   mask) {
 
-    bool get_decision_neighbors(NeighborBundle& result) {
-        return get_decision_neighbors(this, result);
-    }
-
-    bool get_decision_neighbors(AssemblerType*     shifter,
-                                const std::string& root,
-                                NeighborBundle&    result) {
-        shifter->set_cursor(root);
-        return get_decision_neighbors(shifter, result);
-    }
-
-    bool get_decision_neighbors(AssemblerType*  shifter,
-                                NeighborBundle& result) {
-
-        auto left_kmers = shifter->find_left_kmers();
-        auto right_kmers = shifter->find_right_kmers();
-        
-        if (left_kmers.size() > 1 || right_kmers.size() > 1) {
-            result = std::make_pair(left_kmers, right_kmers);
-            return true;
-        } else {
-            return false;
+            this->set_cursor(seed);
+            if (!graph->query(this->hash(seed))) {
+                return {{State::BAD_SEED, this->get()},
+                        {State::BAD_SEED, this->get()}};
+            }
+            this->get_cursor(path);
+            auto state_left = traverse_left(graph, path, mask);
+            this->set_cursor(seed);
+            auto state_right = traverse_right(graph, path, mask);
+            return {state_left, state_right};
         }
-    }
+                      
+        std::string to_string(Path& path) {
+            return std::string(path.begin(), path.end());
+        }
+
+        bool is_decision_kmer(GraphType *        graph,
+                              const std::string& node,
+                              uint8_t&           degree) {
+            this->set_cursor(node);
+            return is_decision_kmer(graph, degree);
+        }
+
+        bool is_decision_kmer(GraphType *        graph,
+                              const std::string& node) {
+            this->set_cursor(node);
+            return this->degree_left(graph) > 1 || this->degree_right(graph) > 1;
+        }
+
+        bool is_decision_kmer(GraphType * graph,
+                              uint8_t&    degree) {
+            uint8_t ldegree, rdegree;
+            ldegree = this->degree_left(graph);
+            rdegree = this->degree_right(graph);
+            degree = ldegree + rdegree;
+            return ldegree > 1 || rdegree > 1;
+        }
+
+        void find_decision_kmers(GraphType *                  graph,
+                                 const std::string&           sequence,
+                                 std::vector<uint32_t>&       decision_positions,
+                                 std::vector<hash_t>&         decision_hashes,
+                                 std::vector<NeighborBundle>& decision_neighbors) {
+
+            hashing::KmerIterator<dBG> iter(sequence, this);
+            size_t pos = 0;
+            while(!iter.done()) {
+                hash_t h = iter.next();
+                NeighborBundle neighbors;
+                if (get_decision_neighbors(graph,
+                                           iter.shifter,
+                                           neighbors)) {
+
+                    decision_neighbors.push_back(neighbors);
+                    decision_positions.push_back(pos);
+                    decision_hashes.push_back(h);
+                }
+            
+                ++pos;
+           }
+        }
+
+        bool get_decision_neighbors(GraphType *        graph,
+                                    const std::string& root,
+                                    NeighborBundle&    result,
+                                    std::set<hash_t>&  union_nodes) {
+
+            return get_decision_neighbors(graph, this, root, result, union_nodes);
+        }
+
+        bool get_decision_neighbors(GraphType *       graph,
+                                    NeighborBundle&   result,
+                                    std::set<hash_t>& union_nodes) {
+            return get_decision_neighbors(graph, this, result, union_nodes);
+        }
+
+        bool get_decision_neighbors(GraphType *        graph,
+                                    dBG *              shifter,
+                                    const std::string& root,
+                                    NeighborBundle&    result,
+                                    std::set<hash_t>&  union_nodes) {
+            shifter->set_cursor(root);
+            return get_decision_neighbors(graph, shifter, result, union_nodes);
+        }
+
+        bool get_decision_neighbors(GraphType *       graph,
+                                    dBG *             shifter,
+                                    NeighborBundle&   result,
+                                    std::set<hash_t>& union_nodes) {
+
+            auto left_kmers = shifter->find_left_kmers(graph, union_nodes);
+            auto right_kmers = shifter->find_right_kmers(graph, union_nodes);
+            
+            if (left_kmers.size() > 1 || right_kmers.size() > 1) {
+                result = std::make_pair(left_kmers, right_kmers);
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        bool get_decision_neighbors(GraphType *        graph,
+                                    const std::string& root,
+                                    NeighborBundle&    result) {
+            return get_decision_neighbors(graph, this, root, result);
+        }
+
+        bool get_decision_neighbors(GraphType *     graph,
+                                    NeighborBundle& result) {
+            return get_decision_neighbors(graph, this, result);
+        }
+
+        bool get_decision_neighbors(GraphType *        graph,
+                                    dBG *              shifter,
+                                    const std::string& root,
+                                    NeighborBundle&    result) {
+            shifter->set_cursor(root);
+            return get_decision_neighbors(graph, shifter, result);
+        }
+
+        bool get_decision_neighbors(GraphType *     graph,
+                                    dBG *           shifter,
+                                    NeighborBundle& result) {
+
+            auto left_kmers = shifter->find_left_kmers(graph);
+            auto right_kmers = shifter->find_right_kmers(graph);
+            
+            if (left_kmers.size() > 1 || right_kmers.size() > 1) {
+                result = std::make_pair(left_kmers, right_kmers);
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+    };
 };
-
 }
 
 #undef pdebug

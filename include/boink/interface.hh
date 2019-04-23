@@ -1,7 +1,17 @@
 #include "boink/boink.hh"
 
-#include "boink/hashing/kmeriterator.hh"
 #include "boink/hashing/hashing_types.hh"
+
+#include "boink/storage/storage.hh"
+#include "boink/storage/nibblestorage.hh"
+#include "boink/storage/bitstorage.hh"
+#include "boink/storage/qfstorage.hh"
+#include "boink/storage/bytestorage.hh"
+#include "boink/storage/partitioned_storage.hh"
+#include "boink/storage/sparseppstorage.hh"
+#include "boink/storage/sparsepp/spp.h"
+
+#include "boink/hashing/kmeriterator.hh"
 #include "boink/hashing/hashshifter.hh"
 #include "boink/hashing/exceptions.hh"
 #include "boink/hashing/alphabets.hh"
@@ -18,34 +28,18 @@
 
 #include "boink/metrics.hh"
 
-#include "boink/storage/nibblestorage.hh"
-#include "boink/storage/bitstorage.hh"
-#include "boink/storage/storage.hh"
-#include "boink/storage/qfstorage.hh"
-#include "boink/storage/bytestorage.hh"
-#include "boink/storage/partitioned_storage.hh"
-#include "boink/storage/sparseppstorage.hh"
 
 #include "boink/dbg.hh"
 #include "boink/pdbg.hh"
 #include "boink/assembly.hh"
 
-#include "boink/reporting/cdbg_writer_reporter.hh"
-#include "boink/reporting/report_types.hh"
 #include "boink/reporting/reporters.hh"
-#include "boink/reporting/cdbg_component_reporter.hh"
-#include "boink/reporting/cdbg_history_reporter.hh"
-#include "boink/reporting/streaming_compactor_reporter.hh"
-#include "boink/reporting/cdbg_unitig_reporter.hh"
 
 #include "boink/processors.hh"
-
-#include "boink/normalization/diginorm.hh"
 
 #include "boink/cdbg/cdbg_types.hh"
 #include "boink/cdbg/compactor.hh"
 #include "boink/cdbg/cdbg.hh"
-#include "boink/cdbg/solid_compactor.hh"
 #include "boink/cdbg/metrics.hh"
 
 #include "boink/minimizers.hh"
@@ -122,37 +116,37 @@ template class boink::PdBG<boink::storage::SparseppSetStorage>;
 
 
 extern
-template class boink::AssemblerMixin<boink::dBG<boink::storage::BitStorage,
-                                                boink::hashing::RollingHashShifter>>;
+template class boink::cdbg::cDBG<boink::dBG<boink::storage::BitStorage,
+                                            boink::hashing::RollingHashShifter>>;
 extern
-template class boink::AssemblerMixin<boink::dBG<boink::storage::ByteStorage,
-                                                boink::hashing::RollingHashShifter>>;
+template class boink::cdbg::cDBG<boink::dBG<boink::storage::ByteStorage,
+                                            boink::hashing::RollingHashShifter>>;
 extern
-template class boink::AssemblerMixin<boink::dBG<boink::storage::NibbleStorage,
-                                                boink::hashing::RollingHashShifter>>;
+template class boink::cdbg::cDBG<boink::dBG<boink::storage::NibbleStorage,
+                                            boink::hashing::RollingHashShifter>>;
 extern
-template class boink::AssemblerMixin<boink::dBG<boink::storage::QFStorage,
-                                                boink::hashing::RollingHashShifter>>;
+template class boink::cdbg::cDBG<boink::dBG<boink::storage::QFStorage,
+                                            boink::hashing::RollingHashShifter>>;
 extern
-template class boink::AssemblerMixin<boink::dBG<boink::storage::SparseppSetStorage,
-                                                boink::hashing::RollingHashShifter>>;
+template class boink::cdbg::cDBG<boink::dBG<boink::storage::SparseppSetStorage,
+                                            boink::hashing::RollingHashShifter>>;
 
 
 extern
-template class boink::CompactorMixin<boink::dBG<boink::storage::BitStorage,
-                                                boink::hashing::RollingHashShifter>>;
+template struct boink::Traverse<boink::dBG<boink::storage::BitStorage,
+                                                        boink::hashing::RollingHashShifter>>;
 extern
-template class boink::CompactorMixin<boink::dBG<boink::storage::ByteStorage,
-                                                boink::hashing::RollingHashShifter>>;
+template struct boink::Traverse<boink::dBG<boink::storage::ByteStorage,
+                                                        boink::hashing::RollingHashShifter>>;
 extern
-template class boink::CompactorMixin<boink::dBG<boink::storage::NibbleStorage,
-                                                boink::hashing::RollingHashShifter>>;
+template struct boink::Traverse<boink::dBG<boink::storage::NibbleStorage,
+                                                        boink::hashing::RollingHashShifter>>;
 extern
-template class boink::CompactorMixin<boink::dBG<boink::storage::QFStorage,
-                                                boink::hashing::RollingHashShifter>>;
+template struct boink::Traverse<boink::dBG<boink::storage::QFStorage,
+                                                        boink::hashing::RollingHashShifter>>;
 extern
-template class boink::CompactorMixin<boink::dBG<boink::storage::SparseppSetStorage,
-                                                boink::hashing::RollingHashShifter>>;
+template struct boink::Traverse<boink::dBG<boink::storage::SparseppSetStorage,
+                                                        boink::hashing::RollingHashShifter>>;
 
 
 extern
@@ -171,24 +165,6 @@ extern
 template class boink::FileConsumer<boink::dBG<boink::storage::SparseppSetStorage,
                                               boink::hashing::RollingHashShifter>>;
 
-
-extern
-template class boink::DecisionNodeProcessor<boink::dBG<boink::storage::BitStorage,
-                                                       boink::hashing::RollingHashShifter>>;
-extern
-template class boink::DecisionNodeProcessor<boink::dBG<boink::storage::ByteStorage,
-                                                       boink::hashing::RollingHashShifter>>;
-extern
-template class boink::DecisionNodeProcessor<boink::dBG<boink::storage::NibbleStorage,
-                                                       boink::hashing::RollingHashShifter>>;
-extern
-template class boink::DecisionNodeProcessor<boink::dBG<boink::storage::QFStorage,
-                                                       boink::hashing::RollingHashShifter>>;
-extern
-template class boink::DecisionNodeProcessor<boink::dBG<boink::storage::SparseppSetStorage,
-                                                       boink::hashing::RollingHashShifter>>;
-
-
 extern
 template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::BitStorage,
                                                boink::hashing::RollingHashShifter>>;
@@ -205,24 +181,6 @@ extern
 template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::SparseppSetStorage,
                                                boink::hashing::RollingHashShifter>>;
 
-
-extern
-template class boink::StreamingCompactorProcessor<boink::dBG<boink::storage::BitStorage,
-                                                             boink::hashing::RollingHashShifter>>;
-extern
-template class boink::StreamingCompactorProcessor<boink::dBG<boink::storage::ByteStorage,
-                                                             boink::hashing::RollingHashShifter>>;
-extern
-template class boink::StreamingCompactorProcessor<boink::dBG<boink::storage::NibbleStorage,
-                                                             boink::hashing::RollingHashShifter>>;
-extern
-template class boink::StreamingCompactorProcessor<boink::dBG<boink::storage::QFStorage,
-                                                             boink::hashing::RollingHashShifter>>;
-extern
-template class boink::StreamingCompactorProcessor<boink::dBG<boink::storage::SparseppSetStorage,
-                                                             boink::hashing::RollingHashShifter>>;
-
-
 extern
 template class boink::signatures::UnikmerSignature<boink::storage::BitStorage>;
 extern
@@ -233,3 +191,7 @@ extern
 template class boink::signatures::UnikmerSignature<boink::storage::QFStorage>;
 extern
 template class boink::signatures::UnikmerSignature<boink::storage::SparseppSetStorage>;
+
+
+extern
+template class boink::WKMinimizer<boink::hashing::RollingHashShifter>;

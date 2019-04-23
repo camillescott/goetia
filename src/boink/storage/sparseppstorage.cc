@@ -8,3 +8,7 @@
  */
 
 #include "boink/storage/sparseppstorage.hh"
+#include "boink/storage/sparsepp/spp.h"
+
+#include <cstdint>
+

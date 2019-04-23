@@ -15,8 +15,13 @@
 #include <vector>
 
 #include "boink/hashing/hashing_types.hh"
+#include "boink/hashing/rollinghashshifter.hh"
 #include "boink/hashing/kmeriterator.hh"
 #include "boink/kmers/kmerclient.hh"
+
+#include "boink/parsing/parsing.hh"
+#include "boink/parsing/readers.hh"
+#include "boink/processors.hh"
 
 
 namespace boink {
@@ -142,55 +147,108 @@ public:
 
 
 template <class ShifterType>
-class WKMinimizer : public InteriorMinimizer<hashing::hash_t>,
-                    public kmers::KmerClient {
+struct WKMinimizer {
 
-public:
+    typedef ShifterType shifter_type;
 
-    using InteriorMinimizer<hashing::hash_t>::InteriorMinimizer;
-    using typename InteriorMinimizer<hashing::hash_t>::value_type;
+    class Minimizer : public InteriorMinimizer<hashing::hash_t>,
+                      public kmers::KmerClient {
 
-    WKMinimizer(int64_t window_size,
-                uint16_t K)
-        : InteriorMinimizer<hashing::hash_t>(window_size),
-          kmers::KmerClient(K) {
-    }
+    public:
 
-    std::vector<value_type> get_minimizers(const std::string& sequence) {
-        hashing::KmerIterator<ShifterType> iter(sequence, this->_K);
-        this->reset();
+        using InteriorMinimizer<hashing::hash_t>::InteriorMinimizer;
+        using typename InteriorMinimizer<hashing::hash_t>::value_type;
+
+        Minimizer(int64_t window_size,
+                  uint16_t K)
+            : InteriorMinimizer<hashing::hash_t>(window_size),
+              kmers::KmerClient(K) {
+        }
+
+        std::vector<value_type> get_minimizers(const std::string& sequence) {
+            hashing::KmerIterator<ShifterType> iter(sequence, this->_K);
+            this->reset();
+            
+            while(!iter.done()) {
+                hashing::hash_t h = iter.next();
+                InteriorMinimizer<hashing::hash_t>::update(h);
+            }
+
+            return InteriorMinimizer<hashing::hash_t>::get_minimizers();
+        }
+
+        std::vector<hashing::hash_t> get_minimizer_values(const std::string& sequence) {
+            hashing::KmerIterator<ShifterType> iter(sequence, this->_K);
+            this->reset();
+
+            while(!iter.done()) {
+                hashing::hash_t h = iter.next();
+                InteriorMinimizer<hashing::hash_t>::update(h);
+            }
+
+            return InteriorMinimizer<hashing::hash_t>::get_minimizer_values();
+        }
+
+        std::vector<std::pair<std::string, int64_t>> get_minimizer_kmers(const std::string& sequence) {
+            std::vector<value_type> minimizers = get_minimizers(sequence);
+            std::vector<std::pair<std::string, int64_t>> kmers;
+            for (auto min : minimizers) {
+                kmers.push_back(std::make_pair(sequence.substr(min.second, this->_K),
+                                               min.second));
+            }
+            return kmers;
+        }
+    };
+
+
+    class Processor : public FileProcessor<Processor,
+                                           parsing::FastxReader> {
+
+    protected:
+
+        Minimizer      M;
+        std::string   _output_filename;
+        std::ofstream _output_stream;
+
+        typedef FileProcessor<Processor, parsing::FastxReader> Base;
+    public:
+
+        using Base::process_sequence;
+
+        Processor(int32_t window_size,
+                  uint16_t K,
+                  const std::string& output_filename,
+                  uint64_t fine_interval   = DEFAULT_INTERVALS::FINE,
+                  uint64_t medium_interval = DEFAULT_INTERVALS::MEDIUM,
+                  uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE)
+            : Base(fine_interval, medium_interval, coarse_interval),
+              M(window_size, K),
+              _output_filename(output_filename),
+              _output_stream(_output_filename.c_str()) {
         
-        while(!iter.done()) {
-            hashing::hash_t h = iter.next();
-            InteriorMinimizer<hashing::hash_t>::update(h);
         }
 
-        return InteriorMinimizer<hashing::hash_t>::get_minimizers();
-    }
-
-    std::vector<hashing::hash_t> get_minimizer_values(const std::string& sequence) {
-        hashing::KmerIterator<ShifterType> iter(sequence, this->_K);
-        this->reset();
-
-        while(!iter.done()) {
-            hashing::hash_t h = iter.next();
-            InteriorMinimizer<hashing::hash_t>::update(h);
+        ~Processor() {
+            _output_stream.close();
         }
 
-        return InteriorMinimizer<hashing::hash_t>::get_minimizer_values();
-    }
+        void process_sequence(const parsing::Read& read) {
+            std::vector<typename Minimizer::value_type> minimizers;
+            minimizers = M.get_minimizers(read.cleaned_seq);
 
-    std::vector<std::pair<std::string, int64_t>> get_minimizer_kmers(const std::string& sequence) {
-        std::vector<value_type> minimizers = get_minimizers(sequence);
-        std::vector<std::pair<std::string, int64_t>> kmers;
-        for (auto min : minimizers) {
-            kmers.push_back(std::make_pair(sequence.substr(min.second, this->_K),
-                                           min.second));
+            for (auto min : minimizers) {
+                _output_stream << this->n_reads() << ","
+                               << min.second << ","
+                               << min.first << ","
+                               << read.cleaned_seq.substr(min.second, M.K())
+                               << std::endl;
+            }
         }
-        return kmers;
-    }
+
+        void report() {}
+    };
+
 };
-
 
 }
 

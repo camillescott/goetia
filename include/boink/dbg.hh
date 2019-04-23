@@ -10,13 +10,12 @@
 #ifndef BOINK_DBG_HH
 #define BOINK_DBG_HH
 
-
-#include "boink/assembly.hh"
 #include "boink/hashing/hashing_types.hh"
 #include "boink/hashing/kmeriterator.hh"
 #include "boink/kmers/kmerclient.hh"
 #include "boink/storage/storage.hh"
 #include "boink/storage/sparseppstorage.hh"
+#include "boink/assembly.hh"
 
 #include <algorithm>
 #include <memory>
@@ -25,14 +24,10 @@
 
 namespace boink {
 
-namespace storage {
-    class SparseppSetStorage;
-}
 
 template <class StorageType,
           class HashShifter>
-class dBG : public kmers::KmerClient,
-            public std::enable_shared_from_this<dBG<StorageType, HashShifter>> {
+class dBG : public kmers::KmerClient {
 
 protected:
 
@@ -41,9 +36,9 @@ protected:
 
 public:
 
-    typedef HashShifter                                   shifter_type;
-	typedef AssemblerMixin<dBG<StorageType, HashShifter>> assembler_type;
-    typedef hashing::KmerIterator<HashShifter>            kmer_iter_type;
+    typedef HashShifter                             shifter_type;
+    typedef Traverse<dBG<StorageType, HashShifter>> traversal_type;
+    typedef hashing::KmerIterator<HashShifter>      kmer_iter_type;
     
     template <typename... Args>
     explicit dBG(uint16_t K, Args&&... args)
@@ -237,9 +232,9 @@ public:
      * @Returns   shift_t objects with the prefix bases and hashes.
      */
     std::vector<hashing::shift_t> left_neighbors(const std::string& root) {
-        auto assembler = this->get_assembler();
-        assembler->set_cursor(root);
-        return assembler->filter_nodes(assembler->gather_left());
+        auto traverser = typename traversal_type::dBG(this->K());
+        traverser.set_cursor(root);
+        return traverser.filter_nodes(this, traverser.gather_left());
     }
 
     /**
@@ -262,9 +257,9 @@ public:
      * @Returns   shift_t objects with the suffix bases and hashes.
      */
     std::vector<hashing::shift_t> right_neighbors(const std::string& root) {
-        auto assembler = this->get_assembler();
-        assembler->set_cursor(root);
-        return assembler->filter_nodes(assembler->gather_right());
+        auto traverser = typename traversal_type::dBG(this->K());
+        traverser.set_cursor(root);
+        return traverser.filter_nodes(this, traverser.gather_right());
     }
 
     /**
@@ -288,10 +283,10 @@ public:
      */
     std::pair<std::vector<hashing::shift_t>,
               std::vector<hashing::shift_t>> neighbors(const std::string& root) {
-        auto assembler = this->get_assembler();
-        assembler->set_cursor(root);
-        auto lfiltered = assembler->filter_nodes(assembler->gather_left());
-        auto rfiltered = assembler->filter_nodes(assembler->gather_right());
+        auto traverser = typename traversal_type::dBG(this->K());
+        traverser.set_cursor(root);
+        auto lfiltered = traverser.filter_nodes(this, traverser.gather_left());
+        auto rfiltered = traverser.filter_nodes(this, traverser.gather_right());
         return std::make_pair(lfiltered, rfiltered);
     }
 
@@ -459,11 +454,6 @@ public:
 
     std::shared_ptr<hashing::KmerIterator<HashShifter>> get_hash_iter(const std::string& sequence) {
         return std::make_shared<hashing::KmerIterator<HashShifter>>(sequence, _K);
-    }
-
-    std::shared_ptr<assembler_type> get_assembler() {
-        auto ptr = this->shared_from_this();
-        return std::make_shared<assembler_type>(ptr);
     }
 
 };

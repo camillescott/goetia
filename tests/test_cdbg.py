@@ -9,18 +9,18 @@ import itertools
 import sys
 
 import pytest
-from boink.tests.utils import *
+from tests.utils import *
 
-from boink.compactor import display_segment_list, StreamingCompactor
 from boink.prometheus import Instrumentation
+from boink import libboink
 
 
 @pytest.fixture
-def compactor(ksize, graph, graph_type):
-    _graph_type, AdapterType = graph_type
+def compactor(ksize, graph, storage_type):
     instrumentation = Instrumentation('', expose=False)
-    compactor = StreamingCompactor.build(graph,
-                                         instrumentation=instrumentation)
+    compactor_type = libboink.cdbg.StreamingCompactor[type(graph)].Compactor
+    compactor = compactor_type.build(graph,
+                                     instrumentation.Registry)
     return compactor
 
 
@@ -44,12 +44,12 @@ class TestFindNewSegments:
 
         # should be NULL - SEG - NULL
         print('Core Segments')
-        display_segment_list(core_segments)
+        #display_segment_list(core_segments)
         for s in core_segments:
             print('segment:', s.sequence)
         # again NULL - SEG - NULL
         print('Branch Segments')
-        display_segment_list(branch_segments)
+        #display_segment_list(branch_segments)
         for s in branch_segments:
             print('segment:', s.sequence)
 
@@ -91,12 +91,12 @@ class TestFindNewSegments:
         graph.insert_sequence(core)
 
         print('Branch Segments')
-        display_segment_list(branch_segments)
+        #display_segment_list(branch_segments)
         for s in branch_segments:
             print('segment:' + s.sequence)
 
         print('Core Segments')
-        display_segment_list(core_segments)
+        #display_segment_list(core_segments)
         for s in core_segments:
             print('segment:' + s.sequence)
 
@@ -191,7 +191,7 @@ class TestFindNewSegments:
         assert lower_segments[1].sequence == lower
 
         test_segments = benchmark(compactor.find_new_segments, test)
-        display_segment_list(test_segments)
+        #display_segment_list(test_segments)
 
         assert test_segments[0].is_null
         assert len(test_segments) == 4
@@ -227,7 +227,7 @@ class TestFindNewSegments:
         assert lower_segments[1].sequence == lower
 
         test_segments = benchmark(compactor.find_new_segments, test)
-        display_segment_list(test_segments)
+        #display_segment_list(test_segments)
 
         assert len(test_segments) == 4
         assert test_segments[1].is_decision_kmer

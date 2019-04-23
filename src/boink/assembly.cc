@@ -12,25 +12,14 @@
 using namespace boink;
 
 
-template class boink::AssemblerMixin<boink::dBG<boink::storage::BitStorage,
-                                                boink::hashing::RollingHashShifter>>;
-template class boink::AssemblerMixin<boink::dBG<boink::storage::ByteStorage,
-                                                boink::hashing::RollingHashShifter>>;
-template class boink::AssemblerMixin<boink::dBG<boink::storage::NibbleStorage,
-                                                boink::hashing::RollingHashShifter>>;
-template class boink::AssemblerMixin<boink::dBG<boink::storage::QFStorage,
-                                                boink::hashing::RollingHashShifter>>;
-template class boink::AssemblerMixin<boink::dBG<boink::storage::SparseppSetStorage,
-                                                boink::hashing::RollingHashShifter>>;
+template struct boink::Traverse<boink::dBG<boink::storage::BitStorage,
+                                           boink::hashing::RollingHashShifter>>;
+template struct boink::Traverse<boink::dBG<boink::storage::ByteStorage,
+                                           boink::hashing::RollingHashShifter>>;
+template struct boink::Traverse<boink::dBG<boink::storage::NibbleStorage,
+                                           boink::hashing::RollingHashShifter>>;
+template struct boink::Traverse<boink::dBG<boink::storage::QFStorage,
+                                           boink::hashing::RollingHashShifter>>;
+template struct boink::Traverse<boink::dBG<boink::storage::SparseppSetStorage,
+                                           boink::hashing::RollingHashShifter>>;
 
-
-template class boink::CompactorMixin<boink::dBG<boink::storage::BitStorage,
-                                                boink::hashing::RollingHashShifter>>;
-template class boink::CompactorMixin<boink::dBG<boink::storage::ByteStorage,
-                                                boink::hashing::RollingHashShifter>>;
-template class boink::CompactorMixin<boink::dBG<boink::storage::NibbleStorage,
-                                                boink::hashing::RollingHashShifter>>;
-template class boink::CompactorMixin<boink::dBG<boink::storage::QFStorage,
-                                                boink::hashing::RollingHashShifter>>;
-template class boink::CompactorMixin<boink::dBG<boink::storage::SparseppSetStorage,
-                                                boink::hashing::RollingHashShifter>>;

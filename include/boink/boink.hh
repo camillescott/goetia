@@ -13,8 +13,13 @@
 #include <exception>
 #include <string>
 #include <iostream>
-#include <type_traits>
 #include <iterator>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <type_traits>
+#include <utility>
 
 namespace boink {
 
@@ -33,25 +38,31 @@ enum direction_t {
 };
 
 
+template <typename T>
+std::string repr(const T& item) {
+    return std::to_string(item);
+}
 
 template<typename _Ty1, typename _Ty2>
-std::ostream& operator<<(std::ostream& _os, const std::pair<_Ty1, _Ty2>& _p) {
+std::string repr(const std::pair<_Ty1, _Ty2>& _p) {
+    std::ostringstream _os;
     _os << "(" << _p.first << ", " << _p.second << ")";
-    return _os;
+    return _os.str();
 }
 
 template <template<typename, typename> class Container, class T, class A>
-std::ostream& operator<<(std::ostream& os, const Container<T,A>& v)
-{
+std::string repr(const Container<T,A>& v) {
+    std::ostringstream os;
     os << "[";
     for (size_t i = 0; i < v.size(); ++i) {
-        os << v[i];
+        os << repr(v[i]);
         if (i != v.size() - 1)
             os << ", ";
     }
     os << "]";
-    return os;
+    return os.str();
 }
+
 
 class BoinkException : public std::exception {
 public:
