@@ -135,13 +135,14 @@ public:
     }
 
     std::string get_cursor() const {
-        return std::string(kmer_buffer,
-                           kmer_buffer + this->_K);
+        return std::string(kmer_window.begin(),
+                           kmer_window.end());
     }
 
     void get_cursor(std::deque<char>& d) const {
-        for (uint16_t i = 0; i < this->_K; ++i) {
-            d.push_back(kmer_buffer[i]);
+
+        for (auto symbol : kmer_window) {
+            d.push_back(symbol);
         }
     }
 
