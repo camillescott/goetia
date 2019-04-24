@@ -15,7 +15,6 @@ if(DEFINED ENV{CONDA_PREFIX})
     set(CMAKE_INSTALL_PREFIX "$ENV{CONDA_PREFIX}")
     set(CMAKE_PREFIX_PATH "$ENV{CONDA_PREFIX}")
     set(CMAKE_INCLUDE_PATH "$ENV{CONDA_PREFIX}/include")
-    #include_directories($ENV{CONDA_PREFIX}/include)
     set(CMAKE_LIBRARY_PATH "$ENV{CONDA_PREFIX}/lib")
 endif()
 
@@ -38,7 +37,10 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_LINK_WHAT_YOU_USE TRUE)
 if(NOT CMAKE_BUILD_TYPE) 
-    set(CMAKE_BUILD_TYPE Release)
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING
+        "Choose the type of build, options are: Debug Release"
+        FORCE
+    )
 endif(NOT CMAKE_BUILD_TYPE)
 
 #
