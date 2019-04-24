@@ -5,6 +5,7 @@
         <class pattern="boink::signatures::*"/>
         <namespace pattern="boink::cdbg::*"/>
         <namespace pattern="boink::hashing::*"/>
+        <namespace pattern="boink::metrics::*"/>
 
         <class pattern="boink::dBG<*, *>"/>
         <class pattern="boink::PdBG<*>"/>
