@@ -1,3 +1,12 @@
+.. image:: https://travis-ci.org/camillescott/boink.svg?branch=master
+    :target: https://travis-ci.org/camillescott/boink
+    
+boink
+-----
+
+Installation
+============
+
 For this repository with anaconda::
 
     conda create -n libboink python=3 cmake cxx-compiler c-compiler clangdev libcxx libstdcxx-ng libgcc-ng pytest numpy scipy
