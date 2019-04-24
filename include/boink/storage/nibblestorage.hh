@@ -112,7 +112,9 @@ public:
 
     NibbleStorage(const std::vector<uint64_t>& tablesizes) :
         _tablesizes{tablesizes},
-        _occupied_bins{0}, _n_unique_kmers{0}
+        _n_tables(_tablesizes.size()),
+        _occupied_bins{0},
+        _n_unique_kmers{0}
     {
         // to allow more than 32 tables increase the size of mutex pool
         assert(_n_tables <= 32);
@@ -138,8 +140,6 @@ public:
 
     void _allocate_counters()
     {
-        _n_tables = _tablesizes.size();
-
         _counts = new byte_t*[_n_tables];
 
         for (size_t i = 0; i < _n_tables; i++) {
