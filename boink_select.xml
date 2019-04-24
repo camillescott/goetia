@@ -6,6 +6,8 @@
         <namespace pattern="boink::cdbg::*"/>
         <namespace pattern="boink::hashing::*"/>
         <namespace pattern="boink::metrics::*"/>
+        <namespace pattern="boink::TraversalState::*"/>
+        <enum name="boink::TraversalState::State"/>
 
         <class pattern="boink::dBG<*, *>"/>
         <class pattern="boink::PdBG<*>"/>

@@ -36,9 +36,10 @@ def test_assembler_cursor_wrong_size(asm, ksize):
 
 class TestLinear:
 
-    def test_all_start_positions(self, ksize, linear_path, asm, consume):
+    def test_all_start_positions(self, ksize, linear_path, asm, consume, check_fp):
         # assemble entire contig, starting from wherever
         contig = linear_path()
+        check_fp()
         consume()
 
         for start in range(0, len(contig), 150):
@@ -51,9 +52,10 @@ class TestLinear:
 
     @using_ksize(9)
     @using_length(81)
-    def test_all_left_to_beginning(self, ksize, length, linear_path, asm, consume):
+    def test_all_left_to_beginning(self, ksize, length, linear_path, asm, consume, check_fp):
         # assemble directed left
         contig = linear_path()
+        check_fp()
         consume()
 
         for start in range(0, len(contig), length // 5):
@@ -66,9 +68,10 @@ class TestLinear:
 
     @using_ksize(9)
     @using_length(81)
-    def test_all_right_to_end(self, ksize, length, linear_path, asm, consume):
+    def test_all_right_to_end(self, ksize, length, linear_path, asm, consume, check_fp):
         # assemble directed right
         contig = linear_path()
+        check_fp()
         consume()
 
         for start in range(0, len(contig), length // 5):
@@ -79,8 +82,9 @@ class TestLinear:
             assert path == contig[start:], start
             assert state == STATES.STOP_FWD
 
-    def test_circular(self, ksize, circular, asm, consume):
+    def test_circular(self, ksize, circular, asm, consume, check_fp):
         contig = circular()
+        check_fp()
         consume()
 
         path, (state, end) = asm.assemble_right(contig[:ksize])
@@ -90,8 +94,9 @@ class TestLinear:
 
 class TestDecisions:
 
-    def test_decision_fwd(self, ksize, right_fork, asm, graph, consume):
+    def test_decision_fwd(self, ksize, right_fork, asm, graph, consume, check_fp):
         (sequence, branch), S = right_fork()
+        check_fp()
         consume()
 
         path, (state, end) = asm.assemble_right(sequence[:ksize])
@@ -103,10 +108,11 @@ class TestDecisions:
         assert branch == assembled_branch
 
     
-    def test_decision_rc(self, ksize, right_fork, asm, graph, consume):
+    def test_decision_rc(self, ksize, right_fork, asm, graph, consume, check_fp):
         '''Test that we assemble through fork from the right when we haven't
         assembled the core path already.'''
         (sequence, branch), S = right_fork()
+        check_fp()
         consume()
         
         path, (lstate, lend), (rstate, rend) = asm.assemble(branch[-ksize:])
@@ -121,8 +127,9 @@ class TestDecisions:
 
 
     def test_triple_decision_fwd(self, ksize, right_triple_fork,
-                                 asm, consume):
+                                 asm, consume, check_fp):
         (core, top, bottom), S = right_triple_fork()
+        check_fp()
         consume()
         
         path, (state, end) = asm.assemble_right(core[:ksize])

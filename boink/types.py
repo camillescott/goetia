@@ -6,4 +6,3 @@ storage_types = [(libboink.storage.SparseppSetStorage, ()),
                  (libboink.storage.ByteStorage, (100000, 4)),
                  (libboink.storage.NibbleStorage, (100000, 4))]
 
-# (libboink.storage.QFStorage, (16,)),
