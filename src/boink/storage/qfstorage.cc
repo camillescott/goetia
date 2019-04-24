@@ -55,7 +55,7 @@
 
 #include "boink/boink.hh"
 #include "boink/hashing/hashing_types.hh"
-#include "cqf/gqf.h"
+#include "boink/storage/cqf/gqf.h"
 
 using namespace std;
 using namespace boink;

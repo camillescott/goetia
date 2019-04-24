@@ -29,7 +29,7 @@
 #include <unistd.h>
 #include <sys/mman.h>
 
-#include "gqf.h"
+#include "boink/storage/cqf/gqf.h"
 
 /* Can be
 	 0 (choose size at run-time),

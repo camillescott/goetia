@@ -15,6 +15,7 @@ set(_headers
     include/boink/hashing/kmeriterator.hh
     include/boink/hashing/rollinghashshifter.hh
     include/boink/hashing/ukhshashshifter.hh
+    include/boink/hashing/smhasher/MurmurHash3.h
     include/boink/hashing/ukhs.hh
     include/boink/interface.hh
     include/boink/kmers/kmerclient.hh
@@ -33,7 +34,9 @@ set(_headers
     include/boink/storage/sparseppstorage.hh
     include/boink/storage/storage.hh
     include/boink/storage/storage_types.hh
+    include/boink/storage/cqf/gqf.h
     include/boink/signatures/ukhs_signature.hh
+    include/boink/signatures/sourmash/kmer_min_hash.hh
 )
 
 set(_sources
@@ -44,10 +47,12 @@ set(_sources
     src/boink/storage/bitstorage.cc
     src/boink/storage/sparseppstorage.cc
     src/boink/storage/nibblestorage.cc
+    src/boink/storage/cqf/gqf.c
     src/boink/processors.cc
     src/boink/metrics.cc
     src/boink/events.cc
     src/boink/reporting/reporters.cc
+    src/boink/hashing/smhasher/MurmurHash3.cc
     src/boink/hashing/hashshifter.cc
     src/boink/hashing/alphabets.cc
     src/boink/hashing/kmeriterator.cc

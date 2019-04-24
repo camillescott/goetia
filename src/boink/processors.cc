@@ -16,7 +16,7 @@
 #include "boink/hashing/rollinghashshifter.hh"
 #include "boink/storage/storage_types.hh"
 
-#include "sourmash/kmer_min_hash.hh"
+#include "boink/signatures/sourmash/kmer_min_hash.hh"
 
 namespace boink {
 

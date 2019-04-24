@@ -30,7 +30,7 @@ list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_SOURCE_DIR}/cmake)
 find_package(Cppyy)
 
 #
-# Make the default build us c++14 and "RELEASE" (-O3)
+# Make the default build use c++14 and "RELEASE" (-O3)
 #
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -41,23 +41,6 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif(NOT CMAKE_BUILD_TYPE)
 
-#
-# Add CQF as an object target: we'll include the resulting object directly
-# in the boink shared library build
-#
-add_library(cqf OBJECT
-            src/cqf/gqf.c 
-)
-target_include_directories(cqf PUBLIC include/cqf)
-
-#
-# Do the same object target method for smhasher.
-#
-add_library(smhasher OBJECT
-            src/smhasher/MurmurHash3.cc
-)
-target_include_directories(smhasher PRIVATE include/smhasher)
-set_property(TARGET smhasher PROPERTY LINK_WHAT_YOU_USE TRUE)
 #
 # gfakluge has its own Makefile for produces its static library; run it.
 #
@@ -73,8 +56,6 @@ set_property(TARGET gfakluge PROPERTY LINK_WHAT_YOU_USE TRUE)
 #
 add_library(boink SHARED
             ${LIB_SOURCES}
-            $<TARGET_OBJECTS:cqf>    
-            $<TARGET_OBJECTS:smhasher>
 )
 set_target_properties(boink PROPERTIES LINKER_LANGUAGE CXX)
 set_property(TARGET boink PROPERTY LINK_WHAT_YOU_USE TRUE)
@@ -126,9 +107,7 @@ add_dependencies(boink gfakluge)
 target_include_directories(boink PUBLIC third-party/gfakluge/src/)
 target_include_directories(boink PRIVATE third-party/)
 target_include_directories(boink PRIVATE include/)
-target_include_directories(boink PUBLIC include/boink)
 target_include_directories(boink PUBLIC ${PROMETHEUS_INCLUDE_DIRS})
-target_include_directories(boink PUBLIC include/cqf)
 
 #
 # Configure the boink pc.

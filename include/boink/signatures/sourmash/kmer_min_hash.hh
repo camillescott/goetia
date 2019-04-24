@@ -8,7 +8,7 @@
 #include <exception>
 #include <string>
 
-#include "smhasher/MurmurHash3.h"
+#include "boink/hashing/smhasher/MurmurHash3.h"
 
 
 #define tbl \
