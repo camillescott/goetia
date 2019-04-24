@@ -44,11 +44,6 @@
 namespace boink {
 namespace events {
 
-using std::shared_ptr;
-using std::make_shared;
-using std::unique_ptr;
-using std::make_unique;
-
 
 class ScopedThread {
 
@@ -83,7 +78,7 @@ protected:
     std::mutex m_mutex;
     std::condition_variable m_cv;
     std::unique_ptr<ScopedThread> m_thread;
-    std::deque<shared_ptr<events::Event>> m_queue;
+    std::deque<std::shared_ptr<events::Event>> m_queue;
     std::set<events::event_t> msg_type_whitelist;
     bool _shutdown;
     uint64_t _to_process;
@@ -104,7 +99,7 @@ public:
           THREAD_NAME("EventListener::" + thread_name)
     {
         msg_type_whitelist.insert(MSG_EXIT_THREAD);
-        m_thread = make_unique<ScopedThread>
+        m_thread = std::make_unique<ScopedThread>
             (std::move(std::thread(&EventListener::process, this)));
     }
 
@@ -117,7 +112,7 @@ public:
     }
 
     void exit_thread() {
-		auto _exit_event = make_shared<Event>(MSG_EXIT_THREAD);
+		auto _exit_event = std::make_shared<Event>(MSG_EXIT_THREAD);
         {
             std::unique_lock<std::mutex> lock(m_mutex);
             m_queue.push_back(_exit_event);
@@ -143,7 +138,7 @@ public:
         return std::this_thread::get_id();
 	}
 
-    void notify(shared_ptr<events::Event> event) {
+    void notify(std::shared_ptr<events::Event> event) {
         //std::this_thread::sleep_for(std::chrono::milliseconds(250));
         if (msg_type_whitelist.count(event->msg_type)) {
             {
@@ -184,7 +179,7 @@ protected:
               << "at thread ID " << get_current_thread_id());
 
 		while (1) {
-			shared_ptr<Event> msg;
+            std::shared_ptr<Event> msg;
 			{
 				// Wait for a message to be added to the queue
 				std::unique_lock<std::mutex> lk(m_mutex);
@@ -223,7 +218,7 @@ protected:
 		}
 	}
 
-    virtual void handle_msg(shared_ptr<events::Event> msg) {
+    virtual void handle_msg(std::shared_ptr<events::Event> msg) {
         pdebug("Handled no-op message");
     }
 
@@ -250,7 +245,7 @@ public:
         stop_listeners();
     }
 
-    void notify(shared_ptr<events::Event> event) {
+    void notify(std::shared_ptr<events::Event> event) {
         //pdebug("Notifying " << registered_listeners.size()
         //       << " listeners of event of type " << event->msg_type);
         for (auto listener : registered_listeners) {

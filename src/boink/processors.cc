@@ -39,15 +39,3 @@ void SourmashSignatureProcessor::report() {
 }
 
 }
-
-template class boink::FileConsumer<boink::dBG<boink::storage::BitStorage,
-                                              boink::hashing::RollingHashShifter>>;
-template class boink::FileConsumer<boink::dBG<boink::storage::ByteStorage,
-                                              boink::hashing::RollingHashShifter>>;
-template class boink::FileConsumer<boink::dBG<boink::storage::NibbleStorage,
-                                              boink::hashing::RollingHashShifter>>;
-template class boink::FileConsumer<boink::dBG<boink::storage::QFStorage,
-                                              boink::hashing::RollingHashShifter>>;
-template class boink::FileConsumer<boink::dBG<boink::storage::SparseppSetStorage,
-                                              boink::hashing::RollingHashShifter>>;
-

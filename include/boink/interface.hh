@@ -82,6 +82,8 @@ STLTYPES_EXPLICIT_INSTANTIATION_DECL(vector, boink::hashing::kmer_t)
 
 
 template class std::pair<boink::hashing::shift_t, boink::hashing::shift_t>;
+template class std::pair<std::vector<boink::hashing::shift_t>,
+                         std::vector<boink::hashing::shift_t>>;
 
 extern
 template class boink::hashing::KmerIterator<boink::hashing::RollingHashShifter>;
@@ -148,22 +150,22 @@ extern
 template struct boink::Traverse<boink::dBG<boink::storage::SparseppSetStorage,
                                                         boink::hashing::RollingHashShifter>>;
 
+extern
+template class boink::InserterProcessor<boink::dBG<boink::storage::BitStorage,
+                                                   boink::hashing::RollingHashShifter>>;
+extern
+template class boink::InserterProcessor<boink::dBG<boink::storage::ByteStorage,
+                                                   boink::hashing::RollingHashShifter>>;
+extern
+template class boink::InserterProcessor<boink::dBG<boink::storage::NibbleStorage,
+                                                   boink::hashing::RollingHashShifter>>;
+extern
+template class boink::InserterProcessor<boink::dBG<boink::storage::QFStorage,
+                                                   boink::hashing::RollingHashShifter>>;
+extern
+template class boink::InserterProcessor<boink::dBG<boink::storage::SparseppSetStorage,
+                                                   boink::hashing::RollingHashShifter>>;
 
-extern
-template class boink::FileConsumer<boink::dBG<boink::storage::BitStorage,
-                                              boink::hashing::RollingHashShifter>>;
-extern
-template class boink::FileConsumer<boink::dBG<boink::storage::ByteStorage,
-                                              boink::hashing::RollingHashShifter>>;
-extern
-template class boink::FileConsumer<boink::dBG<boink::storage::NibbleStorage,
-                                              boink::hashing::RollingHashShifter>>;
-extern
-template class boink::FileConsumer<boink::dBG<boink::storage::QFStorage,
-                                              boink::hashing::RollingHashShifter>>;
-extern
-template class boink::FileConsumer<boink::dBG<boink::storage::SparseppSetStorage,
-                                              boink::hashing::RollingHashShifter>>;
 
 extern
 template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::BitStorage,

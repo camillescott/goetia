@@ -265,43 +265,42 @@ private:
 };
 
 
-template <class GraphType,
+template <class InserterType,
           class ParserType = parsing::FastxReader>
-class FileConsumer : public FileProcessor<FileConsumer<GraphType, ParserType>,
-                                          ParserType> {
+class InserterProcessor : public FileProcessor<InserterProcessor<InserterType, ParserType>,
+                                               ParserType> {
 
 protected:
 
-    std::shared_ptr<GraphType> graph;
-    uint64_t _n_consumed;
+    std::shared_ptr<InserterType> inserter;
+    uint64_t _n_inserted;
 
-    typedef FileProcessor<FileConsumer<GraphType, ParserType>,
+    typedef FileProcessor<InserterProcessor<InserterType, ParserType>,
                           ParserType> Base;
 
 public:
 
     using Base::process_sequence;
     
-    FileConsumer(std::shared_ptr<GraphType> graph,
-                 uint64_t fine_interval   = DEFAULT_INTERVALS::FINE,
-                 uint64_t medium_interval = DEFAULT_INTERVALS::MEDIUM,
-                 uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE)
+    InserterProcessor(std::shared_ptr<InserterType> inserter,
+                      uint64_t fine_interval   = DEFAULT_INTERVALS::FINE,
+                      uint64_t medium_interval = DEFAULT_INTERVALS::MEDIUM,
+                      uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE)
         : Base(fine_interval, medium_interval, coarse_interval),
-          graph(graph), _n_consumed(0) {
+          inserter(inserter), _n_inserted(0) {
 
     }
 
     void process_sequence(const parsing::Read& read) {
-        auto this_n_consumed = graph->insert_sequence(read.cleaned_seq);
-        __sync_add_and_fetch( &_n_consumed, this_n_consumed );
+        auto this_n_inserted = inserter->insert_sequence(read.cleaned_seq);
+        __sync_add_and_fetch(&_n_inserted, this_n_inserted);
     }
 
     void report() {
-        std::cerr << "\t and " << _n_consumed << " new k-mers." << std::endl;
     }
 
-    uint64_t n_consumed() const {
-        return _n_consumed;
+    uint64_t n_inserted() const {
+        return _n_inserted;
     }
 
 };
