@@ -37,7 +37,7 @@ before_script:
     - conda config --add channels conda-forge
     - conda update -q conda
     - conda info -a
-    - conda create -n libboink python=3 cmake cxx-compiler c-compiler clangdev libcxx libstdcxx-ng libgcc-ng pytest numpy scipy
+    - conda create -n libboink python=3 cmake cxx-compiler c-compiler clangdev libcxx libstdcxx-ng libgcc-ng openmp pytest numpy scipy
     - source activate libboink
     - pip install -r requirements.txt
     - mkdir -p build
