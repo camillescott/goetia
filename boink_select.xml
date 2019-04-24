@@ -12,6 +12,7 @@
         <class pattern="boink::*Processor"/>
         <class pattern="boink::*Processor<*>"/>
 		<class pattern="boink::parsing::*"/>
+        <class pattern="boink::InteriorMinimizer<*>"/>
 
         <class name="boink::DEFAULT_INTERVALS"/>
 

@@ -10,6 +10,7 @@
 #ifndef MINIMIZERS_HH
 #define MINIMIZERS_HH
 
+#include <cstdint>
 #include <deque>
 #include <utility>
 #include <vector>
@@ -83,7 +84,7 @@ public:
 };
 
 
-template <class T>
+template <class T = uint64_t>
 class InteriorMinimizer : public RollingMin<T> {
 
 protected:

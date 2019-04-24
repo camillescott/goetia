@@ -194,6 +194,7 @@ template class boink::signatures::UnikmerSignature<boink::storage::QFStorage>;
 extern
 template class boink::signatures::UnikmerSignature<boink::storage::SparseppSetStorage>;
 
+template class boink::InteriorMinimizer<uint64_t>;
 
 extern
 template class boink::WKMinimizer<boink::hashing::RollingHashShifter>;

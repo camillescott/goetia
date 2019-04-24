@@ -1,6 +1,7 @@
 import pytest
 
-from boink.minimizers import InteriorMinimizer
+from boink import libboink
+
 
 class TestInteriorMinimizer(object):
 
@@ -9,19 +10,22 @@ class TestInteriorMinimizer(object):
         window_size = 3
         expected = [1, 1, 2, 4, 4, 4]
 
-        M = InteriorMinimizer(window_size)
-        minimizers = M(sequence)
+        M = libboink.InteriorMinimizer['uint64_t'](window_size)
+        for val in sequence:
+            M.update(val)
 
-        assert minimizers == expected
+        assert list(M.get_minimizer_values()) == expected
 
     def test_window_too_large(self):
         sequence = [3, 1, 2, 3, 1]
-        M = InteriorMinimizer(6)
-
-        assert M(sequence) == []
+        M = libboink.InteriorMinimizer['uint64_t'](6)
+        for val in sequence:
+            M.update(val)
+        assert list(M.get_minimizer_values()) == []
 
     def test_window_equals_seqlen(self):
         sequence = [3, 2, 1, 2, 3]
-        M = InteriorMinimizer(5)
-
-        assert M(sequence) == [1]
+        M = libboink.InteriorMinimizer['uint64_t'](5)
+        for val in sequence:
+            M.update(val)
+        assert list(M.get_minimizer_values()) ==  [1]
