@@ -10,7 +10,7 @@ import pytest
 from boink import libboink
 from boink.assembly import Assembler, STATES
 
-from utils import *
+from .utils import *
 
 
 @pytest.fixture

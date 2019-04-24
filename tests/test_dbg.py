@@ -6,7 +6,7 @@
 # of the MIT license.  See the LICENSE file for details.
 
 import pytest
-from utils import *
+from .utils import *
 
 from boink.data import load_ukhs
 from cppyy.gbl import std
@@ -150,12 +150,18 @@ def test_get_bad_dna_kmer(graph, ksize):
     with pytest.raises(TypeError):
         graph.query("ATYGC")
 
+@using_ksize(5)
+def test_right_neighbors(graph, ksize):
+    s = 'ATGCCGATGCA'
+    graph.insert_sequence(s)
+    n = graph.right_neighbors(s[:5])
+    assert len(n) == 1
 
 @using_ksize(5)
 def test_neighbors(graph, ksize):
-    s = "ATGCCGATGCA"
+    s = 'ATGCCGATGCA'
     graph.insert_sequence(s)
-    l, r = graph.neighbors(s[:5])
+    l, r = graph.neighbor_kmers(s[:5])
     assert len(l) == 1
     assert len(r) == 1
 
