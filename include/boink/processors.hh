@@ -303,6 +303,13 @@ public:
         return _n_inserted;
     }
 
+    static std::shared_ptr<InserterProcessor<InserterType, ParserType>> build(std::shared_ptr<InserterType> inserter,
+                                                                              uint64_t fine_interval   = DEFAULT_INTERVALS::FINE,
+                                                                              uint64_t medium_interval = DEFAULT_INTERVALS::MEDIUM,
+                                                                              uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE) {
+        return std::make_shared<InserterProcessor<InserterType, ParserType>>(inserter, fine_interval, medium_interval, coarse_interval);
+    }
+
 };
 
 
