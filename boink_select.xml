@@ -1,0 +1,38 @@
+<lcgdict>
+    <selection>
+        <!-- <namespace pattern="boink::*"/> -->
+        <class pattern="boink::storage::*Storage"/>
+        <class pattern="boink::signatures::*"/>
+        <namespace pattern="boink::cdbg::*"/>
+        <namespace pattern="boink::hashing::*"/>
+        <namespace pattern="boink::metrics::*"/>
+        <namespace pattern="boink::TraversalState::*"/>
+        <enum name="boink::TraversalState::State"/>
+
+        <class pattern="boink::dBG<*, *>"/>
+        <class pattern="boink::PdBG<*>"/>
+        <class pattern="boink::*Processor"/>
+        <class pattern="boink::*Processor<*>"/>
+		<class pattern="boink::parsing::*"/>
+        <class pattern="boink::InteriorMinimizer<*>"/>
+
+        <class name="boink::DEFAULT_INTERVALS"/>
+
+        <class name="prometheus::Registry"/>
+        <class name="prometheus::Exposer"/>
+
+        <class pattern="std::pair<*,*>"/>
+        <class pattern="std::enable_shared_from_this<*>" />
+        <class pattern="std::vector<*>" />
+        <class pattern="std::vector<*>::iterator" />
+        <function name="__gnu_cxx::operator=="/>
+        <function name="__gnu_cxx::operator!="/>
+    </selection>        
+    <exclusion>
+        <class pattern="boink::hashing::HashShifter*"/>
+        <class pattern="std::vector<prometheus::*>"/>
+		<class pattern="std::vector<boink::CompactorMixin<*>>"/>
+        <class pattern="std::vector<std::basic_ofstream<char>>"/>
+		<class pattern="std::shared_ptr<boink::parsing::ReadParser<boink::parsing::FastxReader>>"/>
+    </exclusion>
+</lcgdict>

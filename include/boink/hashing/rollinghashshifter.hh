@@ -15,7 +15,7 @@
 #include "boink/hashing/hashing_types.hh"
 #include "boink/hashing/hashshifter.hh"
 
-#include "rollinghash/cyclichash.h"
+#include "boink/hashing/rollinghash/cyclichash.h"
 
 namespace boink {
 namespace hashing {

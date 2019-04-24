@@ -9,8 +9,60 @@
 
 #include "boink/hashing/ukhs.hh"
 
+#pragma GCC diagnostic push 
+#pragma GCC diagnostic ignored "-Wall"
+#pragma GCC diagnostic ignored "-Wunknown-pragmas"
+#include "bbhash/BooPHF.h"
+#pragma GCC diagnostic pop
+
+
 namespace boink {
 namespace hashing {
+
+UKHS::UKHS(uint16_t K,
+           std::vector<std::string>& ukhs)
+    : KmerClient  (K),
+      ukhs_revmap (ukhs.size()),
+      ukhs_hasher (K)
+{
+    if (ukhs.front().size() != K) {
+        throw BoinkException("K does not match k-mer size from provided UKHS");
+    }
+
+    //std::cerr << "Building MPHF with "
+    //          << ukhs.size() << " k-mers."
+    //          << std::endl;
+
+    for (auto unikmer : ukhs) {
+        ukhs_hashes.push_back(ukhs_hasher.hash(unikmer));
+    }
+    bphf = std::make_unique<boophf_t>(ukhs_hashes.size(),
+                                      ukhs_hashes,
+                                      1,
+                                      2.0,
+                                      false,
+                                      false);
+    for (auto unikmer_hash : ukhs_hashes) {
+        ukhs_revmap[bphf->lookup(unikmer_hash)] = unikmer_hash;
+    }
+    //std::cerr << "Finished building MPHF." << std::endl;
+}
+
+UKHS::~UKHS() = default;
+
+bool UKHS::query(Unikmer& unikmer) {
+    unikmer.partition = ULLONG_MAX;
+    unikmer.partition = bphf->lookup(unikmer.hash);
+    if (!unikmer.is_valid()) {
+        return false;
+    }
+    if (ukhs_revmap[unikmer.partition] == unikmer.hash) {
+        return true;
+    }
+    return false;
+}
+
+
 
 template <>
 template <>

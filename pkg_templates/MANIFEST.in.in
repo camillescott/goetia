@@ -1,0 +1,2 @@
+recursive-include @PKG@ *.pcm *.so *.rootmap *.map
+recursive-include @PKG@/data *.txt.gz

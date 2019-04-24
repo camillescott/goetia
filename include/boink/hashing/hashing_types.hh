@@ -11,6 +11,7 @@
 #define BOINK_HASHING_TYPES_HH
 
 #include <iostream>
+#include <cstdint>
 
 namespace boink {
 namespace hashing {

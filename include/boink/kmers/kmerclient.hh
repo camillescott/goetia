@@ -10,6 +10,8 @@
 #ifndef BOINK_KMERCLIENT_HH
 #define BOINK_KMERCLIENT_HH
 
+#include <cstdint>
+
 namespace boink {
 namespace kmers {
 

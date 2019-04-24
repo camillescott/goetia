@@ -143,6 +143,14 @@ public:
     void close();
 }; // class ReadParser
 
+// Alias for generic/templated ReadParser pointer
+template<typename T> using ReadParserPtr = std::shared_ptr<ReadParser<T>>;
+template<typename T> using WeakReadParserPtr = std::weak_ptr<ReadParser<T>>;
+
+// Convenience function
+template<typename SeqIO>
+ReadParserPtr<SeqIO> get_parser(const std::string& filename);
+
 
 class FastxReader
 {
@@ -166,20 +174,16 @@ public:
 
     ~FastxReader();
 
+    static std::shared_ptr<ReadParser<FastxReader>> build(const std::string& filename) {
+        return get_parser<FastxReader>(filename);
+    }
+
     Read get_next_read();
     bool is_complete();
     size_t get_num_reads();
     void close();
 }; // class FastxReader
 
-
-// Alias for generic/templated ReadParser pointer
-template<typename T> using ReadParserPtr = std::shared_ptr<ReadParser<T>>;
-template<typename T> using WeakReadParserPtr = std::weak_ptr<ReadParser<T>>;
-
-// Convenience function
-template<typename SeqIO>
-ReadParserPtr<SeqIO> get_parser(const std::string& filename);
 
 // Alias for instantiated ReadParsers
 typedef std::shared_ptr<ReadParser<FastxReader>> FastxParserPtr;

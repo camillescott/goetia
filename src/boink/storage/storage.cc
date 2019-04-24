@@ -51,9 +51,10 @@
 #include <fstream>
 #include <iostream>
 
+#include <zlib.h>
+
 #include "boink/boink.hh"
 #include "boink/hashing/hashing_types.hh"
-#include "zlib.h"
 
 using namespace std;
 using namespace boink;

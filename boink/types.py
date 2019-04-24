@@ -1,16 +1,8 @@
+from boink import boink as libboink
 
-PARAMS = \
-{
-    'StorageTypes': ['BitStorage', 
-                     'NibbleStorage',
-                     'ByteStorage'],
 
-    'ShifterTypes': ['DefaultShifter'],
+storage_types = [(libboink.storage.SparseppSetStorage, ()),
+                 (libboink.storage.BitStorage, (100000, 4)),
+                 (libboink.storage.ByteStorage, (100000, 4)),
+                 (libboink.storage.NibbleStorage, (100000, 4))]
 
-    'AlphabetTypes': ['_DNA_SIMPLE',
-                      '_DNAN_SIMPLE',
-                      '_RNA_SIMPLE',
-                      '_RNAN_SIMPLE',
-                      '_IUPAC_AA',
-                      '_IUPAC_NUCL']
-}

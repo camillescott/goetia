@@ -1,32 +1,48 @@
-language: python
-os: linux
+language: generic
+sudo: required
 dist: xenial
-
-cache:
-  directories:
-    - $HOME/.cache/pip
-
-# branches:
-#  only:
-#  - master
-#  - "/^v.*$/"
-
-script: pytest boink
-
-install:
-  - pip install numpy jinja2 doit pyyaml cython sh pandas
-  - git submodule update --init --remote --recursive 
-  - doit
-  - pip install .  
-  - pip install pytest-benchmark
-  - pip install git+https://github.com/camillescott/debruijnal-enhance-o-tron.git
-  - pip install git+https://github.com/dib-lab/khmer.git
-
-jobs:
-  include:
-    - &check
-      stage: check # do a pre-screen to make sure this is even worth testing
-      python: 3.7
-
-stages:
-  - check
+matrix:
+    include:
+        - name: "PYTHON35"
+          env: PYVERSION="3.5" COMPILER_NAME=gcc CXX=g++-6 CC=gcc-6
+          addons:
+              apt:
+                  sources:
+                       - ubuntu-toolchain-r-test
+                  packages:
+                       - g++-6
+        - name: "PYTHON36"
+          env: PYVERSION="3.6" COMPILER_NAME=gcc CXX=g++-6 CC=gcc-6
+          addons:
+                apt:
+                    sources:
+                        - ubuntu-toolchain-r-test
+                    packages:
+                        - g++-6
+        - name: "PYTHON37"
+          env: PYVERSION="3.7" COMPILER_NAME=gcc CXX=g++-6 CC=gcc-6
+          addons:
+                apt:
+                    sources:
+                        - ubuntu-toolchain-r-test
+                    packages:
+                        - g++-6
+before_script:
+    - sudo apt-get update
+    - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+    - bash miniconda.sh -b -p $HOME/miniconda
+    - export PATH="$HOME/miniconda/bin:$PATH"
+    - conda config --set always_yes yes --set changeps1 no
+    - conda config --add channels defaults
+    - conda config --add channels conda-forge
+    - conda update -q conda
+    - conda info -a
+    - conda create -n libboink python=3 cmake cxx-compiler c-compiler clangdev libcxx libstdcxx-ng libgcc-ng openmp pytest numpy scipy
+    - source activate libboink
+    - pip install -r requirements.txt
+    - pip install git+https://github.com/camillescott/debruijnal-enhance-o-tron#egg=debruijnal_enhance_o_tron
+    - mkdir -p build
+    - cd build
+    - cmake ..
+    - make install VERBOSE=1
+script: py.test -v -s tests/test_dbg.py tests/test_assembly.py tests/test_hashing.py tests/test_metrics.py tests/test_minimizers.py tests/test_processors.py 

@@ -23,7 +23,7 @@
 #include "boink/hashing/hashing_types.hh"
 #include "boink/hashing/exceptions.hh"
 
-#include "nonstd/ring_span.hpp"
+#include "boink/ring_span.hpp"
 
 namespace boink {
 namespace hashing {
@@ -135,13 +135,14 @@ public:
     }
 
     std::string get_cursor() const {
-        return std::string(kmer_buffer,
-                           kmer_buffer + this->_K);
+        return std::string(kmer_window.begin(),
+                           kmer_window.end());
     }
 
     void get_cursor(std::deque<char>& d) const {
-        for (uint16_t i = 0; i < this->_K; ++i) {
-            d.push_back(kmer_buffer[i]);
+
+        for (auto symbol : kmer_window) {
+            d.push_back(symbol);
         }
     }
 
@@ -215,9 +216,17 @@ protected:
     }
 
     void _validate(const char c) const {
-        if (!this->is_valid(c)) {
+        if(!this->is_valid(c)) {
             std::string msg("Invalid symbol: ");
             msg += c;
+            throw InvalidCharacterException(msg.c_str());
+        }
+    }
+
+    void _validate(const char * sequence) const {
+        if (!this->is_valid(sequence)) {
+            std::string msg("Invalid symbol in: ");
+            msg += sequence;
             throw InvalidCharacterException(msg.c_str());
         }
     }

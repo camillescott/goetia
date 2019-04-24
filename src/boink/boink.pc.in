@@ -1,11 +1,12 @@
-prefix=@prefix@
-exec_prefix=${prefix}
-libdir=${exec_prefix}/lib
-sharedlibdir=${libdir}
-includedir=${prefix}/include
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=@CMAKE_INSTALL_PREFIX@
+libdir=${exec_prefix}/@CMAKE_INSTALL_LIBDIR@
+includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@
 
-Name: boink
-Description: The core shared library for the boink project
-URL: https://github.com/camillescott/boink/ 
-Version: @VERSION@
+Name: @PROJECT_NAME@
+Description: @PROJECT_DESCRIPTION@
+Version: @PROJECT_VERSION@
 
+Requires:
+Libs: -L${libdir} -lz -lprometheus-cpp-push -lprometheus-cpp-pull -lprometheus-cpp-core
+Cflags: -I${includedir}

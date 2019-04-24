@@ -1,15 +1,15 @@
-[submodule "include/utils"]
-	path = include/utils
+[submodule "third-party/utils"]
+	path = third-party/utils
 	url = https://github.com/TUM-I5/utils.git
-[submodule "include/gfakluge"]
+[submodule "third-party/gfakluge"]
 	path = third-party/gfakluge
-	url = git@github.com:camillescott/gfakluge.git
+	url = https://github.com/camillescott/gfakluge.git
 [submodule "include/sparsepp"]
 	path = third-party/sparsepp
 	url = https://github.com/greg7mdp/sparsepp
-[submodule "include/prometheus-cpp"]
-	path = third-party/prometheus-cpp
-	url = https://github.com/jupp0r/prometheus-cpp
 [submodule "include/bbhash"]
 	path = include/bbhash
 	url = https://github.com/rizkg/BBHash
+[submodule "include/prometheus-cpp"]
+	path = third-party/prometheus-cpp
+	url = https://github.com/camillescott/prometheus-cpp

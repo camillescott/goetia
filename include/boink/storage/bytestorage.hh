@@ -190,62 +190,9 @@ public:
     void save(std::string, uint16_t);
     void load(std::string, uint16_t&);
 
-    inline const bool insert(hashing::hash_t khash)
-    {
-        bool is_new_kmer = false;
-        unsigned int  n_full	  = 0;
+    const bool insert(hashing::hash_t khash);
 
-        // add one to each entry in each table.
-        for (unsigned int i = 0; i < _n_tables; i++) {
-            const uint64_t bin = khash % _tablesizes[i];
-            byte_t current_count = _counts[ i ][ bin ];
-
-            if (!is_new_kmer) {
-                if (current_count == 0) {
-                    is_new_kmer = true;
-
-                    // track occupied bins in the first table only, as proxy
-                    // for all.
-                    if (i == 0) {
-                        __sync_add_and_fetch(&_occupied_bins, 1);
-                    }
-                }
-            }
-            // NOTE: Technically, multiple threads can cause the bin to spill
-            //	 over max_count a little, if they all read it as less than
-            //	 max_count before any of them increment it.
-            //	 However, do we actually care if there is a little
-            //	 bit of slop here? It can always be trimmed off later, if
-            //	 that would help with stats.
-
-            if ( _max_count > current_count ) {
-                __sync_add_and_fetch( *(_counts + i) + bin, 1 );
-            } else {
-                n_full++;
-            }
-        } // for each table
-
-        // if all tables are full for this position, then add in bigcounts.
-        if (n_full == _n_tables && _use_bigcount) {
-            while (!__sync_bool_compare_and_swap(&_bigcount_spin_lock, 0, 1));
-            if (_bigcounts[khash] == 0) {
-                _bigcounts[khash] = _max_count + 1;
-            } else {
-                if (_bigcounts[khash] < _max_bigcount) {
-                    _bigcounts[khash] += 1;
-                }
-            }
-            __sync_bool_compare_and_swap( &_bigcount_spin_lock, 1, 0 );
-        }
-
-        if (is_new_kmer) {
-            __sync_add_and_fetch(&_n_unique_kmers, 1);
-        }
-
-        return is_new_kmer;
-    }
-
-    inline const count_t insert_and_query(hashing::hash_t khash)
+    const count_t insert_and_query(hashing::hash_t khash)
     {
         if (insert(khash)) {
             // was new, return 1 from insert
@@ -255,7 +202,7 @@ public:
     }
 
     // get the count for the given k-mer hash.
-    inline const count_t query(hashing::hash_t khash) const
+    const count_t query(hashing::hash_t khash) const
     {
         count_t	 max_count	= _max_count;
         count_t  min_count	= max_count; // bound count by max.

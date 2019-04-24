@@ -32,20 +32,19 @@ using storage::PartitionedStorage;
 using hashing::UKHShifter;
 
 template <class BaseStorageType>
-class PdBG : public kmers::KmerClient,
-             public std::enable_shared_from_this<PdBG<BaseStorageType>> {
+class PdBG : public kmers::KmerClient {
 protected:
 
     std::unique_ptr<PartitionedStorage<BaseStorageType>>       S;
     std::shared_ptr<hashing::UKHS>                             ukhs;
-    UKHShifter                                partitioner;
+    UKHShifter                                                 partitioner;
 
 public:
 
     typedef UKHShifter                        shifter_type;
-	typedef AssemblerMixin<PdBG<BaseStorageType>>              assembler_type;
+	typedef Traverse<PdBG<BaseStorageType>>   traversal_type;
     typedef hashing::KmerIterator<UKHShifter> kmer_iter_type;
-    typedef BaseStorageType                                    base_storage_type;
+    typedef BaseStorageType                   base_storage_type;
 
     const uint16_t partition_K;
  
@@ -106,200 +105,43 @@ public:
                );
     }
 
-    inline const bool insert(const std::string& kmer) {
-        partitioner.set_cursor(kmer);
-        partitioner.reset_unikmers();
+    const bool insert(const std::string& kmer);
 
-        return S->insert(partitioner.get(), partitioner.get_front_partition());
-    }
+    const bool insert(const hashing::PartitionedHash ph);
 
-    inline const bool insert(const hashing::PartitionedHash ph) {
-        return S->insert(ph.first, ph.second);
-    }
+    const storage::count_t insert_and_query(const std::string& kmer);
 
-    inline const storage::count_t insert_and_query(const std::string& kmer) {
-        partitioner.set_cursor(kmer);
-        partitioner.reset_unikmers();
+    const storage::count_t insert_and_query(const hashing::PartitionedHash ph);
 
-        return S->insert_and_query(partitioner.get(), partitioner.get_front_partition());
-    }
+    const storage::count_t query(const std::string& kmer);
 
-    inline const storage::count_t insert_and_query(const hashing::PartitionedHash ph) {
-        return S->insert_and_query(ph.first, ph.second);
-    }
-
-    inline const storage::count_t query(const std::string& kmer) {
-        partitioner.set_cursor(kmer);
-        partitioner.reset_unikmers();
-
-        return S->query(partitioner.get(), partitioner.get_front_partition());
-    }
-
-    inline const storage::count_t query(const hashing::PartitionedHash ph) {
-        return S->query(ph.first, ph.second);
-    }
+    const storage::count_t query(const hashing::PartitionedHash ph);
 
     uint64_t insert_sequence(const std::string&          sequence,
                              std::vector<hashing::hash_t>&  kmer_hashes,
-                             std::vector<storage::count_t>& counts) {
-
-        hashing::KmerIterator<UKHShifter> iter(sequence, &partitioner);
-
-        uint64_t         n_consumed = 0;
-        size_t           pos = 0;
-        storage::count_t count;
-        while(!iter.done()) {
-            hashing::PartitionedHash h = iter.next();
-            count = insert_and_query(h);
-
-            kmer_hashes.push_back(h.first);
-            counts.push_back(count);
-
-            n_consumed += (count == 1);
-            ++pos;
-        }
-
-        return n_consumed;
-    }
+                             std::vector<storage::count_t>& counts);
 
     uint64_t insert_sequence(const std::string&      sequence,
-                          std::set<hashing::hash_t>& new_kmers) {
+                          std::set<hashing::hash_t>& new_kmers);
 
-        hashing::KmerIterator<UKHShifter> iter(sequence, &partitioner);
+    uint64_t insert_sequence(const std::string& sequence);
 
-        uint64_t n_consumed = 0;
-        size_t pos = 0;
-        bool is_new;
-        while(!iter.done()) {
-            hashing::PartitionedHash h = iter.next();
-            if(insert(h)) {
-                new_kmers.insert(h.first);
-                n_consumed += is_new;
-            }
-            ++pos;
-        }
+    uint64_t insert_sequence_rolling(const std::string& sequence);
 
-        return n_consumed;
-    }
+    std::vector<storage::count_t> insert_and_query_sequence(const std::string& sequence);
 
-    uint64_t insert_sequence(const std::string& sequence) {
-        hashing::KmerIterator<UKHShifter> iter(sequence, &partitioner);
+    std::vector<storage::count_t> query_sequence(const std::string& sequence);
 
-        uint64_t n_consumed = 0;
-        while(!iter.done()) {
-            hashing::PartitionedHash h = iter.next();
-            n_consumed += insert(h);
-        }
-
-        return n_consumed;
-    }
-
-    uint64_t insert_sequence_rolling(const std::string& sequence) {
-        hashing::KmerIterator<UKHShifter> iter(sequence, &partitioner);
-
-        uint64_t n_consumed = 0;
-        hashing::PartitionedHash h = iter.next();
-        uint64_t          cur_pid       = h.second;
-        BaseStorageType * cur_partition = S->query_partition(cur_pid);
-        cur_partition->insert(h.first);
-
-        while(!iter.done()) {
-            h = iter.next();
-            if (h.second != cur_pid) {
-                cur_pid = h.second;
-                cur_partition = S->query_partition(cur_pid);
-            }
-            n_consumed += cur_partition->insert(h.first);
-        }
-
-        return n_consumed;
-    }
-
-    std::vector<storage::count_t> insert_and_query_sequence(const std::string& sequence) {
-
-        hashing::KmerIterator<UKHShifter> iter(sequence, &partitioner);
-        std::vector<storage::count_t> counts(sequence.length() - _K + 1);
-
-        size_t pos = 0;
-        while(!iter.done()) {
-            hashing::PartitionedHash h = iter.next();
-            counts[pos] = S->insert_and_query(h);
-            ++pos;
-        }
-
-        return counts;
-    }
-
-    std::vector<storage::count_t> query_sequence(const std::string& sequence) {
-
-        hashing::KmerIterator<UKHShifter> iter(sequence, &partitioner);
-        std::vector<storage::count_t> counts(sequence.length() - _K + 1);
-
-        size_t pos = 0;
-        while(!iter.done()) {
-            hashing::PartitionedHash h = iter.next();
-            counts[pos] = query(h);
-            ++pos;
-        }
-
-        return counts;
-    }
-
-    std::vector<storage::count_t> query_sequence_rolling(const std::string& sequence) {
-
-        hashing::KmerIterator<UKHShifter> iter(sequence, &partitioner);
-        std::vector<storage::count_t> counts(sequence.length() - _K + 1);
-        
-        hashing::PartitionedHash h      = iter.next();
-        uint64_t          cur_pid       = h.second;
-        BaseStorageType * cur_partition = S->query_partition(cur_pid);
-        counts[0]                       = cur_partition->query(h.first);
-
-        size_t pos = 1;
-        while(!iter.done()) {
-            h = iter.next();
-            if (h.second != cur_pid) {
-                cur_pid = h.second;
-                cur_partition = S->query_partition(cur_pid);
-            }
-            counts[pos] = cur_partition->query(h.first);
-            ++pos;
-        }
-
-        return counts;
-    }
+    std::vector<storage::count_t> query_sequence_rolling(const std::string& sequence);
 
     void query_sequence(const std::string&             sequence,
                         std::vector<storage::count_t>& counts,
-                        std::vector<hashing::hash_t>&  hashes) {
-
-        hashing::KmerIterator<UKHShifter> iter(sequence, &partitioner);
-
-        while(!iter.done()) {
-            hashing::PartitionedHash h = iter.next();
-            storage::count_t result = query(h);
-            counts.push_back(result);
-            hashes.push_back(h.first);
-        }
-    }
+                        std::vector<hashing::hash_t>&  hashes);
 
     void query_sequence(const std::string& sequence,
                         std::vector<storage::count_t>& counts,
                         std::vector<hashing::hash_t>& hashes,
-                        std::set<hashing::hash_t>& new_hashes) {
-
-        hashing::KmerIterator<UKHShifter> iter(sequence, &partitioner);
-
-        while(!iter.done()) {
-            hashing::PartitionedHash h = iter.next();
-            auto result = query(h);
-            if (result == 0) {
-                new_hashes.insert(h.first);
-            }
-            counts.push_back(result);
-            hashes.push_back(h.first);
-        }
-    }
+                        std::set<hashing::hash_t>& new_hashes);
 
     uint64_t n_unique() const {
         return S->n_unique_kmers();
@@ -403,13 +245,6 @@ public:
     get_hash_iter(const std::string& sequence) {
         return std::make_shared<hashing::KmerIterator<UKHShifter>>(sequence, &partitioner);
     }
-
-    /*
-    std::shared_ptr<assembler_type> get_assembler() {
-        auto ptr = this->shared_from_this();
-        return std::make_shared<assembler_type>(ptr, partitioner);
-    }
-    */
 
     std::vector<size_t> get_partition_counts() {
         return S->get_partition_counts();

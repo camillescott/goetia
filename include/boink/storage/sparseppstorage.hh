@@ -10,10 +10,10 @@
 #ifndef BOINK_SPARSEPPSETSTORAGE_HH
 #define BOINK_SPARSEPPSETSTORAGE_HH
 
-#include "boink/hashing/hashing_types.hh"
 #include "boink/storage/storage.hh"
-#include "sparsepp/spp.h"
+#include "boink/storage/sparsepp/spp.h"
 
+#include <cstdint>
 #include <memory>
 #include <vector>
 
@@ -23,14 +23,19 @@ namespace storage {
 
 class SparseppSetStorage : public Storage {
 
+public:
+
+    typedef spp::sparse_hash_set<hashing::hash_t> store_type;
+
 protected:
 
-    spp::sparse_hash_set<hashing::hash_t> _store;
+    std::unique_ptr<store_type> _store;
 
 public:
     
     SparseppSetStorage()
     {
+        _store = std::make_unique<store_type>();
     }
 
     std::unique_ptr<SparseppSetStorage> clone() const {
@@ -38,19 +43,19 @@ public:
     }
 
     void reset() {
-        _store.clear();
+        _store->clear();
     }
 
     const uint64_t get_maxsize() const {
-        return _store.max_size();
+        return _store->max_size();
     }
 
     const uint64_t n_unique_kmers() const {
-        return _store.size();
+        return _store->size();
     }
 
     const uint64_t n_buckets() const {
-        return _store.bucket_count();
+        return _store->bucket_count();
     }
 
     const uint64_t n_occupied() const {
@@ -66,7 +71,7 @@ public:
     }
 
     const bool insert(hashing::hash_t h) {
-        auto result = _store.insert(h);
+        auto result = _store->insert(h);
         // the second in the returned pair reports that the insert
         // took place ie the hash was new
         return result.second;
@@ -78,7 +83,7 @@ public:
     }
 
     const count_t query(hashing::hash_t h) const {
-        return _store.count(h);
+        return _store->count(h);
     }
 
 

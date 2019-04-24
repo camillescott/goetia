@@ -8,3 +8,6 @@
  */
 
 #include "boink/hashing/rollinghashshifter.hh"
+#include "boink/hashing/kmeriterator.hh"
+
+template class boink::hashing::KmerIterator<boink::hashing::RollingHashShifter>;
