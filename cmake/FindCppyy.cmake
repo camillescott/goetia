@@ -369,6 +369,7 @@ function(cppyy_add_bindings pkg pkg_version author author_email)
     set_property(TARGET ${lib_name} PROPERTY CXX_STANDARD ${ARG_LANGUAGE_STANDARD})
     set_property(TARGET ${lib_name} PROPERTY LIBRARY_OUTPUT_DIRECTORY ${pkg_dir})
     set_property(TARGET ${lib_name} PROPERTY LINK_WHAT_YOU_USE TRUE)
+    set_property(TARGET ${lib_name} PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
     target_include_directories(${lib_name} PRIVATE ${ARG_INCLUDE_DIRS} ${Cppyy_INCLUDE_DIRS})
     target_compile_options(${lib_name} PRIVATE ${ARG_COMPILE_OPTIONS})
     target_link_libraries(${lib_name} PUBLIC ${LibCling_LIBRARY} ${ARG_LINK_LIBRARIES})
@@ -422,7 +423,8 @@ function(cppyy_add_bindings pkg pkg_version author author_email)
     #
     file(COPY ${PKG_SRC_DIR}/
          DESTINATION ${pkg_dir} USE_SOURCE_PERMISSIONS
-         PATTERN ".*" EXCLUDE)
+         PATTERN "__pycache__" EXCLUDE
+    )
 
     #
     # Copy tests
@@ -431,6 +433,7 @@ function(cppyy_add_bindings pkg pkg_version author author_email)
     if(NOT "${ARG_TESTS_DIR}" STREQUAL "")
         file(COPY ${ARG_TESTS_DIR}
             DESTINATION ${CMAKE_BINARY_DIR}/ USE_SOURCE_PERMISSIONS
+            PATTERN "__pycache__" EXCLUDE
         )
     endif()
 

@@ -78,6 +78,7 @@ add_library(boink SHARED
 )
 set_target_properties(boink PROPERTIES LINKER_LANGUAGE CXX)
 set_property(TARGET boink PROPERTY LINK_WHAT_YOU_USE TRUE)
+set_property(TARGET boink PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 set_target_properties(boink PROPERTIES
                       VERSION ${PROJECT_VERSION}
                       SOVERSION 1
