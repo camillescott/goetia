@@ -19,3 +19,7 @@ def find_common_basename(a, b):
 
 def remove_fx_suffix(fn):
     return re.sub(r'(?:fq|FQ|fastq|FASTQ|fa|FA|fasta|FASTA)$', '', fn).strip('._-')
+
+
+def check_trait(trait, type):
+    return trait[type].value

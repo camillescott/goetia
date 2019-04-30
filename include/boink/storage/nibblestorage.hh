@@ -266,6 +266,12 @@ struct is_probabilistic<NibbleStorage> {
       static const bool value = true;
 };
 
+
+template<>
+struct is_counting<NibbleStorage> {
+    static const bool value = true;
+};
+
 }
 }
 

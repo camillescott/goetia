@@ -371,7 +371,9 @@ function(cppyy_add_bindings pkg pkg_version author author_email)
     set_property(TARGET ${lib_name} PROPERTY LINK_WHAT_YOU_USE TRUE)
     set_property(TARGET ${lib_name} PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
     target_include_directories(${lib_name} PRIVATE ${ARG_INCLUDE_DIRS} ${Cppyy_INCLUDE_DIRS})
-    target_compile_options(${lib_name} PRIVATE ${ARG_COMPILE_OPTIONS})
+    if (NOT "${ARG_COMPILE_OPTIONS}" STREQUAL "")
+        target_compile_options(${lib_name} PRIVATE ${ARG_COMPILE_OPTIONS})
+    endif()
     target_link_libraries(${lib_name} PUBLIC ${LibCling_LIBRARY} ${ARG_LINK_LIBRARIES})
 
     #

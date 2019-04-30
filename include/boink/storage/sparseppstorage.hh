@@ -96,9 +96,13 @@ public:
 
 template<> 
 struct is_probabilistic<SparseppSetStorage> { 
-      static const bool value = false;
+    static const bool value = false;
 };
 
+template<>
+struct is_counting<SparseppSetStorage> {
+    static const bool value = false;
+};
 
 }
 }

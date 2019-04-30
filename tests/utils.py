@@ -15,14 +15,15 @@ from debruijnal_enhance_o_tron.fixtures.sequence import (using_ksize,
 #from boink import boink as libboink
 from cppyy.gbl import std
 from boink import boink as libboink
-from boink import types
+from boink.utils import check_trait
+from boink.storage import types as storage_types
 
 
 def storage_t_name(t):
     return t[0].__name__
 
 
-@pytest.fixture(params=types.storage_types, ids=storage_t_name)
+@pytest.fixture(params=storage_types, ids=storage_t_name)
 def storage_type(request):
     _storage_type, params = request.param
     return _storage_type, params
@@ -36,17 +37,14 @@ def graph(storage_type, ksize):
     return std.make_shared[_graph_type](ksize, *params)
 
 
-
-# (boink.storage.QFStorage, (20,)),
 def counting_backends(*args):
     '''
     Convenience wrapper to reduce verbosity of indirect parametrization
     '''
     def wrapped(fixture_func):
         return pytest.mark.parametrize('storage_type', 
-                                       [(libboink.storage.ByteStorage, (1e6, 4)),
-                                        (libboink.storage.NibbleStorage, (1e6, 4)),
-                                        (libboink.storage.QFStorage, (20,))],
+                                       [(type, args) for type, args in storage_types \
+                                        if check_trait(libboink.storage.is_counting, type)],
                                        indirect=['storage_type'],
                                        ids=storage_t_name)(fixture_func)
     return wrapped
@@ -58,8 +56,8 @@ def presence_backends(*args):
     '''
     def wrapped(fixture_func):
         return pytest.mark.parametrize('storage_type', 
-                                       [(libboink.storage.BitStorage, (1e6, 4)),
-                                        (libboink.storage.SparseppSetStorage, ())],
+                                       [(type, args) for type, args in storage_types \
+                                        if not check_trait(libboink.storage.is_counting, type)],
                                        indirect=['storage_type'],
                                        ids=storage_t_name)(fixture_func)
     return wrapped
@@ -71,7 +69,8 @@ def exact_backends(*args):
     '''
     def wrapped(fixture_func):
         return pytest.mark.parametrize('storage_type', 
-                                       [(libboink.storage.SparseppSetStorage, ())],
+                                       [(type, args) for type, args in storage_types \
+                                        if not check_trait(libboink.storage.is_probabilistic, type)],
                                        indirect=['storage_type'],
                                        ids=storage_t_name)(fixture_func)
     return wrapped

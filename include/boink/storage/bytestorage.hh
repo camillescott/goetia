@@ -243,6 +243,13 @@ struct is_probabilistic<ByteStorage> {
       static const bool value = true;
 };
 
+
+template<>
+struct is_counting<ByteStorage> {
+    static const bool value = true;
+};
+
+
 // Helper classes for saving ByteStorage objs to disk & loading them.
 
 class ByteStorageFile

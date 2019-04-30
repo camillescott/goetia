@@ -88,6 +88,11 @@ struct is_probabilistic {
       static const bool value = false;
 };
 
+template< typename T>
+struct is_counting {
+    static const bool value = false;
+};
+
 //
 // base Storage class for hashtable-related storage of information in memory.
 //

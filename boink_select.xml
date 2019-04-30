@@ -1,7 +1,7 @@
 <lcgdict>
     <selection>
         <!-- <namespace pattern="boink::*"/> -->
-        <class pattern="boink::storage::*Storage"/>
+        <class pattern="boink::storage::*"/>
         <class pattern="boink::signatures::*"/>
         <namespace pattern="boink::cdbg::*"/>
         <namespace pattern="boink::hashing::*"/>
