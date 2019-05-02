@@ -40,7 +40,9 @@ enum direction_t {
 
 template <typename T>
 std::string repr(const T& item) {
-    return std::to_string(item);
+    std::ostringstream _os;
+    _os << item;
+    return _os.str();
 }
 
 template<typename _Ty1, typename _Ty2>

@@ -37,6 +37,23 @@
 namespace boink {
 namespace cdbg {
 
+template <class GraphType>
+cDBG<GraphType>::Graph::Graph(std::shared_ptr<GraphType> dbg,
+                              std::shared_ptr<prometheus::Registry> metrics_registry,
+                              uint64_t minimizer_window_size)
+    : KmerClient(dbg->K()),
+      EventNotifier(),
+      dbg(dbg),
+      _n_updates(0),
+      _unitig_id_counter(UNITIG_START_ID),
+      _n_unitig_nodes(0),
+      component_id_counter(0),
+      pr_registry(metrics_registry)
+{
+    pr_registry = metrics_registry;
+    metrics = make_shared<cDBGMetrics>(pr_registry);
+
+}
 
 template <class GraphType>
 std::pair<std::vector<CompactNode*>,

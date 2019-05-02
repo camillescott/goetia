@@ -72,7 +72,9 @@ struct compact_segment {
           right_flank(0),
           is_decision_kmer(false),
           start_pos(0),
-          length(0) {}
+          length(0) 
+    {
+    }
 
     compact_segment(hash_t left_anchor,
                     hash_t right_anchor,
@@ -83,7 +85,20 @@ struct compact_segment {
           right_anchor(right_anchor),
           is_decision_kmer(is_decision_kmer),
           start_pos(start_pos),
-          length(length) {}
+          length(length) 
+    {
+    }
+
+    compact_segment(const compact_segment &obj)
+        : left_anchor(obj.left_anchor),
+          right_anchor(obj.right_anchor),
+          left_flank(obj.left_flank),
+          right_flank(obj.right_flank),
+          is_decision_kmer(obj.is_decision_kmer),
+          start_pos(obj.start_pos),
+          length(obj.length)
+    {
+    }
 
     // return if the segment is default constructed / null
     // used as a delimiter token between connected runs of segments
@@ -95,7 +110,7 @@ struct compact_segment {
 
 inline std::ostream& operator<<(std::ostream& os, const compact_segment& segment)
 {
-    os << "<compact_segment left flank=" << segment.left_flank
+    os << "<compact_segment left_flank=" << segment.left_flank
        << " left_anchor=" << segment.left_anchor
        << " right_anchor=" << segment.right_anchor
        << " right_flank=" << segment.right_flank
@@ -276,6 +291,13 @@ struct StreamingCompactor {
             segments.push_back(segment);
 
             pdebug("Finished decision segment: " << segment);       
+        }
+
+        std::deque<compact_segment> find_new_segments(const std::string& sequence) {
+        
+            std::deque<compact_segment> result;
+            find_new_segments(sequence, result);
+            return result;
         }
 
         void find_new_segments(const std::string& sequence,

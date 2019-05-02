@@ -35,43 +35,47 @@ class TestFindNewSegments:
         check_fp()
 
         print('INPUTS', core, core[:pivot+1], ' ' * (pivot + 1) + branch, sep='\n\n')
+        branch_insert = core[:pivot+1] + branch
 
         core_segments = compactor.find_new_segments(core)
         graph.insert_sequence(core)
-        branch_segments = benchmark(compactor.find_new_segments, 
-                                    core[:pivot+1] + branch)
-        graph.insert_sequence(core[:pivot+1] + branch)
+        branch_segments = benchmark(compactor.find_new_segments,
+                                    branch_insert)
+        graph.insert_sequence(branch_insert)
 
         # should be NULL - SEG - NULL
         print('Core Segments')
+        print(core_segments[0])
         #display_segment_list(core_segments)
         for s in core_segments:
-            print('segment:', s.sequence)
+            print('segment:', s.sequence(core))
         # again NULL - SEG - NULL
         print('Branch Segments')
+        print(branch_segments[0])
         #display_segment_list(branch_segments)
         for s in branch_segments:
-            print('segment:', s.sequence)
+            print('segment:', s.sequence(branch_insert))
 
-        assert branch_segments[0].is_null
+        print(branch_segments[0].NULL)
+        assert branch_segments[0].NULL
         assert len(core_segments) == 3
         assert len(branch_segments) == 3
-        assert branch_segments[1].sequence == branch
+        assert branch_segments[1].sequence(branch_insert) == branch
         assert branch_segments[1].start == pivot + 1
         assert branch_segments[1].is_decision_kmer == False
-        assert branch_segments[-1].is_null
+        assert branch_segments.back().NULL
 
-        assert core_segments[0].is_null
-        assert core_segments[1].sequence == core
-        assert len(core_segments[1].sequence) == length
+        assert core_segments[0].NULL
+        assert core_segments[1].sequence(core) == core
+        assert len(core_segments[1].sequence(core)) == length
         assert core_segments[1].start == 0
         assert core_segments[1].length == length
         assert core_segments[1].is_decision_kmer == False
-        assert core_segments[-1].is_null
+        assert core_segments.back().NULL
 
         for segment in branch_segments:
-            if not segment.is_null:
-                for kmer in kmers(segment.sequence, ksize):
+            if not segment.NULL:
+                for kmer in kmers(segment.sequence(branch), ksize):
                     assert graph.left_degree(kmer) < 2
                     assert graph.right_degree(kmer) < 2
 
@@ -93,34 +97,34 @@ class TestFindNewSegments:
         print('Branch Segments')
         #display_segment_list(branch_segments)
         for s in branch_segments:
-            print('segment:' + s.sequence)
+            print('segment:' + s.sequence(branch))
 
         print('Core Segments')
         #display_segment_list(core_segments)
         for s in core_segments:
-            print('segment:' + s.sequence)
+            print('segment:' + s.sequence(core))
 
         assert len(branch_segments) == 3
-        assert branch_segments[0].is_null
-        assert branch_segments[-1].is_null
+        assert branch_segments[0].NULL
+        assert branch_segments.back().NULL
         branch_segment = branch_segments[1]
-        assert branch_segment.sequence == branch
+        assert branch_segment.sequence(branch) == branch
         assert branch_segment.length == len(branch)
 
         assert len(core_segments) == 5
-        assert core_segments[0].is_null
+        assert core_segments[0].NULL
         assert core_segments[1].is_decision_kmer == False
         assert core_segments[2].is_decision_kmer == True
         assert core_segments[3].is_decision_kmer == False
-        assert core_segments[-1].is_null
+        assert core_segments.back().NULL
 
-        assert graph.left_degree(core_segments[2].sequence) == 1
-        assert graph.right_degree(core_segments[2].sequence) == 2
+        assert graph.left_degree(core_segments[2].sequence(core)) == 1
+        assert graph.right_degree(core_segments[2].sequence(core)) == 2
         assert graph.left_degree(core[pivot:pivot+ksize]) == 1
         assert graph.right_degree(core[pivot:pivot+ksize]) == 2
 
-        assert core[:pivot+ksize-1] == core_segments[1].sequence
-        assert core[pivot+1:] == core_segments[3].sequence
+        assert core[:pivot+ksize-1] == core_segments[1].sequence(core)
+        assert core[pivot+1:] == core_segments[3].sequence(core)
 
 
     @using_ksize(15)
@@ -141,27 +145,27 @@ class TestFindNewSegments:
         graph.insert_sequence(right)
 
         assert len(left_segments) == 3
-        assert left_segments[0].is_null
-        assert left_segments[1].sequence == left
+        assert left_segments[0].NULL
+        assert left_segments[1].sequence(left) == left
         assert left_segments[1].left_anchor == graph.hash(left[:ksize])
         assert left_segments[1].right_anchor == graph.hash(left[-ksize:])
-        assert left_segments[-1].is_null
+        assert left_segments.back().NULL
 
-        assert right_segments[0].is_null
+        assert right_segments[0].NULL
         assert len(right_segments) == 3
-        assert right_segments[1].sequence == right
-        assert right_segments[-1].is_null
+        assert right_segments[1].sequence(right) == right
+        assert right_segments.back().NULL
 
         merged = left + right
         merged_new = left[-ksize+1:] + right[:ksize-1]
         assert sum(graph.query_sequence(merged_new)) == 0
         merged_segments = benchmark(compactor.find_new_segments, merged)
         assert len(merged_segments) == 3
-        assert merged_segments[0].is_null
-        assert merged_segments[-1].is_null
+        assert merged_segments[0].NULL
+        assert merged_segments.back().NULL
         merged_segment = merged_segments[1]
 
-        assert merged_segment.sequence == merged_new
+        assert merged_segment.sequence(merged) == merged_new
         assert merged_segment.left_anchor == graph.hash(merged_new[:ksize])
         assert merged_segment.right_anchor == graph.hash(merged_new[-ksize:])
 
@@ -186,21 +190,21 @@ class TestFindNewSegments:
         graph.insert_sequence(lower)
 
         assert len(upper_segments) == 3
-        assert upper_segments[1].sequence == upper
+        assert upper_segments[1].sequence(upper) == upper
         assert len(lower_segments) == 3
-        assert lower_segments[1].sequence == lower
+        assert lower_segments[1].sequence(lower) == lower
 
         test_segments = benchmark(compactor.find_new_segments, test)
         #display_segment_list(test_segments)
 
-        assert test_segments[0].is_null
+        assert test_segments[0].NULL
         assert len(test_segments) == 4
         assert test_segments[2].is_decision_kmer
-        assert len(test_segments[2].sequence) == ksize
-        assert len(test_segments[1].sequence) == pivot + ksize - 1
+        assert len(test_segments[2].sequence(test)) == ksize
+        assert len(test_segments[1].sequence(test)) == pivot + ksize - 1
         assert test_segments[1].left_anchor == graph.hash(core[:ksize])
         assert test_segments[1].right_anchor == graph.hash(core[pivot-1:pivot+ksize-1])
-        assert test_segments[-1].is_null
+        assert test_segments.back().NULL
 
 
     @using_ksize(15)
@@ -222,18 +226,18 @@ class TestFindNewSegments:
         graph.insert_sequence(lower)
 
         assert len(upper_segments) == 3
-        assert upper_segments[1].sequence == upper
+        assert upper_segments[1].sequence(upper) == upper
         assert len(lower_segments) == 3
-        assert lower_segments[1].sequence == lower
+        assert lower_segments[1].sequence(lower) == lower
 
         test_segments = benchmark(compactor.find_new_segments, test)
         #display_segment_list(test_segments)
 
         assert len(test_segments) == 4
         assert test_segments[1].is_decision_kmer
-        assert test_segments[1].sequence == test[:ksize]
-        assert len(test_segments[1].sequence) == ksize
-        assert len(test_segments[2].sequence) == len(test) - 1
+        assert test_segments[1].sequence(test) == test[:ksize]
+        assert len(test_segments[1].sequence(test)) == ksize
+        assert len(test_segments[2].sequence(test)) == len(test) - 1
         assert test_segments[2].left_anchor == graph.hash(core[pivot+1:pivot+ksize+1])
         assert test_segments[2].right_anchor == graph.hash(core[-ksize:])
 
@@ -315,6 +319,8 @@ class TestDecisionNodes(object):
 
         compactor.update_sequence(upper)
         compactor.update_sequence(lower)
+        print()
+        print(dir(compactor.Graph))
         assert compactor.cdbg.n_dnodes == 0
 
         compactor.update_sequence(test)

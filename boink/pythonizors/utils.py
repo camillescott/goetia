@@ -21,6 +21,7 @@ def is_template_inst(full_name, short_name):
     else:
         return full_name.startswith(template), template
 
+
 def is_member(q_name, q_namespace):
     namespace, _, name = q_name.rpartition('::')
     return namespace == q_namespace, name
