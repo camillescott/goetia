@@ -30,7 +30,7 @@ dBG<StorageType, HashShifter>::insert_sequence(const std::string& sequence,
     storage::count_t count;
     while(!iter.done()) {
         auto h = iter.next();
-        count             = insert_and_query(h);
+        count  = insert_and_query(h);
 
         kmer_hashes.push_back(h);
         counts.push_back(count);

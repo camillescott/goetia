@@ -29,6 +29,12 @@ template <class StorageType,
           class HashShifter>
 class dBG : public kmers::KmerClient {
 
+public:
+
+    typedef HashShifter                             shifter_type;
+    typedef Traverse<dBG<StorageType, HashShifter>> traversal_type;
+    typedef hashing::KmerIterator<HashShifter>      kmer_iter_type;
+
 protected:
 
     std::unique_ptr<StorageType> S;
@@ -36,10 +42,6 @@ protected:
 
 public:
 
-    typedef HashShifter                             shifter_type;
-    typedef Traverse<dBG<StorageType, HashShifter>> traversal_type;
-    typedef hashing::KmerIterator<HashShifter>      kmer_iter_type;
-    
     template <typename... Args>
     explicit dBG(uint16_t K, Args&&... args)
         : KmerClient(K),
@@ -68,6 +70,30 @@ public:
     {
     }
 
+    /**
+     * @Synopsis Build a dBG instance owned by a shared_ptr. 
+     *
+     * @Param K     dBG K length
+     * @Param args  Variadic args to forward on to the storage
+     *
+     * @Returns     shared_ptr owning the dBG.
+     */
+    template <typename ...Args>
+    static std::shared_ptr<dBG<StorageType, HashShifter>> build(uint16_t K, Args&&... args) {
+        return std::make_shared<dBG<StorageType, HashShifter>>(K, std::forward<Args>(args)...);
+    }
+
+    template<typename U = StorageType>
+    static std::shared_ptr<dBG<StorageType, HashShifter>> build(uint16_t K,
+                                                                typename std::enable_if_t<std::is_same<U, boink::storage::SparseppSetStorage>::value, U*> = 0) {
+        return std::make_shared<dBG<StorageType, HashShifter>>(K);
+    }
+
+    /**
+     * @Synopsis  Makes a shallow clone of the dBG.
+     *
+     * @Returns   shared_ptr owning the clone.
+     */
     std::shared_ptr<dBG<StorageType, HashShifter>> clone() {
         return std::make_shared<dBG<StorageType, HashShifter>>(_K, S);
     }
@@ -325,6 +351,15 @@ public:
         return S->estimated_fp();
     }
 
+    /**
+     * @Synopsis  Insert all k-mers from the given sequence.
+     *
+     * @Param sequence string containg the sequence, must be length >= K.
+     * @Param kmer_hashes Hash values corresponding to the k-mers.
+     * @Param counts The k-mer counts after insertion.
+     *
+     * @Returns Number of new unique k-mers inserted.
+     */
     uint64_t insert_sequence(const std::string&          sequence,
                              std::vector<hashing::hash_t>&  kmer_hashes,
                              std::vector<storage::count_t>& counts);
@@ -334,8 +369,22 @@ public:
 
     uint64_t insert_sequence(const std::string& sequence);
 
+    /**
+     * @Synopsis  Insert the sequence and return the post-insertion k-mer counts.
+     *
+     * @Param sequence String with sequence to insert, >= length K.
+     *
+     * @Returns  The counts. 
+     */
     std::vector<storage::count_t> insert_and_query_sequence(const std::string& sequence);
 
+    /**
+     * @Synopsis  Queries the k-mer counts for all k-mers in the sequence.
+     *
+     * @Param sequence String with sequence, >= length K.
+     *
+     * @Returns   The counts.
+     */
     std::vector<storage::count_t> query_sequence(const std::string& sequence);
 
     void query_sequence(const std::string&             sequence,
@@ -356,6 +405,9 @@ public:
         S->load(filename, ksize);
     }
 
+    /**
+     * @Synopsis  Remove all k-mers from the dBG / set all values to zero.
+     */
     void reset() {
         S->reset();
     }
