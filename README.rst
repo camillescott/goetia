@@ -9,7 +9,7 @@ Installation
 
 For this repository with anaconda::
 
-    conda create -n libboink python=3 cmake cxx-compiler c-compiler clangdev libcxx libstdcxx-ng libgcc-ng pytest numpy scipy
+    conda create -n libboink python=3 cmake cxx-compiler c-compiler clangdev libcxx libstdcxx-ng libgcc-ng pytest numpy scipy openmp
     conda activate libboink
     pip install -r requirements.txt
 
