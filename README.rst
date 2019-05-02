@@ -18,5 +18,6 @@ For this repository with anaconda::
 
     mkdir build; cd build
     cmake ..
+    make
     make install
 
