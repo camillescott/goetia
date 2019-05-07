@@ -45,4 +45,4 @@ before_script:
     - cd build
     - cmake ..
     - make install VERBOSE=1
-script: py.test -v -s tests/test_dbg.py tests/test_assembly.py tests/test_hashing.py tests/test_metrics.py tests/test_minimizers.py tests/test_processors.py 
+script: py.test -v -s tests/test_dbg.py tests/test_cdbg.py tests/test_assembly.py tests/test_hashing.py tests/test_metrics.py tests/test_minimizers.py tests/test_processors.py 
