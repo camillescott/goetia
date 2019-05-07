@@ -12,7 +12,7 @@ import pytest
 from tests.utils import *
 
 from boink.prometheus import Instrumentation
-from boink import libboink
+from boink import libboink, nullptr
 
 
 @pytest.fixture
@@ -319,8 +319,6 @@ class TestDecisionNodes(object):
 
         compactor.update_sequence(upper)
         compactor.update_sequence(lower)
-        print()
-        print(dir(compactor.Graph))
         assert compactor.cdbg.n_dnodes == 0
 
         compactor.update_sequence(test)
@@ -339,14 +337,34 @@ class TestDecisionNodes(object):
 
         (core, branch), pivot = left_fork()
         check_fp()
+        print('\npivot', pivot)
+        print('', core)
+        print(branch)
 
         compactor.update_sequence(core)
         assert compactor.cdbg.n_dnodes == 0
+        assert compactor.cdbg.n_unodes == 1
 
+        print(branch, len(branch))
         compactor.update_sequence(branch)
         assert compactor.cdbg.n_dnodes == 1
+        assert compactor.cdbg.n_unodes == 3
+        
         dnode_hash = graph.hash(core[pivot:pivot+ksize])
         print('dnode hash:', dnode_hash)
+        dnode = compactor.cdbg.query_dnode(dnode_hash)
+        lneighbors, rneighbors = compactor.cdbg.find_dnode_neighbors(dnode)
+        assert len(lneighbors) == 2
+        assert len(rneighbors) == 1
+        print(dnode.sequence)
+        print(lneighbors[0].sequence)
+        assert lneighbors[0].sequence == core[:pivot+ksize-1] or \
+                lneighbors[1].sequence == core[:pivot+ksize-1]
+        assert lneighbors[0].sequence == branch or \
+                lneighbors[1].sequence == branch
+        print(lneighbors[1].sequence)
+        print(rneighbors[0].sequence)
+        assert rneighbors[0].sequence == core[pivot+1:]
         assert compactor.cdbg.has_dnode(dnode_hash)
 
     @using_ksize(15)
@@ -360,17 +378,32 @@ class TestDecisionNodes(object):
         (core, branch), pivot = right_fork()
         check_fp()
 
+        print()
         print(core, core[:pivot+1] + branch, sep='\n')
-        print(core[pivot:pivot+ksize])
+        print('d-dnode:', core[pivot:pivot+ksize])
 
         compactor.update_sequence(core)
         assert compactor.cdbg.n_dnodes == 0
 
         compactor.update_sequence(branch)
         assert compactor.cdbg.n_dnodes == 1
+        assert compactor.cdbg.n_unodes == 3
         dnode_hash = graph.hash(core[pivot:pivot+ksize])
         print('dnode hash:', dnode_hash)
         assert compactor.cdbg.has_dnode(dnode_hash)
+        dnode = compactor.cdbg.query_dnode(dnode_hash)
+        lneighbors, rneighbors = compactor.cdbg.find_dnode_neighbors(dnode)
+        assert len(lneighbors) == 1
+        assert len(rneighbors) == 2
+        print(dnode.sequence)
+        print(lneighbors[0].sequence)
+        print(rneighbors[0].sequence)
+        print(rneighbors[1].sequence)
+        assert lneighbors[0].sequence == core[:pivot+ksize-1]
+        assert rneighbors[0].sequence == core[pivot+1:] or \
+                rneighbors[1].sequence == core[pivot+1:]
+        assert rneighbors[0].sequence == branch or \
+                rneighbors[1].sequence == branch
 
     @using_ksize(15)
     @using_length(100)
@@ -539,19 +572,19 @@ class TestUnitigBuildExtend(object):
         assert compactor.cdbg.n_unodes == 1
         unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
         assert unode.sequence == left
-        assert unode.meta == 'ISLAND'
+        assert unode.meta == libboink.cdbg.ISLAND
 
         compactor.update_sequence(right)
         assert compactor.cdbg.n_unodes == 2
         unode = compactor.cdbg.query_unode_end(graph.hash(right[:ksize]))
         assert unode.sequence == right
-        assert unode.meta == 'ISLAND'
+        assert unode.meta == libboink.cdbg.ISLAND
 
         compactor.update_sequence(left + right)
         assert compactor.cdbg.n_unodes == 1
         unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
         assert unode.sequence == left + right
-        assert unode.meta == 'ISLAND'
+        assert unode.meta == libboink.cdbg.ISLAND
         assert compactor.cdbg.query_unode_end(graph.hash(left[-ksize:])) is None
         assert compactor.cdbg.query_unode_end(graph.hash(right[:ksize])) is None
 
@@ -571,19 +604,19 @@ class TestUnitigBuildExtend(object):
         assert compactor.cdbg.n_unodes == 1
         unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
         assert unode.sequence == left
-        assert unode.meta == 'ISLAND'
+        assert unode.meta == libboink.cdbg.ISLAND
 
         compactor.update_sequence(right)
         assert compactor.cdbg.n_unodes == 2
         unode = compactor.cdbg.query_unode_end(graph.hash(right[:ksize]))
         assert unode.sequence == right
-        assert unode.meta == 'ISLAND'
+        assert unode.meta == libboink.cdbg.ISLAND
 
         compactor.update_sequence(merger)
         assert compactor.cdbg.n_unodes == 1
         unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
         assert unode.sequence == sequence
-        assert unode.meta == 'ISLAND'
+        assert unode.meta == libboink.cdbg.ISLAND
         assert compactor.cdbg.query_unode_end(graph.hash(left[-ksize:])) is None
         assert compactor.cdbg.query_unode_end(graph.hash(right[:ksize])) is None
 
@@ -604,19 +637,19 @@ class TestUnitigBuildExtend(object):
         assert compactor.cdbg.n_unodes == 1
         unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
         assert unode.sequence == left
-        assert unode.meta == 'ISLAND'
+        assert unode.meta == libboink.cdbg.ISLAND
 
         compactor.update_sequence(right)
         assert compactor.cdbg.n_unodes == 2
         unode = compactor.cdbg.query_unode_end(graph.hash(right[:ksize]))
         assert unode.sequence == right
-        assert unode.meta == 'ISLAND'
+        assert unode.meta == libboink.cdbg.ISLAND
 
         compactor.update_sequence(sequence)
         assert compactor.cdbg.n_unodes == 1
         unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
         assert unode.sequence == sequence
-        assert unode.meta == 'ISLAND'
+        assert unode.meta == libboink.cdbg.ISLAND
         assert compactor.cdbg.query_unode_end(graph.hash(left[-ksize:])) is None
         assert compactor.cdbg.query_unode_end(graph.hash(right[:ksize])) is None
 
@@ -637,21 +670,21 @@ class TestUnitigBuildExtend(object):
         assert compactor.cdbg.n_unitig_ends == 1
         unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
         assert unode.sequence == left
-        assert unode.meta == 'TRIVIAL'
+        assert unode.meta == libboink.cdbg.TRIVIAL
 
         compactor.update_sequence(right)
         assert compactor.cdbg.n_unodes == 2
         assert compactor.cdbg.n_unitig_ends == 3
         unode = compactor.cdbg.query_unode_end(graph.hash(right[:ksize]))
         assert unode.sequence == right
-        assert unode.meta == 'ISLAND'
+        assert unode.meta == libboink.cdbg.ISLAND
 
         compactor.update_sequence(merger)
         assert compactor.cdbg.n_unodes == 1
         assert compactor.cdbg.n_unitig_ends == 2
         unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
         assert unode.sequence == sequence
-        assert unode.meta == 'ISLAND'
+        assert unode.meta == libboink.cdbg.ISLAND
 
     @using_ksize(15)
     @using_length(100)
@@ -670,21 +703,21 @@ class TestUnitigBuildExtend(object):
         assert compactor.cdbg.n_unitig_ends == 2
         unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
         assert unode.sequence == left
-        assert unode.meta == 'ISLAND'
+        assert unode.meta == libboink.cdbg.ISLAND
 
         compactor.update_sequence(right)
         assert compactor.cdbg.n_unodes == 2
         assert compactor.cdbg.n_unitig_ends == 3
         unode = compactor.cdbg.query_unode_end(graph.hash(right[:ksize]))
         assert unode.sequence == right
-        assert unode.meta == 'TRIVIAL'
+        assert unode.meta == libboink.cdbg.TRIVIAL
 
         compactor.update_sequence(merger)
         assert compactor.cdbg.n_unodes == 1
         assert compactor.cdbg.n_unitig_ends == 2
         unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
         assert unode.sequence == sequence
-        assert unode.meta == 'ISLAND'
+        assert unode.meta == libboink.cdbg.ISLAND
 
     @using_length(50)
     @using_ksize(9)
@@ -702,13 +735,13 @@ class TestUnitigBuildExtend(object):
         assert compactor.cdbg.n_unodes == 1
         unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
         assert unode.sequence == left
-        assert unode.meta == 'ISLAND'
+        assert unode.meta == libboink.cdbg.ISLAND
 
         compactor.update_sequence(right)
         assert compactor.cdbg.n_unodes == 1
         unode = compactor.cdbg.query_unode_end(graph.hash(right[-ksize:]))
         assert unode.sequence == sequence
-        assert unode.meta == 'ISLAND'
+        assert unode.meta == libboink.cdbg.ISLAND
         assert compactor.cdbg.query_unode_end(graph.hash(left[-ksize:])) is None
 
 
@@ -735,13 +768,13 @@ class TestUnitigSplit(object):
         assert top_unode is not None
         assert top_unode.sequence == top[1:]
         assert top_unode.right_end == graph.hash(top[-ksize:])
-        assert top_unode.meta == 'TIP'
+        assert top_unode.meta == libboink.cdbg.TIP
         
         bottom_unode = compactor.cdbg.query_unode_end(graph.hash(bottom[1:ksize+1]))
         assert bottom_unode is not None
         assert bottom_unode.sequence == bottom[1:]
         assert bottom_unode.right_end == graph.hash(bottom[-ksize:])
-        assert bottom_unode.meta == 'TIP'
+        assert bottom_unode.meta == libboink.cdbg.TIP
 
     @using_ksize(15)
     @using_length(50)
@@ -764,13 +797,13 @@ class TestUnitigSplit(object):
         assert top_unode is not None
         assert top_unode.sequence == top[:-1]
         assert top_unode.left_end == graph.hash(top[:ksize])
-        assert top_unode.meta == 'TIP'
+        assert top_unode.meta == libboink.cdbg.TIP
         
         bottom_unode = compactor.cdbg.query_unode_end(graph.hash(bottom[-(ksize+1):-1]))
         assert bottom_unode is not None
         assert bottom_unode.sequence == bottom[:-1]
         assert bottom_unode.left_end == graph.hash(bottom[:ksize])
-        assert bottom_unode.meta == 'TIP'
+        assert bottom_unode.meta == libboink.cdbg.TIP
 
     @using_ksize(15)
     @using_length(150)
@@ -1083,7 +1116,7 @@ class TestCircularUnitigs:
         unode = compactor.cdbg.query_unode_end(graph.hash(sequence[:ksize]))
         assert unode is not None
         assert unode.right_end == graph.hash(sequence[:ksize])
-        assert unode.meta == 'CIRCULAR'
+        assert unode.meta == libboink.cdbg.CIRCULAR
 
     @using_ksize(15)
     @using_length(20)
@@ -1098,7 +1131,7 @@ class TestCircularUnitigs:
         unode = compactor.cdbg.query_unode_end(graph.hash(sequence[:ksize]))
         assert unode.right_end == graph.hash(sequence[:ksize])
         assert unode.sequence == sequence[:length+ksize-1]
-        assert unode.meta == 'CIRCULAR'
+        assert unode.meta == libboink.cdbg.CIRCULAR
 
     @using_ksize(15)
     @using_length(40)
@@ -1118,7 +1151,7 @@ class TestCircularUnitigs:
         unode = compactor.cdbg.query_unode_end(graph.hash(start[:ksize]))
         assert unode.right_end == graph.hash(start[:ksize])
         assert unode.sequence == sequence[:length+ksize-1]
-        assert unode.meta == 'CIRCULAR'
+        assert unode.meta == libboink.cdbg.CIRCULAR
 
     @using_ksize(7)
     @using_length(20)
@@ -1149,7 +1182,7 @@ class TestCircularUnitigs:
         unode = compactor.cdbg.query_unode_end(graph.hash(expected[:ksize]))
         assert unode.right_end == graph.hash(expected[:ksize])
         assert unode.sequence == expected
-        assert unode.meta == 'CIRCULAR'
+        assert unode.meta == libboink.cdbg.CIRCULAR
 
     @using_ksize(7)
     @using_length(20)
@@ -1174,7 +1207,7 @@ class TestCircularUnitigs:
         unode = compactor.cdbg.query_unode_end(graph.hash(sequence[:ksize]))
         assert unode.right_end == graph.hash(sequence[:ksize])
         assert unode.sequence == sequence
-        assert unode.meta == 'CIRCULAR'
+        assert unode.meta == libboink.cdbg.CIRCULAR
 
     @using_ksize(7)
     @using_length(21)
@@ -1214,8 +1247,8 @@ class TestCircularUnitigs:
         assert loop_unode is not None
         assert loop_unode.right_end == graph.hash(loop[:ksize])
         assert loop_unode.sequence == loop
-        assert loop_unode.meta == 'CIRCULAR'
-        loop_unode = loop_unode.clone()
+        assert loop_unode.meta == libboink.cdbg.CIRCULAR
+        loop_unode = libboink.cdbg.UnitigNode.build(loop_unode)
 
         compactor.update_sequence(tail)
         assert compactor.cdbg.n_dnodes == 1
@@ -1250,8 +1283,8 @@ class TestCircularUnitigs:
         assert loop_unode is not None
         assert loop_unode.right_end == graph.hash(loop[:ksize])
         assert loop_unode.sequence == loop
-        assert loop_unode.meta == 'CIRCULAR'
-        loop_unode = loop_unode.clone()
+        assert loop_unode.meta == libboink.cdbg.CIRCULAR
+        loop_unode = libboink.cdbg.UnitigNode.build(loop_unode)
 
         compactor.update_sequence(tail)
         assert compactor.cdbg.n_dnodes == 1
@@ -1267,7 +1300,7 @@ class TestCircularUnitigs:
             print(cycled_loop_unode)
             assert cycled_loop_unode is not None
             assert cycled_loop_unode.right_end == graph.hash(loop[-ksize:])
-            assert cycled_loop_unode.meta == 'FULL'
+            assert cycled_loop_unode.meta == libboink.cdbg.FULL
         else:
             # dnode is last k-mer in loop
             cycled_loop_unode = compactor.cdbg.query_unode_end(graph.hash(loop[pivot-1:pivot-1+ksize]))   
@@ -1275,7 +1308,7 @@ class TestCircularUnitigs:
             print('pivot:', pivot)
             assert cycled_loop_unode is not None
             assert cycled_loop_unode.left_end == graph.hash(loop[:ksize])
-            assert cycled_loop_unode.meta == 'FULL'
+            assert cycled_loop_unode.meta == libboink.cdbg.FULL
 
         print('\n', loop_unode, sep='')
         print(cycled_loop_unode)

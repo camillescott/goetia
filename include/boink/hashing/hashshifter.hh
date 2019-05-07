@@ -134,7 +134,7 @@ public:
         return h;
     }
 
-    std::string get_cursor() const {
+    const std::string get_cursor() const {
         return std::string(kmer_window.begin(),
                            kmer_window.end());
     }
@@ -242,21 +242,26 @@ protected:
     }
 
     void load(const std::string& sequence) {
-        sequence.copy(kmer_buffer, this->_K);
+        load(sequence.cbegin());
     }
 
     void load(const char * sequence) {
-        strncpy(kmer_buffer, sequence, this->_K);
+        for (uint16_t i = 0; i < this->_K; ++i)  {
+            kmer_window.push_back(sequence[i]);
+        }
     }
 
     template <typename Iterator>
-    void load(const Iterator begin, const Iterator end) {
-        std::copy(begin, end, kmer_buffer);
+    void load(Iterator begin, Iterator end) {
+        std::copy(begin, end, kmer_window);
     }
 
     template <typename Iterator>
-    void load(const Iterator begin) {
-        std::copy_n(begin, this->_K, kmer_buffer);
+    void load(Iterator begin) {
+        for (uint16_t i = 0; i < this->_K; ++i)  {
+            kmer_window.push_back(*begin);
+            begin++;
+        }
     }
 
 };

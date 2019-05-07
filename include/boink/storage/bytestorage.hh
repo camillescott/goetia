@@ -163,6 +163,10 @@ public:
         return std::make_unique<ByteStorage>(this->_tablesizes);
     }
 
+    static std::unique_ptr<ByteStorage> build(uint64_t max_table, uint16_t N) {
+        return std::make_unique<ByteStorage>(max_table, N);
+    }
+
     std::vector<uint64_t> get_tablesizes() const
     {
         return _tablesizes;

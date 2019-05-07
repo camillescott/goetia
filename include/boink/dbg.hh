@@ -47,7 +47,7 @@ public:
         : KmerClient(K),
           hasher(K)
     {
-        S = std::make_unique<StorageType>(std::forward<Args>(args)...);
+        S = StorageType::build(std::forward<Args>(args)...);
     }
 
     // Wonky template foo to make sure this constructor is only emitted if
@@ -60,7 +60,7 @@ public:
         : KmerClient(K),
           hasher(K)
     {
-        S = std::make_unique<StorageType>();
+        S = StorageType::build();
     }
 
     explicit dBG(uint16_t K, std::unique_ptr<StorageType>& S)
@@ -79,13 +79,15 @@ public:
      * @Returns     shared_ptr owning the dBG.
      */
     template <typename ...Args>
-    static std::shared_ptr<dBG<StorageType, HashShifter>> build(uint16_t K, Args&&... args) {
+    static std::shared_ptr<dBG<StorageType, HashShifter>> 
+    __attribute__((used)) build(uint16_t K, Args&&... args) {
         return std::make_shared<dBG<StorageType, HashShifter>>(K, std::forward<Args>(args)...);
     }
 
     template<typename U = StorageType>
-    static std::shared_ptr<dBG<StorageType, HashShifter>> build(uint16_t K,
-                                                                typename std::enable_if_t<std::is_same<U, boink::storage::SparseppSetStorage>::value, U*> = 0) {
+    static std::shared_ptr<dBG<StorageType, HashShifter>> 
+    __attribute__((used)) build(uint16_t K,
+                                typename std::enable_if_t<std::is_same<U, boink::storage::SparseppSetStorage>::value, U*> = 0) {
         return std::make_shared<dBG<StorageType, HashShifter>>(K);
     }
 

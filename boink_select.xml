@@ -21,6 +21,8 @@
         <class name="prometheus::Registry"/>
         <class name="prometheus::Exposer"/>
 
+        <class pattern="std::make_unique<boink::*>"/>
+
         <class pattern="std::pair<*,*>"/>
         <class pattern="std::enable_shared_from_this<*>" />
         <class pattern="std::vector<*>" />

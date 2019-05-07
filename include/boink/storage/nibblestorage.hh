@@ -134,6 +134,10 @@ public:
         }
     }
 
+    static std::unique_ptr<NibbleStorage> build(uint64_t max_table, uint16_t N) {
+        return std::make_unique<NibbleStorage>(max_table, N);
+    }
+
     std::unique_ptr<NibbleStorage> clone() const {
         return std::make_unique<NibbleStorage>(this->_tablesizes);
     }

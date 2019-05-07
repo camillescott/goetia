@@ -119,6 +119,10 @@ public:
         return std::make_unique<BitStorage>(this->_tablesizes);
     }
 
+    static std::unique_ptr<BitStorage> build(uint64_t max_table, uint16_t N) {
+        return std::make_unique<BitStorage>(max_table, N);
+    }
+
     void _allocate_counters()
     {
         _n_tables = _tablesizes.size();

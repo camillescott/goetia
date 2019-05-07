@@ -37,6 +37,7 @@ set(_headers
     include/boink/storage/cqf/gqf.h
     include/boink/signatures/ukhs_signature.hh
     include/boink/signatures/sourmash/kmer_min_hash.hh
+    include/boink/benchmarks/bench_storage.hh
 )
 
 set(_sources
@@ -72,6 +73,7 @@ set(_sources
     src/boink/parsing/readers.cc
     src/boink/parsing/parsing.cc
     src/boink/minimizers.cc
+    src/boink/benchmarks/bench_storage.cc
 )
 
 set(_data

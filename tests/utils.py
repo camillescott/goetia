@@ -34,7 +34,7 @@ def graph(storage_type, ksize):
     _storage_type, params = storage_type
     _graph_type = libboink.dBG[_storage_type, libboink.hashing.RollingHashShifter]
     
-    return std.make_shared[_graph_type](ksize, *params)
+    return _graph_type.build(ksize, *params)
 
 
 def counting_backends(*args):

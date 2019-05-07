@@ -77,6 +77,9 @@ public:
 
   ~QFStorage();
 
+  static std::unique_ptr<QFStorage> build(int size) {
+      return std::make_unique<QFStorage>(size);
+  }
   std::unique_ptr<QFStorage> clone() const;
 
   const bool insert(hashing::hash_t khash);

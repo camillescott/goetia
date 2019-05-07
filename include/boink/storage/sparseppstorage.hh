@@ -38,6 +38,10 @@ public:
         _store = std::make_unique<store_type>();
     }
 
+    static std::unique_ptr<SparseppSetStorage> build() {
+        return std::make_unique<SparseppSetStorage>();
+    }
+
     std::unique_ptr<SparseppSetStorage> clone() const {
         return std::make_unique<SparseppSetStorage>();
     }

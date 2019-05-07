@@ -128,6 +128,7 @@ struct StreamingCompactor {
     using TraversalType = Traverse<GraphType>;
     using MinimizerType = WKMinimizer<ShifterType>;
     using cDBGType      = typename cDBG<GraphType>::Graph;
+    using State         = typename TraversalType::State;
 
     struct Report {
         uint64_t n_full;
@@ -723,13 +724,15 @@ struct StreamingCompactor {
                 auto stop_state = this->traverse_left(dbg.get(), start.kmer, path, processed);
                 hash_t end_hash = stop_state.second;
 
-                unode_to_split = cdbg->query_unode_end(end_hash);
-                if (unode_to_split != nullptr) {
-                    size_t split_point = path.size() + 1;
+                if (stop_state.first != State::STOP_SEEN) {
+                    unode_to_split = cdbg->query_unode_end(end_hash);
+                    size_t split_point = path.size() - this->_K  + 1;
                     hash_t left_unode_new_right = start.hash;
+
                     pdebug("split point is " << split_point <<
                             " new_right is " << left_unode_new_right
                            << " root was " << root.hash);
+
                     hash_t right_unode_new_left = this->hash(unode_to_split->sequence.c_str() + 
                                                              split_point + 1);
                     if (rfiltered.size()) {
@@ -766,15 +769,16 @@ struct StreamingCompactor {
                 pdebug("Found a valid right neighbor, search this way... ("
                        << rfiltered.size() << " in filtered set, should be 1.");
                 auto start = rfiltered.back();
+                std::cout << "rstart: " << start.kmer << std::endl;
                 Path path;
-                auto end_state = this->traverse_right(dbg.get(), start.kmer, path, processed);
-                hash_t end_hash = end_state.second;
+                auto stop_state = this->traverse_right(dbg.get(), start.kmer, path, processed);
+                hash_t end_hash = stop_state.second;
 
-                unode_to_split = cdbg->query_unode_end(end_hash);
-                if (unode_to_split != nullptr) {
+                if (stop_state.first != State::STOP_SEEN) {
+                    unode_to_split = cdbg->query_unode_end(end_hash);
                     size_t split_point = unode_to_split->sequence.size()
                                                          - path.size()
-                                                         - 1 - this->_K;
+                                                         - 1;
                     hash_t new_right = this->hash(unode_to_split->sequence.c_str() + 
                                                   split_point - 1);
                     hash_t new_left = start.hash;

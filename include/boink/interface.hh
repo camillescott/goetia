@@ -45,6 +45,8 @@
 #include "boink/minimizers.hh"
 #include "boink/signatures/ukhs_signature.hh"
 
+#include "boink/benchmarks/bench_storage.hh"
+
 #include "prometheus/exposer.h"
 
 #include <set>

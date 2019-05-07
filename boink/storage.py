@@ -19,7 +19,7 @@ def add_storage_args(parser):
     group = parser.add_argument_group('storage')
 
     group.add_argument('--storage', choices=list(type_dict.keys()), 
-                        type=storage_type, default='SparseppSetParser')
+                        type=storage_type, default='SparseppSetStorage')
     group.add_argument('-N', '--n_tables', default=4, type=int)
     group.add_argument('-x', '--max-tablesize', default=1e6, type=int)
 

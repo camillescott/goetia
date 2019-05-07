@@ -11,6 +11,7 @@
 #define BOINK_CDBG_TYPES_HH
 
 #include <climits>
+#include <memory>
 #include <string>
 #include <iostream>
 #include <sstream>
@@ -171,6 +172,14 @@ public:
     {    
     }
 
+    static std::shared_ptr<DecisionNode> build(const DecisionNode& other) {
+        return std::make_shared<DecisionNode>(other.node_id, other.sequence);
+    }
+
+    static std::shared_ptr<DecisionNode> build(const DecisionNode * other) {
+        return std::make_shared<DecisionNode>(other->node_id, other->sequence);
+    }
+
     const bool is_dirty() const {
         return _dirty;
     }
@@ -241,10 +250,27 @@ public:
     UnitigNode(id_t node_id,
                hash_t left_end,
                hash_t right_end,
-               const std::string& sequence)
-        : CompactNode(node_id, sequence, ISLAND),
+               const std::string& sequence,
+               node_meta_t meta = ISLAND)
+        : CompactNode(node_id, sequence, meta),
           _left_end(left_end),
           _right_end(right_end) { 
+    }
+
+    static std::shared_ptr<UnitigNode> build(const UnitigNode& other) {
+        return std::make_shared<UnitigNode>(other.node_id,
+                                            other.left_end(),
+                                            other.right_end(),
+                                            other.sequence,
+                                            other.meta());
+    }
+
+    static std::shared_ptr<UnitigNode> build(const UnitigNode * other) {
+        return std::make_shared<UnitigNode>(other->node_id,
+                                            other->left_end(),
+                                            other->right_end(),
+                                            other->sequence,
+                                            other->meta());
     }
 
     void set_node_meta(node_meta_t new_meta) {

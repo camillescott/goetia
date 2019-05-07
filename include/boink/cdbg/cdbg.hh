@@ -195,82 +195,23 @@ struct cDBG {
          * decision nodes and unitig nodes.
          */
 
-        CompactNode* query_cnode(hash_t hash) {
-            CompactNode * node = query_unode_end(hash);
-            if (node == nullptr) {
-                node = query_dnode(hash);
-            }
-            return node;
-        }
+        CompactNode* query_cnode(hash_t hash);
 
-        DecisionNode* query_dnode(hash_t hash) {
+        DecisionNode* query_dnode(hash_t hash);
 
-            auto search = decision_nodes.find(hash);
-            if (search != decision_nodes.end()) {
-                return search->second.get();
-            }
-            return nullptr;
-        }
+        vector<DecisionNode*> query_dnodes(const std::string& sequence);
 
-        vector<DecisionNode*> query_dnodes(const std::string& sequence) {
+        UnitigNode * query_unode_end(hash_t end_kmer);
 
-            KmerIterator<ShifterType> kmers(sequence, this->_K);
-            vector<DecisionNode*> result;
-            while(!kmers.done()) {
-                hash_t h = kmers.next();
-                DecisionNode * dnode;
-                if ((dnode = query_dnode(h)) != nullptr) {
-                    result.push_back(dnode);
-                }
-            }
-            
-            return result;
-        }
+        UnitigNode * query_unode_tag(hash_t hash);
 
-        UnitigNode * query_unode_end(hash_t end_kmer) {
-            auto search = unitig_end_map.find(end_kmer);
-            if (search != unitig_end_map.end()) {
-                return search->second;
-            }
-            return nullptr;
-        }
+        UnitigNode * query_unode_id(id_t id);
 
-        UnitigNode * query_unode_tag(hash_t hash) {
-            auto search = unitig_tag_map.find(hash);
-            if (search != unitig_tag_map.end()) {
-                return search->second;
-            }
-            return nullptr;
-        }
+        bool has_dnode(hash_t hash);
 
-        UnitigNode * query_unode_id(id_t id) {
-            auto search = unitig_nodes.find(id);
-            if (search != unitig_nodes.end()) {
-                return search->second.get();
-            }
-            return nullptr;
-        }
+        bool has_unode_end(hash_t end_kmer);
 
-        bool has_dnode(hash_t hash) {
-            auto search = decision_nodes.find(hash);
-            if (search != decision_nodes.end()) {
-                return true;
-            }
-            return false;   
-        }
-
-        bool has_unode_end(hash_t end_kmer) {
-            return unitig_end_map.count(end_kmer) != 0;
-        }
-
-        CompactNode * find_rc_cnode(CompactNode * root) {
-
-            std::string  rc_seq  = hashing::revcomp(root->sequence.substr(0, this->_K));
-            hash_t        rc_hash = dbg->hash(rc_seq);
-            CompactNode * rc_node = query_cnode(rc_hash);
-
-            return rc_node;
-        }
+        CompactNode * find_rc_cnode(CompactNode * root);
 
         /* Neighbor-finding and traversal.
          *

@@ -52,8 +52,112 @@ cDBG<GraphType>::Graph::Graph(std::shared_ptr<GraphType> dbg,
 {
     pr_registry = metrics_registry;
     metrics = make_shared<cDBGMetrics>(pr_registry);
-
 }
+
+
+template <class GraphType>
+bool
+cDBG<GraphType>::Graph::has_dnode(hash_t hash)  {
+    auto search = decision_nodes.find(hash);
+    if (search != decision_nodes.end()) {
+        return true;
+    }
+    return false;   
+}
+
+
+template <class GraphType>
+bool
+cDBG<GraphType>::Graph::has_unode_end(hash_t end_kmer) {
+    return unitig_end_map.count(end_kmer) != 0;
+}
+
+
+template <class GraphType>
+UnitigNode *
+cDBG<GraphType>::Graph::query_unode_end(hash_t end_kmer) {
+    auto search = unitig_end_map.find(end_kmer);
+    if (search != unitig_end_map.end()) {
+        return search->second;
+    }
+    return nullptr;
+}
+
+
+template <class GraphType>
+UnitigNode *
+cDBG<GraphType>::Graph::query_unode_tag(hash_t hash) {
+    auto search = unitig_tag_map.find(hash);
+    if (search != unitig_tag_map.end()) {
+        return search->second;
+    }
+    return nullptr;
+}
+
+
+template <class GraphType>
+UnitigNode *
+cDBG<GraphType>::Graph::query_unode_id(id_t id) {
+    auto search = unitig_nodes.find(id);
+    if (search != unitig_nodes.end()) {
+        return search->second.get();
+    }
+    return nullptr;
+}
+
+
+template <class GraphType>
+CompactNode * 
+cDBG<GraphType>::Graph::query_cnode(hash_t hash) {
+    CompactNode * node = query_unode_end(hash);
+    if (node == nullptr) {
+        node = query_dnode(hash);
+    }
+    return node;
+}
+
+
+template <class GraphType>
+DecisionNode * 
+cDBG<GraphType>::Graph::query_dnode(hash_t hash) {
+
+    auto search = decision_nodes.find(hash);
+    if (search != decision_nodes.end()) {
+        return search->second.get();
+    }
+    return nullptr;
+}
+
+
+template <class GraphType>
+vector<DecisionNode*>
+cDBG<GraphType>::Graph::query_dnodes(const std::string& sequence) {
+
+    KmerIterator<ShifterType> kmers(sequence, this->_K);
+    vector<DecisionNode*> result;
+    while(!kmers.done()) {
+        hash_t h = kmers.next();
+        DecisionNode * dnode;
+        if ((dnode = query_dnode(h)) != nullptr) {
+            result.push_back(dnode);
+        }
+    }
+    
+    return result;
+}
+
+
+template <class GraphType>
+CompactNode *
+cDBG<GraphType>::Graph::find_rc_cnode(CompactNode * root) {
+
+    std::string  rc_seq  = hashing::revcomp(root->sequence.substr(0, this->_K));
+    hash_t        rc_hash = dbg->hash(rc_seq);
+    CompactNode * rc_node = query_cnode(rc_hash);
+
+    return rc_node;
+}
+
 
 template <class GraphType>
 std::pair<std::vector<CompactNode*>,

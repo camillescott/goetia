@@ -48,22 +48,34 @@ def pythonize_boink_cdbg(klass, name):
         klass.__repr__ = __repr__
         klass.__str__ = __str__
 
+    
+    if name == 'CompactNode':
+        klass.__len__ = lambda self: self.length()
+        klass.meta = property(klass.meta)
+
+    
+    if name == 'UnitigNode':
+        klass.left_end = property(klass.left_end)
+        klass.right_end = property(klass.right_end)
+
+
     cDBG_inst, template = is_template_inst(name, 'cDBG')
     if cDBG_inst:
-        print()
-        print('pythonizor:', name, klass)
-        print('sub:', klass.Graph)
         klass.Graph.n_updates = property(klass.Graph.n_updates)
         klass.Graph.n_unodes = property(klass.Graph.n_unitig_nodes)
         klass.Graph.n_tags = property(klass.Graph.n_tags)
         klass.Graph.n_dnodes = property(klass.Graph.n_decision_nodes)
         klass.Graph.n_unitig_ends = property(klass.Graph.n_unitig_ends)
-        print(dir(klass.Graph))
+
+        klass.Graph.query_cnode = convert_nullptr(klass.Graph.query_cnode)
+        klass.Graph.query_dnode = convert_nullptr(klass.Graph.query_dnode)
+        klass.Graph.query_unode_end = convert_nullptr(klass.Graph.query_unode_end)
+        klass.Graph.query_unode_tag = convert_nullptr(klass.Graph.query_unode_tag)
+        klass.Graph.query_unode_id = convert_nullptr(klass.Graph.query_unode_id)
+
 
     compactor_inst, template = is_template_inst(name, 'StreamingCompactor')
     if compactor_inst:
-        print()
-        print('pythonizor: ', name, klass)
         klass.Compactor.Graph = property(lambda self: self.cdbg)
 
 

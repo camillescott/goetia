@@ -2,6 +2,7 @@
 #define KMER_MIN_HASH_HH
 
 #include <algorithm>
+#include <cstring>
 #include <set>
 #include <map>
 #include <queue>

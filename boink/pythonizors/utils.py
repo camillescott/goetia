@@ -1,3 +1,4 @@
+import cppyy
 import re
 
 
@@ -25,3 +26,14 @@ def is_template_inst(full_name, short_name):
 def is_member(q_name, q_namespace):
     namespace, _, name = q_name.rpartition('::')
     return namespace == q_namespace, name
+
+
+def convert_nullptr(func):
+    
+    def wrapper(*args, **kwargs):
+        result = func(*args, **kwargs)
+        if cppyy.addressof(result) == 0:
+            return None
+        return result
+
+    return wrapper
