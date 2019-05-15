@@ -16,6 +16,7 @@ from boink.args import (add_output_interval_args,
                         add_pairing_args)
 from boink.data import load_ukhs
 from boink import libboink
+from boink.storage import get_storage_args, process_storage_args
 from boink.utils import find_common_basename, remove_fx_suffix, grouper
 
 
@@ -173,6 +174,7 @@ class DraffRunner:
         parser.add_argument('-W', type=int, default=31)
         parser.add_argument('-K', type=int, default=9)
         parser.add_argument('--prefix', nargs='*')
+        get_storage_args(parser)
         parser.add_argument('--merge')
         parser.add_argument('-i', '--inputs', nargs='+', required=True)
 
@@ -184,6 +186,8 @@ class DraffRunner:
 
     def run(self):
         args = self.parser.parse_args()
+        process_storage_args(args)
+        self.signature_t = libboink.signatures.UnikmerSignature[args.storage]
         return args.func(args)
 
     def iter_inputs(self, args):
@@ -232,20 +236,19 @@ class DraffStream:
         frame.draw(messages=[term.read + 'Initializing UKHS({},{})...'.format(args.W, args.K)],
                    draw_dist_plot=False)
         ukhs = load_ukhs(args.W, args.K)
-        storage_t = getattr(libboink.storage, 'BitStorage')
-        signature_t = libboink.signatures.UnikmerSignature[storage_t]
-
+        signature_t = self.runner.signature_t
+        
         if args.merge:
             frame.draw(messages=[term.red + 'Initializing signature for {}...'.format(args.merge)], 
                        draw_dist_plot=False)
-            sig_gen = signature_t.Signature.build(args.W, args.K, ukhs, 100000, 4)
+            sig_gen = signature_t.Signature.build(args.W, args.K, ukhs, *args.storage_args)
             processor = signature_t.Processor.build(sig_gen,
                                                     args.fine_interval,
                                                     args.medium_interval,
                                                     args.coarse_interval)
 
             for sample, prefix in self.runner.iter_inputs(args):
-                frame.draw(messages=['Started processing on {sample}'.format(sample)], draw_dist_plot=False)
+                frame.draw(messages=['Started processing on {}'.format(sample)], draw_dist_plot=False)
 
                 n_reads, distances, distances_t, stdevs, saturated = self.process_sample(sig_gen, processor, sample, frame,
                                                                                         dfunc, args.distance_window, args.stdev_cutoff)
@@ -271,12 +274,13 @@ class DraffStream:
             for sample, prefix in self.runner.iter_inputs(args):
                 frame.draw(messages=[term.red + 'Initializing signature for {}...'.format(prefix)], 
                            draw_dist_plot=False)
-                sig_gen = signature_t.Signature.build(args.W, args.K, ukhs.__smartptr__(), 100000, 4)
+                sig_gen = signature_t.Signature.build(args.W, args.K, ukhs.__smartptr__(), *args.storage_args)
                 processor = signature_t.Processor.build(sig_gen,
                                                         args.fine_interval,
                                                         args.medium_interval,
                                                         args.coarse_interval)
 
+                frame.draw(messages=['Started processing on {}.'.format(sample)])
                 n_reads, distances, distances_t, stdevs,  saturated = self.process_sample(sig_gen, processor, sample, frame,
                                                                                           dfunc, args.distance_window, args.stdev_cutoff)
 
@@ -302,6 +306,7 @@ class DraffStream:
         for n_reads, state in processor.chunked_process(*sample):
             if state.fine:
                 signatures.append(sig_gen.signature)
+                frame.draw(n_reads, messages=['Accumulating distances over initial window.'])
 
                 if len(signatures) > 1:
                     distances.append(dfunc(signatures[-2], signatures[-1]))
