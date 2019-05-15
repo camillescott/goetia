@@ -37,7 +37,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_LINK_WHAT_YOU_USE TRUE)
 if(NOT CMAKE_BUILD_TYPE) 
-    set(CMAKE_BUILD_TYPE "Release" CACHE STRING
+    set(CMAKE_BUILD_TYPE "Debug" CACHE STRING
         "Choose the type of build, options are: Debug Release"
         FORCE
     )
@@ -115,6 +115,14 @@ target_include_directories(boink PUBLIC ${PROMETHEUS_INCLUDE_DIRS})
 # Configure the boink pc.
 #
 configure_file(src/boink/boink.pc.in boink.pc @ONLY)
+
+
+#
+# Benchmark exes
+#
+add_executable(do_bench_storage ${CMAKE_SOURCE_DIR}/src/boink/benchmarks/do_bench_storage.cc)
+target_link_libraries(do_bench_storage boink)
+
 
 #
 # Set up the Cppyy bindings generation. This is a customized version defined

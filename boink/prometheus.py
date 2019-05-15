@@ -9,6 +9,19 @@ import socket
 from cppyy import gbl
 from cppyy.gbl import std
 
+
+def get_prometheus_args(parser):
+    group = parser.add_argument_group('prometheus')
+    group.add_argument('--port', default=None,
+                        help='Port to expose prometheus metrics.')
+    return group
+
+
+def print_prometheus_args(args):
+    print('* Exposing prometheus metrics on port', args.port, file=sys.stderr)
+    print('*', '*' * 10, '*', sep='\n', file=sys.stderr)
+
+
 def is_port_in_use(port):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         return s.connect_ex(('localhost', port)) == 0
@@ -16,14 +29,16 @@ def is_port_in_use(port):
 
 class Instrumentation:
 
-    def __init__(self, port,
+    def __init__(self, port = None,
                        uri = '/metrics',
-                       expose  = True):
+                       expose  = False):
 
         self.Registry = std.make_shared[gbl.prometheus.Registry]()
         ref = std.weak_ptr[gbl.prometheus.Registry](self.Registry.__smartptr__())
 
         if expose:
+            if port is None:
+                raise ValueError('Must specificy prometheus port to expose.')
             _port = int(port)
             try:
                 if is_port_in_use(_port):

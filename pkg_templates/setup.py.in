@@ -124,7 +124,8 @@ SETUP_METADATA = \
     },
     'entry_points': {
         'console_scripts': [
-            'draff = boink.draff:run_draff'
+            'draff = boink.draff:run_draff',
+            'boink = boink.__main__:main'
         ]
     }
 }

@@ -1,5 +1,5 @@
 from boink import libboink
-from boink.storage import types
+from boink.storage import _types as types
 
 # Because cDBG::Graph is usually first accessed via StreamingCompactor::Compactor, its
 # pythonizor seems to be fired after its first instantation already exists. This makes sure

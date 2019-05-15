@@ -1,5 +1,8 @@
 from numpy import zeros
+import numpy
+
 import json
+import typing
 
 from boink.pythonizors import utils
 
@@ -37,7 +40,7 @@ def pythonize_boink_signatures(klass, name):
                     'name'     : name}
             return data
 
-        def save(self, stream: file, name: str) -> None:
+        def save(self, stream: typing.TextIO, name: str) -> None:
             """Save the signature to disk.
 
             Args:
