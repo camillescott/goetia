@@ -196,39 +196,10 @@ public:
 
     const bool insert(hashing::hash_t khash);
 
-    const count_t insert_and_query(hashing::hash_t khash)
-    {
-        if (insert(khash)) {
-            // was new, return 1 from insert
-            return 1;
-        }
-        return query(khash);
-    }
+    const count_t insert_and_query(hashing::hash_t khash);
 
     // get the count for the given k-mer hash.
-    const count_t query(hashing::hash_t khash) const
-    {
-        count_t	 max_count	= _max_count;
-        count_t  min_count	= max_count; // bound count by max.
-
-        // first, get the min count across all tables (standard CMS).
-        for (unsigned int i = 0; i < _n_tables; i++) {
-            count_t the_count = _counts[i][khash % _tablesizes[i]];
-            if (the_count < min_count) {
-                min_count = the_count;
-            }
-        }
-
-        // if the count is saturated, check in the bigcount structure to
-        // see if we've accumulated more counts.
-        if (min_count == max_count && _use_bigcount) {
-            KmerCountMap::const_iterator it = _bigcounts.find(khash);
-            if (it != _bigcounts.end()) {
-                min_count = it->second;
-            }
-        }
-        return min_count;
-    }
+    const count_t query(hashing::hash_t khash) const;
     // Get direct access to the counts.
     //
     // Note:

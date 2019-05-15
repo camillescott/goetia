@@ -61,6 +61,60 @@ using namespace boink::storage;
 using namespace boink::hashing;
 
 
+const bool
+BitStorage::insert( hashing::hash_t khash ) {
+    bool is_new_kmer = false;
+
+    for (size_t i = 0; i < _n_tables; i++) {
+        uint64_t bin = khash % _tablesizes[i];
+        uint64_t byte = bin / 8;
+        unsigned char bit = (unsigned char)(1 << (bin % 8));
+
+        unsigned char bits_orig = __sync_fetch_and_or( *(_counts + i) +
+                                  byte, bit );
+        if (!(bits_orig & bit)) {
+            if (i == 0) {
+                __sync_add_and_fetch( &_occupied_bins, 1 );
+            }
+            is_new_kmer = true;
+        }
+    } // iteration over hashtables
+
+    if (is_new_kmer) {
+        __sync_add_and_fetch( &_n_unique_kmers, 1 );
+        return 1; // kmer not seen before
+    }
+
+    return 0; // kmer already seen
+} // test_and_set_bits
+
+
+const count_t
+BitStorage::insert_and_query(hashing::hash_t khash)
+{
+    insert(khash);
+    // presence filter, should always be 1 after insert
+    return 1;
+}
+
+// get the count for the given k-mer hash.
+const count_t
+BitStorage::query(hashing::hash_t khash) const
+{
+    for (size_t i = 0; i < _n_tables; i++) {
+        uint64_t bin = khash % _tablesizes[i];
+        uint64_t byte = bin / 8;
+        unsigned char bit = bin % 8;
+
+        if (!(_counts[i][byte] & (1 << bit))) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+
+
 void BitStorage::update_from(const BitStorage& other)
 {
     if (_tablesizes != other._tablesizes) {

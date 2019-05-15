@@ -61,6 +61,80 @@ using namespace boink::storage;
 using namespace boink::hashing;
 
 
+const bool
+NibbleStorage::insert(hashing::hash_t khash)
+{
+    bool is_new_kmer = false;
+
+    for (unsigned int i = 0; i < _n_tables; i++) {
+        MuxGuard g(mutexes[i]);
+        byte_t* const table(_counts[i]);
+        const uint64_t idx = _table_index(khash, _tablesizes[i]);
+        const uint8_t mask = _mask(khash, _tablesizes[i]);
+        const uint8_t shift = _shift(khash, _tablesizes[i]);
+        const uint8_t current_count = (table[idx] & mask) >> shift;
+
+        if (!is_new_kmer) {
+            if (current_count == 0) {
+                is_new_kmer = true;
+
+                // track occupied bins in the first table only, as proxy
+                // for all.
+                if (i == 0) {
+                    __sync_add_and_fetch(&_occupied_bins, 1);
+                }
+            }
+        }
+        // if we have reached the maximum count stop incrementing the
+        // counter. This avoids overflowing it.
+        if (current_count == _max_count) {
+            continue;
+        }
+
+        // increase count, no checking for overflow
+        const uint8_t new_count = (current_count + 1) << shift;
+        table[idx] = (table[idx] & ~mask) | (new_count & mask);
+    }
+
+    if (is_new_kmer) {
+        __sync_add_and_fetch(&_n_unique_kmers, 1);
+    }
+
+    return is_new_kmer;
+}
+
+
+const count_t
+NibbleStorage::insert_and_query(hashing::hash_t khash)
+{
+    if (insert(khash)) {
+        return 1;
+    }
+    return query(khash);
+}
+
+// get the count for the given k-mer hash.
+const count_t
+NibbleStorage::query(hashing::hash_t khash) const
+{
+    uint8_t min_count = _max_count; // bound count by maximum
+
+    // get the minimum count across all tables
+    for (unsigned int i = 0; i < _n_tables; i++) {
+        const byte_t* table(_counts[i]);
+        const uint64_t idx = _table_index(khash, _tablesizes[i]);
+        const uint8_t mask = _mask(khash, _tablesizes[i]);
+        const uint8_t shift = _shift(khash, _tablesizes[i]);
+        const uint8_t the_count = (table[idx] & mask) >> shift;
+
+        if (the_count < min_count) {
+            min_count = the_count;
+        }
+    }
+    return min_count;
+}
+
+
 void NibbleStorage::save(std::string outfilename, uint16_t ksize)
 {
     if (!_counts[0]) {

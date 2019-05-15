@@ -12,3 +12,27 @@
 
 #include <cstdint>
 
+using namespace boink;
+using namespace boink::hashing;
+using namespace boink::storage;
+
+const bool
+SparseppSetStorage::insert(hash_t h) {
+    auto result = _store->insert(h);
+    // the second in the returned pair reports that the insert
+    // took place ie the hash was new
+    return result.second;
+}
+
+
+const count_t
+SparseppSetStorage::insert_and_query(hashing::hash_t h) {
+    insert(h);
+    return 1; // its a presence filter so always 1 after insert
+}
+
+
+const count_t
+SparseppSetStorage::query(hashing::hash_t h) const {
+    return _store->count(h);
+}

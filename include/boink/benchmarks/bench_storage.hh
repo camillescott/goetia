@@ -3,7 +3,9 @@
 #include "boink/hashing/hashing_types.hh"
 
 #include <chrono>
+#include <iostream>
 #include <memory>
+#include <string>
 #include <vector>
 
 
@@ -51,6 +53,22 @@ double time_it(callable &&func,
     auto time_elapsed = std::chrono::system_clock::now() - time_start;
     return std::chrono::duration<double>(time_elapsed).count();
 }
+
+
+template<class storage_type>
+void _run_storage_bench(std::unique_ptr<storage_type>& storage,
+                   std::vector<hashing::hash_t>& hashes,
+                   std::string storage_name) {
+
+    storage->reset();
+    std::cout << storage_name << ", " << hashes.size() << ", insert, "           << time_it(storage_insert_bench<storage_type>, storage, hashes) << std::endl;
+    std::cout << storage_name << ", " << hashes.size() << ", insert_second, "    << time_it(storage_insert_bench<storage_type>, storage, hashes) << std::endl;
+    std::cout << storage_name << ", " << hashes.size() << ", query, "            << time_it(storage_query_bench<storage_type>, storage, hashes) << std::endl;
+    std::cout << storage_name << ", " << hashes.size() << ", insert_and_query, " << time_it(storage_insert_and_query_bench<storage_type>, storage, hashes) << std::endl;
+}
+
+std::vector<hashing::hash_t> generate_hashes(size_t n_hashes);
+
 
 void run_storage_bench();
 

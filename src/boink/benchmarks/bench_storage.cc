@@ -12,43 +12,46 @@
 namespace boink {
 namespace bench {
 
-
-
-void run_storage_bench() {
+std::vector<hashing::hash_t> generate_hashes(size_t n_hashes) {
     std::random_device rd;
     std::mt19937_64 gen(rd());
     std::uniform_int_distribution<hashing::hash_t> dis;
 
     std::vector<hashing::hash_t> hashes;
-    for (int n = 0; n < 10000000; ++n) {
+    for (int n = 0; n < n_hashes; ++n) {
         hashes.push_back(dis(gen));
     }
 
-    std::cout << "storage_type, bench, time" << std::endl;
-    std::unique_ptr<storage::BitStorage> bitstorage = std::make_unique<storage::BitStorage>(5000000, 4);
-    std::cout << "BitStorage, insert, " << time_it(storage_insert_bench<storage::BitStorage>, bitstorage, hashes) << std::endl
-              << "BitStorage, query, " << time_it(storage_query_bench<storage::BitStorage>, bitstorage, hashes) << std::endl
-              << "BitStorage, insert_and_query, " << time_it(storage_insert_and_query_bench<storage::BitStorage>, bitstorage, hashes) 
-              << std::endl;
+    return hashes;
+}
 
-    std::unique_ptr<storage::NibbleStorage> nibblestorage = std::make_unique<storage::NibbleStorage>(5000000, 4);
-    std::cout << "NibbleStorage, insert, " << time_it(storage_insert_bench<storage::NibbleStorage>, nibblestorage, hashes) 
-              << ", query, " << time_it(storage_query_bench<storage::NibbleStorage>, nibblestorage, hashes) 
-              << ", insert_and_query, " << time_it(storage_insert_and_query_bench<storage::NibbleStorage>, nibblestorage, hashes)
-              << std::endl;
 
-    std::unique_ptr<storage::ByteStorage> bytestorage = std::make_unique<storage::ByteStorage>(5000000, 4);
-    std::cout << "ByteStorage, insert, " << time_it(storage_insert_bench<storage::ByteStorage>, bytestorage, hashes) << std::endl
-              << "ByteStorage, query, " << time_it(storage_query_bench<storage::ByteStorage>, bytestorage, hashes) << std::endl 
-              << "ByteStorage, insert_and_query, " << time_it(storage_insert_and_query_bench<storage::ByteStorage>, bytestorage, hashes) 
-              << std::endl;
+void run_storage_bench() {
 
-    std::unique_ptr<storage::SparseppSetStorage> sparseppstorage = std::make_unique<storage::SparseppSetStorage>();
-    std::cout << "SparseppSetStorage, insert, " << time_it(storage_insert_bench<storage::SparseppSetStorage>, sparseppstorage, hashes) << std::endl
-              << "SparseppSetStorage, query, " << time_it(storage_query_bench<storage::SparseppSetStorage>, sparseppstorage, hashes) << std::endl
-              << "SparseppSetStorage, insert_and_query, " << time_it(storage_insert_and_query_bench<storage::SparseppSetStorage>, sparseppstorage, hashes) 
-              << std::endl;
+    std::vector<size_t> hashes_sizes = {1000000, 10000000, 100000000};
 
+
+    std::unique_ptr<storage::BitStorage> bitstorage;
+    std::unique_ptr<storage::NibbleStorage> nibblestorage;
+    std::unique_ptr<storage::ByteStorage> bytestorage;
+    std::unique_ptr<storage::SparseppSetStorage> sparseppstorage;
+    
+    std::cout << "storage_type, n_hashes, bench, time" << std::endl;
+    for (auto n_hashes : hashes_sizes) {
+        bitstorage = std::make_unique<storage::BitStorage>(n_hashes / 4, 4);
+        nibblestorage = std::make_unique<storage::NibbleStorage>(n_hashes / 4, 4);
+        bytestorage = std::make_unique<storage::ByteStorage>(n_hashes / 4, 4);
+        sparseppstorage  = std::make_unique<storage::SparseppSetStorage>();
+
+        auto hashes = generate_hashes(n_hashes);
+
+        for (size_t N = 0; N < 3; ++N) {
+            _run_storage_bench(bitstorage, hashes, "BitStorage");
+            _run_storage_bench(nibblestorage, hashes, "NibbleStorage");
+            _run_storage_bench(bytestorage, hashes, "ByteStorage");
+            _run_storage_bench(sparseppstorage, hashes, "SparseppSetStorage");
+        }
+    }
 }
 
 }

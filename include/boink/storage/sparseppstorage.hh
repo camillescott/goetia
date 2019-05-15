@@ -74,21 +74,11 @@ public:
 
     }
 
-    const bool insert(hashing::hash_t h) {
-        auto result = _store->insert(h);
-        // the second in the returned pair reports that the insert
-        // took place ie the hash was new
-        return result.second;
-    }
+    const bool insert(hashing::hash_t h);
 
-    const count_t insert_and_query(hashing::hash_t h) {
-        insert(h);
-        return 1; // its a presence filter so always 1 after insert
-    }
+    const count_t insert_and_query(hashing::hash_t h);
 
-    const count_t query(hashing::hash_t h) const {
-        return _store->count(h);
-    }
+    const count_t query(hashing::hash_t h) const;
 
 
     byte_t ** get_raw_tables() {
