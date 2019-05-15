@@ -14,7 +14,7 @@ from cppyy.gbl import std
 
 @using_ksize([21, 51, 101])
 @presence_backends()
-def test_presence(graph, ksize, random_sequence):
+def test_presence_insert(graph, ksize, random_sequence):
     # basic get/add test
     for kmer in kmers(random_sequence(), ksize):
 
@@ -23,18 +23,18 @@ def test_presence(graph, ksize, random_sequence):
         assert graph.query(kmer) == 0
         assert graph.query(hashval) == 0
 
-        graph.insert(kmer)
+        assert graph.insert(kmer) == True
         assert graph.query(kmer) == 1
         assert graph.query(hashval) == 1
 
-        graph.insert(kmer)
+        assert graph.insert(kmer) == False
         assert graph.query(kmer) == 1
         assert graph.query(hashval) == 1
 
 
 @using_ksize([21, 51, 101])
 @counting_backends()
-def test_counting_presence(graph, ksize, random_sequence):
+def test_counting_insert(graph, ksize, random_sequence):
     # basic get/add test
     for kmer in kmers(random_sequence(), ksize):
 
@@ -43,18 +43,40 @@ def test_counting_presence(graph, ksize, random_sequence):
         assert graph.query(kmer) == 0
         assert graph.query(hashval) == 0
 
-        graph.insert(kmer)
+        assert graph.insert(kmer) == True
         assert graph.query(kmer) == 1
         assert graph.query(hashval) == 1
 
-        graph.insert(kmer)
+        assert graph.insert(kmer) == False
         assert graph.query(kmer) == 2
         assert graph.query(hashval) == 2
 
 
 @using_ksize([21, 51, 101])
 @counting_backends()
-def test_counting_count(graph, ksize, random_sequence):
+def test_counting_insert_and_query(graph, ksize, random_sequence):
+    # basic get/add test
+    for kmer in kmers(random_sequence(), ksize):
+
+        hashval = graph.hash(kmer)
+        assert graph.insert_and_query(kmer) == 1
+        assert graph.insert_and_query(hashval) == 2
+
+
+@using_ksize([21, 51, 101])
+@presence_backends()
+def test_presence_insert_and_query(graph, ksize, random_sequence):
+    # basic get/add test
+    for kmer in kmers(random_sequence(), ksize):
+
+        hashval = graph.hash(kmer)
+        assert graph.insert_and_query(kmer) == 1
+        assert graph.insert_and_query(hashval) == 1
+
+
+@using_ksize([21, 51, 101])
+@counting_backends()
+def test_counting_query(graph, ksize, random_sequence):
     seq_kmers = list(kmers(random_sequence(), ksize))
     for iterations in range(10):
         for kmer in seq_kmers:
@@ -62,6 +84,8 @@ def test_counting_count(graph, ksize, random_sequence):
             assert graph.query(hashval) == iterations
             assert graph.query(kmer)    == iterations
             graph.insert(hashval)
+
+
 
 
 @using_ksize([21, 51, 101])

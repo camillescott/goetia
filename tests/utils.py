@@ -16,7 +16,7 @@ from debruijnal_enhance_o_tron.fixtures.sequence import (using_ksize,
 from cppyy.gbl import std
 from boink import boink as libboink
 from boink.utils import check_trait
-from boink.storage import types as storage_types
+from boink.storage import _types as storage_types
 
 
 def storage_t_name(t):
