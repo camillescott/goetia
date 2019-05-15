@@ -87,6 +87,14 @@ struct UnikmerSignature {
             return std::make_shared<Signature>(K, bucket_K, ukhs, std::forward<Args>(args)...);
         }
 
+        template<typename U = StorageType>
+        static std::shared_ptr<Signature> build(uint16_t K,
+                                                uint16_t bucket_K,
+                                                std::shared_ptr<hashing::UKHS> ukhs,
+                                                typename std::enable_if_t<std::is_same<U, boink::storage::SparseppSetStorage>::value, U*> = 0) {
+            return std::make_shared<Signature>(K, bucket_K, ukhs);
+        }
+
         inline void insert(const std::string& kmer) {
             signature->insert(kmer);
         }

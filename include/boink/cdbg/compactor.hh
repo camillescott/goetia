@@ -1087,6 +1087,16 @@ struct StreamingCompactor {
         {
         }
 
+        static std::shared_ptr<Processor<ParserType>> build(shared_ptr<Compactor> compactor,
+                                                            uint64_t fine_interval   = DEFAULT_INTERVALS::FINE,
+                                                            uint64_t medium_interval = DEFAULT_INTERVALS::MEDIUM,
+                                                            uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE) {
+            return std::make_shared<Processor<ParserType>>(compactor,
+                                                           fine_interval,
+                                                           medium_interval,
+                                                           coarse_interval);
+        }
+
         void process_sequence(const parsing::Read& read) {
             try {
                 compactor->update_sequence(read.cleaned_seq);
@@ -1140,6 +1150,11 @@ struct StreamingCompactor {
                               ",n_circular,n_loops,n_dnodes,n_unodes,n_tags,"
                               "n_updates,n_splits,n_merges,n_extends,n_clips,"
                               "n_deletes,n_circular_merges,n_unique,estimated_fp" << std::endl;
+        }
+
+        static std::shared_ptr<Reporter> build(std::shared_ptr<Compactor> compactor,
+                                               const std::string& output_filename) {
+            return std::make_shared<Reporter>(compactor, output_filename);
         }
 
         virtual void handle_msg(shared_ptr<events::Event> event) {

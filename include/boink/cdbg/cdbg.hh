@@ -472,6 +472,10 @@ struct cDBG {
                            << std::endl; // open <graph>
         }
 
+        static std::shared_ptr<HistoryReporter> build(const std::string& filename) {
+            return std::make_shared<HistoryReporter>(filename);
+        }
+
         virtual void handle_exit() {
             _output_stream << "</graph>" << std::endl;
             _output_stream << "</graphml>" << std::endl;
@@ -593,6 +597,12 @@ struct cDBG {
             _output_stream << std::endl;
         }
 
+        static std::shared_ptr<UnitigReporter> build(std::shared_ptr<Graph> cdbg,
+                                                     const std::string&     filename,
+                                                     std::vector<size_t>    bins) {
+            return std::make_shared<UnitigReporter>(cdbg, filename, bins);
+        }
+
         virtual void handle_msg(std::shared_ptr<events::Event> event) {
              if (event->msg_type == events::MSG_TIME_INTERVAL) {
                 auto _event = static_cast<events::TimeIntervalEvent*>(event.get());
@@ -656,6 +666,12 @@ struct cDBG {
             _cerr(this->THREAD_NAME << " reporting at COARSE interval.");
 
             this->msg_type_whitelist.insert(events::MSG_TIME_INTERVAL);
+        }
+
+        static std::shared_ptr<Writer> build(std::shared_ptr<Graph> cdbg,
+                                             cdbg::cDBGFormat format,
+                                             const string& output_prefix) {
+            return std::make_shared<Writer>(cdbg, format, output_prefix);
         }
 
         virtual void handle_msg(std::shared_ptr<events::Event> event) {
