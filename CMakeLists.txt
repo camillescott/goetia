@@ -31,13 +31,13 @@ find_package(Cppyy)
 #
 # Make the default build use c++14 and "RELEASE" (-O3)
 #
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_LINK_WHAT_YOU_USE TRUE)
 if(NOT CMAKE_BUILD_TYPE) 
-    set(CMAKE_BUILD_TYPE "Debug" CACHE STRING
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING
         "Choose the type of build, options are: Debug Release"
         FORCE
     )
@@ -135,7 +135,7 @@ target_link_libraries(do_bench_storage boink)
 cppyy_add_bindings(
     "boink" "${PROJECT_VERSION}" "Camille Scott" "cswel@ucdavis.edu"
    LICENSE "MIT"
-   LANGUAGE_STANDARD "14"
+   LANGUAGE_STANDARD "17"
    SELECTION_XML  ${CMAKE_SOURCE_DIR}/boink_select.xml
    INTERFACE_FILE ${CMAKE_SOURCE_DIR}/include/boink/interface.hh
    PKG_SRC_DIR    ${CMAKE_SOURCE_DIR}/boink
