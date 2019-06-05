@@ -1,3 +1,10 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# (c) Camille Scott, 2019
+# File   : pythonize_ukhs.py
+# License: MIT
+# Author : Camille Scott <camille.scott.w@gmail.com>
+# Date   : 16.05.2019
 from numpy import zeros
 import numpy
 
@@ -21,7 +28,7 @@ def pythonize_boink_signatures(klass, name):
                 sig[i] = count
             return sig
 
-        def __len__(self):
+        def __len__(self) -> int:
             return self.get_size()
 
         def to_dict(self, name: str) -> dict:

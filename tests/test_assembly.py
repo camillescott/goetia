@@ -92,6 +92,7 @@ class TestLinear:
         assert path == contig[:len(path)]
         assert state == STATES.STOP_SEEN
 
+
 class TestDecisions:
 
     def test_decision_fwd(self, ksize, right_fork, asm, graph, consume, check_fp):
@@ -103,6 +104,7 @@ class TestDecisions:
         assert state == STATES.DECISION_FWD
         assert path == sequence[:S+ksize]
         assert end == graph.hash(sequence[S:S+ksize])
+        assert graph.right_degree(path[-ksize:]) == 2
 
         assembled_branch, (lstate, lend), (rstate, rend) = asm.assemble(branch[-ksize:])
         assert branch == assembled_branch

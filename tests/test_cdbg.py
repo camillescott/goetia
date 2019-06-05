@@ -747,6 +747,56 @@ class TestUnitigBuildExtend(object):
 
 class TestUnitigSplit(object):
 
+    def test_split_full_fwd(self, left_comb, right_comb, ksize, tip_length, n_branches,
+                                  sequence_generator, graph, compactor, check_fp):
+        ''' Test splitting a full unitig when its left and right flanks
+        are fwd decision nodes
+        
+          o→o                  o→o
+             ↘                ↗  
+               o→o→(split)→o→o
+             ↗                ↘
+          o→o                  o→o
+        '''
+
+        lseqs = left_comb()
+        rseqs = right_comb()
+        check_fp()
+        to_split = sequence_generator.random_unitig_merge(lseqs[0][-ksize:],
+                                                          rseqs[0][:ksize])
+        # trim off the dnodes
+        to_split = to_split[1:-1]
+
+        for s in [*lseqs, *rseqs, to_split]:
+            compactor.update_sequence(s)
+
+        assert compactor.cdbg.n_dnodes == 2
+        assert compactor.cdbg.n_unodes == (n_branches * 2) + 1
+        for s in lseqs:
+            un = compactor.cdbg.query_unode_end(graph.hash(s[:ksize]))
+            assert un is not None
+            assert len(un) == ksize - 1 + tip_length
+            assert un.sequence == s[:-1]
+
+        for s in rseqs:
+            un = compactor.cdbg.query_unode_end(graph.hash(s[-ksize:]))
+            assert un is not None
+            assert len(un) == ksize - 1 + tip_length
+            assert un.sequence == s[1:]
+
+        un = compactor.cdbg.query_unode_end(graph.hash(to_split[:ksize]))
+        assert un is not None
+        assert un.sequence == to_split
+
+        splitter = list(sequence_generator.random_branches(to_split[1:1+ksize],
+                                                           1,
+                                                           n_tail_kmers=2))[0]
+        compactor.update_sequence(splitter)
+        assert compactor.cdbg.n_dnodes == 3
+        assert compactor.cdbg.n_unodes == (n_branches * 2) + 3
+
+
+        
     @using_ksize(15)
     @using_length(50)
     def test_clip_from_left(self, right_sea, ksize, length, graph, compactor,
