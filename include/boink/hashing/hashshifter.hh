@@ -1,3 +1,10 @@
+/**
+ * (c) Camille Scott, 2019
+ * File   : hashshifter.hh
+ * License: MIT
+ * Author : Camille Scott <camille.scott.w@gmail.com>
+ * Date   : 30.07.2019
+ */
 /* hashshifter.hh -- base CRTP HashShifter class
  *
  * Copyright (C) 2018 Camille Scott
@@ -144,6 +151,11 @@ public:
         for (auto symbol : kmer_window) {
             d.push_back(symbol);
         }
+    }
+
+    void get_cursor(kmer_t& result) const {
+        result.hash = get();
+        result.kmer = get_cursor();
     }
 
 private:

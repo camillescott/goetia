@@ -41,6 +41,8 @@
 #include "boink/cdbg/compactor.hh"
 #include "boink/cdbg/cdbg.hh"
 #include "boink/cdbg/metrics.hh"
+#include "boink/cdbg/udbg.hh"
+#include "boink/cdbg/ucompactor.hh"
 
 #include "boink/minimizers.hh"
 #include "boink/signatures/ukhs_signature.hh"
@@ -135,6 +137,22 @@ extern
 template class boink::cdbg::cDBG<boink::dBG<boink::storage::SparseppSetStorage,
                                             boink::hashing::RollingHashShifter>>;
 
+extern
+template class boink::cdbg::uDBG<boink::dBG<boink::storage::BitStorage,
+                                            boink::hashing::RollingHashShifter>>;
+extern
+template class boink::cdbg::uDBG<boink::dBG<boink::storage::ByteStorage,
+                                            boink::hashing::RollingHashShifter>>;
+extern
+template class boink::cdbg::uDBG<boink::dBG<boink::storage::NibbleStorage,
+                                            boink::hashing::RollingHashShifter>>;
+extern
+template class boink::cdbg::uDBG<boink::dBG<boink::storage::QFStorage,
+                                            boink::hashing::RollingHashShifter>>;
+extern
+template class boink::cdbg::uDBG<boink::dBG<boink::storage::SparseppSetStorage,
+                                            boink::hashing::RollingHashShifter>>;
+
 
 extern
 template struct boink::Traverse<boink::dBG<boink::storage::BitStorage,
@@ -184,6 +202,22 @@ template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::QFStor
 extern
 template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::SparseppSetStorage,
                                                boink::hashing::RollingHashShifter>>;
+
+extern
+template class boink::cdbg::UStreamingCompactor<boink::dBG<boink::storage::BitStorage,
+                                                boink::hashing::RollingHashShifter>>;
+extern
+template class boink::cdbg::UStreamingCompactor<boink::dBG<boink::storage::ByteStorage,
+                                                boink::hashing::RollingHashShifter>>;
+extern
+template class boink::cdbg::UStreamingCompactor<boink::dBG<boink::storage::NibbleStorage,
+                                                boink::hashing::RollingHashShifter>>;
+extern
+template class boink::cdbg::UStreamingCompactor<boink::dBG<boink::storage::QFStorage,
+                                                boink::hashing::RollingHashShifter>>;
+extern
+template class boink::cdbg::UStreamingCompactor<boink::dBG<boink::storage::SparseppSetStorage,
+                                                boink::hashing::RollingHashShifter>>;
 
 extern
 template class boink::signatures::UnikmerSignature<boink::storage::BitStorage>;

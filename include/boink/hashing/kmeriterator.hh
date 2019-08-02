@@ -1,3 +1,10 @@
+/**
+ * (c) Camille Scott, 2019
+ * File   : kmeriterator.hh
+ * License: MIT
+ * Author : Camille Scott <camille.scott.w@gmail.com>
+ * Date   : 23.07.2019
+ */
 /* kmeriterator.hh -- sequence k-mer iterators
  *
  * Copyright (C) 2018 Camille Scott

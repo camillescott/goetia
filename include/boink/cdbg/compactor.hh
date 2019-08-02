@@ -1,3 +1,10 @@
+/**
+ * (c) Camille Scott, 2019
+ * File   : compactor.hh
+ * License: MIT
+ * Author : Camille Scott <camille.scott.w@gmail.com>
+ * Date   : 18.07.2019
+ */
 /* compactor.hh -- streaming dBG compactor
  *
  * Copyright (C) 2018 Camille Scott

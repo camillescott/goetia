@@ -1,3 +1,10 @@
+/**
+ * (c) Camille Scott, 2019
+ * File   : assembly.hh
+ * License: MIT
+ * Author : Camille Scott <camille.scott.w@gmail.com>
+ * Date   : 23.07.2019
+ */
 /* assembly.hh -- boink traversal and assembly
  *
  * Copyright (C) 2018 Camille Scott
@@ -70,7 +77,8 @@ namespace TraversalState {
         DECISION_RC,
         STOP_SEEN,
         STOP_MASKED,
-        BAD_SEED
+        BAD_SEED,
+        GRAPH_ERROR
     };
 }
 
