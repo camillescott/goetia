@@ -1,11 +1,10 @@
-/* storage.hh -- boink-modified oxli storage
- *
- * Copyright (C) 2018 Camille Scott
- * All rights reserved.
- *
- * This software may be modified and distributed under the terms
- * of the MIT license.  See the LICENSE file for details.
- *
+/**
+ * (c) Camille Scott, 2019
+ * File   : storage.hh
+ * License: MIT
+ * Author : Camille Scott <camille.scott.w@gmail.com>
+ * Date   : 30.08.2019
+
  *** END BOINK LICENSE BLOCK
  *
  * This file is part of khmer, https://github.com/dib-lab/khmer/, and is
@@ -56,8 +55,6 @@
 #include <utility>
 #include <vector>
 
-#include "boink/hashing/hashing_types.hh"
-
 
 #   define MAX_BIGCOUNT 65535
 #   define SAVED_SIGNATURE "OXLI"
@@ -81,14 +78,12 @@ typedef uint8_t                     byte_t;
 typedef uint16_t                    count_t;
 typedef std::pair<count_t, count_t> full_count_t;
 
-typedef std::unordered_map<hashing::hash_t, count_t> KmerCountMap;
-
-template< typename T > 
+template<class Storage> 
 struct is_probabilistic { 
       static const bool value = false;
 };
 
-template< typename T>
+template<class Storage>
 struct is_counting {
     static const bool value = false;
 };
@@ -97,6 +92,7 @@ struct is_counting {
 // base Storage class for hashtable-related storage of information in memory.
 //
 
+template<typename ValueType>
 class Storage
 {
 protected:
@@ -104,6 +100,10 @@ protected:
     bool _use_bigcount;
 
 public:
+
+    typedef ValueType value_type;
+    typedef std::unordered_map<value_type, count_t> CountMap;
+
     Storage() : _supports_bigcount(false), _use_bigcount(false) { } ;
     virtual ~Storage() { }
 
@@ -116,9 +116,9 @@ public:
     virtual const uint64_t n_occupied() const = 0;
     virtual const uint64_t n_unique_kmers() const = 0;
 
-    virtual const bool    insert(hashing::hash_t khash ) = 0;
-    virtual const count_t insert_and_query(hashing::hash_t khash) = 0;
-    virtual const count_t query(hashing::hash_t khash) const = 0;
+    virtual const bool    insert(value_type khash ) = 0;
+    virtual const count_t insert_and_query(value_type khash) = 0;
+    virtual const count_t query(value_type khash) const = 0;
 
     virtual byte_t ** get_raw_tables() = 0;
     virtual void reset() = 0;

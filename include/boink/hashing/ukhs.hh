@@ -1,3 +1,10 @@
+/**
+ * (c) Camille Scott, 2019
+ * File   : ukhs.hh
+ * License: MIT
+ * Author : Camille Scott <camille.scott.w@gmail.com>
+ * Date   : 06.08.2019
+ */
 /* ukhs.hh -- k-mer hash functions
  *
  * Copyright (C) 2018 Camille Scott
@@ -10,17 +17,16 @@
 #ifndef BOINK_UKHS_HH
 #define BOINK_UKHS_HH
 
+#include <algorithm>
 #include <climits>
 #include <iostream>
 #include <memory>
 #include <utility>
 
 #include "boink/boink.hh"
-#include "boink/minimizers.hh"
 #include "boink/hashing/alphabets.hh"
-#include "boink/hashing/hashing_types.hh"
 #include "boink/hashing/hashshifter.hh"
-#include "boink/hashing/rollinghashshifter.hh"
+#include "boink/hashing/rollinghash/cyclichash.h"
 #include "boink/hashing/kmeriterator.hh"
 #include "boink/kmers/kmerclient.hh"
 
@@ -40,327 +46,423 @@ class mphf;
 namespace boink {
 namespace hashing {
 
+struct UKHS {
 
-struct Unikmer {
-    hash_t   hash;
-    uint64_t partition;
+    using value_type = uint64_t;
 
-    Unikmer(hash_t hash, uint64_t partition)
-        : hash(hash), partition(partition)
-    {}
+    struct Unikmer {
+        /* A hash and its associated partition. 
+         *
+         */
+        value_type hash;
+        uint64_t   partition;
 
-    Unikmer(hash_t hash)
-        : hash(hash), partition(ULLONG_MAX)
-    {}
+        Unikmer(value_type hash, uint64_t partition)
+            : hash(hash), partition(partition)
+        {}
 
-    Unikmer()
-        : hash(ULLONG_MAX), partition(ULLONG_MAX)
-    {}
+        Unikmer(value_type hash)
+            : hash(hash), partition(ULLONG_MAX)
+        {}
 
-    const bool is_valid() const {
-        return partition != ULLONG_MAX;
-    }
+        Unikmer()
+            : hash(ULLONG_MAX), partition(ULLONG_MAX)
+        {}
 
-    friend bool operator>(const Unikmer& lhs, const Unikmer& rhs) {
-        return lhs.hash > rhs.hash;
-    }
+        const bool is_valid() const {
+            return partition != ULLONG_MAX;
+        }
 
-    friend bool operator==(const Unikmer& lhs, const Unikmer& rhs) {
-        return lhs.hash == rhs.hash;
-    }
+        friend bool operator>(const Unikmer& lhs, const Unikmer& rhs) {
+            return lhs.hash > rhs.hash;
+        }
 
-    friend std::ostream& operator<<(std::ostream& o, const Unikmer& un);
+        friend bool operator<(const Unikmer& lhs, const Unikmer& rhs) {
+            return lhs.hash < rhs.hash;
+        }
+
+        friend bool operator==(const Unikmer& lhs, const Unikmer& rhs) {
+            return lhs.hash == rhs.hash;
+        }
+
+        friend inline std::ostream&
+        operator<<(std::ostream& o, const Unikmer& un) {
+            o << "<Unikmer hash=" << un.hash;
+            if (un.is_valid()) {
+                o << " p=" << un.partition;
+            } else {
+                o << " p=None";
+            }
+            o << ">";
+            return o;
+        }
+    };
+
+    struct BinnedKmer {
+        value_type hash;
+        Unikmer    unikmer;
+
+        BinnedKmer(value_type hash, Unikmer unikmer)
+            : hash(hash), unikmer(unikmer)
+        {
+        }
+
+        BinnedKmer(value_type hash)
+            : hash(hash)
+        {
+        }
+
+        BinnedKmer()
+            : hash(ULLONG_MAX)
+        {
+        }
+
+        operator value_type() const {
+            return hash;
+        }
+
+        friend bool operator>(const BinnedKmer& lhs, const BinnedKmer& rhs) {
+            return lhs.hash > rhs.hash;
+        }
+
+        friend bool operator<(const BinnedKmer& lhs, const BinnedKmer& rhs) {
+            return lhs.hash < rhs.hash;
+        }
+
+        friend bool operator==(const BinnedKmer& lhs, const BinnedKmer& rhs) {
+            return lhs.hash == rhs.hash;
+        }
+
+        friend inline std::ostream&
+        operator<<(std::ostream& o, const BinnedKmer& kmer) {
+            o << "<BinnedKmer hash=" << kmer.hash
+              << " unikmer="         << kmer.unikmer
+              << ">";
+            return o;
+        }
+    };
+
+    class Map : public kmers::KmerClient {
+
+    protected:
+
+        typedef boomphf::SingleHashFunctor<value_type>     boophf_hasher_t;
+        typedef boomphf::mphf<value_type, boophf_hasher_t> boophf_t;
+
+        std::vector<value_type>   ukhs_hashes;
+        std::vector<value_type>   ukhs_revmap;
+        bool                      ukhs_initialized;
+        std::unique_ptr<boophf_t> bphf;
+
+    public:
+
+        // Window size W. K size is stored in KmerClient.
+        const uint16_t _W;
+
+        explicit Map(uint16_t W,
+                     uint16_t K,
+                     std::vector<std::string>& ukhs);
+
+        ~Map();
+
+        const uint16_t W() const {
+            return _W;
+        }
+
+        static std::shared_ptr<Map> build(uint16_t W,
+                                          uint16_t K,
+                                          std::vector<std::string>& ukhs) {
+            return std::make_shared<Map>(W, K, ukhs);
+        }
+
+        value_type query_revmap(uint64_t partition) {
+            if (partition > ukhs_revmap.size()) {
+                return ULLONG_MAX;
+            }
+            return ukhs_revmap[partition];
+        }
+
+        bool query(Unikmer& unikmer);
+
+        std::vector<value_type> get_hashes() const {
+            return ukhs_hashes;
+        }
+
+        const size_t n_hashes() const {
+            return ukhs_hashes.size();
+        }
+    };
+
+    class LazyShifter : public HashShifter<LazyShifter, BinnedKmer> {
+
+        /* Shifter that keeps track of each k-mer's associated
+         * Unikmer. The hash_type will end being composed as:
+         *
+         *     hash_type:
+         *         uint64_t hash
+         *         Unikmer  unikmer:
+         *             uint64_t hash
+         *             size_t   partition
+         *
+         * There will usually be only one associated unikmer
+         * for a single k-mer. Sometimes, however, a few unikmers
+         * will exist within the window; in this case, we choose
+         * the minimum unikmer as the representative. Rather than
+         * use the minizer class for this, we'll just keep two deques,
+         * one with the indices and one with the unikmers, to track
+         * the unikmers within the window; the logic is easier 
+         * this way concerning directionality, and there will usually
+         * only be one unikmer in the window anyway, so it will have
+         * less overhead.
+         */
+
+        typedef HashShifter<LazyShifter, BinnedKmer> BaseShifter;
+
+    public:
+
+        typedef BaseShifter baseshifter_type;
+
+        // These types will now be composited with Unikmer
+        using BaseShifter::hash_type;
+        using BaseShifter::shift_type;
+        using BaseShifter::kmer_type;
+
+    protected:
+
+        using BaseShifter::_K;
+        using BaseShifter::kmer_window;
+
+        // K size of the window, "W" of the W,K UKHS
+        // Same as HashShifter->_K
+        uint16_t _window_K;
+        // K size of the unikmer
+        uint16_t _unikmer_K;
+
+        // Unikmer uses value_type from rolling hashshifter
+        CyclicHash<value_type>       window_hasher;
+        CyclicHash<value_type>       unikmer_hasher;
+
+        // Current position of the unikmer hasher within
+        // the window: it will need to be moved across the window
+        // if we change directions
+        bool unikmer_hasher_on_left;
+
+        // We'll store the unikmers for the current window and their
+        // indices, only finding the minimum when queried.
+        std::deque<Unikmer>    window_unikmers;
+        std::deque<size_t>     unikmer_indices;
+
+        // Reset the unikmer hasher and eat the length K-1 window prefix
+        void set_unikmer_hasher_left_prefix() {
+            unikmer_hasher.reset();
+            for (uint16_t i = 0; i < _unikmer_K - 1; ++i) {
+                unikmer_hasher.eat(*(kmer_window.begin() + i));
+            }
+        }
+
+        // Reset the unikmer hasher and eat the length K-1 window suffix
+        void set_unikmer_hasher_right_suffix() {
+            unikmer_hasher.reset();
+            for (uint16_t i = this->_K - _unikmer_K + 1; i < this->_K; ++i) {
+                unikmer_hasher.eat(*(kmer_window.begin() + i));
+            }
+        }
+
+        void shift_unikmers_left() {
+            for (auto& index : unikmer_indices) {
+                ++index;
+            }
+            if (unikmer_indices.back() > this->_K - _unikmer_K) {
+                unikmer_indices.pop_back();
+                window_unikmers.pop_back();
+            }
+        }
+
+        void update_unikmer_left(const char c) {
+            if (!unikmer_hasher_on_left) {
+                // if we're not on the left of the window, reset the cursor there
+                set_unikmer_hasher_left_prefix();
+                unikmer_hasher.hash_prepend(c);
+                unikmer_hasher_on_left = true;
+            } else {
+                // othewise just shift the new symbol on
+                unikmer_hasher.reverse_update(c, *(kmer_window.begin() + _unikmer_K - 1));
+            }
+
+            shift_unikmers_left();
+            Unikmer cur_unikmer(unikmer_hasher.hashvalue);
+            if (ukhs_map->query(cur_unikmer)) {
+                unikmer_indices.push_front(0);
+                window_unikmers.push_front(cur_unikmer);
+            }
+        }
+
+        void shift_unikmers_right() {
+            if (unikmer_indices.front() == 0) {
+                unikmer_indices.pop_front();
+                window_unikmers.pop_front();
+            }
+
+            for (auto& index : unikmer_indices) {
+                --index;
+            }
+        }
+
+        void update_unikmer_right(const char c) {
+            // if the ukhs hasher is on the left, reset the cursor
+            if (unikmer_hasher_on_left) {
+                set_unikmer_hasher_right_suffix();
+                unikmer_hasher.hash_extend(c);
+                unikmer_hasher_on_left = false;
+            } else {
+                unikmer_hasher.update(*(kmer_window.begin() + this->_K - _unikmer_K), c);
+            }
+            
+            shift_unikmers_right();
+            Unikmer cur_unikmer(unikmer_hasher.hashvalue);
+            if (ukhs_map->query(cur_unikmer)) {
+                unikmer_indices.push_back(this->_K - _unikmer_K);
+                window_unikmers.push_back(cur_unikmer);
+            }
+        }
+
+        Unikmer get_min_unikmer() {
+            return *std::min_element(std::begin(window_unikmers),
+                                     std::end(window_unikmers));
+        }
+
+        void clear_unikmers() {
+            unikmer_indices.clear();
+            window_unikmers.clear();
+        }
+
+    public:
+
+        using BaseShifter::symbols;
+
+        // W,K unikmer map
+        std::shared_ptr<Map>         ukhs_map;
+
+        explicit LazyShifter(uint16_t K,
+                             uint16_t _unikmer_K,
+                             std::shared_ptr<Map> ukhs)
+            : BaseShifter    (K),
+              window_hasher  (K),
+              unikmer_hasher (_unikmer_K),
+              _window_K       (K),
+              _unikmer_K      (_unikmer_K),
+              ukhs_map       (ukhs)
+        {
+            if (ukhs_map->W() != K) {
+                throw BoinkException("Shifter K does not match UKHS::Map W.");
+            }
+            if (ukhs_map->K() != _unikmer_K) {
+                throw BoinkException("Shifter _unikmer_K does not match UKHS::Map K.");
+            }
+        }
+
+        explicit LazyShifter(LazyShifter& other)
+            : LazyShifter(other.window_K(),
+                          other.unikmer_K(),
+                          other.ukhs_map)
+        {
+        }
+
+        explicit LazyShifter(const LazyShifter& other)
+            : LazyShifter(other.window_K(),
+                          other.unikmer_K(),
+                          other.ukhs_map)
+        {
+        }
+
+        uint16_t window_K() const {
+            return _window_K;
+        }
+
+        uint16_t unikmer_K() const {
+            return _unikmer_K;
+        }
+
+        void init() {
+            if (this->initialized) {
+                return;
+            }
+            for (uint16_t i = 0; i < this->_K; ++i) {
+                this->_validate(*(kmer_window.begin() + i));
+                window_hasher.eat(*(kmer_window.begin() + i));
+            }
+            this->initialized = true;
+        }
+
+        std::vector<uint64_t> get_ukhs_hashes() const {
+            return ukhs_map->get_hashes();
+        }
+
+        const size_t n_ukhs_hashes() const {
+            return ukhs_map->n_hashes();
+        }
+
+        hash_type get() {
+            return BinnedKmer(window_hasher.hashvalue, get_min_unikmer());
+        }
+
+
+        hash_type _hash(const std::string& sequence) const {
+            LazyShifter shifter(this->_window_K,
+                                this->_unikmer_K,
+                                this->ukhs_map);
+            shifter.set_cursor(sequence);
+            return shifter.get();
+        }
+
+        hash_type _hash(const char * sequence) const {
+            LazyShifter shifter(this->_window_K,
+                                this->_unikmer_K,
+                                this->ukhs_map);
+            shifter.set_cursor(sequence);
+            return shifter.get();
+        }
+
+        hash_type update_left(const char c) {
+            // update main window left
+            this->window_hasher.reverse_update(c, this->kmer_window.back());
+            update_unikmer_left(c);
+            return this->get();
+        }
+
+        hash_type update_right(const char c) {
+            // update main window right
+            this->window_hasher.update(this->kmer_window.front(), c);
+            update_unikmer_right(c);
+            return this->get();
+        }
+
+        std::vector<shift_type> gather_left() {
+            std::vector<shift_type> hashes;
+            const char back = this->kmer_window.back();
+            for (auto symbol : symbols) {
+                window_hasher.reverse_update(symbol, back);
+                shift_type result(window_hasher.hashvalue, symbol);
+                hashes.push_back(result);
+                window_hasher.update(symbol, back);
+            }
+
+            return hashes;
+        }
+
+        std::vector<shift_type> gather_right() {
+            std::vector<shift_type> hashes;
+            const char front = this->kmer_window.front();
+            for (auto symbol : symbols) {
+                window_hasher.update(front, symbol);
+                hashes.push_back(shift_type(window_hasher.hashvalue, symbol));
+                window_hasher.reverse_update(front, symbol);
+            }
+            return hashes;
+        }
+    };
+
 };
-
-
-inline std::ostream& operator<<(std::ostream& o, const Unikmer& un) {
-    o << "<Unikmer hash=" << un.hash;
-    if (un.is_valid()) {
-        o << " p=" << un.partition;
-    } else {
-        o << " p=None";
-    }
-    o << ">";
-    return o;
-}
-
-
-class UKHS : public kmers::KmerClient {
-
-protected:
-
-    typedef boomphf::SingleHashFunctor<uint64_t>        boophf_hasher_t;
-    typedef boomphf::mphf<uint64_t, boophf_hasher_t>    boophf_t;
-
-    std::vector<uint64_t>          ukhs_hashes;
-    std::vector<uint64_t>          ukhs_revmap;
-    RollingHashShifter             ukhs_hasher;
-    bool                           ukhs_initialized;
-    std::unique_ptr<boophf_t>      bphf;
-
-public:
-
-    explicit UKHS(uint16_t K,
-                  std::vector<std::string>& ukhs);
-
-    ~UKHS();
-
-    static std::shared_ptr<UKHS> build(uint16_t K,
-                                 std::vector<std::string>& ukhs) {
-        return std::make_shared<UKHS>(K, ukhs);
-    }
-
-    uint64_t query_revmap(uint64_t partition) {
-        if (partition > ukhs_revmap.size()) {
-            return ULLONG_MAX;
-        }
-        return ukhs_revmap[partition];
-    }
-
-    bool query(Unikmer& unikmer);
-
-    uint64_t hash_unikmer(const std::string& kmer) {
-        return ukhs_hasher.hash(kmer);
-    }
-
-    std::vector<uint64_t> get_hashes() const {
-        return ukhs_hashes;
-    }
-
-    const size_t n_hashes() const {
-        return ukhs_hashes.size();
-    }
-};
-
-
-class UKHShifter : public HashShifter<UKHShifter> {
-
-protected:
-
-    typedef HashShifter<UKHShifter> BaseShifter;
-
-    using BaseShifter::_K;
-    using BaseShifter::kmer_window;
-
-    CyclicHash<hash_t>           window_hasher;
-    CyclicHash<hash_t>           ukhs_hasher;
-
-    uint16_t                     window_K;
-    uint16_t                     seed_K;
-
-    InteriorMinimizer<Unikmer>   minimizer;
-    std::shared_ptr<UKHS>        ukhs;
-
-    bool                         ukhs_hasher_on_left;
-
-    void update_unikmer() {
-        Unikmer unikmer(ukhs_hasher.hashvalue);
-        if (ukhs->query(unikmer)) {
-            minimizer.update(unikmer);
-        } else {
-            minimizer.update(Unikmer());
-        }
-    }
-
-    void set_ukhs_hasher_left_prefix() {
-        ukhs_hasher.reset();
-        for (uint16_t i = 0; i < seed_K - 1; ++i) {
-            ukhs_hasher.eat(*(kmer_window.begin() + i));
-        }
-    }
-
-    void set_ukhs_hasher_right_suffix() {
-        ukhs_hasher.reset();
-        for (uint16_t i = this->_K - seed_K + 1; i < this->_K; ++i) {
-            ukhs_hasher.eat(*(kmer_window.begin() + i));
-        }
-    }
-
-public:
-
-    using BaseShifter::symbols;
-
-    typedef PartitionedHash hash_type;
-
-    explicit UKHShifter(uint16_t K,
-                        uint16_t seed_K,
-                        std::shared_ptr<UKHS> ukhs)
-        : BaseShifter   (K),
-          window_hasher (K),
-          ukhs_hasher   (seed_K),
-          window_K      (K),
-          seed_K        (seed_K),
-          minimizer     (K - seed_K + 1),
-          ukhs          (ukhs)
-    {
-
-    }
-
-    explicit UKHShifter(UKHShifter& other)
-        : UKHShifter(other.K(), other.ukhs_K(), other.get_ukhs())
-    {
-    }
-
-    void init() {
-        if (this->initialized) {
-            return;
-        }
-        for (uint16_t i = 0; i < this->_K; ++i) {
-            this->_validate(*(kmer_window.begin() + i));
-            window_hasher.eat(*(kmer_window.begin() + i));
-        }
-        this->initialized = true;
-    }
-
-    const uint16_t ukhs_K() const {
-        return seed_K;
-    }
-
-    hash_t get() {
-        return window_hasher.hashvalue;
-    }
-
-    hash_t _hash(const std::string& sequence) const {
-        return hash_cyclic(sequence, window_K);
-    }
-
-    hash_t _hash(const char * sequence) const {
-        CyclicHash<hash_t> tmp_hasher(window_K);
-        for (uint16_t i = 0; i < window_K; ++i) {
-            tmp_hasher.eat(sequence[i]);
-        }
-        return tmp_hasher.hashvalue;
-    }
-
-    std::shared_ptr<UKHS> get_ukhs() {
-        return ukhs;
-    }
-
-    std::vector<uint64_t> get_ukhs_hashes() const {
-        return ukhs->get_hashes();
-    }
-
-    const size_t n_ukhs_hashes() const {
-        return ukhs->n_hashes();
-    }
-
-    auto get_unikmers() const {
-        return minimizer.get_minimizers();
-    }
-
-    auto get_front_unikmer() const {
-        return minimizer.get_front_value();
-    }
-
-    auto get_front_partition() const {
-        return minimizer.get_front_value().partition;
-    }
-
-    auto get_back_partition() const {
-        return minimizer.get_back_value().partition;
-    }
-    
-    bool query_unikmer(Unikmer& unikmer) {
-        return ukhs->query(unikmer);
-    }
-
-    void reset_unikmers() {
-        minimizer.reset();
-        ukhs_hasher.reset();
-
-        for (uint16_t i = 0; i < seed_K; ++i) {
-            ukhs_hasher.eat(*(kmer_window.begin() + i));
-        }
-        for (uint16_t i = seed_K; i < this->_K; ++i) {
-            update_unikmer();
-            ukhs_hasher.update(*(kmer_window.begin() + i - seed_K),
-                               *(kmer_window.begin() + i));
-        }
-
-        update_unikmer();
-
-        if (minimizer.size() != 1) {
-            throw BoinkException("Window should contain a k-mer from the UKHS!");
-        }
-
-        ukhs_hasher_on_left = false;
-
-        init();
-    }
-
-    hash_t update_left(const char c) {
-        // update main window left
-        this->window_hasher.reverse_update(c, this->kmer_window.back());
-
-        // update ukhs hasher
-        if (!ukhs_hasher_on_left) {
-            // if we're not on the left of the window, reset the cursor there
-            set_ukhs_hasher_left_prefix();
-            ukhs_hasher.hash_prepend(c);
-            ukhs_hasher_on_left = true;
-        } else {
-            // othewise just shift the new symbol on
-            ukhs_hasher.reverse_update(c, *(kmer_window.begin() + seed_K - 1));
-        }
-        update_unikmer();
-        return this->get();
-    }
-
-    hash_t update_right(const char c) {
-        // update main window right
-        this->window_hasher.update(this->kmer_window.front(), c);
-
-        // if the ukhs hasher is on the left, reset the cursor
-        if (ukhs_hasher_on_left) {
-            set_ukhs_hasher_right_suffix();
-            ukhs_hasher.hash_extend(c);
-            ukhs_hasher_on_left = false;
-        } else {
-            ukhs_hasher.update(*(kmer_window.begin() + this->_K - seed_K), c);
-        }
-        update_unikmer();
-        return this->get();
-    }
-
-    std::vector<shift_t> gather_left() {
-        std::vector<shift_t> hashes;
-        const char back = this->kmer_window.back();
-        for (auto symbol : symbols) {
-            window_hasher.reverse_update(symbol, back);
-            shift_t result(window_hasher.hashvalue, symbol);
-            hashes.push_back(result);
-            window_hasher.update(symbol, back);
-        }
-
-        return hashes;
-    }
-
-    std::vector<shift_t> gather_right() {
-        std::vector<shift_t> hashes;
-        const char front = this->kmer_window.front();
-        for (auto symbol : symbols) {
-            window_hasher.update(front, symbol);
-            hashes.push_back(shift_t(window_hasher.hashvalue, symbol));
-            window_hasher.reverse_update(front, symbol);
-        }
-        return hashes;
-    }
-};
-
-
-
-// specializations for KmerIterator
-
-template <>
-template <>
-typename hash_return<PartitionedHash>::type
-KmerIterator<UKHShifter>::first<PartitionedHash>();
-
-
-template <>
-template <>
-typename hash_return<PartitionedHash>::type
-KmerIterator<UKHShifter>::next<PartitionedHash>();
 
 }
 }

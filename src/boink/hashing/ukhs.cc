@@ -1,3 +1,10 @@
+/**
+ * (c) Camille Scott, 2019
+ * File   : ukhs.cc
+ * License: MIT
+ * Author : Camille Scott <camille.scott.w@gmail.com>
+ * Date   : 07.08.2019
+ */
 /* ukhs.cc
  *
  * Copyright (C) 2018 Camille Scott
@@ -19,11 +26,12 @@
 namespace boink {
 namespace hashing {
 
-UKHS::UKHS(uint16_t K,
-           std::vector<std::string>& ukhs)
+UKHS::Map::Map(uint16_t W,
+               uint16_t K,
+               std::vector<std::string>& ukhs)
     : KmerClient  (K),
       ukhs_revmap (ukhs.size()),
-      ukhs_hasher (K)
+      _W          (W)
 {
     if (ukhs.front().size() != K) {
         throw BoinkException("K does not match k-mer size from provided UKHS");
@@ -34,7 +42,7 @@ UKHS::UKHS(uint16_t K,
     //          << std::endl;
 
     for (auto unikmer : ukhs) {
-        ukhs_hashes.push_back(ukhs_hasher.hash(unikmer));
+        ukhs_hashes.push_back(hash_cyclic(unikmer, K));
     }
     bphf = std::make_unique<boophf_t>(ukhs_hashes.size(),
                                       ukhs_hashes,
@@ -48,9 +56,9 @@ UKHS::UKHS(uint16_t K,
     //std::cerr << "Finished building MPHF." << std::endl;
 }
 
-UKHS::~UKHS() = default;
+UKHS::Map::~Map() = default;
 
-bool UKHS::query(Unikmer& unikmer) {
+bool UKHS::Map::query(Unikmer& unikmer) {
     unikmer.partition = ULLONG_MAX;
     unikmer.partition = bphf->lookup(unikmer.hash);
     if (!unikmer.is_valid()) {
@@ -62,36 +70,6 @@ bool UKHS::query(Unikmer& unikmer) {
     return false;
 }
 
-
-
-template <>
-template <>
-typename hash_return<PartitionedHash>::type
-KmerIterator<UKHShifter>::first<PartitionedHash>() {
-    _initialized = true;
-    index += 1;
-    shifter->reset_unikmers();
-    return std::make_pair<hash_t, uint64_t>(shifter->get(), shifter->get_back_partition());
-}
-
-
-template <>
-template <>
-typename hash_return<PartitionedHash>::type
-KmerIterator<UKHShifter>::next<PartitionedHash>() {
-    if (!_initialized) {
-        return this->first<PartitionedHash>();
-    }
-
-    if (done()) {
-        throw InvalidCharacterException("past end of iterator");
-    }
-
-    shifter->shift_right(_seq[index + _K - 1]);
-    index += 1;
-
-    return std::make_pair<hash_t, uint64_t>(shifter->get(), shifter->get_back_partition());
-}
 
 }
 }

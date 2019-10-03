@@ -1,11 +1,11 @@
-/* sparseppstorage.hh -- storage classes for the boink dbg
- *
- * Copyright (C) 2018 Camille Scott
- * All rights reserved.
- *
- * This software may be modified and distributed under the terms
- * of the MIT license.  See the LICENSE file for details.
+/**
+ * (c) Camille Scott, 2019
+ * File   : sparseppstorage.hh
+ * License: MIT
+ * Author : Camille Scott <camille.scott.w@gmail.com>
+ * Date   : 30.08.2019
  */
+
 
 #ifndef BOINK_SPARSEPPSETSTORAGE_HH
 #define BOINK_SPARSEPPSETSTORAGE_HH
@@ -21,11 +21,12 @@ namespace boink {
 namespace storage {
 
 
-class SparseppSetStorage : public Storage {
+template<class ValueType = uint64_t>
+class SparseppSetStorage : public Storage<uint64_t> {
 
 public:
 
-    typedef spp::sparse_hash_set<hashing::hash_t> store_type;
+    typedef spp::sparse_hash_set<value_type> store_type;
 
 protected:
 
@@ -33,18 +34,15 @@ protected:
 
 public:
     
-    SparseppSetStorage()
+    template<typename... Args>
+    SparseppSetStorage(Args&&... args)
     {
         _store = std::make_unique<store_type>();
     }
 
-    static std::unique_ptr<SparseppSetStorage> build() {
-        return std::make_unique<SparseppSetStorage>();
-    }
+    static std::shared_ptr<SparseppSetStorage> build();
 
-    std::unique_ptr<SparseppSetStorage> clone() const {
-        return std::make_unique<SparseppSetStorage>();
-    }
+    std::shared_ptr<SparseppSetStorage> clone() const;
 
     void reset() {
         _store->clear();
@@ -74,11 +72,11 @@ public:
 
     }
 
-    const bool insert(hashing::hash_t h);
+    const bool insert(value_type h);
 
-    const count_t insert_and_query(hashing::hash_t h);
+    const count_t insert_and_query(value_type h);
 
-    const count_t query(hashing::hash_t h) const;
+    const count_t query(value_type h) const;
 
 
     byte_t ** get_raw_tables() {
@@ -88,13 +86,13 @@ public:
 };
 
 
-template<> 
-struct is_probabilistic<SparseppSetStorage> { 
+template<class ValueType>
+struct is_probabilistic<SparseppSetStorage<ValueType>> { 
     static const bool value = false;
 };
 
-template<>
-struct is_counting<SparseppSetStorage> {
+template<class ValueType>
+struct is_counting<SparseppSetStorage<ValueType>> {
     static const bool value = false;
 };
 

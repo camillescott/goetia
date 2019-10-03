@@ -1,4 +1,5 @@
 /* processors.hh -- 
+#include "boink/hashing/hashing_types.hh"
  *
  * Copyright (C) 2018 Camille Scott
  * All rights reserved.
@@ -21,7 +22,6 @@
 #include "boink/parsing/readers.hh"
 #include "boink/events.hh"
 #include "boink/event_types.hh"
-#include "boink/hashing/hashing_types.hh"
 #include "boink/hashing/exceptions.hh"
 
 

@@ -1,3 +1,10 @@
+/**
+ * (c) Camille Scott, 2019
+ * File   : bitstorage.cc
+ * License: MIT
+ * Author : Camille Scott <camille.scott.w@gmail.com>
+ * Date   : 30.08.2019
+ */
 /* bitstorage.cc -- boink-modified oxli storage
  *
  * Copyright (C) 2018 Camille Scott
@@ -52,17 +59,21 @@
 #include <iostream>
 
 #include "boink/boink.hh"
-#include "boink/hashing/hashing_types.hh"
 #include "zlib.h"
 
 using namespace std;
 using namespace boink;
 using namespace boink::storage;
-using namespace boink::hashing;
 
+template<class ValueType>
+std::shared_ptr<BitStorage<ValueType>>
+BitStorage<ValueType>::build(uint64_t max_table, uint16_t N) {
+    return std::make_shared<BitStorage>(max_table, N);
+}
 
+template<class ValueType>
 const bool
-BitStorage::insert( hashing::hash_t khash ) {
+BitStorage<ValueType>::insert( value_type khash ) {
     bool is_new_kmer = false;
 
     for (size_t i = 0; i < _n_tables; i++) {
@@ -89,8 +100,9 @@ BitStorage::insert( hashing::hash_t khash ) {
 } // test_and_set_bits
 
 
+template<class ValueType>
 const count_t
-BitStorage::insert_and_query(hashing::hash_t khash)
+BitStorage<ValueType>::insert_and_query(value_type khash)
 {
     insert(khash);
     // presence filter, should always be 1 after insert
@@ -98,8 +110,9 @@ BitStorage::insert_and_query(hashing::hash_t khash)
 }
 
 // get the count for the given k-mer hash.
+template<class ValueType>
 const count_t
-BitStorage::query(hashing::hash_t khash) const
+BitStorage<ValueType>::query(value_type khash) const
 {
     for (size_t i = 0; i < _n_tables; i++) {
         uint64_t bin = khash % _tablesizes[i];
@@ -114,8 +127,9 @@ BitStorage::query(hashing::hash_t khash) const
 }
 
 
-
-void BitStorage::update_from(const BitStorage& other)
+template<class ValueType>
+void
+BitStorage<ValueType>::update_from(const BitStorage<ValueType>& other)
 {
     if (_tablesizes != other._tablesizes) {
         throw BoinkException("both nodegraphs must have same table sizes");
@@ -151,7 +165,9 @@ void BitStorage::update_from(const BitStorage& other)
 }
 
 
-void BitStorage::reset()
+template<class ValueType>
+void
+BitStorage<ValueType>::reset()
 {
     for (unsigned int table_num = 0; table_num < _n_tables; table_num++) {
         uint64_t tablesize = _tablesizes[table_num];
@@ -161,7 +177,9 @@ void BitStorage::reset()
 }
 
 
-void BitStorage::save(std::string outfilename, uint16_t ksize)
+template<class ValueType>
+void
+BitStorage<ValueType>::save(std::string outfilename, uint16_t ksize)
 {
     if (!_counts[0]) {
         throw BoinkException();
@@ -204,7 +222,9 @@ void BitStorage::save(std::string outfilename, uint16_t ksize)
  * Loads @param infilename into BitStorage, with error checking on
  * file type and file version.  Populates _counts internally.
  */
-void BitStorage::load(std::string infilename, uint16_t &ksize)
+template<class ValueType>
+void
+BitStorage<ValueType>::load(std::string infilename, uint16_t &ksize)
 {
     ifstream infile;
 
@@ -317,3 +337,5 @@ void BitStorage::load(std::string infilename, uint16_t &ksize)
     }
 }
 
+
+template class BitStorage<uint64_t>;

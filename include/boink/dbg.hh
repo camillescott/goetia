@@ -1,3 +1,10 @@
+/**
+ * (c) Camille Scott, 2019
+ * File   : dbg.hh
+ * License: MIT
+ * Author : Camille Scott <camille.scott.w@gmail.com>
+ * Date   : 30.08.2019
+ */
 /* dbg.hh -- Generic de Bruijn graph
  *
  * Copyright (C) 2018 Camille Scott
@@ -10,7 +17,6 @@
 #ifndef BOINK_DBG_HH
 #define BOINK_DBG_HH
 
-#include "boink/hashing/hashing_types.hh"
 #include "boink/hashing/kmeriterator.hh"
 #include "boink/kmers/kmerclient.hh"
 #include "boink/storage/storage.hh"
@@ -20,6 +26,7 @@
 #include <algorithm>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace boink {
@@ -32,73 +39,39 @@ class dBG : public kmers::KmerClient {
 public:
 
     typedef HashShifter                             shifter_type;
+    typedef typename HashShifter::hash_type         hash_type;
+    typedef typename HashShifter::kmer_type         kmer_type;
+    typedef typename HashShifter::shift_type        shift_type;
+    typedef StorageType                             storage_type;
     typedef Traverse<dBG<StorageType, HashShifter>> traversal_type;
     typedef hashing::KmerIterator<HashShifter>      kmer_iter_type;
 
 protected:
 
-    std::unique_ptr<StorageType> S;
+    std::shared_ptr<StorageType> S;
     HashShifter hasher;
 
 public:
 
-    template <typename... Args>
-    explicit dBG(uint16_t K, Args&&... args)
-        : KmerClient(K),
-          hasher(K)
-    {
-        S = StorageType::build(std::forward<Args>(args)...);
-    }
-
-    // Wonky template foo to make sure this constructor is only emitted if
-    // StorageType is SparseeppSetStorage. In most cases the above variadic
-    // constructor works fine, but cppyy doesn't resolve the overload correctly
-    // when no extra arguments are given.
-    template<typename U = StorageType>
-    explicit dBG(uint16_t K,
-                 typename std::enable_if_t<std::is_same<U, boink::storage::SparseppSetStorage>::value, U*> = 0)
-        : KmerClient(K),
-          hasher(K)
-    {
-        S = StorageType::build();
-    }
-
-    explicit dBG(uint16_t K, std::unique_ptr<StorageType>& S)
-        : KmerClient(K),
-          hasher(K),
-          S(std::move(S->clone()))
-    {
-    }
+    dBG(HashShifter& hasher, std::shared_ptr<StorageType> S);
 
     /**
      * @Synopsis Build a dBG instance owned by a shared_ptr. 
      *
-     * @Param K     dBG K length
-     * @Param args  Variadic args to forward on to the storage
+     * @Param args  Variadic args to forward on to dBG constructor
      *
      * @Returns     shared_ptr owning the dBG.
      */
-    template <typename ...Args>
-    static std::shared_ptr<dBG<StorageType, HashShifter>> 
-    __attribute__((used)) build(uint16_t K, Args&&... args) {
-        return std::make_shared<dBG<StorageType, HashShifter>>(K, std::forward<Args>(args)...);
-    }
 
-    template<typename U = StorageType>
-    static std::shared_ptr<dBG<StorageType, HashShifter>> 
-    __attribute__((used)) build(uint16_t K,
-                                typename std::enable_if_t<std::is_same<U, boink::storage::SparseppSetStorage>::value, U*> = 0) {
-        return std::make_shared<dBG<StorageType, HashShifter>>(K);
-    }
+    static std::shared_ptr<dBG<StorageType, HashShifter>>
+    __attribute__((used)) build(HashShifter& hasher, std::shared_ptr<StorageType> S);
 
     /**
      * @Synopsis  Makes a shallow clone of the dBG.
      *
      * @Returns   shared_ptr owning the clone.
      */
-    std::shared_ptr<dBG<StorageType, HashShifter>> clone() {
-        return std::make_shared<dBG<StorageType, HashShifter>>(_K, S);
-    }
+    std::shared_ptr<dBG<StorageType, HashShifter>> clone();
 
     /**
      * @Synopsis  Hash a k-mer using the templated HashShifter.
@@ -107,9 +80,7 @@ public:
      *
      * @Returns   The hash value.
      */
-    hashing::hash_t hash(const std::string& kmer) const {
-        return hasher.hash(kmer);
-    }
+    hash_type hash(const std::string& kmer);
 
     /**
      * @Synopsis  Hash a k-mer using the templated HashShifter.
@@ -119,9 +90,7 @@ public:
      *
      * @Returns   The hash value.
      */
-    hashing::hash_t hash(const char * kmer) const {
-        return hasher.hash(kmer);
-    }
+    hash_type hash(const char * kmer);
 
     /**
      * @Synopsis  Hash the k-mer and add it to the dBG storage.
@@ -134,7 +103,7 @@ public:
         return S->insert(hash(kmer));
     }
 
-    inline const bool insert(hashing::hash_t kmer) {
+    inline const bool insert(hash_type kmer) {
         return S->insert(kmer);
     }
 
@@ -146,7 +115,7 @@ public:
      *
      * @Returns    Post-insertion count of the element.
      */
-    inline const storage::count_t insert_and_query(hashing::hash_t kmer) {
+    inline const storage::count_t insert_and_query(hash_type kmer) {
         return S->insert_and_query(kmer);
     }
 
@@ -161,13 +130,9 @@ public:
      *
      * @Returns   The count of the k-mer.
      */
-    inline const storage::count_t query(const std::string& kmer) const {
-        return S->query(hash(kmer));
-    }
+    const storage::count_t query(const std::string& kmer);
 
-    inline const storage::count_t query(hashing::hash_t hashed_kmer) const {
-        return S->query(hashed_kmer);
-    }
+    const storage::count_t query(hash_type hashed_kmer) const;
 
     /**
      * @Synopsis  Number of unique k-mers in the storage.
@@ -218,14 +183,13 @@ public:
      *
      * @Returns   kmer_t objects with the left k-mers.
      */
-    std::vector<hashing::kmer_t> build_left_kmers(const std::vector<hashing::shift_t>& nodes,
-                                                  const std::string& root) {
-        std::vector<hashing::kmer_t> kmers;
+    std::vector<kmer_type> build_left_kmers(const std::vector<shift_type>& nodes,
+                                            const std::string& root) {
+        std::vector<kmer_type> kmers;
         auto _prefix = prefix(root);
         for (auto neighbor : nodes) {
-            kmers.push_back(hashing::kmer_t(neighbor.hash,
-                                   neighbor.symbol
-                                   + _prefix));
+            kmers.push_back(kmer_type(neighbor.hash,
+                                   neighbor.symbol + _prefix));
         }
         return kmers;
     }
@@ -239,14 +203,13 @@ public:
      *
      * @Returns   kmer_t objects with the right k-mers.
      */
-    std::vector<hashing::kmer_t> build_right_kmers(const std::vector<hashing::shift_t>& nodes,
-                                                   const std::string& root) {
-        std::vector<hashing::kmer_t> kmers;
+    std::vector<kmer_type> build_right_kmers(const std::vector<shift_type>& nodes,
+                                             const std::string& root) {
+        std::vector<kmer_type> kmers;
         auto _suffix = suffix(root);
         for (auto neighbor : nodes) {
-            kmers.push_back(hashing::kmer_t(neighbor.hash,
-                                   _suffix
-                                   + neighbor.symbol));
+            kmers.push_back(kmer_type(neighbor.hash,
+                                     _suffix + neighbor.symbol));
         }
 
         return kmers;
@@ -259,11 +222,7 @@ public:
      *
      * @Returns   shift_t objects with the prefix bases and hashes.
      */
-    std::vector<hashing::shift_t> left_neighbors(const std::string& root) {
-        auto traverser = typename traversal_type::dBG(this->K());
-        traverser.set_cursor(root);
-        return traverser.filter_nodes(this, traverser.gather_left());
-    }
+    std::vector<shift_type> left_neighbors(const std::string& root);
 
     /**
      * @Synopsis  Find the left-neighbors (in-neighbors) of root in the graph.
@@ -272,7 +231,7 @@ public:
      *
      * @Returns   kmer_t objects with the complete k-mers and hashes.
      */
-    std::vector<hashing::kmer_t> left_neighbor_kmers(const std::string& root) {
+    std::vector<kmer_type> left_neighbor_kmers(const std::string& root) {
         auto filtered = left_neighbors(root);
         return build_left_kmers(filtered, root);
     }
@@ -284,11 +243,7 @@ public:
      *
      * @Returns   shift_t objects with the suffix bases and hashes.
      */
-    std::vector<hashing::shift_t> right_neighbors(const std::string& root) {
-        auto traverser = typename traversal_type::dBG(this->K());
-        traverser.set_cursor(root);
-        return traverser.filter_nodes(this, traverser.gather_right());
-    }
+    std::vector<shift_type> right_neighbors(const std::string& root);
 
     /**
      * @Synopsis  Finds the right-neighbors (out-neighbors) of root in the graph.
@@ -297,7 +252,7 @@ public:
      *
      * @Returns   kmer_t objects with the complete k-mers and hashes.
      */
-    std::vector<hashing::kmer_t> right_neighbor_kmers(const std::string& root) {
+    std::vector<kmer_type> right_neighbor_kmers(const std::string& root) {
         auto filtered = right_neighbors(root);
         return build_right_kmers(filtered, root);
     }
@@ -309,14 +264,8 @@ public:
      *
      * @Returns   A pair of shift_t vectors; first contains the left and second the right neighbors.
      */
-    std::pair<std::vector<hashing::shift_t>,
-              std::vector<hashing::shift_t>> neighbors(const std::string& root) {
-        auto traverser = typename traversal_type::dBG(this->K());
-        traverser.set_cursor(root);
-        auto lfiltered = traverser.filter_nodes(this, traverser.gather_left());
-        auto rfiltered = traverser.filter_nodes(this, traverser.gather_right());
-        return std::make_pair(lfiltered, rfiltered);
-    }
+    std::pair<std::vector<shift_type>,
+              std::vector<shift_type>> neighbors(const std::string& root);
 
     /**
      * @Synopsis  Finds all neighbors of root in the graph.
@@ -325,8 +274,8 @@ public:
      *
      * @Returns   A pair of kmer_t vectors; first contains the left and second the right neighbors.
      */
-    std::pair<std::vector<hashing::kmer_t>,
-              std::vector<hashing::kmer_t>> neighbor_kmers(const std::string& root) {
+    std::pair<std::vector<kmer_type>,
+              std::vector<kmer_type>> neighbor_kmers(const std::string& root) {
         auto filtered = neighbors(root);
         return std::make_pair(build_left_kmers(filtered.first, root),
                               build_right_kmers(filtered.second, root));
@@ -363,11 +312,11 @@ public:
      * @Returns Number of new unique k-mers inserted.
      */
     uint64_t insert_sequence(const std::string&          sequence,
-                             std::vector<hashing::hash_t>&  kmer_hashes,
+                             std::vector<hash_type>&  kmer_hashes,
                              std::vector<storage::count_t>& counts);
 
     uint64_t insert_sequence(const std::string&      sequence,
-                             std::set<hashing::hash_t>& new_kmers);
+                             std::set<hash_type>& new_kmers);
 
     uint64_t insert_sequence(const std::string& sequence);
 
@@ -391,12 +340,12 @@ public:
 
     void query_sequence(const std::string&             sequence,
                         std::vector<storage::count_t>& counts,
-                        std::vector<hashing::hash_t>&  hashes);
+                        std::vector<hash_type>&  hashes);
 
     void query_sequence(const std::string& sequence,
                         std::vector<storage::count_t>& counts,
-                        std::vector<hashing::hash_t>& hashes,
-                        std::set<hashing::hash_t>& new_hashes);
+                        std::vector<hash_type>& hashes,
+                        std::set<hash_type>& new_hashes);
 
     void save(std::string filename) {
         S->save(filename, _K);
@@ -414,12 +363,11 @@ public:
         S->reset();
     }
 
-    std::shared_ptr<hashing::KmerIterator<HashShifter>> get_hash_iter(const std::string& sequence) {
-        return std::make_shared<hashing::KmerIterator<HashShifter>>(sequence, _K);
-    }
+    std::shared_ptr<hashing::KmerIterator<HashShifter>> get_hash_iter(const std::string& sequence);
 
 };
 
+void test_dbg();
 
 }
 

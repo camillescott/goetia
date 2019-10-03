@@ -1,3 +1,10 @@
+/**
+ * (c) Camille Scott, 2019
+ * File   : alphabets.hh
+ * License: MIT
+ * Author : Camille Scott <camille.scott.w@gmail.com>
+ * Date   : 06.08.2019
+ */
 /* alphabets.hh -- hashing alphabets
  *
  * Copyright (C) 2018 Camille Scott
@@ -52,8 +59,8 @@
 
 
 
+#include <cstdint>
 #include <string>
-#include "boink/hashing/hashing_types.hh"
 
 namespace boink {
 namespace hashing {
@@ -68,7 +75,7 @@ extern std::string IUPAC_AA;
 
 
 std::string revcomp(const std::string& kmer);
-hash_t      hash_cyclic(const std::string& kmer, const uint16_t k);
+uint64_t    hash_cyclic(const std::string& kmer, const uint16_t k);
 
 
 }

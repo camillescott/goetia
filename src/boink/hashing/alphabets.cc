@@ -1,3 +1,10 @@
+/**
+ * (c) Camille Scott, 2019
+ * File   : alphabets.cc
+ * License: MIT
+ * Author : Camille Scott <camille.scott.w@gmail.com>
+ * Date   : 06.08.2019
+ */
 /* alphabets.cc
  *
  * Copyright (C) 2018 Camille Scott
@@ -78,8 +85,8 @@ std::string revcomp(const std::string& kmer) {
 }
 
 
-hash_t hash_cyclic(const std::string& kmer, const uint16_t k) {
-    CyclicHash<hash_t> hasher(k);
+uint64_t hash_cyclic(const std::string& kmer, const uint16_t k) {
+    CyclicHash<uint64_t> hasher(k);
     for (uint16_t i = 0; i < k; ++i) {
         hasher.eat(kmer[i]);
     }

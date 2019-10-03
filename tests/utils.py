@@ -14,7 +14,10 @@ from debruijnal_enhance_o_tron.fixtures.sequence import (using_ksize,
                                                          using_pivot)
 #from boink import boink as libboink
 from cppyy.gbl import std
+import boink
 from boink import boink as libboink
+from boink.data import load_unikmer_map
+from boink.hashing import _types as hashing_types
 from boink.utils import check_trait
 from boink.storage import _types as storage_types
 
@@ -29,12 +32,26 @@ def storage_type(request):
     return _storage_type, params
 
 
+@pytest.fixture(params=hashing_types, ids=lambda t: t.__name__)
+def hasher_type(request, ksize):
+    _hasher_type = request.param
+    if _hasher_type is libboink.hashing.UKHS.LazyShifter:
+        return _hasher_type, (ksize, 7, load_unikmer_map(ksize, 7))
+    else:
+        return _hasher_type, (ksize,)
+
+
 @pytest.fixture()
-def graph(storage_type, ksize):
+def graph(storage_type, hasher_type, ksize):
     _storage_type, params = storage_type
-    _graph_type = libboink.dBG[_storage_type, libboink.hashing.RollingHashShifter]
+    storage = _storage_type.build(*params)
+
+    _hasher_type, params = hasher_type
+    hasher = _hasher_type(*params)
+    hasher.set_cursor('A' * ksize)
+    _graph_type = libboink.dBG[_storage_type, _hasher_type]
     
-    return _graph_type.build(ksize, *params)
+    return _graph_type.build(hasher, storage)
 
 
 def counting_backends(*args):

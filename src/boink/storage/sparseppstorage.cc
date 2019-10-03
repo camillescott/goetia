@@ -1,3 +1,10 @@
+/**
+ * (c) Camille Scott, 2019
+ * File   : sparseppstorage.cc
+ * License: MIT
+ * Author : Camille Scott <camille.scott.w@gmail.com>
+ * Date   : 30.08.2019
+ */
 /* boink.hh
  *
  * Copyright (C) 2018 Camille Scott
@@ -12,12 +19,12 @@
 
 #include <cstdint>
 
-using namespace boink;
-using namespace boink::hashing;
-using namespace boink::storage;
+namespace boink {
+namespace storage {
 
+template<class ValueType>
 const bool
-SparseppSetStorage::insert(hash_t h) {
+SparseppSetStorage<ValueType>::insert(value_type h) {
     auto result = _store->insert(h);
     // the second in the returned pair reports that the insert
     // took place ie the hash was new
@@ -25,14 +32,35 @@ SparseppSetStorage::insert(hash_t h) {
 }
 
 
+template<class ValueType>
 const count_t
-SparseppSetStorage::insert_and_query(hashing::hash_t h) {
+SparseppSetStorage<ValueType>::insert_and_query(value_type h) {
     insert(h);
     return 1; // its a presence filter so always 1 after insert
 }
 
 
+template<class ValueType>
 const count_t
-SparseppSetStorage::query(hashing::hash_t h) const {
+SparseppSetStorage<ValueType>::query(value_type h) const {
     return _store->count(h);
 }
+
+
+template<class ValueType>
+std::shared_ptr<SparseppSetStorage<ValueType>>
+SparseppSetStorage<ValueType>::build() {
+    return std::make_shared<SparseppSetStorage>();
+}
+
+
+template<class ValueType>
+std::shared_ptr<SparseppSetStorage<ValueType>>
+SparseppSetStorage<ValueType>::clone() const {
+    return std::make_shared<SparseppSetStorage>();
+}
+
+}
+}
+
+template class boink::storage::SparseppSetStorage<uint64_t>;

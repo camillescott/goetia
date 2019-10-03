@@ -3,10 +3,10 @@ from boink import libboink
 import argparse
 import sys
 
-_types = [(libboink.storage.SparseppSetStorage, ()),
-          (libboink.storage.BitStorage, (100000, 4)),
+_types = [(libboink.storage.SparseppSetStorage['uint64_t'], tuple()),
+          (libboink.storage.BitStorage['uint64_t'], (100000, 4)),
           (libboink.storage.ByteStorage, (100000, 4)),
-          (libboink.storage.NibbleStorage, (100000, 4))]
+          (libboink.storage.NibbleStorage['uint64_t'], (100000, 4))]
 
 types = {storage_t.__name__ : defaults for storage_t, defaults in _types}
 

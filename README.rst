@@ -12,7 +12,7 @@ For this repository with anaconda::
     git clone https://github.com/camillescott/boink && cd boink
     git submodule update --init --recursive
 
-    conda create -y -n libboink -c conda-forge python=3 cmake cxx-compiler c-compiler clangdev libcxx libstdcxx-ng libgcc-ng pytest numpy scipy openmp
+    conda create -y -n libboink -c conda-forge python=3 cmake cxx-compiler c-compiler clangdev libcxx libstdcxx-ng libgcc-ng pytest numpy scipy openmp python-clang screed blessings pytest-benchmark pyfiglet
     conda activate libboink
     pip install -r requirements.txt
 

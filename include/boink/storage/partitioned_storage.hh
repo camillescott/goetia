@@ -1,3 +1,10 @@
+/**
+ * (c) Camille Scott, 2019
+ * File   : partitioned_storage.hh
+ * License: MIT
+ * Author : Camille Scott <camille.scott.w@gmail.com>
+ * Date   : 30.08.2019
+ */
 /* partitioned_storage.hh -- storage classes for the boink dbg
  *
  * Copyright (C) 2018 Camille Scott
@@ -11,8 +18,6 @@
 #define BOINK_PARTITIONEDSTORAGE_HH
 
 #include "boink/boink.hh"
-#include "boink/hashing/hashing_types.hh"
-#include "boink/hashing/ukhs.hh"
 #include "boink/storage/storage.hh"
 #include "sparsepp/spp.h"
 
@@ -23,14 +28,15 @@ namespace storage {
 
 
 template <class BaseStorageType>
-class PartitionedStorage : public Storage {
+class PartitionedStorage : public Storage<uint64_t> {
 
 protected:
-    std::vector<std::unique_ptr<BaseStorageType>> partitions;
+    std::vector<std::shared_ptr<BaseStorageType>> partitions;
     const uint64_t                                n_partitions;
 
 public:
 
+    typedef uint64_t        value_type;
     typedef BaseStorageType base_storage_type;
     
     template <typename... Args>
@@ -40,13 +46,13 @@ public:
     {
         for (size_t i = 0; i < n_partitions; ++i) {
             partitions.push_back(
-                std::make_unique<BaseStorageType>(std::forward<Args>(args)...)
+                std::make_shared<base_storage_type>(std::forward<Args>(args)...)
             );
         }
     }
 
     PartitionedStorage(const uint64_t n_partitions,
-                       BaseStorageType* S)
+                       base_storage_type* S)
         : n_partitions(n_partitions)
     {
         for (size_t i = 0; i < n_partitions; ++i) {
@@ -54,8 +60,8 @@ public:
         }
     }
 
-    std::unique_ptr<PartitionedStorage<BaseStorageType>> clone() const {
-        return std::make_unique<PartitionedStorage<BaseStorageType>>(n_partitions,
+    std::shared_ptr<PartitionedStorage<BaseStorageType>> clone() const {
+        return std::make_shared<PartitionedStorage<BaseStorageType>>(n_partitions,
                                                                      partitions.front().get());
 
     }
@@ -109,16 +115,16 @@ public:
 
     }
 
-    inline const bool insert(hashing::hash_t h, uint64_t partition) {
+    inline const bool insert(value_type h, uint64_t partition) {
         return query_partition(partition)->insert(h);
     }
 
-    inline const count_t insert_and_query(hashing::hash_t h, uint64_t partition) {
+    inline const count_t insert_and_query(value_type h, uint64_t partition) {
         auto partition_store = query_partition(partition);
         return partition_store->insert_and_query(h);
     }
 
-    inline const count_t query(hashing::hash_t h, uint64_t partition) {
+    inline const count_t query(value_type h, uint64_t partition) {
         return query_partition(partition)->query(h);
     }
 
@@ -136,15 +142,15 @@ public:
     }
 
 
-    const bool insert(hashing::hash_t khash ) {
+    const bool insert(value_type khash ) {
         throw BoinkException("Method not available!");
     }
 
-    const storage::count_t insert_and_query(hashing::hash_t khash) {
+    const storage::count_t insert_and_query(value_type khash) {
         throw BoinkException("Method not available!");
     }
 
-    const storage::count_t query(hashing::hash_t khash) const {
+    const storage::count_t query(value_type khash) const {
         throw BoinkException("Method not available!");
     }
 
@@ -158,7 +164,6 @@ public:
 };
 
 
-template<>
 template<class StorageType>
 struct is_probabilistic<PartitionedStorage<StorageType>> { 
       static const bool value = is_probabilistic<StorageType>::value;

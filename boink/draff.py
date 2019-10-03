@@ -14,7 +14,7 @@ from cppyy.gbl import std
 
 from boink.args import (add_output_interval_args, 
                         add_pairing_args)
-from boink.data import load_ukhs
+from boink.data import load_unikmer_map
 from boink import libboink
 from boink.storage import get_storage_args, process_storage_args
 from boink.utils import find_common_basename, remove_fx_suffix, grouper
@@ -235,7 +235,7 @@ class DraffStream:
 
         frame.draw(messages=[term.read + 'Initializing UKHS({},{})...'.format(args.W, args.K)],
                    draw_dist_plot=False)
-        ukhs = load_ukhs(args.W, args.K)
+        ukhs = load_unikmer_map(args.W, args.K)
         signature_t = self.runner.signature_t
         
         if args.merge:

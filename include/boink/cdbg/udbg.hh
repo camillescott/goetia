@@ -28,11 +28,12 @@
 #include "boink/boink.hh"
 
 #include "boink/events.hh"
+#include "boink/dbg.hh"
 #include "boink/assembly.hh"
-#include "boink/hashing/hashing_types.hh"
 #include "boink/hashing/kmeriterator.hh"
+#include "boink/hashing/rollinghashshifter.hh"
+#include "boink/hashing/ukhs.hh"
 #include "boink/kmers/kmerclient.hh"
-#include "boink/minimizers.hh"
 #include "boink/storage/storage.hh"
 
 # ifdef DEBUG_CDBG
@@ -49,33 +50,29 @@
 namespace boink {
 namespace cdbg {
 
-using boink::hashing::hash_t;
-using boink::hashing::shift_t;
-using boink::hashing::kmer_t;
-using boink::hashing::KmerIterator;
 
-
-template <class GraphType>
+template <class StorageType>
 struct uDBG {
 
-    protected:
+    typedef dBG<StorageType,
+                hashing::UKHS::LazyShifter>     dbg_type;
+    typedef typename dbg_type::shifter_type     shifter_type;
+    typedef Traverse<dbg_type>                  traversal_type;
+    typedef typename traversal_type::dBG        traverser_type;
 
-        using ShifterType   = typename GraphType::shifter_type;
-        using TraversalType = Traverse<GraphType>;
-        using MinimizerType = typename WKMinimizer<ShifterType>::Minimizer;
+    typedef hashing::KmerIterator<shifter_type> kmer_iter_type;
+    typedef typename shifter_type::hash_type    hash_type;
+    typedef typename hashing::UKHS::value_type  value_type;
+    typedef typename shifter_type::kmer_type    kmer_type;
+    typedef typename shifter_type::shift_type   shift_type;
+    typedef TraversalState::State               state_type;
 
-    public:
-
-    struct Junction {
-        hash_t src;
-        hash_t dst;
-    };
 
     struct UnitigTip {
-        std::string         kmer;
-        std::vector<hash_t> neighbors;
-        direction_t         position;
-        hash_t              partner;
+        std::string             kmer;
+        std::vector<value_type> neighbors;
+        direction_t             position;
+        value_type              partner;
 
         UnitigTip() {}
 
@@ -88,29 +85,23 @@ struct uDBG {
     };
 
     struct Tag {
-        hash_t   left;
-        hash_t   right;
-        uint64_t unikmer;
+        value_type  left;
+        value_type  right;
+        uint64_t    partition;
     };
-
-    typedef GraphType             graph_type;
-    typedef ShifterType           shifter_type;
-    typedef TraversalType         traverser_type;
-    typedef MinimizerType         minimizer_type;
-    typedef TraversalState::State state_type;
 
     class Graph : public kmers::KmerClient,
                   public events::EventNotifier {
 
-        typedef spp::sparse_hash_map<hash_t, UnitigTip*> tip_map_t;
-        typedef typename tip_map_t::const_iterator       tip_map_iter_t;
+        typedef spp::sparse_hash_map<value_type, UnitigTip*> tip_map_t;
+        typedef typename tip_map_t::const_iterator           tip_map_iter_t;
 
-        typedef spp::sparse_hash_map<hash_t, Tag>        tag_map_t;
-        typedef typename tag_map_t::const_iterator       tag_map_iter_t;
+        typedef spp::sparse_hash_map<value_type, Tag>        tag_map_t;
+        typedef typename tag_map_t::const_iterator           tag_map_iter_t;
 
     protected:
 
-        std::shared_ptr<GraphType> dbg;
+        std::shared_ptr<dbg_type> dbg;
 
         tip_map_t  left_tips;
         tip_map_t  right_tips;
@@ -122,12 +113,12 @@ struct uDBG {
 
     public:
 
-        Graph(std::shared_ptr<GraphType> dbg)
+        Graph(std::shared_ptr<dbg_type> dbg)
             : KmerClient(dbg->K()),
               dbg(dbg) {
         }
 
-        UnitigTip * query_left_tips(hash_t tip_hash) {
+        UnitigTip * query_left_tips(value_type tip_hash) {
             auto search = left_tips.find(tip_hash);
             if (search != left_tips.end()) {
                 return search->second;
@@ -135,7 +126,7 @@ struct uDBG {
             return nullptr;
         }
 
-        UnitigTip * query_right_tips(hash_t tip_hash) {
+        UnitigTip * query_right_tips(value_type tip_hash) {
             auto search = right_tips.find(tip_hash);
             if (search != right_tips.end()) {
                 return search->second;
@@ -143,7 +134,7 @@ struct uDBG {
             return nullptr;
         }
 
-        state_type left_traverse_to_tip(hash_t      start,
+        state_type left_traverse_to_tip(value_type   start,
                                         UnitigTip * result) {
 
             result = nullptr;
@@ -153,7 +144,7 @@ struct uDBG {
             }
             auto cur = search->second;
 
-            std::set<hash_t> seen;
+            std::set<hash_type> seen;
             seen.insert(start);
             while(true) {
                 search = tags.find(cur.left);

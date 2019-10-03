@@ -1,11 +1,11 @@
-/* cdbg.hh -- compact de Bruijn Graph
- *
- * Copyright (C) 2018 Camille Scott
- * All rights reserved.
- *
- * This software may be modified and distributed under the terms
- * of the MIT license.  See the LICENSE file for details.
+/**
+ * (c) Camille Scott, 2019
+ * File   : cdbg.hh
+ * License: MIT
+ * Author : Camille Scott <camille.scott.w@gmail.com>
+ * Date   : 31.08.2019
  */
+
 
 #ifndef BOINK_CDBG_HH
 #define BOINK_CDBG_HH
@@ -65,10 +65,6 @@
 namespace boink {
 namespace cdbg {
 
-using boink::hashing::hash_t;
-using boink::hashing::shift_t;
-using boink::hashing::kmer_t;
-using boink::hashing::KmerIterator;
 
 template <class GraphType>
 struct cDBG {
@@ -82,8 +78,13 @@ struct cDBG {
 
     public:
 
-    typedef GraphType     graph_type;
-    typedef ShifterType   shifter_type;
+    typedef GraphType                         graph_type;
+
+    typedef ShifterType                       shifter_type;
+    typedef typename shifter_type::hash_type  hash_type;
+    typedef typename shifter_type::kmer_type  kmer_type;
+    typedef typename shifter_type::shift_type shift_type;
+
     typedef TraversalType traverser_type;
     typedef MinimizerType minimizer_type;
 
@@ -94,7 +95,7 @@ struct cDBG {
         /* Map of k-mer hash --> DecisionNode. DecisionNodes take
          * their k-mer hash value as their Node ID.
          */
-        typedef spp::sparse_hash_map<hash_t,
+        typedef spp::sparse_hash_map<hash_type,
                                      std::unique_ptr<DecisionNode>> dnode_map_t;
         typedef dnode_map_t::const_iterator dnode_iter_t;
 
@@ -114,9 +115,9 @@ struct cDBG {
         // The actual ID --> UNode map
         unode_map_t unitig_nodes;
         // The map from Unitig end k-mer hashes to UnitigNodes
-        spp::sparse_hash_map<hash_t, UnitigNode*> unitig_end_map;
+        spp::sparse_hash_map<hash_type, UnitigNode*> unitig_end_map;
         // The map from dBG k-mer tags to UnitigNodes
-        spp::sparse_hash_map<hash_t, UnitigNode*> unitig_tag_map;
+        spp::sparse_hash_map<hash_type, UnitigNode*> unitig_tag_map;
 
         //std::mutex dnode_mutex;
         //std::mutex unode_mutex;
@@ -195,21 +196,21 @@ struct cDBG {
          * decision nodes and unitig nodes.
          */
 
-        CompactNode* query_cnode(hash_t hash);
+        CompactNode* query_cnode(hash_type hash);
 
-        DecisionNode* query_dnode(hash_t hash);
+        DecisionNode* query_dnode(hash_type hash);
 
         vector<DecisionNode*> query_dnodes(const std::string& sequence);
 
-        UnitigNode * query_unode_end(hash_t end_kmer);
+        UnitigNode * query_unode_end(hash_type end_kmer);
 
-        UnitigNode * query_unode_tag(hash_t hash);
+        UnitigNode * query_unode_tag(hash_type hash);
 
         UnitigNode * query_unode_id(id_t id);
 
-        bool has_dnode(hash_t hash);
+        bool has_dnode(hash_type hash);
 
-        bool has_unode_end(hash_t end_kmer);
+        bool has_unode_end(hash_type end_kmer);
 
         CompactNode * find_rc_cnode(CompactNode * root);
 
@@ -232,42 +233,42 @@ struct cDBG {
 
         node_meta_t recompute_node_meta(UnitigNode * unode);
 
-        UnitigNode * switch_unode_ends(hash_t old_unode_end,
-                                       hash_t new_unode_end);
+        UnitigNode * switch_unode_ends(hash_type old_unode_end,
+                                       hash_type new_unode_end);
 
-        DecisionNode* build_dnode(hash_t hash,
+        DecisionNode* build_dnode(hash_type hash,
                                   const std::string& kmer);
 
         UnitigNode * build_unode(const std::string& sequence,
-                                 std::vector<hash_t>& tags,
-                                 hash_t left_end,
-                                 hash_t right_end);
+                                 std::vector<hash_type>& tags,
+                                 hash_type left_end,
+                                 hash_type right_end);
 
         void clip_unode(direction_t clip_from,
-                        hash_t old_unode_end,
-                        hash_t new_unode_end);
+                        hash_type old_unode_end,
+                        hash_type new_unode_end);
 
         void extend_unode(direction_t ext_dir,
                           const std::string& new_sequence,
-                          hash_t old_unode_end,
-                          hash_t new_unode_end,
-                          std::vector<hash_t>& new_tags);
+                          hash_type old_unode_end,
+                          hash_type new_unode_end,
+                          std::vector<hash_type>& new_tags);
 
         void split_unode(id_t node_id,
                          size_t split_at,
                          std::string split_kmer,
-                         hash_t new_right_end,
-                         hash_t new_left_end);
+                         hash_type new_right_end,
+                         hash_type new_left_end);
 
         void merge_unodes(const std::string& span_sequence,
                           size_t n_span_kmers,
-                          hash_t left_end,
-                          hash_t right_end,
-                          std::vector<hash_t>& new_tags);
+                          hash_type left_end,
+                          hash_type right_end,
+                          std::vector<hash_type>& new_tags);
 
         void delete_unode(UnitigNode * unode);
     
-        void delete_unodes_from_tags(std::vector<hash_t>& tags);
+        void delete_unodes_from_tags(std::vector<hash_type>& tags);
 
         void delete_dnode(DecisionNode * dnode);
 

@@ -1,3 +1,10 @@
+/**
+ * (c) Camille Scott, 2019
+ * File   : ukhs_signature.hh
+ * License: MIT
+ * Author : Camille Scott <camille.scott.w@gmail.com>
+ * Date   : 30.08.2019
+ */
 /* ukhs_signature.hh
  *
  * Copyright (C) 2018 Camille Scott
@@ -20,7 +27,6 @@
 
 #include "boink/boink.hh"
 #include "boink/hashing/alphabets.hh"
-#include "boink/hashing/hashing_types.hh"
 #include "boink/hashing/kmeriterator.hh"
 #include "boink/event_types.hh"
 #include "boink/reporting/reporters.hh"
@@ -33,9 +39,6 @@
 namespace boink {
 namespace signatures {
 
-using boink::hashing::hash_t;
-using boink::hashing::PartitionedHash;
-
 
 class IncompatibleSignature : public BoinkException {
 public:
@@ -47,15 +50,17 @@ public:
 template <class StorageType>
 struct UnikmerSignature {
 
-    typedef StorageType storage_type;
-
+    typedef StorageType                      storage_type;
+    typedef hashing::UKHS::LazyShifter       shifter_type;
+    typedef typename shifter_type::hash_type hash_type;
+    typedef typename shifter_type::kmer_type kmer_type;
+    typedef typename shifter_type::shift_type shift_type;
 
     class Signature : public kmers::KmerClient {
 
     protected:
 
-        std::shared_ptr<hashing::UKHS>        ukhs;
-        hashing::UKHShifter           partitioner;
+        std::shared_ptr<hashing::UKHS::Map> ukhs_map;
 
         std::shared_ptr<PdBG<StorageType>> signature;
 
@@ -66,33 +71,32 @@ struct UnikmerSignature {
         template <typename... Args>
         explicit Signature(uint16_t K,
                            uint16_t bucket_K,
-                           std::shared_ptr<hashing::UKHS> ukhs,
+                           std::shared_ptr<hashing::UKHS::Map> ukhs_map,
                            Args&&... args)
             : KmerClient  (K),
-              ukhs        (ukhs),
-              partitioner (K, bucket_K, ukhs),
+              ukhs_map    (ukhs_map),
               bucket_K    (bucket_K)
         {
             signature = std::make_shared<PdBG<StorageType>>(K,
                                                             bucket_K,
-                                                            ukhs,
+                                                            ukhs_map,
                                                             std::forward<Args>(args)...);
         }
 
         template<typename...Args>
         static std::shared_ptr<Signature> build(uint16_t K,
                                                 uint16_t bucket_K,
-                                                std::shared_ptr<hashing::UKHS> ukhs,
+                                                std::shared_ptr<hashing::UKHS::Map> ukhs_map,
                                                 Args&&... args) {
-            return std::make_shared<Signature>(K, bucket_K, ukhs, std::forward<Args>(args)...);
+            return std::make_shared<Signature>(K, bucket_K, ukhs_map, std::forward<Args>(args)...);
         }
 
         template<typename U = StorageType>
         static std::shared_ptr<Signature> build(uint16_t K,
                                                 uint16_t bucket_K,
-                                                std::shared_ptr<hashing::UKHS> ukhs,
-                                                typename std::enable_if_t<std::is_same<U, boink::storage::SparseppSetStorage>::value, U*> = 0) {
-            return std::make_shared<Signature>(K, bucket_K, ukhs);
+                                                std::shared_ptr<hashing::UKHS::Map> ukhs_map,
+                                                typename std::enable_if_t<std::is_same<U, boink::storage::SparseppSetStorage<>>::value, U*> = 0) {
+            return std::make_shared<Signature>(K, bucket_K, ukhs_map);
         }
 
         inline void insert(const std::string& kmer) {
@@ -119,7 +123,7 @@ struct UnikmerSignature {
             return n_kmers;
         }
 
-        std::set<hash_t> intersection(Signature * other) {
+        std::set<hash_type> intersection(Signature * other) {
             if (other->get_size() != this->get_size() or
                 other->bucket_K   != this->bucket_K or
                 other->K()        != this->K()) {
@@ -128,6 +132,22 @@ struct UnikmerSignature {
             }
         }
     };
+
+    /*
+    class Reporter : public reporting::SingleFileReporter {
+    public:
+
+        Reporter(const std::string& filename)
+            : SingleFileReporter(filename, "Test")
+        {
+        }
+
+        virtual void handle_msg(std::shared_ptr<events::Event> event) {
+
+        }
+
+    };
+    */    
 
 
     class Processor : public FileProcessor<Processor,
@@ -166,8 +186,8 @@ struct UnikmerSignature {
         }
     };
 
-
-    class Reporter : public reporting::SingleFileReporter {
+/*
+    class Reporter : public reporting::SingleFileReporter; {
 
     private:
 
@@ -176,35 +196,19 @@ struct UnikmerSignature {
     public:
 
         Reporter(std::shared_ptr<Signature> signature,
-                 const std::string&         filename)
-            : SingleFileReporter(filename, "UnikmerSignature::Reporter"),
-              signature(signature)
-        {
-            _cerr(this->THREAD_NAME << " reporting at MEDIUM interval.");
-            this->msg_type_whitelist.insert(events::MSG_TIME_INTERVAL);
-        }
+                 const std::string&         filename);
 
+        
         static std::shared_ptr<Reporter> build(std::shared_ptr<Signature> signature,
                                                const std::string&         filename) {
             return std::make_shared<Reporter>(signature, filename);
         }
-
-        virtual void handle_msg(std::shared_ptr<events::Event> event) {
-             if (event->msg_type == events::MSG_TIME_INTERVAL) {
-                auto _event = static_cast<events::TimeIntervalEvent*>(event.get());
-                if (_event->level == events::TimeIntervalEvent::MEDIUM ||
-                    _event->level == events::TimeIntervalEvent::END) {
-                    
-                    _output_stream << _event->t;
-                    auto counts = signature->get_signature();
-                    for (auto& count : counts) {
-                        _output_stream << ", " << count;
-                    }
-                    _output_stream << std::endl;
-                }
-            }       
-        }
+        
+        
+        virtual void handle_msg(std::shared_ptr<events::Event> event);
+    
     };
+*/
 
 };
 

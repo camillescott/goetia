@@ -35,7 +35,6 @@
 #   define pdebug(x) do {} while (0)
 # endif
 
-using boink::hashing::hash_t;
 
 namespace boink {
 namespace cdbg {

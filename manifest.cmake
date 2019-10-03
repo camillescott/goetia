@@ -1,10 +1,10 @@
 set(_headers
     include/boink/assembly.hh
     include/boink/boink.hh
-    include/boink/cdbg/cdbg.hh
-    include/boink/cdbg/cdbg_types.hh
-    include/boink/cdbg/compactor.hh
-    include/boink/cdbg/metrics.hh
+    #include/boink/cdbg/cdbg.hh
+    #include/boink/cdbg/cdbg_types.hh
+    #include/boink/cdbg/compactor.hh
+    #include/boink/cdbg/metrics.hh
     include/boink/cdbg/udbg.hh
     include/boink/cdbg/ucompactor.hh
     include/boink/dbg.hh
@@ -12,7 +12,6 @@ set(_headers
     include/boink/event_types.hh
     include/boink/hashing/alphabets.hh
     include/boink/hashing/exceptions.hh
-    include/boink/hashing/hashing_types.hh
     include/boink/hashing/hashshifter.hh
     include/boink/hashing/kmeriterator.hh
     include/boink/hashing/rollinghashshifter.hh
@@ -61,17 +60,16 @@ set(_sources
     src/boink/hashing/kmeriterator.cc
     src/boink/hashing/rollinghashshifter.cc
     src/boink/hashing/ukhs.cc
-    src/boink/hashing/hashing_types.cc
     src/boink/signatures/ukhs_signature.cc
     src/boink/assembly.cc
     src/boink/dbg.cc
     src/boink/pdbg.cc
     src/boink/boink.cc
     src/boink/event_types.cc
-    src/boink/cdbg/metrics.cc
-    src/boink/cdbg/cdbg_types.cc
-    src/boink/cdbg/cdbg.cc
-    src/boink/cdbg/compactor.cc
+    #src/boink/cdbg/metrics.cc
+    #src/boink/cdbg/cdbg_types.cc
+    #src/boink/cdbg/cdbg.cc
+    #src/boink/cdbg/compactor.cc
     src/boink/cdbg/udbg.cc
     src/boink/cdbg/ucompactor.cc
     src/boink/parsing/readers.cc

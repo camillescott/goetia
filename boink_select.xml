@@ -1,15 +1,20 @@
 <lcgdict>
     <selection>
         <!-- <namespace pattern="boink::*"/> -->
-        <class pattern="boink::storage::*"/>
-        <class pattern="boink::signatures::*"/>
-        <namespace pattern="boink::cdbg::*"/>
+        <namespace pattern="boink::storage::*"/>
+        <!-- <class pattern="boink::signatures::*"/> -->
+        <!-- <namespace pattern="boink::cdbg::*"/> -->
+        <class name="boink::events::EventListener"/>
+        <!-- <class name="boink::reporting::SingleFileReporter"/> -->
+        <class name="boink::TestReporter" />
+        <!-- <class pattern="boink::signatures::UnikmerSignature<*>::Signature"/> -->
         <namespace pattern="boink::hashing::*"/>
         <namespace pattern="boink::metrics::*"/>
         <namespace pattern="boink::TraversalState::*"/>
         <enum name="boink::TraversalState::State"/>
 
         <class pattern="boink::dBG<*, *>"/>
+        <class pattern="boink::dBG*" />
         <class pattern="boink::PdBG<*>"/>
         <class pattern="boink::*Processor"/>
         <class pattern="boink::*Processor<*>"/>
@@ -22,6 +27,7 @@
         <class name="prometheus::Exposer"/>
 
         <class pattern="std::make_unique<boink::*>"/>
+        <class pattern="std::make_shared<boink::*>"/>
 
         <class pattern="std::pair<*,*>"/>
         <class pattern="std::enable_shared_from_this<*>" />
@@ -31,9 +37,12 @@
         <function name="__gnu_cxx::operator!="/>
     </selection>        
     <exclusion>
+        <namespace pattern="boink::events::*"/>
         <class pattern="boink::hashing::HashShifter*"/>
         <class pattern="std::vector<prometheus::*>"/>
-		<class pattern="std::vector<boink::CompactorMixin<*>>"/>
+        <class pattern="std::vector<boink::Traverse<*>>::*"/>
+        <class pattern="std::vector<boink::*shift_type"/>
+        <class pattern="boink::Traverse<*>::*"/>
         <class pattern="std::vector<std::basic_ofstream<char>>"/>
 		<class pattern="std::shared_ptr<boink::parsing::ReadParser<boink::parsing::FastxReader>>"/>
     </exclusion>
