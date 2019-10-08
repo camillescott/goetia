@@ -443,7 +443,7 @@ struct UKHS {
 
                 Unikmer unikmer(unikmer_hasher.hashvalue);
                 if (ukhs_map->query(unikmer)) {
-                    unikmer_indices.push_back(i - _unikmer_K);
+                    unikmer_indices.push_back(i - _unikmer_K + 1);
                     window_unikmers.push_back(unikmer);
                 }
                 //std::cout << "LazyShifter: eat/update "
