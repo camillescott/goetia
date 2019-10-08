@@ -75,7 +75,7 @@ def test_rolling_setcursor_seq_too_large():
     assert hasher.get() == 13194817695400542713
 
 
-def test_unikmer_shifter(ksize, length, random_sequence, unikmer_shifter):
+def test_unikmer_shifter_kmeriterator(ksize, length, random_sequence, unikmer_shifter):
     print()
     shifter, uk_ksize, uk_map = unikmer_shifter
     seq = random_sequence()
