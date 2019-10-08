@@ -5,7 +5,7 @@
  * Author : Camille Scott <camille.scott.w@gmail.com>
  * Date   : 30.08.2019
  */
-#include "boink/assembly.hh"
+#include "boink/traversal.hh"
 
 #include "boink/dbg.hh"
 #include "boink/hashing/rollinghashshifter.hh"

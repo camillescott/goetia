@@ -283,6 +283,14 @@ dBG<StorageType, HashShifter>::get_hash_iter(const std::string& sequence) {
 }
 
 
+template<class StorageType,
+         class HashShifter>
+HashShifter
+dBG<StorageType, HashShifter>::get_hasher() {
+    return HashShifter(hasher);
+}
+
+
 //
 // Specialization for UKHS Shifters
 //

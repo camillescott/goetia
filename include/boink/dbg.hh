@@ -21,7 +21,7 @@
 #include "boink/kmers/kmerclient.hh"
 #include "boink/storage/storage.hh"
 #include "boink/storage/sparseppstorage.hh"
-#include "boink/assembly.hh"
+#include "boink/traversal.hh"
 
 #include <algorithm>
 #include <memory>
@@ -364,6 +364,7 @@ public:
     }
 
     std::shared_ptr<hashing::KmerIterator<HashShifter>> get_hash_iter(const std::string& sequence);
+    HashShifter                                         get_hasher();
 
 };
 

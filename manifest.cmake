@@ -1,5 +1,5 @@
 set(_headers
-    include/boink/assembly.hh
+    include/boink/traversal.hh
     include/boink/boink.hh
     #include/boink/cdbg/cdbg.hh
     #include/boink/cdbg/cdbg_types.hh
@@ -61,7 +61,7 @@ set(_sources
     src/boink/hashing/rollinghashshifter.cc
     src/boink/hashing/ukhs.cc
     src/boink/signatures/ukhs_signature.cc
-    src/boink/assembly.cc
+    src/boink/traversal.cc
     src/boink/dbg.cc
     src/boink/pdbg.cc
     src/boink/boink.cc
