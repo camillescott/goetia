@@ -37,7 +37,7 @@ before_script:
     - conda config --add channels conda-forge
     - conda update -q conda
     - conda info -a
-    - conda create -n libboink python=3 conda-forge python=3 cmake cxx-compiler c-compiler clangdev libcxx libstdcxx-ng libgcc-ng pytest numpy scipy openmp python-clang screed blessings pytest-benchmark pyfiglet py-cpuinfo
+    - conda create -n libboink -c conda-forge python=3 cmake cxx-compiler c-compiler clangdev libcxx libstdcxx-ng libgcc-ng pytest numpy scipy openmp python-clang screed blessings pytest-benchmark pyfiglet py-cpuinfo
     - source activate libboink
     - pip install -r requirements.txt
     - pip install git+https://github.com/camillescott/debruijnal-enhance-o-tron#egg=debruijnal_enhance_o_tron
