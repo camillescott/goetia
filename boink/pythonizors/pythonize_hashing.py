@@ -27,3 +27,20 @@ def pythonize_boink_hashing(klass, name):
             return kmers 
 
         klass.get_kmers = staticmethod(get_kmers)
+    
+        
+        def __uk_repr__(self):
+            return '<Unikmer h={0} p={1}>'.format(self.hash, self.partition)
+
+        def __uk_str__(self):
+            return repr(self)
+
+        klass.Unikmer.__repr__ = __uk_repr__
+        klass.Unikmer.__str__  = __uk_str__
+
+
+        def __binned_repr__(self):
+            return '<BinnedKmer h={0} bin={1}>'.format(self.hash, self.unikmer)
+
+        klass.BinnedKmer.__repr__ = __binned_repr__
+        klass.BinnedKmer.__str__  = __binned_repr__

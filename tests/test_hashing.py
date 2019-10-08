@@ -11,6 +11,25 @@ from boink import libboink
 #from boink.hashing import RollingHashShifter, UKHShifter, unikmer_valid
 
 
+def get_min_unikmer(wmer, uk_map):
+    wmer_hash = libboink.hashing.hash_cyclic(wmer, len(wmer))
+    kmer_hashes = [libboink.hashing.hash_cyclic(kmer, uk_map.K) for kmer in kmers(wmer, uk_map.K)]
+    unikmers = []
+    for h in kmer_hashes:
+        unikmer = libboink.hashing.UKHS.Unikmer(h)
+        if uk_map.query(unikmer):
+            unikmers.append(unikmer)
+    #print(kmer_hashes)
+    #print([str(u) for u in unikmers])
+    return wmer_hash, min(unikmers, key=lambda elem: elem.hash)
+
+
+@pytest.fixture
+def unikmer_shifter(request, ksize):
+    m = load_unikmer_map(ksize, 7)
+    return libboink.hashing.UKHS.LazyShifter(ksize, 7, m), 7, m
+
+
 def test_rolling_hash():
     K = 27
     seq = 'TCACCTGTGTTGTGCTACTTGCGGCGC'
@@ -54,6 +73,26 @@ def test_rolling_setcursor_seq_too_large():
 
     hasher.set_cursor(seq)
     assert hasher.get() == 13194817695400542713
+
+
+def test_unikmer_shifter(ksize, length, random_sequence, unikmer_shifter):
+    print()
+    shifter, uk_ksize, uk_map = unikmer_shifter
+    seq = random_sequence()
+    it = libboink.hashing.KmerIterator[type(shifter)](seq, shifter)
+    i = 0
+    while not it.done():
+        kmer = seq[i:i+ksize]
+        act_h = it.next()
+        #print(i, act_h)
+        exp_kmer_hash, exp_ukmer = get_min_unikmer(kmer, uk_map)
+
+        assert act_h.hash == exp_kmer_hash
+        assert act_h.unikmer.hash == exp_ukmer.hash
+        assert act_h.unikmer.partition == exp_ukmer.partition
+        i += 1
+
+        #print('---')
 
 
 '''

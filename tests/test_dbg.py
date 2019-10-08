@@ -301,7 +301,9 @@ def test_get_counts(graph, random_sequence, ksize, benchmark):
 @using_ksize([21, 31, 41])
 @using_length([50000, 500000])
 @pytest.mark.benchmark(group='dbg-sequence')
-def test_pdbg_n_unique(random_sequence, ksize, benchmark, storage_type):
+def test_pdbg_n_unique(random_sequence, ksize, length, benchmark, storage_type):
+    from boink.utils import check_trait
+
     storage_t, params = storage_type
     ukhs = load_unikmer_map(ksize, 7)
     graph = std.make_shared[libboink.PdBG[storage_t]](ksize, 7, ukhs.__smartptr__(), *params)
@@ -309,7 +311,14 @@ def test_pdbg_n_unique(random_sequence, ksize, benchmark, storage_type):
     kmer_set = set(kmers(sequence, ksize))
     benchmark(graph.insert_sequence, sequence)
 
-    assert abs(len(kmer_set) - graph.n_unique()) < 10
+    for kmer in kmer_set:
+        assert graph.query(kmer)
+
+    if check_trait(libboink.storage.is_probabilistic, storage_t):
+        assert abs(len(kmer_set) - graph.n_unique()) < length * .001
+    else:
+        assert len(kmer_set) == graph.n_unique()
+        
 
 
 @using_ksize([21, 31, 41])
