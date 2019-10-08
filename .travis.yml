@@ -34,10 +34,11 @@ before_script:
     - export PATH="$HOME/miniconda/bin:$PATH"
     - conda config --set always_yes yes --set changeps1 no
     - conda config --add channels defaults
+    - conda config --add channels bioconda
     - conda config --add channels conda-forge
     - conda update -q conda
     - conda info -a
-    - conda create -n libboink -c conda-forge python=3 cmake cxx-compiler c-compiler clangdev libcxx libstdcxx-ng libgcc-ng pytest numpy scipy openmp python-clang screed blessings pytest-benchmark pyfiglet py-cpuinfo
+    - conda create -n libboink python=$PYVERSION cmake cxx-compiler c-compiler clangdev libcxx libstdcxx-ng libgcc-ng pytest numpy scipy openmp python-clang screed blessings pytest-benchmark pyfiglet py-cpuinfo
     - source activate libboink
     - pip install -r requirements.txt
     - pip install git+https://github.com/camillescott/debruijnal-enhance-o-tron#egg=debruijnal_enhance_o_tron
