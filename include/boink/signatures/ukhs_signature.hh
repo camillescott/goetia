@@ -95,7 +95,7 @@ struct UnikmerSignature {
         static std::shared_ptr<Signature> build(uint16_t K,
                                                 uint16_t bucket_K,
                                                 std::shared_ptr<hashing::UKHS::Map> ukhs_map,
-                                                typename std::enable_if_t<std::is_same<U, boink::storage::SparseppSetStorage<>>::value, U*> = 0) {
+                                                typename std::enable_if_t<std::is_same<U, boink::storage::SparseppSetStorage>::value, U*> = 0) {
             return std::make_shared<Signature>(K, bucket_K, ukhs_map);
         }
 

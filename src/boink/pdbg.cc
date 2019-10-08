@@ -79,7 +79,7 @@ PdBG<BaseStorageType>::insert_sequence(const std::string&             sequence,
                                        std::vector<hash_type>&        kmer_hashes,
                                        std::vector<storage::count_t>& counts) {
 
-    kmer_iter_type iter(sequence, &partitioner);
+    kmer_iter_type iter(sequence, partitioner);
 
     uint64_t         n_consumed = 0;
     size_t           pos = 0;
@@ -104,7 +104,7 @@ uint64_t
 PdBG<BaseStorageType>::insert_sequence(const std::string&   sequence,
                                        std::set<hash_type>& new_kmers) {
 
-    kmer_iter_type iter(sequence, &partitioner);
+    kmer_iter_type iter(sequence, partitioner);
 
     uint64_t n_consumed = 0;
     size_t pos = 0;
@@ -125,11 +125,11 @@ PdBG<BaseStorageType>::insert_sequence(const std::string&   sequence,
 template <class BaseStorageType>
 uint64_t 
 PdBG<BaseStorageType>::insert_sequence(const std::string& sequence) {
-    kmer_iter_type iter(sequence, &partitioner);
+    kmer_iter_type iter(sequence, partitioner);
 
     uint64_t n_consumed = 0;
     while(!iter.done()) {
-        auto h = iter.next();
+        hash_type h = iter.next();
         n_consumed += insert(h);
     }
 
@@ -140,7 +140,7 @@ PdBG<BaseStorageType>::insert_sequence(const std::string& sequence) {
 template <class BaseStorageType>
 uint64_t 
 PdBG<BaseStorageType>::insert_sequence_rolling(const std::string& sequence) {
-    kmer_iter_type iter(sequence, &partitioner);
+    kmer_iter_type iter(sequence, partitioner);
 
     uint64_t          n_consumed    = 0;
     auto              h             = iter.next();
@@ -165,7 +165,7 @@ template <class BaseStorageType>
 std::vector<storage::count_t> 
 PdBG<BaseStorageType>::insert_and_query_sequence(const std::string& sequence) {
 
-    kmer_iter_type iter(sequence, &partitioner);
+    kmer_iter_type iter(sequence, partitioner);
     std::vector<storage::count_t> counts(sequence.length() - _K + 1);
 
     size_t pos = 0;
@@ -183,7 +183,7 @@ template <class BaseStorageType>
 std::vector<storage::count_t> 
 PdBG<BaseStorageType>::query_sequence(const std::string& sequence) {
 
-    kmer_iter_type iter(sequence, &partitioner);
+    kmer_iter_type iter(sequence, partitioner);
     std::vector<storage::count_t> counts(sequence.length() - _K + 1);
 
     size_t pos = 0;
@@ -201,7 +201,7 @@ template <class BaseStorageType>
 std::vector<storage::count_t> 
 PdBG<BaseStorageType>::query_sequence_rolling(const std::string& sequence) {
 
-    kmer_iter_type iter(sequence, &partitioner);
+    kmer_iter_type iter(sequence, partitioner);
     std::vector<storage::count_t> counts(sequence.length() - _K + 1);
     
     hash_type         h             = iter.next();
@@ -230,7 +230,7 @@ PdBG<BaseStorageType>::query_sequence(const std::string&             sequence,
                                       std::vector<storage::count_t>& counts,
                                       std::vector<hash_type>&        hashes) {
 
-    kmer_iter_type iter(sequence, &partitioner);
+    kmer_iter_type iter(sequence, partitioner);
 
     while(!iter.done()) {
         auto h = iter.next();
@@ -248,7 +248,7 @@ PdBG<BaseStorageType>::query_sequence(const std::string&             sequence,
                                       std::vector<hash_type>&        hashes,
                                       std::set<hash_type>&           new_hashes) {
 
-    kmer_iter_type iter(sequence, &partitioner);
+    kmer_iter_type iter(sequence, partitioner);
 
     while(!iter.done()) {
         auto h = iter.next();
@@ -263,9 +263,9 @@ PdBG<BaseStorageType>::query_sequence(const std::string&             sequence,
 
 }
 
-template class boink::PdBG<boink::storage::BitStorage<>>;
+template class boink::PdBG<boink::storage::BitStorage>;
 template class boink::PdBG<boink::storage::ByteStorage>;
-template class boink::PdBG<boink::storage::NibbleStorage<>>;
-template class boink::PdBG<boink::storage::QFStorage<>>;
-template class boink::PdBG<boink::storage::SparseppSetStorage<>>;
+template class boink::PdBG<boink::storage::NibbleStorage>;
+template class boink::PdBG<boink::storage::QFStorage>;
+template class boink::PdBG<boink::storage::SparseppSetStorage>;
 

@@ -74,8 +74,7 @@ namespace storage {
  *
  */
 
-template<typename ValueType = uint64_t>
-class BitStorage : public Storage<ValueType>
+class BitStorage : public Storage<uint64_t>
 {
 protected:
     std::vector<uint64_t> _tablesizes;
@@ -86,7 +85,7 @@ protected:
 
 public:
 
-    typedef ValueType value_type;
+    using Storage<uint64_t>::value_type;
 
     BitStorage(uint64_t max_table, uint16_t N)
         : BitStorage(get_n_primes_near_x(N, max_table))
@@ -192,13 +191,13 @@ public:
     void update_from(const BitStorage&);
 };
 
-template<class ValueType>
-struct is_probabilistic<BitStorage<ValueType>> { 
+template<>
+struct is_probabilistic<BitStorage> { 
       static const bool value = true;
 };
 
-template<class ValueType>
-struct is_counting<BitStorage<ValueType>> {
+template<>
+struct is_counting<BitStorage> {
     static const bool value = false;
 };
 

@@ -73,12 +73,11 @@ namespace storage {
  * tracking statistics, as well as save/load, and not much else.
  *
  */
-template<class ValueType = uint64_t>
-class NibbleStorage : public Storage<ValueType>
+class NibbleStorage : public Storage<uint64_t>
 {
 public:
 
-    typedef ValueType value_type;
+    using Storage<uint64_t>::value_type;
 
 protected:
     // table size is measured in number of entries in the table, not in bytes
@@ -206,14 +205,14 @@ public:
 };
 
 
-template<class ValueType>
-struct is_probabilistic<NibbleStorage<ValueType>> { 
+template<>
+struct is_probabilistic<NibbleStorage> { 
       static const bool value = true;
 };
 
 
-template<class ValueType>
-struct is_counting<NibbleStorage<ValueType>> {
+template<>
+struct is_counting<NibbleStorage> {
     static const bool value = true;
 };
 

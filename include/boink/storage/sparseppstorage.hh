@@ -21,11 +21,11 @@ namespace boink {
 namespace storage {
 
 
-template<class ValueType = uint64_t>
 class SparseppSetStorage : public Storage<uint64_t> {
 
 public:
-
+    
+    using Storage<uint64_t>::value_type;
     typedef spp::sparse_hash_set<value_type> store_type;
 
 protected:
@@ -86,13 +86,13 @@ public:
 };
 
 
-template<class ValueType>
-struct is_probabilistic<SparseppSetStorage<ValueType>> { 
+template<>
+struct is_probabilistic<SparseppSetStorage> { 
     static const bool value = false;
 };
 
-template<class ValueType>
-struct is_counting<SparseppSetStorage<ValueType>> {
+template<>
+struct is_counting<SparseppSetStorage> {
     static const bool value = false;
 };
 

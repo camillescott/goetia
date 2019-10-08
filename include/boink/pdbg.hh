@@ -94,7 +94,7 @@ public:
 
     std::vector<hash_type> get_hashes(const std::string& sequence) {
 
-        kmer_iter_type iter(sequence, &partitioner);
+        kmer_iter_type iter(sequence, partitioner);
         std::vector<hash_type> kmer_hashes;
 
         while(!iter.done()) {
@@ -257,7 +257,7 @@ public:
     }
 };
 
-typedef PdBG<storage::SparseppSetStorage<>> DefaultPdBG;
+typedef PdBG<storage::SparseppSetStorage> DefaultPdBG;
 
 }
 #endif

@@ -73,15 +73,14 @@ namespace storage {
  *
  * \brief A Quotient Filter storage
  */
-template<class ValueType = uint64_t>
-class QFStorage : public Storage<ValueType> {
+class QFStorage : public Storage<uint64_t> {
 protected:
     std::shared_ptr<QF> cf;
     int _size;
 
 public:
   
-  typedef ValueType value_type;
+  using Storage<uint64_t>::value_type;
 
   QFStorage(int size);
 
@@ -121,15 +120,15 @@ public:
 };
 
 
-template<class ValueType>
-struct is_probabilistic<QFStorage<ValueType>> { 
+template<>
+struct is_probabilistic<QFStorage> { 
       static const bool value = true;
 };
 
 
 
-template<class ValueType>
-struct is_counting<QFStorage<ValueType>> {
+template<>
+struct is_counting<QFStorage> {
     static const bool value = true;
 };
 

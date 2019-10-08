@@ -59,6 +59,7 @@ public:
     }
 
     KmerIterator(const std::string& seq, ShifterType * shifter);
+    KmerIterator(const std::string& seq, ShifterType& shifter_proto);
 
     ~KmerIterator() {
         if (_shifter_owner) {

@@ -55,8 +55,8 @@ Reporter::handle_msg(std::shared_ptr<events::Event> event) {
 }
 
 
-template class boink::signatures::UnikmerSignature<boink::storage::BitStorage<>>;
+template class boink::signatures::UnikmerSignature<boink::storage::BitStorage>;
 template class boink::signatures::UnikmerSignature<boink::storage::ByteStorage>;
-template class boink::signatures::UnikmerSignature<boink::storage::NibbleStorage<>>;
-template class boink::signatures::UnikmerSignature<boink::storage::QFStorage<>>;
-template class boink::signatures::UnikmerSignature<boink::storage::SparseppSetStorage<>>;
+template class boink::signatures::UnikmerSignature<boink::storage::NibbleStorage>;
+template class boink::signatures::UnikmerSignature<boink::storage::QFStorage>;
+template class boink::signatures::UnikmerSignature<boink::storage::SparseppSetStorage>;

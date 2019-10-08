@@ -22,9 +22,8 @@
 namespace boink {
 namespace storage {
 
-template<class ValueType>
 const bool
-SparseppSetStorage<ValueType>::insert(value_type h) {
+SparseppSetStorage::insert(value_type h) {
     auto result = _store->insert(h);
     // the second in the returned pair reports that the insert
     // took place ie the hash was new
@@ -32,35 +31,29 @@ SparseppSetStorage<ValueType>::insert(value_type h) {
 }
 
 
-template<class ValueType>
 const count_t
-SparseppSetStorage<ValueType>::insert_and_query(value_type h) {
+SparseppSetStorage::insert_and_query(value_type h) {
     insert(h);
     return 1; // its a presence filter so always 1 after insert
 }
 
 
-template<class ValueType>
 const count_t
-SparseppSetStorage<ValueType>::query(value_type h) const {
+SparseppSetStorage::query(value_type h) const {
     return _store->count(h);
 }
 
 
-template<class ValueType>
-std::shared_ptr<SparseppSetStorage<ValueType>>
-SparseppSetStorage<ValueType>::build() {
+std::shared_ptr<SparseppSetStorage>
+SparseppSetStorage::build() {
     return std::make_shared<SparseppSetStorage>();
 }
 
 
-template<class ValueType>
-std::shared_ptr<SparseppSetStorage<ValueType>>
-SparseppSetStorage<ValueType>::clone() const {
+std::shared_ptr<SparseppSetStorage>
+SparseppSetStorage::clone() const {
     return std::make_shared<SparseppSetStorage>();
 }
 
 }
 }
-
-template class boink::storage::SparseppSetStorage<uint64_t>;

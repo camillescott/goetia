@@ -102,9 +102,10 @@ struct Traverse {
         using BaseShifter::shift_left;
         using BaseShifter::shift_right;
 
-        template<typename... Args>
-        explicit dBG(Args&&... args)
-            : BaseShifter(std::forward<Args>(args)...)
+        template<typename Arg1,
+                 typename... Args>
+        explicit dBG(Arg1 arg1, Args&&... args)
+            : BaseShifter(arg1, std::forward<Args>(args)...)
         {
         }
 
@@ -126,28 +127,28 @@ struct Traverse {
             seen.clear();
         }
 
-        size_t degree_left(GraphType * graph) {
+        size_t in_degree(GraphType * graph) {
             auto neighbors = this->gather_left();
             return count_nodes(graph, neighbors);
         }
 
-        size_t degree_right(GraphType * graph) {
+        size_t out_degree(GraphType * graph) {
             auto neighbors = this->gather_right();
             return count_nodes(graph, neighbors);
         }
 
         size_t degree(GraphType * graph) {
-            return degree_left(graph) + degree_right(graph);
+            return in_degree(graph) + out_degree(graph);
         }
 
-        size_t degree_left(GraphType *          graph,
+        size_t in_degree(GraphType *          graph,
                            std::set<hash_type>& extras) {
 
             auto neighbors = this->gather_left();
             return count_nodes(graph, neighbors, extras);
         }
 
-        size_t degree_right(GraphType *          graph,
+        size_t out_degree(GraphType *          graph,
                             std::set<hash_type>& extras) {
 
             auto neighbors = this->gather_right();
@@ -156,7 +157,7 @@ struct Traverse {
 
         size_t degree(GraphType *          graph,
                       std::set<hash_type>& extras) {
-            return degree_left(graph, extras) + degree_right(graph, extras);
+            return in_degree(graph, extras) + out_degree(graph, extras);
         }
 
         size_t try_traverse_left(GraphType * graph,
@@ -271,15 +272,15 @@ struct Traverse {
                               const std::string& node) {
 
             this->set_cursor(node);
-            return this->degree_left(graph) > 1 || this->degree_right(graph) > 1;
+            return this->in_degree(graph) > 1 || this->out_degree(graph) > 1;
         }
 
         bool is_decision_kmer(GraphType * graph,
                               uint8_t&    degree) {
 
             uint8_t ldegree, rdegree;
-            ldegree = this->degree_left(graph);
-            rdegree = this->degree_right(graph);
+            ldegree = this->in_degree(graph);
+            rdegree = this->out_degree(graph);
             degree = ldegree + rdegree;
             return ldegree > 1 || rdegree > 1;
         }

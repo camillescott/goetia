@@ -266,7 +266,10 @@ protected:
     }
 
     void load(const std::string& sequence) {
-        load(sequence.cbegin());
+        //load(sequence.cbegin());
+        for (uint16_t i = 0; i < this->_K; ++i)  {
+            kmer_window.push_back(sequence[i]);
+        }
     }
 
     void load(const char * sequence) {

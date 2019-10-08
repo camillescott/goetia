@@ -278,7 +278,8 @@ template<class StorageType,
          class HashShifter>
 std::shared_ptr<hashing::KmerIterator<HashShifter>>
 dBG<StorageType, HashShifter>::get_hash_iter(const std::string& sequence) {
-    return std::make_shared<hashing::KmerIterator<HashShifter>>(sequence, &hasher);
+    // Return a KmerIterator with a *copy* of the hasher
+    return std::make_shared<hashing::KmerIterator<HashShifter>>(sequence, hasher);
 }
 
 
@@ -288,7 +289,7 @@ dBG<StorageType, HashShifter>::get_hash_iter(const std::string& sequence) {
 /*
 template<>
 const bool
-dBG<boink::storage::SparseppSetStorage<>,
+dBG<boink::storage::SparseppSetStorage,
     boink::hashing::UKHS::LazyShifter>::
 insert(const std::string& kmer) {
     return S->insert(hash(kmer).hash);
@@ -297,7 +298,7 @@ insert(const std::string& kmer) {
 
 template<>
 const bool
-dBG<boink::storage::SparseppSetStorage<>,
+dBG<boink::storage::SparseppSetStorage,
     boink::hashing::UKHS::LazyShifter>::
 insert(hash_type kmer) {
     return S->insert(kmer.hash);
@@ -306,7 +307,7 @@ insert(hash_type kmer) {
 
 template<>
 const storage::count_t 
-dBG<boink::storage::SparseppSetStorage<>,
+dBG<boink::storage::SparseppSetStorage,
     boink::hashing::UKHS::LazyShifter>::
 insert_and_query(hash_type kmer) {
     return S->insert_and_query(kmer.hash);
@@ -315,7 +316,7 @@ insert_and_query(hash_type kmer) {
 
 template<>
 const storage::count_t 
-dBG<boink::storage::SparseppSetStorage<>,
+dBG<boink::storage::SparseppSetStorage,
     boink::hashing::UKHS::LazyShifter>::
 insert_and_query(const std::string& kmer) {
     return S->insert_and_query(hash(kmer).hash);
@@ -324,7 +325,7 @@ insert_and_query(const std::string& kmer) {
 
 template<>
 const storage::count_t 
-dBG<boink::storage::SparseppSetStorage<>,
+dBG<boink::storage::SparseppSetStorage,
     boink::hashing::UKHS::LazyShifter>::
 query(const std::string& kmer) {
     return S->query(hash(kmer).hash);
@@ -333,7 +334,7 @@ query(const std::string& kmer) {
 
 template<>
 const storage::count_t 
-dBG<boink::storage::SparseppSetStorage<>,
+dBG<boink::storage::SparseppSetStorage,
     boink::hashing::UKHS::LazyShifter>::
 query(hash_type hashed_kmer) const {
     return S->query(hashed_kmer.hash);
@@ -341,43 +342,43 @@ query(hash_type hashed_kmer) const {
 */
 }
 
-template class boink::dBG<boink::storage::BitStorage<>,
+template class boink::dBG<boink::storage::BitStorage,
                           boink::hashing::RollingHashShifter>;
 template class boink::dBG<boink::storage::ByteStorage,
                           boink::hashing::RollingHashShifter>;
-template class boink::dBG<boink::storage::NibbleStorage<>,
+template class boink::dBG<boink::storage::NibbleStorage,
                           boink::hashing::RollingHashShifter>;
-template class boink::dBG<boink::storage::QFStorage<>,
+template class boink::dBG<boink::storage::QFStorage,
                           boink::hashing::RollingHashShifter>;
-template class boink::dBG<boink::storage::SparseppSetStorage<>,
+template class boink::dBG<boink::storage::SparseppSetStorage,
                           boink::hashing::RollingHashShifter>;
 
 
-template class boink::dBG<boink::storage::BitStorage<>,
+template class boink::dBG<boink::storage::BitStorage,
                           boink::hashing::UKHS::LazyShifter>;
 template class boink::dBG<boink::storage::ByteStorage,
                           boink::hashing::UKHS::LazyShifter>;
-template class boink::dBG<boink::storage::NibbleStorage<>,
+template class boink::dBG<boink::storage::NibbleStorage,
                           boink::hashing::UKHS::LazyShifter>;
-template class boink::dBG<boink::storage::QFStorage<>,
+template class boink::dBG<boink::storage::QFStorage,
                           boink::hashing::UKHS::LazyShifter>;
-template class boink::dBG<boink::storage::SparseppSetStorage<>,
+template class boink::dBG<boink::storage::SparseppSetStorage,
                           boink::hashing::UKHS::LazyShifter>;
 
-template class boink::InserterProcessor<boink::dBG<boink::storage::BitStorage<>,
+template class boink::InserterProcessor<boink::dBG<boink::storage::BitStorage,
                                                    boink::hashing::RollingHashShifter>>;
 template class boink::InserterProcessor<boink::dBG<boink::storage::ByteStorage,
                                                    boink::hashing::RollingHashShifter>>;
-template class boink::InserterProcessor<boink::dBG<boink::storage::NibbleStorage<>,
+template class boink::InserterProcessor<boink::dBG<boink::storage::NibbleStorage,
                                                    boink::hashing::RollingHashShifter>>;
-template class boink::InserterProcessor<boink::dBG<boink::storage::QFStorage<>,
+template class boink::InserterProcessor<boink::dBG<boink::storage::QFStorage,
                                                    boink::hashing::RollingHashShifter>>;
-template class boink::InserterProcessor<boink::dBG<boink::storage::SparseppSetStorage<>,
+template class boink::InserterProcessor<boink::dBG<boink::storage::SparseppSetStorage,
                                                    boink::hashing::RollingHashShifter>>;
 
 
 void boink::test_dbg() {
-    //auto g = boink::dBG<boink::storage::SparseppSetStorage<>,
+    //auto g = boink::dBG<boink::storage::SparseppSetStorage,
     //                    boink::hashing::RollingHashShifter>::build(std::make_tuple(5),
     //                                                               std::make_tuple(0));
 }

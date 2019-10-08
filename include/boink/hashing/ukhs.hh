@@ -117,6 +117,18 @@ struct UKHS {
         {
         }
 
+        BinnedKmer(BinnedKmer& other)
+            : hash(other.hash),
+              unikmer(other.unikmer)
+        {
+        }
+
+        BinnedKmer(const BinnedKmer& other)
+            : hash(other.hash),
+              unikmer(other.unikmer)
+        {
+        }
+
         operator value_type() const {
             return hash;
         }
@@ -298,6 +310,8 @@ struct UKHS {
         }
 
         void shift_unikmers_right() {
+            //std::cout << "indices: " << repr(unikmer_indices) << std::endl;
+            //std::cout << "unikmers: " << repr(window_unikmers) << std::endl;
             if (unikmer_indices.front() == 0) {
                 unikmer_indices.pop_front();
                 window_unikmers.pop_front();
@@ -306,27 +320,44 @@ struct UKHS {
             for (auto& index : unikmer_indices) {
                 --index;
             }
+
+            //std::cout << "new indices: " << repr(unikmer_indices) << std::endl;
+            //std::cout << "new unikmers: " << repr(window_unikmers) << std::endl;
         }
 
         void update_unikmer_right(const char c) {
+            //std::cout << "LazyShifter update_unikmer_right(" 
+            //          << c << "): " << this->get_cursor() << std::endl;
             // if the ukhs hasher is on the left, reset the cursor
             if (unikmer_hasher_on_left) {
+                //std::cout << "LazyShifter set_unikmer_hasher_right_suffix" << std::endl;
                 set_unikmer_hasher_right_suffix();
                 unikmer_hasher.hash_extend(c);
                 unikmer_hasher_on_left = false;
             } else {
+                //std::cout << "LazyShifter update: "
+                //          << *(kmer_window.begin() + this->_K - _unikmer_K)
+                //          << " => " << c << std::endl;
                 unikmer_hasher.update(*(kmer_window.begin() + this->_K - _unikmer_K), c);
             }
             
             shift_unikmers_right();
             Unikmer cur_unikmer(unikmer_hasher.hashvalue);
             if (ukhs_map->query(cur_unikmer)) {
+                //std::cout << "LazyShifter: found unikmer" << std::endl;
                 unikmer_indices.push_back(this->_K - _unikmer_K);
                 window_unikmers.push_back(cur_unikmer);
             }
+            //std::cout << "LazyShifter: leave update_unikmer, uhash: " << cur_unikmer << std::endl;
         }
 
         Unikmer get_min_unikmer() {
+            //std::cout << "LazyShifter: " << repr(window_unikmers) << std::endl;
+            //std::cout << "LazyShifter: " << repr(unikmer_indices) << std::endl;
+
+            if (window_unikmers.size() == 0) {
+                throw BoinkException("Window should contain unikmer.");
+            }
             return *std::min_element(std::begin(window_unikmers),
                                      std::end(window_unikmers));
         }
@@ -383,15 +414,47 @@ struct UKHS {
             return _unikmer_K;
         }
 
+
         void init() {
             if (this->initialized) {
                 return;
             }
-            for (uint16_t i = 0; i < this->_K; ++i) {
+            //std::cout << "LazyShifter: init()" << std::endl;
+            for (uint16_t i = 0; i < _unikmer_K; ++i) {
                 this->_validate(*(kmer_window.begin() + i));
                 window_hasher.eat(*(kmer_window.begin() + i));
+                unikmer_hasher.eat(*(kmer_window.begin() + i));
+                //std::cout << "LazyShifter: eat " << *(kmer_window.begin() +i) << std::endl;
             }
+
+            Unikmer unikmer(unikmer_hasher.hashvalue);
+            if (ukhs_map->query(unikmer)) {
+                unikmer_indices.push_back(0);
+                window_unikmers.push_back(unikmer);
+            }
+
+            for (uint16_t i = _unikmer_K; i < _window_K; ++i) {
+                // once we've eaten the first K bases, start keeping
+                // track of unikmers
+
+                window_hasher.eat(*(kmer_window.begin() + i));
+                unikmer_hasher.update(*(kmer_window.begin() + i - _unikmer_K),
+                                      *(kmer_window.begin() + i));
+
+                Unikmer unikmer(unikmer_hasher.hashvalue);
+                if (ukhs_map->query(unikmer)) {
+                    unikmer_indices.push_back(i - _unikmer_K);
+                    window_unikmers.push_back(unikmer);
+                }
+                //std::cout << "LazyShifter: eat/update "
+                //          << *(kmer_window.begin() +i)
+                //          << ", shiftoff " <<  *(kmer_window.begin() + i - _unikmer_K)
+                //          << std::endl;
+            }
+
             this->initialized = true;
+            unikmer_hasher_on_left = false;
+            //std::cout << "LazyShifter: finish init(): " << this->get() << std::endl;
         }
 
         std::vector<uint64_t> get_ukhs_hashes() const {

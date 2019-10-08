@@ -12,6 +12,7 @@
         <namespace pattern="boink::metrics::*"/>
         <namespace pattern="boink::TraversalState::*"/>
         <enum name="boink::TraversalState::State"/>
+        <class pattern="boink::Traverse<*>::*"/>
 
         <class pattern="boink::dBG<*, *>"/>
         <class pattern="boink::dBG*" />
@@ -42,7 +43,6 @@
         <class pattern="std::vector<prometheus::*>"/>
         <class pattern="std::vector<boink::Traverse<*>>::*"/>
         <class pattern="std::vector<boink::*shift_type"/>
-        <class pattern="boink::Traverse<*>::*"/>
         <class pattern="std::vector<std::basic_ofstream<char>>"/>
 		<class pattern="std::shared_ptr<boink::parsing::ReadParser<boink::parsing::FastxReader>>"/>
     </exclusion>

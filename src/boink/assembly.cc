@@ -157,7 +157,7 @@ Traverse<GraphType>::dBG::traverse_left(GraphType * graph,
     shift_type next;
     uint8_t n_left;
     while (1) {
-        if (degree_right(graph) > 1) {
+        if (out_degree(graph) > 1) {
             pdebug("Stop: reverse d-node");
             path.pop_front();
             return {State::DECISION_RC, end_hash};
@@ -224,7 +224,7 @@ Traverse<GraphType>::dBG::traverse_right(GraphType *       graph,
     shift_type next;
     uint8_t n_right;
     while (1) {
-        if (degree_left(graph) > 1) {
+        if (in_degree(graph) > 1) {
             path.pop_back();
             return {State::DECISION_RC, end_hash};
         }
@@ -281,26 +281,26 @@ Traverse<GraphType>::dBG::traverse(GraphType *        graph,
 } // namespace boink
 
 
-template struct boink::Traverse<boink::dBG<boink::storage::BitStorage<>,
+template struct boink::Traverse<boink::dBG<boink::storage::BitStorage,
                                            boink::hashing::RollingHashShifter>>;
 template struct boink::Traverse<boink::dBG<boink::storage::ByteStorage,
                                            boink::hashing::RollingHashShifter>>;
-template struct boink::Traverse<boink::dBG<boink::storage::NibbleStorage<>,
+template struct boink::Traverse<boink::dBG<boink::storage::NibbleStorage,
                                            boink::hashing::RollingHashShifter>>;
-template struct boink::Traverse<boink::dBG<boink::storage::QFStorage<>,
+template struct boink::Traverse<boink::dBG<boink::storage::QFStorage,
                                            boink::hashing::RollingHashShifter>>;
-template struct boink::Traverse<boink::dBG<boink::storage::SparseppSetStorage<>,
+template struct boink::Traverse<boink::dBG<boink::storage::SparseppSetStorage,
                                            boink::hashing::RollingHashShifter>>;
 
-template struct boink::Traverse<boink::dBG<boink::storage::SparseppSetStorage<>,
+template struct boink::Traverse<boink::dBG<boink::storage::SparseppSetStorage,
                                            boink::hashing::UKHS::LazyShifter>>;
-template struct boink::Traverse<boink::dBG<boink::storage::BitStorage<>,
+template struct boink::Traverse<boink::dBG<boink::storage::BitStorage,
                                            boink::hashing::UKHS::LazyShifter>>;
 template struct boink::Traverse<boink::dBG<boink::storage::ByteStorage,
                                            boink::hashing::UKHS::LazyShifter>>;
-template struct boink::Traverse<boink::dBG<boink::storage::NibbleStorage<>,
+template struct boink::Traverse<boink::dBG<boink::storage::NibbleStorage,
                                            boink::hashing::UKHS::LazyShifter>>;
-template struct boink::Traverse<boink::dBG<boink::storage::QFStorage<>,
+template struct boink::Traverse<boink::dBG<boink::storage::QFStorage,
                                            boink::hashing::UKHS::LazyShifter>>;
 
 

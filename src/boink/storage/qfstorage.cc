@@ -60,8 +60,7 @@ using namespace boink;
 using namespace boink::storage;
 
 
-template<class ValueType>
-QFStorage<ValueType>::QFStorage(int size)
+QFStorage::QFStorage(int size)
     : _size(size)
 {
     cf = std::make_shared<QF>();
@@ -74,72 +73,63 @@ QFStorage<ValueType>::QFStorage(int size)
 }
 
 
-template<class ValueType>
-QFStorage<ValueType>::~QFStorage() 
+QFStorage::~QFStorage() 
 { 
     qf_destroy(cf.get());
 }
 
 
-template<class ValueType>
-std::shared_ptr<QFStorage<ValueType>>
-QFStorage<ValueType>::clone() const {
-    return std::make_shared<QFStorage<ValueType>>(_size);
+std::shared_ptr<QFStorage>
+QFStorage::clone() const {
+    return std::make_shared<QFStorage>(_size);
 }
 
 
-template<class ValueType>
 const bool
-QFStorage<ValueType>::insert(value_type khash) {
+QFStorage::insert(value_type khash) {
     bool is_new = query(khash) == 0;
     qf_insert(cf.get(), khash % cf->range, 0, 1);
     return is_new;
 }
 
 
-template<class ValueType>
 const count_t
-QFStorage<ValueType>::insert_and_query(value_type khash) {
+QFStorage::insert_and_query(value_type khash) {
     qf_insert(cf.get(), khash % cf->range, 0, 1);
     return query(khash);
 }
 
 
-template<class ValueType>
 const count_t
-QFStorage<ValueType>::query(value_type khash) const 
+QFStorage::query(value_type khash) const 
 {
     return qf_count_key_value(cf.get(), khash % cf->range, 0);
 }
 
 
-template<class ValueType>
 std::vector<uint64_t>
-QFStorage<ValueType>::get_tablesizes() const 
+QFStorage::get_tablesizes() const 
 { 
     return {cf->xnslots}; 
 }
 
 
-template<class ValueType>
 const uint64_t
-QFStorage<ValueType>::n_unique_kmers() const 
+QFStorage::n_unique_kmers() const 
 { 
     return cf->ndistinct_elts; 
 }
 
 
-template<class ValueType>
 const uint64_t
-QFStorage<ValueType>::n_occupied() const 
+QFStorage::n_occupied() const 
 { 
     return cf->noccupied_slots; 
 }
 
 
-template<class ValueType>
 void
-QFStorage<ValueType>::save(std::string outfilename, uint16_t ksize)
+QFStorage::save(std::string outfilename, uint16_t ksize)
 {
     ofstream outfile(outfilename.c_str(), ios::binary);
 
@@ -178,9 +168,8 @@ QFStorage<ValueType>::save(std::string outfilename, uint16_t ksize)
 }
 
 
-template<class ValueType>
 void
-QFStorage<ValueType>::load(std::string infilename, uint16_t &ksize)
+QFStorage::load(std::string infilename, uint16_t &ksize)
 {
     ifstream infile;
     // configure ifstream to raise exceptions for everything.
@@ -269,4 +258,3 @@ QFStorage<ValueType>::load(std::string infilename, uint16_t &ksize)
 }
 
 
-template class QFStorage<uint64_t>;

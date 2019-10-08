@@ -28,10 +28,10 @@ namespace cdbg {
 }
 }
 
-template class boink::cdbg::uDBG<boink::storage::BitStorage<>>;
+template class boink::cdbg::uDBG<boink::storage::BitStorage>;
 template class boink::cdbg::uDBG<boink::storage::ByteStorage>;
-template class boink::cdbg::uDBG<boink::storage::NibbleStorage<>>;
-template class boink::cdbg::uDBG<boink::storage::QFStorage<>>;
-template class boink::cdbg::uDBG<boink::storage::SparseppSetStorage<>>;
+template class boink::cdbg::uDBG<boink::storage::NibbleStorage>;
+template class boink::cdbg::uDBG<boink::storage::QFStorage>;
+template class boink::cdbg::uDBG<boink::storage::SparseppSetStorage>;
 
 

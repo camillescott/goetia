@@ -58,9 +58,8 @@ using namespace boink;
 using namespace boink::storage;
 
 
-template<class ValueType>
 const bool
-NibbleStorage<ValueType>::insert(value_type khash)
+NibbleStorage::insert(value_type khash)
 {
     bool is_new_kmer = false;
 
@@ -101,9 +100,8 @@ NibbleStorage<ValueType>::insert(value_type khash)
     return is_new_kmer;
 }
 
-template<class ValueType>
 const count_t
-NibbleStorage<ValueType>::insert_and_query(value_type khash)
+NibbleStorage::insert_and_query(value_type khash)
 {
     if (insert(khash)) {
         return 1;
@@ -112,9 +110,8 @@ NibbleStorage<ValueType>::insert_and_query(value_type khash)
 }
 
 // get the count for the given k-mer hash.
-template<class ValueType>
 const count_t
-NibbleStorage<ValueType>::query(value_type khash) const
+NibbleStorage::query(value_type khash) const
 {
     uint8_t min_count = _max_count; // bound count by maximum
 
@@ -133,9 +130,8 @@ NibbleStorage<ValueType>::query(value_type khash) const
     return min_count;
 }
 
-template<class ValueType>
 void
-NibbleStorage<ValueType>::save(std::string outfilename, uint16_t ksize)
+NibbleStorage::save(std::string outfilename, uint16_t ksize)
 {
     if (!_counts[0]) {
         throw BoinkException();
@@ -168,9 +164,8 @@ NibbleStorage<ValueType>::save(std::string outfilename, uint16_t ksize)
     }
 }
 
-template<class ValueType>
 void
-NibbleStorage<ValueType>::load(std::string infilename, uint16_t& ksize)
+NibbleStorage::load(std::string infilename, uint16_t& ksize)
 {
     ifstream infile;
     // configure ifstream to raise exceptions for everything.
@@ -283,4 +278,3 @@ NibbleStorage<ValueType>::load(std::string infilename, uint16_t& ksize)
     }
 }
 
-template class NibbleStorage<uint64_t>;
