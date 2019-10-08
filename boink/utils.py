@@ -1,3 +1,11 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# (c) Camille Scott, 2019
+# File   : utils.py
+# License: MIT
+# Author : Camille Scott <camille.scott.w@gmail.com>
+# Date   : 08.10.2019
+
 import itertools
 import os
 import re
@@ -23,3 +31,8 @@ def remove_fx_suffix(fn):
 
 def check_trait(trait, type):
     return trait[type].value
+
+
+def copy_attrs(src, dst, attrs):
+    for attr in attrs:
+        setattr(dst, attr, getattr(src, attr))

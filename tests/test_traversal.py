@@ -1,14 +1,16 @@
-# boink/tests/test_assembly.py
-# Copyright (C) 2018 Camille Scott
-# All rights reserved.
-#
-# This software may be modified and distributed under the terms
-# of the MIT license.  See the LICENSE file for details.
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# (c) Camille Scott, 2019
+# File   : test_traversal.py
+# License: MIT
+# Author : Camille Scott <camille.scott.w@gmail.com>
+# Date   : 08.10.2019
+
 
 import pytest
 
 from boink import libboink
-from boink.assembly import Assembler, STATES
+from boink.traversal import Assembler, STATES
 
 from .utils import *
 
