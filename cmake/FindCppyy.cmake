@@ -354,7 +354,7 @@ function(cppyy_add_bindings pkg pkg_version author author_email)
     endforeach()
 
     add_custom_command(OUTPUT ${extra_map_file}
-                       COMMAND ${LibClang_PYTHON_EXECUTABLE} ${Cppyygen_EXECUTABLE} 
+                       COMMAND python ${Cppyygen_EXECUTABLE} 
                                --libclang ${LibClang_LIBRARY} --flags "\"${generator_args}\""
                                ${extra_map_file} ${ARG_HEADERS}
                        DEPENDS ${ARG_HEADERS} 
@@ -453,7 +453,7 @@ function(cppyy_add_bindings pkg pkg_version author author_email)
     string(TOLOWER ${CMAKE_SYSTEM_NAME} SYSTEM_STR)
     set(pkg_whl "${CMAKE_BINARY_DIR}/dist/${pkg}-${pkg_version}-py3-none-${SYSTEM_STR}_${CMAKE_SYSTEM_PROCESSOR}.whl")
     add_custom_command(OUTPUT  ${pkg_whl}
-                       COMMAND ${LibClang_PYTHON_EXECUTABLE} setup.py bdist_wheel
+                       COMMAND python setup.py bdist_wheel
                        DEPENDS ${SETUP_PY_FILE} ${lib_name} ${setup_cfg}
                        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     )
