@@ -42,6 +42,8 @@ before_script:
     - source activate libboink
     - pip install -r requirements.txt
     - pip install git+https://github.com/camillescott/debruijnal-enhance-o-tron#egg=debruijnal_enhance_o_tron
+    - which python
+    - python -c "from clang.cindex import Config"
     - mkdir -p build
     - cd build
     - cmake ..
