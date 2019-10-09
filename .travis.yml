@@ -11,6 +11,9 @@ matrix:
                        - ubuntu-toolchain-r-test
                   packages:
                        - g++-6
+                       - clang-8
+                       - libc++-8-dev
+                       - libc++abi-8-dev
         - name: "PYTHON36"
           env: PYVERSION="3.6" COMPILER_NAME=gcc CXX=g++-6 CC=gcc-6
           addons:
@@ -19,6 +22,9 @@ matrix:
                         - ubuntu-toolchain-r-test
                     packages:
                         - g++-6
+                        - clang-8
+                        - libc++-8-dev
+                        - libc++abi-8-dev
         - name: "PYTHON37"
           env: PYVERSION="3.7" COMPILER_NAME=gcc CXX=g++-6 CC=gcc-6
           addons:
@@ -27,6 +33,9 @@ matrix:
                         - ubuntu-toolchain-r-test
                     packages:
                         - g++-6
+                        - clang-8
+                        - libc++-8-dev
+                        - libc++abi-8-dev
 before_script:
     - sudo apt-get update
     - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
