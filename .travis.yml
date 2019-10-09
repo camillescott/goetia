@@ -43,6 +43,8 @@ before_script:
     - pip install git+https://github.com/camillescott/debruijnal-enhance-o-tron#egg=debruijnal_enhance_o_tron
     - mkdir -p build
     - cd build
+    - which python
+    - python -c "from clang.cindex import Config"
     - cmake ..
     - make install VERBOSE=1
 script: py.test -v tests/test_dbg.py tests/test_cdbg.py tests/test_assembly.py tests/test_hashing.py tests/test_metrics.py tests/test_minimizers.py tests/test_processors.py 
