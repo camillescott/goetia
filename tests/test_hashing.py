@@ -75,6 +75,19 @@ def test_rolling_setcursor_seq_too_large():
     assert hasher.get() == 13194817695400542713
 
 
+def test_update_left_right(hasher, ksize, length, random_sequence):
+    s = random_sequence()
+    fwd_hashes = [hasher.set_cursor(s[:ksize])]
+    for base in s[ksize:]:
+        fwd_hashes.append(hasher.shift_right(base))
+
+    bkw_hashes = [hasher.set_cursor(s[-ksize:])]
+    for base in s[:-ksize][::-1]:
+        bkw_hashes.append(hasher.shift_left(base))
+
+    assert fwd_hashes == bkw_hashes[::-1]
+
+
 def test_unikmer_shifter_kmeriterator(ksize, length, random_sequence, unikmer_shifter):
     print()
     shifter, uk_ksize, uk_map = unikmer_shifter
