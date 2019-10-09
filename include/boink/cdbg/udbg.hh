@@ -29,7 +29,7 @@
 
 #include "boink/events.hh"
 #include "boink/dbg.hh"
-#include "boink/assembly.hh"
+#include "boink/traversal.hh"
 #include "boink/hashing/kmeriterator.hh"
 #include "boink/hashing/rollinghashshifter.hh"
 #include "boink/hashing/ukhs.hh"

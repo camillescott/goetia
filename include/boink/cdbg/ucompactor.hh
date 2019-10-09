@@ -21,7 +21,7 @@
 #include <climits>
 #include <cstdint>
 
-#include "boink/assembly.hh"
+#include "boink/traversal.hh"
 #include "boink/hashing/kmeriterator.hh"
 #include "boink/hashing/ukhs.hh"
 #include "boink/dbg.hh"

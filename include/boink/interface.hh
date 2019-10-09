@@ -40,7 +40,7 @@
 
 #include "boink/dbg.hh"
 #include "boink/pdbg.hh"
-#include "boink/assembly.hh"
+#include "boink/traversal.hh"
 
 #include "boink/reporting/reporters.hh"
 

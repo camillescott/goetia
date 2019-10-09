@@ -14,7 +14,7 @@
 #include "boink/hashing/ukhs.hh"
 #include "boink/storage/storage_types.hh"
 #include "boink/dbg.hh"
-#include "boink/assembly.hh"
+#include "boink/traversal.hh"
 
 namespace boink {
 namespace hashing {

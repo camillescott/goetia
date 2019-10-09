@@ -18,7 +18,7 @@
 #define BOINK_PDBG_HH
 
 #include "boink/boink.hh"
-#include "boink/assembly.hh"
+#include "boink/traversal.hh"
 #include "boink/hashing/kmeriterator.hh"
 #include "boink/hashing/hashshifter.hh"
 #include "boink/kmers/kmerclient.hh"
