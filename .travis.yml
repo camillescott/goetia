@@ -3,14 +3,6 @@ sudo: required
 dist: xenial
 matrix:
     include:
-        - name: "PYTHON35"
-          env: PYVERSION="3.5" COMPILER_NAME=gcc CXX=g++-6 CC=gcc-6
-          addons:
-              apt:
-                  sources:
-                       - ubuntu-toolchain-r-test
-                  packages:
-                       - g++-6
         - name: "PYTHON36"
           env: PYVERSION="3.6" COMPILER_NAME=gcc CXX=g++-6 CC=gcc-6
           addons:
