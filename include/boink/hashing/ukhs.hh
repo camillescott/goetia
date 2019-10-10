@@ -265,16 +265,14 @@ struct UKHS {
         std::deque<size_t>     unikmer_indices;
 
         // Reset the unikmer hasher and eat the length K-1 window prefix
-        void set_unikmer_hasher_left_prefix() {
-            unikmer_hasher.reset();
+        void eat_unikmer_hasher_left_prefix() {
             for (uint16_t i = 0; i < _unikmer_K - 1; ++i) {
                 unikmer_hasher.eat(*(kmer_window.begin() + i));
             }
         }
 
         // Reset the unikmer hasher and eat the length K-1 window suffix
-        void set_unikmer_hasher_right_suffix() {
-            unikmer_hasher.reset();
+        void eat_unikmer_hasher_right_suffix() {
             for (uint16_t i = this->_K - _unikmer_K + 1; i < this->_K; ++i) {
                 unikmer_hasher.eat(*(kmer_window.begin() + i));
             }
@@ -293,11 +291,16 @@ struct UKHS {
         void update_unikmer_left(const char c) {
             if (!unikmer_hasher_on_left) {
                 // if we're not on the left of the window, reset the cursor there
-                set_unikmer_hasher_left_prefix();
-                unikmer_hasher.hash_prepend(c);
+                unikmer_hasher.reset();
+                unikmer_hasher.eat(c);
+                eat_unikmer_hasher_left_prefix();
                 unikmer_hasher_on_left = true;
             } else {
                 // othewise just shift the new symbol on
+                //std::cout << "Reverse update, "
+                //          << *(kmer_window.begin() + _unikmer_K - 1)
+                //          << " => "
+                //          << c << std::endl;
                 unikmer_hasher.reverse_update(c, *(kmer_window.begin() + _unikmer_K - 1));
             }
 
@@ -331,8 +334,9 @@ struct UKHS {
             // if the ukhs hasher is on the left, reset the cursor
             if (unikmer_hasher_on_left) {
                 //std::cout << "LazyShifter set_unikmer_hasher_right_suffix" << std::endl;
-                set_unikmer_hasher_right_suffix();
-                unikmer_hasher.hash_extend(c);
+                unikmer_hasher.reset();
+                eat_unikmer_hasher_right_suffix();
+                unikmer_hasher.eat(c);
                 unikmer_hasher_on_left = false;
             } else {
                 //std::cout << "LazyShifter update: "
@@ -352,8 +356,8 @@ struct UKHS {
         }
 
         Unikmer get_min_unikmer() {
-            //std::cout << "LazyShifter: " << repr(window_unikmers) << std::endl;
-            //std::cout << "LazyShifter: " << repr(unikmer_indices) << std::endl;
+            std::cout << "LazyShifter: " << repr(window_unikmers) << std::endl;
+            std::cout << "LazyShifter: " << repr(unikmer_indices) << std::endl;
 
             if (window_unikmers.size() == 0) {
                 throw BoinkException("Window should contain unikmer.");

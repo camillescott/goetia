@@ -20,7 +20,7 @@ class Assembler:
     def __init__(self, graph):
         self.graph = graph
         self.graphptr = self.graph.__smartptr__().get()
-        self.traverser = libboink.Traverse[type(graph)].dBG(graph.K)
+        self.traverser = libboink.Traverse[type(graph)].dBG(graph.get_hasher())
         copy_attrs(libboink.Traverse[type(graph)],
                    self,
                    ['hash_type', 'shift_type', 'kmer_type'])

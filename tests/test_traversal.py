@@ -29,10 +29,11 @@ def test_assembler_cursor(asm, ksize):
     assert asm.cursor == seed
 
 
+@pytest.mark.parametrize('hasher_type', [libboink.hashing.RollingHashShifter], indirect=True)
 def test_assembler_cursor_wrong_size(asm, ksize):
     seed = 'A' * (ksize - 1)
-
-    with pytest.raises(TypeError):
+    
+    with pytest.raises(BaseException):
         asm.cursor = seed
 
 
@@ -52,7 +53,7 @@ class TestLinear:
             assert path == contig, (len(path), len(contig), start)
             assert lstate == rstate == STATES.STOP_FWD
 
-    @using_ksize(9)
+    @using_ksize(21)
     @using_length(81)
     def test_all_left_to_beginning(self, ksize, length, linear_path, asm, consume, check_fp):
         # assemble directed left
@@ -68,7 +69,7 @@ class TestLinear:
             assert path == contig[:start + ksize], start
             assert state == STATES.STOP_FWD
 
-    @using_ksize(9)
+    @using_ksize(21)
     @using_length(81)
     def test_all_right_to_end(self, ksize, length, linear_path, asm, consume, check_fp):
         # assemble directed right

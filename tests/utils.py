@@ -40,18 +40,27 @@ def hasher_type(request, ksize):
     else:
         return _hasher_type, (ksize,)
 
-
-@pytest.fixture()
-def graph(storage_type, hasher_type, ksize):
-    _storage_type, params = storage_type
-    storage = _storage_type.build(*params)
-
+@pytest.fixture
+def hasher(request, hasher_type, ksize):
     _hasher_type, params = hasher_type
     hasher = _hasher_type(*params)
     hasher.set_cursor('A' * ksize)
-    _graph_type = libboink.dBG[_storage_type, _hasher_type]
+    return hasher
+
+
+@pytest.fixture
+def store(storage_type):
+    _storage_type, params = storage_type
+    storage = _storage_type.build(*params)
+    return storage
+
+
+@pytest.fixture()
+def graph(store, hasher, ksize):
+
+    _graph_type = libboink.dBG[type(store), type(hasher)]
     
-    return _graph_type.build(hasher, storage)
+    return _graph_type.build(hasher, store)
 
 
 def counting_backends(*args):

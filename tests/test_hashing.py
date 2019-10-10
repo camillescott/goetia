@@ -15,11 +15,13 @@ def get_min_unikmer(wmer, uk_map):
     wmer_hash = libboink.hashing.hash_cyclic(wmer, len(wmer))
     kmer_hashes = [libboink.hashing.hash_cyclic(kmer, uk_map.K) for kmer in kmers(wmer, uk_map.K)]
     unikmers = []
-    for h in kmer_hashes:
+    positions = []
+    for i, h in enumerate(kmer_hashes):
         unikmer = libboink.hashing.UKHS.Unikmer(h)
         if uk_map.query(unikmer):
             unikmers.append(unikmer)
-    #print(kmer_hashes)
+            positions.append(i)
+    print([f'{i}: {u}' for i, u in zip(positions, unikmers)])
     #print([str(u) for u in unikmers])
     return wmer_hash, min(unikmers, key=lambda elem: elem.hash)
 
@@ -73,6 +75,25 @@ def test_rolling_setcursor_seq_too_large():
 
     hasher.set_cursor(seq)
     assert hasher.get() == 13194817695400542713
+
+
+def test_unikmer_shifter_shift_left(ksize, length, random_sequence, unikmer_shifter):
+    shifter, uk_ksize, uk_map = unikmer_shifter
+    seq = random_sequence()
+
+    hashes = [shifter.set_cursor(seq[-ksize:])]
+    exp_kmer_hash, exp_ukmer = get_min_unikmer(seq[-ksize:], uk_map)
+    assert hashes[0].hash == exp_kmer_hash
+    assert hashes[0].unikmer == exp_ukmer
+
+    print(seq[-ksize:])
+    for i in range(len(seq) - ksize - 1, -1, -1):
+        print(seq[i:i+ksize])
+        h = shifter.shift_left(seq[i])
+        exp_hash, exp_uk = get_min_unikmer(seq[i:i+ksize], uk_map)
+
+        assert h.hash == exp_hash
+        assert h.unikmer == exp_uk
 
 
 def test_update_left_right(hasher, ksize, length, random_sequence):
