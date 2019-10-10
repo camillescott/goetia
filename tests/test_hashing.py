@@ -86,9 +86,7 @@ def test_unikmer_shifter_shift_left(ksize, length, random_sequence, unikmer_shif
     assert hashes[0].hash == exp_kmer_hash
     assert hashes[0].unikmer == exp_ukmer
 
-    print(seq[-ksize:])
     for i in range(len(seq) - ksize - 1, -1, -1):
-        print(seq[i:i+ksize])
         h = shifter.shift_left(seq[i])
         exp_hash, exp_uk = get_min_unikmer(seq[i:i+ksize], uk_map)
 
@@ -118,7 +116,6 @@ def test_update_left_right(hasher, ksize, length, random_sequence):
 
 
 def test_unikmer_shifter_kmeriterator(ksize, length, random_sequence, unikmer_shifter):
-    print()
     shifter, uk_ksize, uk_map = unikmer_shifter
     seq = random_sequence()
     it = libboink.hashing.KmerIterator[type(shifter)](seq, shifter)

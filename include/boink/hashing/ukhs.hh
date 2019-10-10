@@ -356,7 +356,7 @@ struct UKHS {
         }
 
         Unikmer get_min_unikmer() {
-            std::cout << "LazyShifter: " << repr(window_unikmers) << std::endl;
+            //std::cout << "LazyShifter: " << repr(window_unikmers) << std::endl;
             std::cout << "LazyShifter: " << repr(unikmer_indices) << std::endl;
 
             if (window_unikmers.size() == 0) {
