@@ -20,11 +20,11 @@
 #include <assert.h>
 #include <cstdint>
 
-#include "boink/assembly.hh"
-#include "boink/hashing/hashing_types.hh"
+#include "boink/traversal.hh"
 #include "boink/hashing/kmeriterator.hh"
 #include "boink/dbg.hh"
 #include "boink/storage/bytestorage.hh"
+#include "boink/storage/nibblestorage.hh"
 #include "boink/cdbg/cdbg.hh"
 #include "boink/minimizers.hh"
 
@@ -51,11 +51,15 @@ namespace cdbg {
 template <class GraphType>
 struct StreamingCompactor {
 
-    using ShifterType   = typename GraphType::shifter_type;
-    using TraversalType = Traverse<GraphType>;
-    using MinimizerType = WKMinimizer<ShifterType>;
-    using cDBGType      = typename cDBG<GraphType>::Graph;
-    using State         = typename TraversalType::State;
+    using ShifterType    = typename GraphType::shifter_type;
+    using TraversalType  = Traverse<GraphType>;
+    using MinimizerType  = WKMinimizer<ShifterType>;
+    using cDBGType       = typename cDBG<GraphType>::Graph;
+    using CompactNode    = typename cDBG<GraphType>::CompactNode;
+    using UnitigNode     = typename cDBG<GraphType>::UnitigNode;
+    using DecisionNode   = typename cDBG<GraphType>::DecisionNode;
+    using State          = typename TraversalType::State;
+    using NeighborBundle = typename TraversalType::NeighborBundle;
 
     typedef GraphType                         graph_type;
 
@@ -63,6 +67,8 @@ struct StreamingCompactor {
     typedef typename shifter_type::hash_type  hash_type;
     typedef typename shifter_type::kmer_type  kmer_type;
     typedef typename shifter_type::shift_type shift_type;
+
+    typedef std::pair<kmer_type, NeighborBundle> DecisionKmer;
 
 
     /* Represents a segment of new k-mers from a sequence, relative to the current
@@ -128,20 +134,18 @@ struct StreamingCompactor {
         const bool is_null() const {
             return length == 0 && (left_anchor == right_anchor) && !is_decision_kmer;
         }
+
+        friend inline std::ostream& operator<<(std::ostream& os, const compact_segment& segment) {
+            os << "<compact_segment left_flank=" << segment.left_flank
+               << " left_anchor=" << segment.left_anchor
+               << " right_anchor=" << segment.right_anchor
+               << " right_flank=" << segment.right_flank
+               << " start=" << segment.start_pos
+               << " length=" << segment.length
+               << ">";
+            return os;
+        }
     };
-
-
-    inline std::ostream& operator<<(std::ostream& os, const compact_segment& segment)
-    {
-        os << "<compact_segment left_flank=" << segment.left_flank
-           << " left_anchor=" << segment.left_anchor
-           << " right_anchor=" << segment.right_anchor
-           << " right_flank=" << segment.right_flank
-           << " start=" << segment.start_pos
-           << " length=" << segment.length
-           << ">";
-        return os;
-    }
 
 
     struct Report {
@@ -341,7 +345,7 @@ struct StreamingCompactor {
 
             pdebug("FIND SEGMENTS: " << sequence);
 
-            KmerIterator<ShifterType> kmers(sequence, this->_K);
+            hashing::KmerIterator<ShifterType> kmers(sequence, this->_K);
             hash_type prev_hash, cur_hash;
             size_t pos = 0;
             bool cur_new = false, prev_new = false, cur_seen = false, prev_seen = false;
@@ -739,6 +743,16 @@ struct StreamingCompactor {
                 hash_type end_hash = stop_state.second;
 
                 if (stop_state.first != State::STOP_SEEN) {
+
+                    if (stop_state.first == State::DECISION_FWD) {
+
+                        shift_type right;
+                        auto n_found = this->try_traverse_right(dbg.get(), right);
+                        if (n_found == 1) {
+                            end_hash = right.hash;
+                            path.pop_front();
+                        }
+                    }
                     unode_to_split = cdbg->query_unode_end(end_hash);
                     size_t split_point = path.size() - this->_K  + 1;
                     hash_type left_unode_new_right = start.hash;
@@ -789,6 +803,17 @@ struct StreamingCompactor {
                 hash_type end_hash = stop_state.second;
 
                 if (stop_state.first != State::STOP_SEEN) {
+
+                    if (stop_state.first == State::DECISION_FWD) {
+
+                        shift_type right;
+                        auto n_found = this->try_traverse_left(dbg.get(), right);
+                        if (n_found == 1) {
+                            end_hash = right.hash;
+                            path.pop_back();
+                        }
+                    }
+
                     unode_to_split = cdbg->query_unode_end(end_hash);
                     size_t split_point = unode_to_split->sequence.size()
                                                          - path.size()
@@ -1320,7 +1345,7 @@ struct StreamingCompactor {
 
     private:
 
-        std::unique_ptr<dBG<storage::ByteStorage,
+        std::unique_ptr<dBG<storage::NibbleStorage,
                             ShifterType>> abund_filter;
 
     public:
@@ -1339,10 +1364,12 @@ struct StreamingCompactor {
               dbg           (compactor->dbg),
               min_abund     (min_abund)
         {
-            abund_filter = std::make_unique<dBG<storage::ByteStorage,
-                                                ShifterType>>(dbg->K(),
-                                                              abund_table_size,
-                                                              n_abund_tables);
+            std::shared_ptr<storage::NibbleStorage> abund_storage = storage::NibbleStorage::build(abund_table_size,
+                                                                                                  n_abund_tables);
+            auto abund_hasher = dbg->get_hasher();
+            abund_filter = std::make_unique<dBG<storage::NibbleStorage,
+                                                ShifterType>>(abund_hasher,
+                                                              abund_storage);
         }
 
         std::vector<std::pair<size_t, size_t>> find_solid_segments(const std::string& sequence) {

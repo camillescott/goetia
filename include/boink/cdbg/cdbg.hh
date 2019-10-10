@@ -36,8 +36,7 @@
 #include "boink/metrics.hh"
 #include "boink/reporting/reporters.hh"
 
-#include "boink/assembly.hh"
-#include "boink/hashing/hashing_types.hh"
+#include "boink/traversal.hh"
 #include "boink/hashing/kmeriterator.hh"
 #include "boink/kmers/kmerclient.hh"
 #include "boink/minimizers.hh"
@@ -85,9 +84,227 @@ struct cDBG {
     typedef typename shifter_type::kmer_type  kmer_type;
     typedef typename shifter_type::shift_type shift_type;
 
-    typedef TraversalType traverser_type;
-    typedef MinimizerType minimizer_type;
+    typedef TraversalType                     traverser_type;
+    typedef MinimizerType                     minimizer_type;
 
+
+    class CompactNode {
+
+    protected:
+
+        node_meta_t _meta;
+
+    public:
+
+        const id_t node_id;
+        id_t component_id;
+        std::string sequence;
+        
+        CompactNode(id_t node_id,
+                    const std::string& sequence,
+                    node_meta_t meta)
+            : _meta(meta),
+              node_id(node_id),
+              component_id(NULL_ID),
+              sequence(sequence)
+        {
+        }
+
+        std::string revcomp() const {
+            return hashing::revcomp(sequence);
+        }
+
+        size_t length() const {
+            return sequence.length();
+        }
+
+        const node_meta_t meta() const {
+            return _meta;
+        }
+
+        friend bool operator== (const CompactNode& lhs, const CompactNode& rhs) {
+            return lhs.node_id == rhs.node_id;
+        }
+
+        std::string get_name() const {
+            return std::string("NODE") + std::to_string(node_id);
+        }
+
+    };
+
+
+    class DecisionNode: public CompactNode {
+
+    protected:
+
+        bool _dirty;
+        uint8_t _left_degree;
+        uint8_t _right_degree;
+        uint32_t _count;
+
+    public:
+
+        DecisionNode(id_t node_id, const std::string& sequence)
+            : CompactNode(node_id, sequence, DECISION),
+              _dirty(true),
+              _left_degree(0),
+              _right_degree(0),
+              _count(1)
+        {    
+        }
+
+        static std::shared_ptr<DecisionNode> build(const DecisionNode& other) {
+            return std::make_shared<DecisionNode>(other.node_id, other.sequence);
+        }
+
+        static std::shared_ptr<DecisionNode> build(const DecisionNode * other) {
+            return std::make_shared<DecisionNode>(other->node_id, other->sequence);
+        }
+
+        const bool is_dirty() const {
+            return _dirty;
+        }
+
+        void set_dirty(bool dirty) {
+            _dirty = dirty;
+        }
+
+        const uint32_t count() const {
+            return _count;
+        }
+
+        void incr_count() {
+            _count++;
+        }
+
+        const uint8_t degree() const {
+            return left_degree() + right_degree();
+        }
+
+        const uint8_t left_degree() const {
+            return _left_degree;
+        }
+
+        void incr_left_degree() {
+            _left_degree++;
+        }
+
+        const uint8_t right_degree() const {
+            return _right_degree;
+        }
+
+        void incr_right_degree() {
+            _right_degree++;
+        }
+
+        std::string repr() const {
+            std::ostringstream os;
+            os << *this;
+            return os.str();
+        }
+
+        friend inline std::ostream& operator<<(std::ostream& o, const DecisionNode& dn) {
+
+            o << "<DNode ID/hash=" << dn.node_id << " k-mer=" << dn.sequence
+              //<< " Dl=" << std::to_string(dn.left_degree())
+              //<< " Dr=" << std::to_string(dn.right_degree())
+              << " count=" << dn.count()
+              << " dirty=" << dn.is_dirty() << ">";
+            return o;
+        }
+    };
+
+
+    class UnitigNode : public CompactNode {
+
+    protected:
+
+        hash_type _left_end, _right_end;
+        using CompactNode::_meta;
+
+    public:
+
+        using CompactNode::sequence;
+        std::vector<hash_type> tags;
+
+        UnitigNode(id_t node_id,
+                   hash_type left_end,
+                   hash_type right_end,
+                   const std::string& sequence,
+                   node_meta_t meta = ISLAND)
+            : CompactNode(node_id, sequence, meta),
+              _left_end(left_end),
+              _right_end(right_end) { 
+        }
+
+        static std::shared_ptr<UnitigNode> build(const UnitigNode& other) {
+            return std::make_shared<UnitigNode>(other.node_id,
+                                                other.left_end(),
+                                                other.right_end(),
+                                                other.sequence,
+                                                other.meta());
+        }
+
+        static std::shared_ptr<UnitigNode> build(const UnitigNode * other) {
+            return std::make_shared<UnitigNode>(other->node_id,
+                                                other->left_end(),
+                                                other->right_end(),
+                                                other->sequence,
+                                                other->meta());
+        }
+
+        void set_node_meta(node_meta_t new_meta) {
+            _meta = new_meta;
+        }
+
+        const hash_type left_end() const {
+            return _left_end;
+        }
+
+        void set_left_end(hash_type left_end) {
+            _left_end = left_end;
+        }
+
+        void extend_right(hash_type right_end, const std::string& new_sequence) {
+            sequence += new_sequence;
+            _right_end = right_end;
+        }
+
+        void extend_left(hash_type left_end, const std::string& new_sequence) {
+            sequence = new_sequence + sequence;
+            _left_end = left_end;
+        }
+
+        const hash_type right_end() const {
+            return _right_end;
+        }
+
+        void set_right_end(hash_type right_end) {
+            _right_end = right_end;
+        }
+
+        std::string repr() const {
+            std::ostringstream os;
+            os << *this;
+            return os.str();
+        }
+
+        friend inline std::ostream& operator<<(std::ostream& o, const UnitigNode& un) {
+            o << "<UNode ID=" << un.node_id
+              << " left_end=" << un.left_end()
+              << " right_end=" << un.right_end()
+              << " sequence=" << un.sequence
+              << " length=" << un.sequence.length()
+              << " meta=" << node_meta_repr(un.meta())
+              << ">";
+            return o;
+        }
+
+    };
+
+    typedef CompactNode * CompactNodePtr;
+    typedef DecisionNode * DecisionNodePtr;
+    typedef UnitigNode * UnitigNodePtr;
 
     class Graph : public kmers::KmerClient,
                   public events::EventNotifier {
@@ -97,7 +314,7 @@ struct cDBG {
          */
         typedef spp::sparse_hash_map<hash_type,
                                      std::unique_ptr<DecisionNode>> dnode_map_t;
-        typedef dnode_map_t::const_iterator dnode_iter_t;
+        typedef typename dnode_map_t::const_iterator dnode_iter_t;
 
         /* Map of Node ID --> UnitigNode. This is a container
          * for the UnitigNodes' pointers; k-mer maps are stored elsewhere,
@@ -105,7 +322,7 @@ struct cDBG {
          */
         typedef spp::sparse_hash_map<id_t,
                                      std::unique_ptr<UnitigNode>> unode_map_t;
-        typedef unode_map_t::const_iterator unode_iter_t;
+        typedef typename unode_map_t::const_iterator unode_iter_t;
 
     protected:
 
@@ -152,19 +369,19 @@ struct cDBG {
          * (the caller will need to lock).
          */
 
-        dnode_map_t::const_iterator dnodes_begin() const {
+        typename dnode_map_t::const_iterator dnodes_begin() const {
             return decision_nodes.cbegin();
         }
 
-        dnode_map_t::const_iterator dnodes_end() const {
+        typename dnode_map_t::const_iterator dnodes_end() const {
             return decision_nodes.cend();
         }
 
-        unode_map_t::const_iterator unodes_begin() const {
+        typename unode_map_t::const_iterator unodes_begin() const {
             return unitig_nodes.cbegin();
         }
 
-        unode_map_t::const_iterator unodes_end() const {
+        typename unode_map_t::const_iterator unodes_end() const {
             return unitig_nodes.cend();
         }
 

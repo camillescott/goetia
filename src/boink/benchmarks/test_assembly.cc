@@ -1,4 +1,4 @@
-#include "boink/assembly.hh"
+#include "boink/traversal.hh"
 #include "boink/boink.hh"
 #include "boink/dbg.hh"
 #include "boink/storage/sparseppstorage.hh"

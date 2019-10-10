@@ -3,7 +3,7 @@
         <!-- <namespace pattern="boink::*"/> -->
         <namespace pattern="boink::storage::*"/>
         <!-- <class pattern="boink::signatures::*"/> -->
-        <!-- <namespace pattern="boink::cdbg::*"/> -->
+        <namespace pattern="boink::cdbg::*"/>
         <class name="boink::events::EventListener"/>
         <!-- <class name="boink::reporting::SingleFileReporter"/> -->
         <class name="boink::TestReporter" />

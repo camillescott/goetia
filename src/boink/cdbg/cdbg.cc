@@ -73,7 +73,7 @@ cDBG<GraphType>::Graph::has_unode_end(hash_type end_kmer) {
 
 
 template <class GraphType>
-UnitigNode *
+typename cDBG<GraphType>::UnitigNode *
 cDBG<GraphType>::Graph::query_unode_end(hash_type end_kmer) {
     auto search = unitig_end_map.find(end_kmer);
     if (search != unitig_end_map.end()) {
@@ -84,7 +84,7 @@ cDBG<GraphType>::Graph::query_unode_end(hash_type end_kmer) {
 
 
 template <class GraphType>
-UnitigNode *
+typename cDBG<GraphType>::UnitigNode *
 cDBG<GraphType>::Graph::query_unode_tag(hash_type hash) {
     auto search = unitig_tag_map.find(hash);
     if (search != unitig_tag_map.end()) {
@@ -95,7 +95,7 @@ cDBG<GraphType>::Graph::query_unode_tag(hash_type hash) {
 
 
 template <class GraphType>
-UnitigNode *
+typename cDBG<GraphType>::UnitigNode *
 cDBG<GraphType>::Graph::query_unode_id(id_t id) {
     auto search = unitig_nodes.find(id);
     if (search != unitig_nodes.end()) {
@@ -106,7 +106,7 @@ cDBG<GraphType>::Graph::query_unode_id(id_t id) {
 
 
 template <class GraphType>
-CompactNode * 
+typename cDBG<GraphType>::CompactNode * 
 cDBG<GraphType>::Graph::query_cnode(hash_type hash) {
     CompactNode * node = query_unode_end(hash);
     if (node == nullptr) {
@@ -117,7 +117,7 @@ cDBG<GraphType>::Graph::query_cnode(hash_type hash) {
 
 
 template <class GraphType>
-DecisionNode * 
+typename cDBG<GraphType>::DecisionNode * 
 cDBG<GraphType>::Graph::query_dnode(hash_type hash) {
 
     auto search = decision_nodes.find(hash);
@@ -129,10 +129,10 @@ cDBG<GraphType>::Graph::query_dnode(hash_type hash) {
 
 
 template <class GraphType>
-vector<DecisionNode*>
+vector<typename cDBG<GraphType>::DecisionNode*>
 cDBG<GraphType>::Graph::query_dnodes(const std::string& sequence) {
 
-    KmerIterator<ShifterType> kmers(sequence, this->_K);
+    hashing::KmerIterator<ShifterType> kmers(sequence, this->_K);
     vector<DecisionNode*> result;
     while(!kmers.done()) {
         hash_type h = kmers.next();
@@ -147,7 +147,7 @@ cDBG<GraphType>::Graph::query_dnodes(const std::string& sequence) {
 
 
 template <class GraphType>
-CompactNode *
+typename cDBG<GraphType>::CompactNode *
 cDBG<GraphType>::Graph::find_rc_cnode(CompactNode * root) {
 
     std::string  rc_seq  = hashing::revcomp(root->sequence.substr(0, this->_K));
@@ -159,8 +159,8 @@ cDBG<GraphType>::Graph::find_rc_cnode(CompactNode * root) {
 
 
 template <class GraphType>
-std::pair<std::vector<CompactNode*>,
-          std::vector<CompactNode*>>
+std::pair<std::vector<typename cDBG<GraphType>::CompactNode*>,
+          std::vector<typename cDBG<GraphType>::CompactNode*>>
 cDBG<GraphType>::Graph::find_dnode_neighbors(DecisionNode* dnode) {
 
     std::vector<CompactNode*> left;
@@ -186,7 +186,8 @@ cDBG<GraphType>::Graph::find_dnode_neighbors(DecisionNode* dnode) {
 
 
 template <class GraphType>
-std::pair<DecisionNode*, DecisionNode*>
+std::pair<typename cDBG<GraphType>::DecisionNode*,
+          typename cDBG<GraphType>::DecisionNode*>
 cDBG<GraphType>::Graph::find_unode_neighbors(UnitigNode * unode) {
 
     DecisionNode * left = nullptr, * right = nullptr;
@@ -223,7 +224,7 @@ cDBG<GraphType>::Graph::find_unode_neighbors(UnitigNode * unode) {
 
 
 template <class GraphType>
-std::vector<CompactNode*>
+std::vector<typename cDBG<GraphType>::CompactNode*>
 cDBG<GraphType>::Graph::traverse_breadth_first(CompactNode* root) {
 
     std::set<id_t> seen;
@@ -329,7 +330,7 @@ cDBG<GraphType>::Graph::recompute_node_meta(UnitigNode * unode) {
 
 
 template <class GraphType>
-UnitigNode * 
+typename cDBG<GraphType>::UnitigNode * 
 cDBG<GraphType>::Graph::switch_unode_ends(hash_type old_unode_end,
                                           hash_type new_unode_end) {
 
@@ -350,7 +351,7 @@ cDBG<GraphType>::Graph::switch_unode_ends(hash_type old_unode_end,
 
 
 template <class GraphType>
-DecisionNode*
+typename cDBG<GraphType>::DecisionNode*
 cDBG<GraphType>::Graph::build_dnode(hash_type hash,
                                     const std::string& kmer) {
     /* Build a new DecisionNode; or, if the given k-mer hash
@@ -378,7 +379,7 @@ cDBG<GraphType>::Graph::build_dnode(hash_type hash,
 
 
 template <class GraphType>
-UnitigNode *
+typename cDBG<GraphType>::UnitigNode *
 cDBG<GraphType>::Graph::build_unode(const std::string& sequence,
                                     std::vector<hash_type>& tags,
                                     hash_type left_end,

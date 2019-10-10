@@ -1,10 +1,10 @@
 set(_headers
     include/boink/traversal.hh
     include/boink/boink.hh
-    #include/boink/cdbg/cdbg.hh
-    #include/boink/cdbg/cdbg_types.hh
-    #include/boink/cdbg/compactor.hh
-    #include/boink/cdbg/metrics.hh
+    include/boink/cdbg/cdbg.hh
+    include/boink/cdbg/cdbg_types.hh
+    include/boink/cdbg/compactor.hh
+    include/boink/cdbg/metrics.hh
     include/boink/cdbg/udbg.hh
     include/boink/cdbg/ucompactor.hh
     include/boink/dbg.hh
@@ -66,10 +66,10 @@ set(_sources
     src/boink/pdbg.cc
     src/boink/boink.cc
     src/boink/event_types.cc
-    #src/boink/cdbg/metrics.cc
-    #src/boink/cdbg/cdbg_types.cc
-    #src/boink/cdbg/cdbg.cc
-    #src/boink/cdbg/compactor.cc
+    src/boink/cdbg/metrics.cc
+    src/boink/cdbg/cdbg_types.cc
+    src/boink/cdbg/cdbg.cc
+    src/boink/cdbg/compactor.cc
     src/boink/cdbg/udbg.cc
     src/boink/cdbg/ucompactor.cc
     src/boink/parsing/readers.cc

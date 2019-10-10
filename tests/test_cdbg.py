@@ -8,7 +8,9 @@
 import itertools
 import sys
 
+from debruijnal_enhance_o_tron.fixtures.sequence import using_n_branches
 import pytest
+
 from tests.utils import *
 
 from boink.prometheus import Instrumentation
@@ -24,6 +26,7 @@ def compactor(ksize, graph, storage_type):
     return compactor
 
 
+@pytest.mark.parametrize('hasher_type', [libboink.hashing.RollingHashShifter], indirect=True)
 class TestFindNewSegments:
 
     @using_ksize(15)
@@ -300,7 +303,7 @@ class TestFindNewSegments:
         assert segments[5].length == len(mut) - (pivotR + 1)
 
 
-
+@pytest.mark.parametrize('hasher_type', [libboink.hashing.RollingHashShifter], indirect=True)
 class TestDecisionNodes(object):
 
     @using_ksize(15)
@@ -489,6 +492,7 @@ class TestDecisionNodes(object):
         assert compactor.cdbg.n_unodes == 2
 
 
+@pytest.mark.parametrize('hasher_type', [libboink.hashing.RollingHashShifter], indirect=True)
 class TestUnitigBuildExtend(object):
 
     @using_ksize(15)
@@ -745,6 +749,7 @@ class TestUnitigBuildExtend(object):
         assert compactor.cdbg.query_unode_end(graph.hash(left[-ksize:])) is None
 
 
+@pytest.mark.parametrize('hasher_type', [libboink.hashing.RollingHashShifter], indirect=True)
 class TestUnitigSplit(object):
 
     def test_split_full_fwd(self, left_comb, right_comb, ksize, tip_length, n_branches,
@@ -795,13 +800,13 @@ class TestUnitigSplit(object):
         assert compactor.cdbg.n_dnodes == 3
         assert compactor.cdbg.n_unodes == (n_branches * 2) + 3
 
-
-        
-    @using_ksize(15)
-    @using_length(50)
-    def test_clip_from_left(self, right_sea, ksize, length, graph, compactor,
+    @using(tip_length=[2,4],
+           ksize=15,
+           length=50,
+           n_branches=2)
+    def test_clip_from_left(self, right_comb, ksize, length, graph, compactor,
                                   check_fp):
-        top, bottom = right_sea()
+        top, bottom = right_comb()
         check_fp()
 
         compactor.update_sequence(top)
@@ -826,11 +831,13 @@ class TestUnitigSplit(object):
         assert bottom_unode.right_end == graph.hash(bottom[-ksize:])
         assert bottom_unode.meta == libboink.cdbg.TIP
 
-    @using_ksize(15)
-    @using_length(50)
-    def test_clip_from_right(self, left_sea, ksize, length, graph, compactor,
+    @using(tip_length=[2,4],
+           ksize=15,
+           length=50,
+           n_branches=2)
+    def test_clip_from_right(self, left_comb, ksize, length, graph, compactor,
                                    check_fp):
-        top, bottom = left_sea()
+        top, bottom = left_comb()
         check_fp()
 
         compactor.update_sequence(top)
@@ -1149,6 +1156,7 @@ class TestUnitigSplit(object):
         assert rbottom.left_end == graph.hash(bottom[L+2:L+2+ksize])
 
 
+@pytest.mark.parametrize('hasher_type', [libboink.hashing.RollingHashShifter], indirect=True)
 class TestCircularUnitigs:
 
     @using_ksize(15)
@@ -1298,7 +1306,7 @@ class TestCircularUnitigs:
         assert loop_unode.right_end == graph.hash(loop[:ksize])
         assert loop_unode.sequence == loop
         assert loop_unode.meta == libboink.cdbg.CIRCULAR
-        loop_unode = libboink.cdbg.UnitigNode.build(loop_unode)
+        loop_unode = libboink.cdbg.cDBG[type(graph)].UnitigNode.build(loop_unode)
 
         compactor.update_sequence(tail)
         assert compactor.cdbg.n_dnodes == 1
@@ -1334,7 +1342,7 @@ class TestCircularUnitigs:
         assert loop_unode.right_end == graph.hash(loop[:ksize])
         assert loop_unode.sequence == loop
         assert loop_unode.meta == libboink.cdbg.CIRCULAR
-        loop_unode = libboink.cdbg.UnitigNode.build(loop_unode)
+        loop_unode = libboink.cdbg.cDBG[type(graph)].UnitigNode.build(loop_unode)
 
         compactor.update_sequence(tail)
         assert compactor.cdbg.n_dnodes == 1
@@ -1369,6 +1377,7 @@ class TestCircularUnitigs:
         print((' ' * (pivot+1)) + cycled_loop_unode.sequence)
 
 
+@pytest.mark.parametrize('hasher_type', [libboink.hashing.RollingHashShifter], indirect=True)
 class TestBreadthFirstTraversal:
 
     @using_ksize(21)
@@ -1421,6 +1430,7 @@ class TestBreadthFirstTraversal:
         assert len(nodes) == 6
 
 
+@pytest.mark.parametrize('hasher_type', [libboink.hashing.RollingHashShifter], indirect=True)
 class TestFindConnectedComponents:
 
     @using_ksize(21)

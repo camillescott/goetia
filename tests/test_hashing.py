@@ -131,32 +131,3 @@ def test_unikmer_shifter_kmeriterator(ksize, length, random_sequence, unikmer_sh
         assert act_h.unikmer.partition == exp_ukmer.partition
         i += 1
 
-        #print('---')
-
-
-'''
-def test_ukhs_unikmer():
-    W = 27
-    K = 7
-    seq = 'TCACCTGTGTTGTGCTACTTGCGGCGC'
-
-    hasher = UKHShifter(27, 7)
-    assert hasher.hash(seq) == 13194817695400542713
-    hasher.set_cursor(seq)
-    assert hasher.hashvalue == 13194817695400542713
-    assert hasher.unikmers() == [(5571541805904823269, 1681)]
-
-
-@using_length(1000)
-def test_ukhs_long_list(linear_path):
-    W = 27
-    K = 7
-    seq = linear_path()
-
-    hasher = UKHShifter(27, 7)
-    print(seq[:27])
-    U = hasher.find_unikmers(seq)
-    print(len(U))
-    for u, p in U:
-        assert unikmer_valid(p)
-'''

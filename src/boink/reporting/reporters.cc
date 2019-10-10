@@ -12,7 +12,7 @@
 
 namespace boink {
 namespace reporting {
-/*
+
 SingleFileReporter::SingleFileReporter(const std::string& output_filename,
                    const std::string& thread_name) 
     : EventListener(thread_name),
@@ -30,9 +30,7 @@ SingleFileReporter::~SingleFileReporter() {
     _output_stream.close();
 
 }
-*/
 
-/*
 MultiFileReporter::MultiFileReporter(const std::string& prefix,
                                      const std::string& thread_name)
     : EventListener(thread_name),
@@ -71,7 +69,6 @@ std::ofstream& MultiFileReporter::next_stream(uint64_t start_time,
 MultiFileReporter::~MultiFileReporter() {
     current_stream().close();
 }
-*/
 
 }
 }

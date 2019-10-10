@@ -19,19 +19,9 @@
 #include "boink/events.hh"
 
 namespace boink {
-/*
-class TestReporter : public events::EventListener {
- 
-public:
 
-    TestReporter()
-        : events::EventListener("Test")
-    {}
-};
-*/
 namespace reporting {
 
-/*
 class SingleFileReporter : public events::EventListener {
 
 protected:
@@ -48,9 +38,8 @@ public:
 
     virtual ~SingleFileReporter();
 };
-*/
 
-/*
+
 class MultiFileReporter : public events::EventListener {
 
 protected:
@@ -76,8 +65,6 @@ public:
     virtual ~MultiFileReporter();
 
 };
-*/
-
 
 }
 }

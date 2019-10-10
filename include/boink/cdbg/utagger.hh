@@ -10,7 +10,7 @@
 #define BOINK_UTAGGER_HH
 
 
-#include "boink/assembly.hh"
+#include "boink/traversal.hh"
 #include "boink/hashing/hashing_types.hh"
 #include "boink/hashing/kmeriterator.hh"
 #include "boink/hashing/ukhs.hh"

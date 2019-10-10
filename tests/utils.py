@@ -6,6 +6,9 @@
 # of the MIT license.  See the LICENSE file for details.
 
 import pytest
+import collections
+import six
+
 import random
 
 from debruijnal_enhance_o_tron.sequence import *
@@ -100,3 +103,31 @@ def exact_backends(*args):
                                        indirect=['storage_type'],
                                        ids=storage_t_name)(fixture_func)
     return wrapped
+
+
+def is_iterable(arg):
+    return (
+        isinstance(arg, collections.abc.Iterable) 
+        and not isinstance(arg, six.string_types)
+    )
+
+
+def using(**kwargs):
+    def wrapped(fixture_func):
+        for param, value in kwargs.items():
+            if is_iterable(value):
+                value = list(value)
+                ids = ['{0}={1}'.format(param, v) for v in value]
+            else:
+                ids = ['{0}={1}'.format(param, value)]
+                value = [value]
+            
+            fixture_func = pytest.mark.parametrize(param,
+                                                   value,
+                                                   indirect=True,
+                                                   ids=ids)(fixture_func)
+
+        return fixture_func
+
+    return wrapped
+

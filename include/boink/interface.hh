@@ -46,10 +46,10 @@
 
 #include "boink/processors.hh"
 
-//#include "boink/cdbg/cdbg_types.hh"
-//#include "boink/cdbg/compactor.hh"
-//#include "boink/cdbg/cdbg.hh"
-//#include "boink/cdbg/metrics.hh"
+#include "boink/cdbg/cdbg_types.hh"
+#include "boink/cdbg/compactor.hh"
+#include "boink/cdbg/cdbg.hh"
+#include "boink/cdbg/metrics.hh"
 #include "boink/cdbg/udbg.hh"
 //#include "boink/cdbg/ucompactor.hh"
 
@@ -73,31 +73,7 @@ template bool operator!=(const std::STLTYPE< TTYPE >::iterator&,                
                          const std::STLTYPE< TTYPE >::iterator&);                 \
 }
 
-//#define STLTYPES_EXPLICIT_INSTANTIATION_DECL(STLTYPE, TTYPE)                        \
-template class std::STLTYPE< TTYPE >;                                               \
-template class __gnu_cxx::__normal_iterator<TTYPE*, std::STLTYPE< TTYPE > >;\
-template class __gnu_cxx::__normal_iterator<const TTYPE*, std::STLTYPE< TTYPE > >; \
-namespace __gnu_cxx {                                                           \
-template bool operator==(const __normal_iterator<TTYPE*, std::STLTYPE< TTYPE > >&,  \
-                         const __normal_iterator<TTYPE*, std::STLTYPE< TTYPE > >&); \
-template bool operator!=(const __normal_iterator<TTYPE*, std::STLTYPE< TTYPE > >&,  \
-                         const __normal_iterator<TTYPE*, std::STLTYPE< TTYPE > >&); \
-}
-//template bool operator!=(const std::STLTYPE< TTYPE >::iterator&,                  \
-                         const std::STLTYPE< TTYPE >::iterator&);                 \
 
-
-
-/*
-STLTYPES_EXPLICIT_INSTANTIATION_DECL(vector, boink::hashing::hash_t)
-STLTYPES_EXPLICIT_INSTANTIATION_DECL(vector, boink::hashing::shift_t)
-STLTYPES_EXPLICIT_INSTANTIATION_DECL(vector, boink::hashing::kmer_t)
-
-
-template class std::pair<boink::hashing::shift_t, boink::hashing::shift_t>;
-template class std::pair<std::vector<boink::hashing::shift_t>,
-                         std::vector<boink::hashing::shift_t>>;
-*/
 extern
 template class boink::hashing::KmerIterator<boink::hashing::RollingHashShifter>;
 extern
@@ -179,7 +155,6 @@ extern
 template class boink::PdBG<boink::storage::SparseppSetStorage>;
 
 
-/*
 extern
 template class boink::cdbg::cDBG<boink::dBG<boink::storage::BitStorage,
                                             boink::hashing::RollingHashShifter>>;
@@ -195,7 +170,6 @@ template class boink::cdbg::cDBG<boink::dBG<boink::storage::QFStorage,
 extern
 template class boink::cdbg::cDBG<boink::dBG<boink::storage::SparseppSetStorage,
                                             boink::hashing::RollingHashShifter>>;
-*/
 
 extern
 template class boink::cdbg::uDBG<boink::storage::BitStorage>;
@@ -257,7 +231,6 @@ template class boink::InserterProcessor<boink::dBG<boink::storage::SparseppSetSt
                                                    boink::hashing::RollingHashShifter>>;
 
 
-/*
 extern
 template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::BitStorage,
                                                boink::hashing::RollingHashShifter>>;
@@ -273,7 +246,6 @@ template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::QFStor
 extern
 template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::SparseppSetStorage,
                                                boink::hashing::RollingHashShifter>>;
-*/
 /*
 extern
 template class boink::cdbg::UStreamingCompactor<boink::storage::BitStorage>;
