@@ -108,6 +108,14 @@ def test_update_left_right(hasher, ksize, length, random_sequence):
 
     assert fwd_hashes == bkw_hashes[::-1]
 
+    # cursor is now the front k-mer, switch directions and hash fwd again
+    # to be sure left->right direction change works
+    hashes = [hasher.get()]
+    for base in s[ksize:]:
+        hashes.append(hasher.shift_right(base))
+
+    assert hashes == fwd_hashes
+
 
 def test_unikmer_shifter_kmeriterator(ksize, length, random_sequence, unikmer_shifter):
     print()
