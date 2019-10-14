@@ -1372,6 +1372,14 @@ struct StreamingCompactor {
                                                               abund_storage);
         }
 
+        static std::shared_ptr<SolidCompactor> build(std::shared_ptr<Compactor> compactor,
+                                                     unsigned int               min_abund,
+                                                     uint64_t                   abund_table_size,
+                                                     uint16_t                   n_abund_tables) {
+            return std::make_shared<SolidCompactor>(compactor, min_abund, abund_table_size, n_abund_tables);
+        }
+                                                     
+
         std::vector<std::pair<size_t, size_t>> find_solid_segments(const std::string& sequence) {
             std::vector<hash_type>  hashes;
             std::vector<storage::count_t> counts;

@@ -12,10 +12,7 @@ import six
 import random
 
 from debruijnal_enhance_o_tron.sequence import *
-from debruijnal_enhance_o_tron.fixtures.sequence import (using_ksize,
-                                                         using_length,
-                                                         using_pivot)
-#from boink import boink as libboink
+
 from cppyy.gbl import std
 import boink
 from boink import boink as libboink
@@ -113,13 +110,20 @@ def is_iterable(arg):
 
 
 def using(**kwargs):
+
+    def pretty(val):
+        if 'meta' in type(val).__name__:
+            return val.__name__
+        else:
+            return str(val)
+
     def wrapped(fixture_func):
         for param, value in kwargs.items():
             if is_iterable(value):
                 value = list(value)
-                ids = ['{0}={1}'.format(param, v) for v in value]
+                ids = ['{0}={1}'.format(param, pretty(v)) for v in value]
             else:
-                ids = ['{0}={1}'.format(param, value)]
+                ids = ['{0}={1}'.format(param, pretty(value))]
                 value = [value]
             
             fixture_func = pytest.mark.parametrize(param,

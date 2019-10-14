@@ -13,7 +13,7 @@ from boink.data import load_unikmer_map
 from .utils import *
 
 
-@using_ksize([21, 51, 101])
+@using(ksize=[21, 51, 101])
 @presence_backends()
 def test_presence_insert(graph, ksize, random_sequence):
     # basic get/add test
@@ -33,7 +33,7 @@ def test_presence_insert(graph, ksize, random_sequence):
         assert graph.query(hashval) == 1
 
 
-@using_ksize([21, 51, 101])
+@using(ksize=[21, 51, 101])
 @counting_backends()
 def test_counting_insert(graph, ksize, random_sequence):
     # basic get/add test
@@ -53,7 +53,7 @@ def test_counting_insert(graph, ksize, random_sequence):
         assert graph.query(hashval) == 2
 
 
-@using_ksize([21, 51, 101])
+@using(ksize=[21, 51, 101])
 @counting_backends()
 def test_counting_insert_and_query(graph, ksize, random_sequence):
     # basic get/add test
@@ -64,7 +64,7 @@ def test_counting_insert_and_query(graph, ksize, random_sequence):
         assert graph.insert_and_query(hashval) == 2
 
 
-@using_ksize([21, 51, 101])
+@using(ksize=[21, 51, 101])
 @presence_backends()
 def test_presence_insert_and_query(graph, ksize, random_sequence):
     # basic get/add test
@@ -75,7 +75,7 @@ def test_presence_insert_and_query(graph, ksize, random_sequence):
         assert graph.insert_and_query(hashval) == 1
 
 
-@using_ksize([21, 51, 101])
+@using(ksize=[21, 51, 101])
 @counting_backends()
 def test_counting_query(graph, ksize, random_sequence):
     seq_kmers = list(kmers(random_sequence(), ksize))
@@ -87,9 +87,7 @@ def test_counting_query(graph, ksize, random_sequence):
             graph.insert(hashval)
 
 
-
-
-@using_ksize([21, 51, 101])
+@using(ksize=[21, 51, 101])
 @counting_backends()
 def test_counting_count_add_sequence(graph, ksize, random_sequence):
     seq = random_sequence()
@@ -102,12 +100,12 @@ def test_counting_count_add_sequence(graph, ksize, random_sequence):
         graph.insert_sequence(seq)
 
 
-@using_ksize([21,51,81])
+@using(ksize=[21, 51, 101])
 def test_get_ksize(graph, ksize):
     assert graph.K == ksize
 
 
-@using_ksize(21)
+@using(ksize=21)
 def test_hash_type(graph, ksize, hasher_type):
     hasher_t, _ = hasher_type
     # hashing of strings -> numbers.
@@ -128,7 +126,7 @@ def test_hash_bad_length(graph, ksize):
     assert graph.hash(test_kmer) == graph.hash(test_kmer + 'TTTT')
 
 
-@using_ksize(21)
+@using(ksize=21)
 def test_add_hashval(graph, ksize):
     # test add(hashval)
     x = graph.hash("ATC" * 7)
@@ -139,7 +137,7 @@ def test_add_hashval(graph, ksize):
     assert z == 1
 
 
-@using_ksize(21)
+@using(ksize=21)
 def test_add_dna_kmer(graph, ksize):
     # test add(dna)
     x = graph.insert("ATC" * 7)
@@ -149,7 +147,7 @@ def test_add_dna_kmer(graph, ksize):
     assert z == 1
 
 
-@using_ksize(21)
+@using(ksize=21)
 def test_get_hashval(graph, ksize):
     # test get(hashval)
     hashval = graph.hash("ATC" * 7)
@@ -159,7 +157,7 @@ def test_get_hashval(graph, ksize):
     assert z == 1
 
 
-@using_ksize(21)
+@using(ksize=21)
 def test_get_dna_kmer(graph):
     # test get(dna)
     kmer = "ATC" * 7
@@ -170,23 +168,23 @@ def test_get_dna_kmer(graph):
     assert z == 1
 
 
-@using_ksize(21)
+@using(ksize=21)
 def test_get_bad_dna_kmer(graph, ksize):
     # test get(dna) with bad dna; should fail
     #TODO: figure out cppyy exception foo
     with pytest.raises(TypeError):
         graph.query("Y" * ksize)
 
-@using_ksize(21)
-@using_length(23)
+
+@using(ksize=21, length=23)
 def test_right_neighbors(graph, ksize, linear_path):
     s = linear_path()
     graph.insert_sequence(s)
     n = graph.right_neighbors(s[1:22])
     assert len(n) == 1
 
-@using_ksize(21)
-@using_length(23)
+
+@using(ksize=21, length=23)
 def test_neighbors(graph, ksize, linear_path):
     s = linear_path()
     graph.insert_sequence(s)
@@ -195,8 +193,7 @@ def test_neighbors(graph, ksize, linear_path):
     assert len(r) == 1
 
 
-@using_ksize(21)
-@using_length(50)
+@using(ksize=21, length=50)
 def test_insert_sequence_overload(graph, ksize, length, linear_path):
     x = linear_path()
     hashes = std.vector[type(graph).hash_type]()
@@ -209,8 +206,7 @@ def test_insert_sequence_overload(graph, ksize, length, linear_path):
         assert graph.query(x[start:start + ksize]) == 1
 
 
-@using_ksize(21)
-@using_length(30)
+@using(ksize=21, length=30)
 def test_insert_sequence_bad_dna(graph, linear_path):
     # while we don't specifically handle bad DNA, we should at least be
     # consistent...
@@ -219,7 +215,7 @@ def test_insert_sequence_bad_dna(graph, linear_path):
         num_kmers = graph.insert_sequence(x)
 
 
-@using_ksize(21)
+@using(ksize=21)
 def test_add_sequence_short(graph):
     # raise error on too short when consume is run
     x = "ATGCA"
@@ -227,7 +223,7 @@ def test_add_sequence_short(graph):
         graph.insert_sequence(x)
 
 
-@using_ksize(21)
+@using(ksize=21)
 def test_get_kmer_counts(graph, ksize):
     graph.insert_sequence("A" * ksize)
     counts = graph.query_sequence("A" * ksize)
@@ -249,8 +245,7 @@ def test_get_kmer_counts(graph, ksize):
     assert counts[1] == 1
 
 
-@using_ksize(21)
-@using_length(23)
+@using(ksize=21, length=23)
 def test_get_kmer_hashes(graph, ksize, length, linear_path):
     s = linear_path()
     hashes = list(graph.hashes(s))
@@ -261,8 +256,7 @@ def test_get_kmer_hashes(graph, ksize, length, linear_path):
     assert hashes[2] == graph.hash(s[2:2+ksize])
 
 
-@using_ksize([21, 31, 41])
-@using_length(1000)
+@using(ksize=[21, 31, 41], length=1000)
 def test_hashing_2(graph, linear_path, ksize):
     ''' Graph.hash uses a stand alone hasher for RollingHashShifters,
     Graph.hashes uses a KmerIterator; check that they give the same
@@ -275,8 +269,7 @@ def test_hashing_2(graph, linear_path, ksize):
         assert u == v
 
 
-@using_ksize([21, 31, 41])
-@using_length([50000, 500000])
+@using(ksize=[21, 31, 41], length=[50000, 500000])
 @pytest.mark.benchmark(group='dbg-sequence')
 @exact_backends()
 def test_n_unique(graph, random_sequence, ksize, benchmark):
@@ -287,8 +280,7 @@ def test_n_unique(graph, random_sequence, ksize, benchmark):
     assert len(kmer_set) == graph.n_unique()
 
 
-@using_ksize([21, 31, 41])
-@using_length([50000, 500000])
+@using(ksize=[21, 31, 41], length=[50000, 500000])
 @pytest.mark.benchmark(group='dbg-sequence')
 def test_get_counts(graph, random_sequence, ksize, benchmark):
     sequence = random_sequence()
@@ -298,8 +290,7 @@ def test_get_counts(graph, random_sequence, ksize, benchmark):
     assert all((count > 0 for count in counts))
 
 
-@using_ksize([21, 31, 41])
-@using_length([50000, 500000])
+@using(ksize=[21, 31, 41], length=[50000, 500000])
 @pytest.mark.benchmark(group='dbg-sequence')
 def test_pdbg_n_unique(random_sequence, ksize, length, benchmark, storage_type):
     from boink.utils import check_trait
@@ -321,8 +312,7 @@ def test_pdbg_n_unique(random_sequence, ksize, length, benchmark, storage_type):
         
 
 
-@using_ksize([21, 31, 41])
-@using_length([50000, 500000])
+@using(ksize=[21, 31, 41], length=[50000, 500000])
 @pytest.mark.benchmark(group='dbg-sequence')
 def test_pdbg_get_counts(random_sequence, ksize, benchmark, storage_type):
     sequence = random_sequence()

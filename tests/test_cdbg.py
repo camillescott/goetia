@@ -8,7 +8,6 @@
 import itertools
 import sys
 
-from debruijnal_enhance_o_tron.fixtures.sequence import using_n_branches
 import pytest
 
 from tests.utils import *
@@ -18,19 +17,21 @@ from boink import libboink, nullptr
 
 
 @pytest.fixture
-def compactor(ksize, graph, storage_type):
+def compactor_type(ksize, graph):
+    return libboink.cdbg.StreamingCompactor[type(graph)]
+
+
+@pytest.fixture
+def compactor(ksize, graph, compactor_type):
     instrumentation = Instrumentation('', expose=False)
-    compactor_type = libboink.cdbg.StreamingCompactor[type(graph)].Compactor
-    compactor = compactor_type.build(graph,
-                                     instrumentation.Registry)
+    compactor = compactor_type.Compactor.build(graph,
+                                               instrumentation.Registry)
     return compactor
 
 
-@pytest.mark.parametrize('hasher_type', [libboink.hashing.RollingHashShifter], indirect=True)
+@using(ksize=15, length=100, hasher_type=libboink.hashing.RollingHashShifter)
 class TestFindNewSegments:
 
-    @using_ksize(15)
-    @using_length(100)
     @pytest.mark.benchmark(group='cdbg-segments')
     def test_fork_core_first(self, ksize, length, graph, compactor, right_fork,
                                    check_fp, benchmark):
@@ -82,8 +83,6 @@ class TestFindNewSegments:
                     assert graph.left_degree(kmer) < 2
                     assert graph.right_degree(kmer) < 2
 
-    @using_ksize(15)
-    @using_length(100)
     @pytest.mark.benchmark(group='cdbg-segments')
     def test_right_decision_split(self, ksize, graph, compactor, right_fork,
                                   check_fp, benchmark):
@@ -129,9 +128,6 @@ class TestFindNewSegments:
         assert core[:pivot+ksize-1] == core_segments[1].sequence(core)
         assert core[pivot+1:] == core_segments[3].sequence(core)
 
-
-    @using_ksize(15)
-    @using_length(100)
     @pytest.mark.benchmark(group='cdbg-segments')
     def test_merge_no_decisions(self, ksize, length, graph, compactor,
                                       linear_path, check_fp, benchmark):
@@ -172,9 +168,6 @@ class TestFindNewSegments:
         assert merged_segment.left_anchor == graph.hash(merged_new[:ksize])
         assert merged_segment.right_anchor == graph.hash(merged_new[-ksize:])
 
-
-    @using_ksize(15)
-    @using_length(100)
     @pytest.mark.benchmark(group='cdbg-segments')
     def test_right_decision_on_end(self, ksize, graph, compactor, right_fork,
                                          check_fp, benchmark):
@@ -209,9 +202,6 @@ class TestFindNewSegments:
         assert test_segments[1].right_anchor == graph.hash(core[pivot-1:pivot+ksize-1])
         assert test_segments.back().NULL
 
-
-    @using_ksize(15)
-    @using_length(100)
     @pytest.mark.benchmark(group='cdbg-segments')
     def test_left_decision_on_end(self, ksize, length, graph, compactor, left_fork,
                                         check_fp, benchmark):
@@ -244,8 +234,6 @@ class TestFindNewSegments:
         assert test_segments[2].left_anchor == graph.hash(core[pivot+1:pivot+ksize+1])
         assert test_segments[2].right_anchor == graph.hash(core[-ksize:])
 
-    @using_ksize(15)
-    @using_length(20)
     @pytest.mark.benchmark(group='cdbg-segments')
     def test_contained_loop(self, ksize, length, graph, compactor,
                                   circular, check_fp, benchmark):
@@ -257,8 +245,6 @@ class TestFindNewSegments:
         assert segments[1].left_anchor == graph.hash(sequence[:ksize])
         assert segments[1].right_anchor == graph.hash(sequence[length-1:length+ksize-1])
 
-    @using_ksize(15)
-    @using_length(50)
     @pytest.mark.benchmark(group='cdbg-segments')
     def test_zero_new_segments(self, ksize, length, graph, compactor,
                                      linear_path, check_fp, benchmark):
@@ -269,9 +255,6 @@ class TestFindNewSegments:
         segments = benchmark(compactor.find_new_segments, sequence)
         assert len(segments) == 0
 
-
-    @using_ksize(15)
-    @using_length(100)
     @pytest.mark.benchmark(group='cdbg-segments')
     def test_two_or_more_decisions(self, ksize, length, graph, compactor,
                                            snp_bubble, check_fp, benchmark):
@@ -303,11 +286,9 @@ class TestFindNewSegments:
         assert segments[5].length == len(mut) - (pivotR + 1)
 
 
-@pytest.mark.parametrize('hasher_type', [libboink.hashing.RollingHashShifter], indirect=True)
+@using(ksize=15, length=100, hasher_type=libboink.hashing.RollingHashShifter)
 class TestDecisionNodes(object):
 
-    @using_ksize(15)
-    @using_length(100)
     def test_new_decision_from_fork(self, ksize, length, graph, compactor,
                                           left_fork, check_fp):
         '''New decision node of form (begin)-[D]-[S]-(end)
@@ -330,8 +311,6 @@ class TestDecisionNodes(object):
         print('dnode hash:', dnode_hash)
         assert compactor.cdbg.has_dnode(dnode_hash)
 
-    @using_ksize(15)
-    @using_length(100)
     def test_left_end_induced_decision_from_fork(self, ksize, length, graph, compactor,
                                              left_fork, check_fp):
         '''Decision node induced by segment end which is also end of sequence
@@ -370,8 +349,6 @@ class TestDecisionNodes(object):
         assert rneighbors[0].sequence == core[pivot+1:]
         assert compactor.cdbg.has_dnode(dnode_hash)
 
-    @using_ksize(15)
-    @using_length(100)
     def test_right_end_induced_decision_from_fork(self, ksize, length, graph, compactor,
                                                         right_fork, check_fp):
         '''Decision node induced by segment end which is also end of sequence
@@ -408,8 +385,6 @@ class TestDecisionNodes(object):
         assert rneighbors[0].sequence == branch or \
                 rneighbors[1].sequence == branch
 
-    @using_ksize(15)
-    @using_length(100)
     def test_left_mid_induced_decision_from_fork(self, ksize, length, graph, compactor,
                                                        left_fork, check_fp):
         ''' Decision node is induced by a non-decision segment end,
@@ -433,8 +408,6 @@ class TestDecisionNodes(object):
         print('dnode hash:', dnode_hash)
         assert compactor.cdbg.has_dnode(dnode_hash)
 
-    @using_ksize(15)
-    @using_length(100)
     def test_right_mid_induced_decision_from_fork(self, ksize, length, graph, compactor,
                                                         right_fork, check_fp):
         ''' Decision node is induced by a non-decision segment end,
@@ -458,8 +431,6 @@ class TestDecisionNodes(object):
         print('dnode hash:', dnode_hash)
         assert compactor.cdbg.has_dnode(dnode_hash)
 
-    @using_ksize(15)
-    @using_length(100)
     def test_new_decision_node_segment_flanked(self, ksize, length, graph, compactor,
                                                      left_hairpin, check_fp):
         ''' Test flanked new decision node using a hairpin fixture, of form
@@ -473,8 +444,6 @@ class TestDecisionNodes(object):
         assert compactor.cdbg.n_dnodes == 1
         assert compactor.cdbg.has_dnode(graph.hash(sequence[pivot:pivot+ksize]))
 
-    @using_ksize(15)
-    @using_length(100)
     def test_trivial_unode_induced(self, ksize, length, graph, compactor,
                                          left_hairpin, check_fp):
         sequence, pivot = left_hairpin()
@@ -492,11 +461,9 @@ class TestDecisionNodes(object):
         assert compactor.cdbg.n_unodes == 2
 
 
-@pytest.mark.parametrize('hasher_type', [libboink.hashing.RollingHashShifter], indirect=True)
+@using(ksize=15, length=100, hasher_type=libboink.hashing.RollingHashShifter)
 class TestUnitigBuildExtend(object):
 
-    @using_ksize(15)
-    @using_length(100)
     def test_left_fork_unode_creation(self, ksize, length, graph, compactor,
                                             left_fork, check_fp):
         '''New decision node of form (begin)-[D]-[S]-(end)
@@ -527,8 +494,6 @@ class TestUnitigBuildExtend(object):
         test_unode = compactor.cdbg.query_unode_end(graph.hash(test[1:ksize+1]))
         assert test_unode.sequence == test[1:]
 
-    @using_ksize(15)
-    @using_length(100)
     def test_extend_right(self, ksize, length, graph, compactor, linear_path, check_fp):
         sequence = linear_path()
         left = sequence[:length//2]
@@ -543,8 +508,6 @@ class TestUnitigBuildExtend(object):
         assert compactor.cdbg.query_unode_end(graph.hash(left[:ksize])).sequence == sequence
         assert compactor.cdbg.n_unitig_ends == 2
 
-    @using_ksize(15)
-    @using_length(100)
     def test_extend_left(self, ksize, length, graph, compactor, linear_path, check_fp):
         sequence = linear_path()
         check_fp()
@@ -561,8 +524,6 @@ class TestUnitigBuildExtend(object):
         assert compactor.cdbg.query_unode_end(graph.hash(sequence[:ksize])).sequence == sequence
         assert compactor.cdbg.n_unitig_ends == 2
 
-    @using_ksize(15)
-    @using_length(100)
     def test_merge(self, ksize, length, graph, compactor, linear_path, check_fp):
         sequence = linear_path()
         check_fp()
@@ -592,8 +553,6 @@ class TestUnitigBuildExtend(object):
         assert compactor.cdbg.query_unode_end(graph.hash(left[-ksize:])) is None
         assert compactor.cdbg.query_unode_end(graph.hash(right[:ksize])) is None
 
-    @using_ksize(15)
-    @using_length(100)
     def test_suffix_merge(self, ksize, length, graph, compactor, linear_path, check_fp):
         sequence = linear_path()
         check_fp()
@@ -624,8 +583,6 @@ class TestUnitigBuildExtend(object):
         assert compactor.cdbg.query_unode_end(graph.hash(left[-ksize:])) is None
         assert compactor.cdbg.query_unode_end(graph.hash(right[:ksize])) is None
 
-    @using_ksize(7)
-    @using_length(20)
     @pytest.mark.parametrize("offset", range(1,5))
     def test_overlap_merge(self, ksize, offset, length, graph, compactor, linear_path, check_fp):
         sequence = linear_path()
@@ -657,8 +614,6 @@ class TestUnitigBuildExtend(object):
         assert compactor.cdbg.query_unode_end(graph.hash(left[-ksize:])) is None
         assert compactor.cdbg.query_unode_end(graph.hash(right[:ksize])) is None
 
-    @using_ksize(15)
-    @using_length(100)
     def test_trivial_merge_left(self, ksize, length, graph, compactor, linear_path, check_fp):
         sequence = linear_path()
         check_fp()
@@ -690,8 +645,6 @@ class TestUnitigBuildExtend(object):
         assert unode.sequence == sequence
         assert unode.meta == libboink.cdbg.ISLAND
 
-    @using_ksize(15)
-    @using_length(100)
     def test_trivial_merge_right(self, ksize, length, graph, compactor, linear_path, check_fp):
         sequence = linear_path()
         check_fp()
@@ -723,8 +676,6 @@ class TestUnitigBuildExtend(object):
         assert unode.sequence == sequence
         assert unode.meta == libboink.cdbg.ISLAND
 
-    @using_length(50)
-    @using_ksize(9)
     def test_suffix_extend(self, ksize, length, internal_pivot,
                                 graph, compactor, linear_path, check_fp):
         sequence = linear_path()
@@ -749,7 +700,7 @@ class TestUnitigBuildExtend(object):
         assert compactor.cdbg.query_unode_end(graph.hash(left[-ksize:])) is None
 
 
-@pytest.mark.parametrize('hasher_type', [libboink.hashing.RollingHashShifter], indirect=True)
+@using(hasher_type=libboink.hashing.RollingHashShifter)
 class TestUnitigSplit(object):
 
     def test_split_full_fwd(self, left_comb, right_comb, ksize, tip_length, n_branches,
@@ -862,8 +813,8 @@ class TestUnitigSplit(object):
         assert bottom_unode.left_end == graph.hash(bottom[:ksize])
         assert bottom_unode.meta == libboink.cdbg.TIP
 
-    @using_ksize(15)
-    @using_length(150)
+    @using(ksize=15,
+           length=150)
     def test_induced_decision_to_unitig_extend(self, ksize, length, graph, compactor,
                                                      right_fork, check_fp):
         (core, branch), pivot = right_fork()
@@ -894,8 +845,8 @@ class TestUnitigSplit(object):
         assert compactor.cdbg.query_unode_end(graph.hash(core[pivot+1:pivot+ksize+1])).right_end == \
                graph.hash(core[-ksize:])
     
-    @using_ksize(15)
-    @using_length(100)
+    @using(ksize=15,
+           length=100)
     def test_left_induced_split(self, ksize, length, graph, compactor,
                                       left_fork, check_fp):
         ''' Decision node is induced by a non-decision segment end,
@@ -939,8 +890,8 @@ class TestUnitigSplit(object):
         assert core_right_unode.right_end == graph.hash(core[-ksize:])
 
 
-    @using_ksize(15)
-    @using_length(100)
+    @using(ksize=15,
+           length=100)
     def test_right_induced_split(self, ksize, length, graph, compactor,
                                        right_fork, check_fp):
         ''' Decision node is induced by a non-decision segment end,
@@ -982,8 +933,9 @@ class TestUnitigSplit(object):
         assert core_right_unode.left_end == graph.hash(core[pivot+1:pivot+ksize+1])
         assert core_right_unode.right_end == graph.hash(core[-ksize:])
 
-    @using_ksize(15)
-    @using_length(100)
+
+    @using(ksize=15,
+           length=100)
     def test_tandem_decision_unitig_clipping(self, ksize, length, graph, compactor,
                                           tandem_quad_forks, check_fp):
         (core, left_branches, right_branches), left_pivot, right_pivot = tandem_quad_forks()
@@ -1041,8 +993,8 @@ class TestUnitigSplit(object):
             assert unode.sequence == branch
             assert unode.right_end == graph.hash(branch[-ksize:])
 
-    @using_ksize(15)
-    @using_length(100)
+    @using(ksize=15,
+           length=100)
     def test_induced_chain(self, ksize, length, graph, compactor,
                                       snp_bubble, check_fp):
 
@@ -1080,8 +1032,8 @@ class TestUnitigSplit(object):
         assert bottom.sequence == snp[L+1:R+ksize-1]
 
 
-    @using_ksize(15)
-    @using_length(100)
+    @using(ksize=15,
+           length=100)
     def test_induced_chain_hourglass(self, ksize, length, graph, compactor,
                                            hourglass_tangle, check_fp):
 
@@ -1122,8 +1074,8 @@ class TestUnitigSplit(object):
         assert rbottom.left_end == graph.hash(bottom[L+2:L+2+ksize])
         assert rbottom.sequence == bottom[L+2:]
 
-    @using_ksize(15)
-    @using_length(100)
+    @using(ksize=15,
+           length=100)  
     def test_induced_bowtie_split(self, ksize, length, graph, compactor,
                                         bowtie_tangle, check_fp):
 
@@ -1156,11 +1108,11 @@ class TestUnitigSplit(object):
         assert rbottom.left_end == graph.hash(bottom[L+2:L+2+ksize])
 
 
-@pytest.mark.parametrize('hasher_type', [libboink.hashing.RollingHashShifter], indirect=True)
+@using(hasher_type=libboink.hashing.RollingHashShifter)
 class TestCircularUnitigs:
 
-    @using_ksize(15)
-    @using_length(20)
+    @using(ksize=15,
+           length=20)
     def test_suffix_loop_at_end(self, ksize, length, graph, compactor,
                                       suffix_circular, check_fp):
         sequence = suffix_circular()
@@ -1176,8 +1128,8 @@ class TestCircularUnitigs:
         assert unode.right_end == graph.hash(sequence[:ksize])
         assert unode.meta == libboink.cdbg.CIRCULAR
 
-    @using_ksize(15)
-    @using_length(20)
+    @using(ksize=15,
+           length=20)
     def test_contained_in_sequence(self, ksize, length, graph, compactor,
                                    circular, check_fp):
         sequence = circular()
@@ -1191,8 +1143,8 @@ class TestCircularUnitigs:
         assert unode.sequence == sequence[:length+ksize-1]
         assert unode.meta == libboink.cdbg.CIRCULAR
 
-    @using_ksize(15)
-    @using_length(40)
+    @using(ksize=15,
+           length=40)
     def test_circular_merge(self, ksize, length, graph, compactor,
                                                 circular, check_fp):
         sequence = circular()
@@ -1211,8 +1163,7 @@ class TestCircularUnitigs:
         assert unode.sequence == sequence[:length+ksize-1]
         assert unode.meta == libboink.cdbg.CIRCULAR
 
-    @using_ksize(7)
-    @using_length(20)
+    @using(ksize=15, length=50)
     @pytest.mark.parametrize("offset", range(1,7), ids=lambda offset: 'offset={0}'.format(offset))
     def test_circular_cycling_merge(self, ksize, offset, length, graph, compactor,
                                           suffix_circular, check_fp):
@@ -1242,8 +1193,7 @@ class TestCircularUnitigs:
         assert unode.sequence == expected
         assert unode.meta == libboink.cdbg.CIRCULAR
 
-    @using_ksize(7)
-    @using_length(20)
+    @using(ksize=7, length=20)
     @pytest.mark.parametrize("offset", range(1,6), ids=lambda offset: 'offset={0}'.format(offset))
     def test_circular_overlap_merge(self, ksize, offset, length, graph, compactor,
                                           suffix_circular, check_fp):
@@ -1267,8 +1217,7 @@ class TestCircularUnitigs:
         assert unode.sequence == sequence
         assert unode.meta == libboink.cdbg.CIRCULAR
 
-    @using_ksize(7)
-    @using_length(21)
+    @using(ksize=7, length=20)
     def test_split_circular_tangle_chain(self, ksize, length, graph, compactor,
                                                suffix_circular_tangle, check_fp):
         (loop, inducer), lpivot = suffix_circular_tangle()
@@ -1292,9 +1241,7 @@ class TestCircularUnitigs:
         assert cycled_unode.sequence == expected
         assert cycled_unode.right_end == graph.hash(expected[-ksize:])
 
-    @using_ksize(7)
-    @using_length(20)
-    @using_pivot(['flank_left', 'middle', 'flank_right'])
+    @using(ksize=7, length=20, pivot=['flank_left', 'middle', 'flank_right'])
     def test_split_circular(self, ksize, length, graph, compactor,
                                   circular_key, check_fp):
         (loop, tail), pivot = circular_key()
@@ -1325,9 +1272,7 @@ class TestCircularUnitigs:
         print(loop_unode.sequence)
         print((' ' * (pivot+1)) + cycled_loop_unode.sequence)
 
-    @using_ksize(7)
-    @using_length(20)
-    @using_pivot(['left', 'right'])
+    @using(ksize=7, length=20, pivot=['left', 'right'])
     def test_split_circular_on_end(self, ksize, length, graph, compactor,
                                          circular_key, check_fp):
         (loop, tail), pivot = circular_key()
@@ -1377,11 +1322,10 @@ class TestCircularUnitigs:
         print((' ' * (pivot+1)) + cycled_loop_unode.sequence)
 
 
-@pytest.mark.parametrize('hasher_type', [libboink.hashing.RollingHashShifter], indirect=True)
+@using(hasher_type=libboink.hashing.RollingHashShifter)
 class TestBreadthFirstTraversal:
 
-    @using_ksize(21)
-    @using_length(100)
+    @using(ksize=21, length=100)
     @pytest.mark.benchmark(group='cdbg-traversal')
     def test_single_component_from_left_unode(self, ksize, length, graph, compactor,
                                                     snp_bubble, check_fp, benchmark):
@@ -1397,8 +1341,7 @@ class TestBreadthFirstTraversal:
         assert len(nodes) == 6
 
 
-    @using_ksize(21)
-    @using_length(100)
+    @using(ksize=21, length=100)
     @pytest.mark.benchmark(group='cdbg-traversal')
     def test_single_component_from_right_unode(self, ksize, length, graph, compactor,
                                                      snp_bubble, check_fp, benchmark):
@@ -1413,8 +1356,7 @@ class TestBreadthFirstTraversal:
         nodes = benchmark(compactor.cdbg.traverse_breadth_first, root)
         assert len(nodes) == 6
 
-    @using_ksize(21)
-    @using_length(100)
+    @using(ksize=21, length=100)
     @pytest.mark.benchmark(group='cdbg-traversal')
     def test_single_component_from_dnode(self, ksize, length, graph, compactor,
                                                snp_bubble, check_fp, benchmark):
@@ -1430,11 +1372,10 @@ class TestBreadthFirstTraversal:
         assert len(nodes) == 6
 
 
-@pytest.mark.parametrize('hasher_type', [libboink.hashing.RollingHashShifter], indirect=True)
+@using(hasher_type=libboink.hashing.RollingHashShifter)
 class TestFindConnectedComponents:
 
-    @using_ksize(21)
-    @using_length(100)
+    @using(ksize=21, length=100)
     @pytest.mark.benchmark(group='cdbg-find-components')
     def test_single_component(self, ksize, length, graph, compactor,
                                     snp_bubble, check_fp, benchmark):
@@ -1452,8 +1393,7 @@ class TestFindConnectedComponents:
         dl, dr = graph.hash(wild[L:L+ksize]), graph.hash(wild[R:R+ksize])
         assert all((ID in components[0] for ID in (0,1,2,3,dl,dr)))
 
-    @using_ksize(21)
-    @using_length(100)
+    @using(ksize=21, length=100)
     @pytest.mark.parametrize('n_components', [10, 50, 100])
     @pytest.mark.benchmark(group='cdbg-find-components')
     def test_many_components(self, ksize, length, n_components, graph, compactor,

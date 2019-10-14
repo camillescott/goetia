@@ -10,9 +10,10 @@ import sys
 
 import pytest
 
-from boink.compactor import SolidStreamingCompactor
-from boink.tests.utils import *
-from boink.tests.test_cdbg import compactor
+from boink import libboink
+
+from .utils import *
+from .test_cdbg import compactor, compactor_type
 
 
 @pytest.fixture(params=[1, 3])
@@ -21,19 +22,19 @@ def min_abund(request):
 
 
 @pytest.fixture
-def solid_compactor(graph, compactor, min_abund):
-    _solid_compactor = SolidStreamingCompactor.build(compactor,
-                                                     min_abund,
-                                                     graph.size,
-                                                     graph.n_tables)
+def solid_compactor(graph, compactor, compactor_type, min_abund):
+    
+    _solid_compactor = compactor_type.SolidCompactor.build(compactor,
+                                                           min_abund,
+                                                           100000,
+                                                           4)
     return _solid_compactor
 
 
+@using(hasher_type=libboink.hashing.RollingHashShifter)
 class TestFindSolidSegments:
 
-    @using_ksize(7)
-    @using_length(20)
-    @pytest.mark.parametrize('min_abund', [2], indirect=True)
+    @using(ksize=21, length=100, min_abund=2)
     def test_no_segments(self, ksize, length, graph, compactor, solid_compactor,
                                min_abund, linear_path, check_fp):
         sequence = linear_path()
@@ -41,8 +42,7 @@ class TestFindSolidSegments:
         segments = solid_compactor.find_solid_segments(sequence)
         assert segments == []
 
-    @using_ksize(7)
-    @using_length(20)
+    @using(ksize=21, length=100)
     def test_one_segments(self, ksize, length, graph, compactor, solid_compactor,
                                 min_abund, linear_path, check_fp):
         sequence = linear_path()
