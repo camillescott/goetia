@@ -373,17 +373,6 @@ template class boink::dBG<boink::storage::QFStorage,
 template class boink::dBG<boink::storage::SparseppSetStorage,
                           boink::hashing::UKHS::LazyShifter>;
 
-template class boink::InserterProcessor<boink::dBG<boink::storage::BitStorage,
-                                                   boink::hashing::RollingHashShifter>>;
-template class boink::InserterProcessor<boink::dBG<boink::storage::ByteStorage,
-                                                   boink::hashing::RollingHashShifter>>;
-template class boink::InserterProcessor<boink::dBG<boink::storage::NibbleStorage,
-                                                   boink::hashing::RollingHashShifter>>;
-template class boink::InserterProcessor<boink::dBG<boink::storage::QFStorage,
-                                                   boink::hashing::RollingHashShifter>>;
-template class boink::InserterProcessor<boink::dBG<boink::storage::SparseppSetStorage,
-                                                   boink::hashing::RollingHashShifter>>;
-
 
 void boink::test_dbg() {
     //auto g = boink::dBG<boink::storage::SparseppSetStorage,

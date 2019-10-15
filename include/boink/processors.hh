@@ -25,8 +25,6 @@
 #include "boink/hashing/exceptions.hh"
 
 
-class KmerMinHash;
-
 namespace boink {
 
 struct DEFAULT_INTERVALS {
@@ -343,31 +341,6 @@ public:
     }
 
 };
-
-
-
-class SourmashSignatureProcessor : public FileProcessor<SourmashSignatureProcessor,
-                                                        parsing::FastxReader> {
-
-protected:
-
-    KmerMinHash * signature;
-    typedef FileProcessor<SourmashSignatureProcessor, parsing::FastxReader> Base;
-
-public:
-
-    using Base::process_sequence;
-
-    SourmashSignatureProcessor(KmerMinHash * signature,
-                               uint64_t fine_interval   = DEFAULT_INTERVALS::FINE,
-                               uint64_t medium_interval = DEFAULT_INTERVALS::MEDIUM,
-                               uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE);
-
-    void process_sequence(const parsing::Read& read);
-
-    void report();
-};
-
 
 } //namespace boink
 #endif

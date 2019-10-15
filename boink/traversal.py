@@ -11,7 +11,7 @@ from boink.utils import copy_attrs
 from cppyy.gbl import std
 from cppyy import gbl
 
-
+Traverse = libboink.Traverse
 STATES = libboink.TraversalState
 
 

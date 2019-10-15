@@ -38,6 +38,7 @@ set(_headers
     include/boink/storage/cqf/gqf.h
     include/boink/signatures/ukhs_signature.hh
     include/boink/signatures/sourmash/kmer_min_hash.hh
+    include/boink/signatures/sourmash_signature.hh
     include/boink/benchmarks/bench_storage.hh
 )
 
@@ -61,6 +62,7 @@ set(_sources
     src/boink/hashing/rollinghashshifter.cc
     src/boink/hashing/ukhs.cc
     src/boink/signatures/ukhs_signature.cc
+    src/boink/signatures/sourmash_signature.cc
     src/boink/traversal.cc
     src/boink/dbg.cc
     src/boink/pdbg.cc

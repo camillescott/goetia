@@ -55,6 +55,7 @@
 
 #include "boink/minimizers.hh"
 #include "boink/signatures/ukhs_signature.hh"
+#include "boink/signatures/sourmash_signature.hh"
 
 #include "boink/benchmarks/bench_storage.hh"
 
@@ -213,23 +214,6 @@ template struct boink::Traverse<boink::dBG<boink::storage::NibbleStorage,
 extern
 template struct boink::Traverse<boink::dBG<boink::storage::QFStorage,
                                            boink::hashing::UKHS::LazyShifter>>;
-
-extern
-template class boink::InserterProcessor<boink::dBG<boink::storage::BitStorage,
-                                                   boink::hashing::RollingHashShifter>>;
-extern
-template class boink::InserterProcessor<boink::dBG<boink::storage::ByteStorage,
-                                                   boink::hashing::RollingHashShifter>>;
-extern
-template class boink::InserterProcessor<boink::dBG<boink::storage::NibbleStorage,
-                                                   boink::hashing::RollingHashShifter>>;
-extern
-template class boink::InserterProcessor<boink::dBG<boink::storage::QFStorage,
-                                                   boink::hashing::RollingHashShifter>>;
-extern
-template class boink::InserterProcessor<boink::dBG<boink::storage::SparseppSetStorage,
-                                                   boink::hashing::RollingHashShifter>>;
-
 
 extern
 template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::BitStorage,

@@ -19,6 +19,7 @@
 
 #include "boink/hashing/kmeriterator.hh"
 #include "boink/kmers/kmerclient.hh"
+#include "boink/processors.hh"
 #include "boink/storage/storage.hh"
 #include "boink/storage/sparseppstorage.hh"
 #include "boink/traversal.hh"
@@ -365,6 +366,8 @@ public:
 
     std::shared_ptr<hashing::KmerIterator<HashShifter>> get_hash_iter(const std::string& sequence);
     HashShifter                                         get_hasher();
+
+    using Processor = InserterProcessor<dBG>;
 
 };
 
