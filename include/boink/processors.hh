@@ -1,12 +1,17 @@
-/* processors.hh -- 
-#include "boink/hashing/hashing_types.hh"
+/**
+ * (c) Camille Scott, 2019
+ * File   : processors.hh
+ * License: MIT
+ * Author : Camille Scott <camille.scott.w@gmail.com>
+ * Date   : 15.10.2019
  *
- * Copyright (C) 2018 Camille Scott
- * All rights reserved.
+ * Sequence-parsing driver base classes. These classes manage a 
+ * sequence parser and delegate processing to a process_sequence method.
+ * The InserterProcessor is a generic processor that parses reads
+ * and repeatedly calls insert_sequence on any class that has the method.
  *
- * This software may be modified and distributed under the terms
- * of the MIT license.  See the LICENSE file for details.
  */
+
 
 #ifndef BOINK_PROCESSORS_HH
 #define BOINK_PROCESSORS_HH
@@ -36,6 +41,11 @@ struct DEFAULT_INTERVALS {
 };
 
 
+
+/**
+ * @Synopsis  Bounded counter. Returns True when interval is
+ *            reached and resets to zero.
+ */
 class IntervalCounter {
 
 public:
@@ -67,6 +77,14 @@ public:
 };
 
 
+/**
+ * @Synopsis  Reports the current sequence-processing interval.
+ *            The intervals themselves are defined by the user
+ *            and given to the processor; the processor notifies
+ *            all its registered listeners with an interval_state
+ *            stored on a TimeIntervalEvent when an interval
+ *            is ticked.
+ */
 struct interval_state {
 	bool fine;
 	bool medium;
@@ -85,6 +103,17 @@ struct interval_state {
 };
 
 
+/**
+ * @Synopsis  CRTP base class for generic sequence processing. Uses
+ *            the given sequence parsing type to parse sequences and
+ *            pass them to a process_sequence method that is implemented
+ *            by the derived class. Notifies registered listeners when
+ *            the given FINE, MEDIUM, and COARSE intervals of number
+ *            of parsed sequences are reached.
+ *
+ * @tparam Derived    CRTP derived class.
+ * @tparam ParserType Sequencing parsing type.
+ */
 template <class Derived,
           class ParserType = parsing::FastxReader>
 class FileProcessor : public events::EventNotifier {
@@ -92,12 +121,20 @@ class FileProcessor : public events::EventNotifier {
 protected:
 
     std::array<IntervalCounter, 3> counters;
-    uint64_t _n_reads;
+    uint64_t                       _n_reads;
 
     bool _ticked(interval_state tick) {
         return tick.fine || tick.medium || tick.coarse || tick.end;
     }
 
+    /**
+     * @Synopsis  Increment all interval counters by n_ticks and notify
+     *            listeners of interval reached.
+     *
+     * @Param     n_ticks Number of sequences to increment.
+     * 
+     * @Returns   An interval_state reporting whether an interval is reached.
+     */
     interval_state _notify_tick(uint64_t n_ticks) {
         interval_state result;
 
@@ -129,6 +166,9 @@ protected:
         return result;
     }
 
+    /**
+     * @Synopsis  Notifiy listeners that parsing is complete.
+     */
     void _notify_stop() {
         auto event = std::make_shared<events::TimeIntervalEvent>();
         event->level = events::TimeIntervalEvent::END;
@@ -147,13 +187,25 @@ public:
                   uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE)
         :  events::EventNotifier(),
            counters { fine_interval, 
-                        medium_interval,
-                        coarse_interval },
+                      medium_interval,
+                      coarse_interval },
           _n_reads(0) {
         
-        //std::cout << counters[0].counter << " " << counters[1].counter << std::endl;
     }
 
+    /**
+     * @Synopsis  Process a split pair of paired-end sequence files until
+     *            all sequences are consumed.
+     *
+     * @Param left_filename    Left/R1 filename.
+     * @Param right_filename   Right/R2 filename.
+     * @Param min_length       Filter sequences under this length;
+     *                         if 0 (default), do no filter.
+     * @Param force_name_match Force left and right sequence names to follow
+     *                         standard naming conventions.
+     *
+     * @Returns                Number of sequences processed.
+     */
     uint64_t process(const std::string& left_filename,
                      const std::string& right_filename,
                      uint32_t min_length=0,
@@ -163,11 +215,6 @@ public:
                                              min_length,
                                              force_name_match);
         return process(reader);
-    }
-
-    uint64_t process(std::string const &filename) {
-        parsing::ReadParserPtr<ParserType> parser = parsing::get_parser<ParserType>(filename);
-        return process(parser);
     }
 
     uint64_t process(parsing::SplitPairedReader<ParserType>& reader) {
@@ -181,6 +228,19 @@ public:
         return _n_reads;
     }
 
+    /**
+     * @Synopsis  Process a single-ended sequence file until all sequences
+     *            are consumed.
+     *
+     * @Param filename File to process.
+     *
+     * @Returns   Number of sequences consumed.
+     */
+    uint64_t process(std::string const &filename) {
+        parsing::ReadParserPtr<ParserType> parser = parsing::get_parser<ParserType>(filename);
+        return process(parser);
+    }
+
     uint64_t process(parsing::ReadParserPtr<ParserType>& parser) {
         while(1) {
             auto state = advance(parser);
@@ -192,6 +252,12 @@ public:
         return _n_reads;
     }
 
+    /**
+     * @Synopsis     Default paired-end sequence processing implementation:
+     *               just consume both.
+     *
+     * @Param bundle ReadBundle containing the two sequences.
+     */
     void process_sequence(parsing::ReadBundle& bundle) {
         if (bundle.has_left) {
             derived().process_sequence(bundle.left);
@@ -201,6 +267,14 @@ public:
         }
     }
 
+    /**
+     * @Synopsis  Consume the next FINE_INTERVAL sequences and return the
+     *            current interval state when completed.
+     *
+     * @Param reader The reader to consume from.
+     *
+     * @Returns   interval_state with current interval.
+     */
     interval_state advance(parsing::SplitPairedReader<ParserType>& reader) {
         parsing::ReadBundle bundle;
 
@@ -220,6 +294,14 @@ public:
         return interval_state(false, false, false, true);
     }
 
+    /**
+     * @Synopsis  Consume the next FINE_INTERVAL sequences and return the
+     *            current interval state when completed.
+     *
+     * @Param parser The reader to consume from.
+     *
+     * @Returns   interval_state with current interval.
+     */
     interval_state advance(parsing::ReadParserPtr<ParserType>& parser) {
         parsing::Read read;
 
@@ -247,6 +329,11 @@ public:
         return interval_state(false, false, false, true);
     }
 
+    /**
+     * @Synopsis  Number of sequences / reads consumed.
+     *
+     * @Returns   
+     */
     uint64_t n_reads() const {
         return _n_reads;
     }
