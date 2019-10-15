@@ -2,12 +2,11 @@
     <selection>
         <!-- <namespace pattern="boink::*"/> -->
         <namespace pattern="boink::storage::*"/>
-        <!-- <class pattern="boink::signatures::*"/> -->
+        <namespace pattern="boink::events::*"/>
+        <namespace pattern="boink::signatures::*"/>
         <namespace pattern="boink::cdbg::*"/>
-        <class name="boink::events::EventListener"/>
-        <!-- <class name="boink::reporting::SingleFileReporter"/> -->
-        <class name="boink::TestReporter" />
-        <!-- <class pattern="boink::signatures::UnikmerSignature<*>::Signature"/> -->
+        <class name="boink::reporting::*"/>
+        <class pattern="boink::signatures::UnikmerSignature<*>::Signature"/>
         <namespace pattern="boink::hashing::*"/>
         <namespace pattern="boink::metrics::*"/>
         <namespace pattern="boink::TraversalState::*"/>
@@ -38,7 +37,6 @@
         <function name="__gnu_cxx::operator!="/>
     </selection>        
     <exclusion>
-        <namespace pattern="boink::events::*"/>
         <class pattern="boink::hashing::HashShifter*"/>
         <class pattern="std::vector<prometheus::*>"/>
         <class pattern="std::vector<boink::Traverse<*>>::*"/>

@@ -248,7 +248,7 @@ struct StreamingCompactor {
             return report;
         }
 
-        void update_sequence(const std::string& sequence) {
+        size_t insert_sequence(const std::string& sequence) {
             std::set<hash_type> new_kmers;
             std::deque<compact_segment> segments;
             std::set<hash_type> new_decision_kmers;
@@ -271,6 +271,8 @@ struct StreamingCompactor {
             for (auto h : hashes) {
                 dbg->insert(h);
             }
+
+            return hashes.size();
         }
 
         compact_segment init_segment(hash_type left_anchor,
@@ -1054,11 +1056,11 @@ struct StreamingCompactor {
         void reverse_complement_cdbg() {
             for (auto it = cdbg->dnodes_begin(); it != cdbg->dnodes_end(); ++it) {
                 auto rc_sequence = it->second->revcomp();
-                update_sequence(rc_sequence);
+                insert_sequence(rc_sequence);
             }
             for (auto it = cdbg->unodes_begin(); it != cdbg->unodes_end(); ++it) {
                 auto rc_sequence = it->second->revcomp();
-                update_sequence(rc_sequence);
+                insert_sequence(rc_sequence);
             }
 
             std::vector<CompactNode*>  rc_nodes_to_delete;
@@ -1098,74 +1100,7 @@ struct StreamingCompactor {
     };
 
 
-
-    template <class ParserType = parsing::FastxReader>
-    class Processor : public FileProcessor<Processor<ParserType>,
-                                           ParserType> { //template class names like modern art
-
-    protected:
-
-        shared_ptr<Compactor> compactor;
-        shared_ptr<GraphType> graph;
-
-        typedef FileProcessor<Processor<ParserType>,
-                              ParserType> Base;
-
-    public:
-
-        using Base::process_sequence;
-        using events::EventNotifier::register_listener;
-        
-        Processor(shared_ptr<Compactor> compactor,
-                  uint64_t fine_interval   = DEFAULT_INTERVALS::FINE,
-                  uint64_t medium_interval = DEFAULT_INTERVALS::MEDIUM,
-                  uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE)
-            : Base(fine_interval, medium_interval, coarse_interval),
-              compactor(compactor),
-              graph(compactor->dbg)
-        {
-        }
-
-        static std::shared_ptr<Processor<ParserType>> build(shared_ptr<Compactor> compactor,
-                                                            uint64_t fine_interval   = DEFAULT_INTERVALS::FINE,
-                                                            uint64_t medium_interval = DEFAULT_INTERVALS::MEDIUM,
-                                                            uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE) {
-            return std::make_shared<Processor<ParserType>>(compactor,
-                                                           fine_interval,
-                                                           medium_interval,
-                                                           coarse_interval);
-        }
-
-        void process_sequence(const parsing::Read& read) {
-            try {
-                compactor->update_sequence(read.cleaned_seq);
-            } catch (hashing::InvalidCharacterException &e) {
-                std::cerr << "WARNING: Bad sequence encountered at "
-                          << this->_n_reads << ": "
-                          << read.cleaned_seq << ", exception was "
-                          << e.what() << std::endl;
-                return;
-            } catch (hashing::SequenceLengthException &e) {
-                std::cerr << "NOTE: Skipped sequence that was too short: read "
-                          << this->_n_reads << " with sequence "
-                          << read.cleaned_seq 
-                          << std::endl;
-                return;
-            } catch (std::exception &e) {
-                std::cerr << "ERROR: Exception thrown at " << this->_n_reads 
-                          << " with msg: " << e.what()
-                          <<  std::endl;
-                throw e;
-            }
-        }
-
-        void report() {
-            //std::cerr << "\tcurrently " << compactor->cdbg->n_decision_nodes()
-            //          << " d-nodes, " << compactor->cdbg->n_unitig_nodes()
-            //          << " u-nodes." << std::endl;
-        }
-
-    };
+    using Processor = InserterProcessor<Compactor>;
 
 
     class Reporter: public reporting::SingleFileReporter {
@@ -1296,10 +1231,19 @@ struct StreamingCompactor {
               cutoff(cutoff),
               n_seq_updates(0)
         {
+            auto storage = storage::ByteStorage::build(100000000, 4);
+            auto hasher = graph->get_hasher();
             counts = std::make_unique<dBG<storage::ByteStorage,
-                                          ShifterType>>(graph->K(),
-                                                        100000000,
-                                                        4);
+                                          ShifterType>>(hasher, storage);
+        }
+
+        static std::shared_ptr<NormalizingCompactor> build(std::shared_ptr<Compactor> compactor,
+                                                           unsigned int cutoff,
+                                                           uint64_t fine_interval   = DEFAULT_INTERVALS::FINE,
+                                                           uint64_t medium_interval = DEFAULT_INTERVALS::MEDIUM,
+                                                           uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE) {
+            return std::make_shared<NormalizingCompactor>(compactor, cutoff, fine_interval, medium_interval, coarse_interval);
+
         }
 
         void process_sequence(const parsing::Read& read) {
@@ -1311,7 +1255,7 @@ struct StreamingCompactor {
             counts->insert_sequence(read.cleaned_seq);
 
             try {
-                compactor->update_sequence(read.cleaned_seq);
+                compactor->insert_sequence(read.cleaned_seq);
             } catch (hashing::InvalidCharacterException &e) {
                 std::cerr << "WARNING: Bad sequence encountered at "
                           << this->_n_reads << ": "
@@ -1415,12 +1359,12 @@ struct StreamingCompactor {
             return segments;
         }
 
-        void update_sequence(const std::string& sequence) {
+        void insert_sequence(const std::string& sequence) {
 
             auto solid_segments = find_solid_segments(sequence);
             for (auto segment : solid_segments) {
                 auto length = segment.second - segment.first;
-                compactor->update_sequence(sequence.substr(segment.first,
+                compactor->insert_sequence(sequence.substr(segment.first,
                                                            length));
             }
         }

@@ -12,8 +12,8 @@ from scipy.spatial import distance as dmetrics
 
 from cppyy.gbl import std
 
-from boink.args import (add_output_interval_args, 
-                        add_pairing_args)
+from boink.cli import get_output_interval_args 
+from boink.parsing import get_pairing_args, iter_fastx_inputs
 from boink.data import load_unikmer_map
 from boink import libboink
 from boink.storage import get_storage_args, process_storage_args
@@ -178,8 +178,8 @@ class DraffRunner:
         parser.add_argument('--merge')
         parser.add_argument('-i', '--inputs', nargs='+', required=True)
 
-        add_pairing_args(parser)
-        add_output_interval_args(parser)
+        get_pairing_args(parser)
+        get_output_interval_args(parser)
         parser.set_defaults(func=func)
 
         return parser

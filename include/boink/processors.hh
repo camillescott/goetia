@@ -61,6 +61,11 @@ public:
         }
     }
 
+    friend inline std::ostream& operator<< (std::ostream& os, const IntervalCounter& counter) {
+       os  << "IntervalCounter<interval=" << counter.interval 
+           << ", counter=" << counter.counter << ">";
+       return os;
+    }
 };
 
 
@@ -143,9 +148,9 @@ public:
                   uint64_t medium_interval = DEFAULT_INTERVALS::MEDIUM,
                   uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE)
         :  events::EventNotifier(),
-           counters ({{ fine_interval, 
+           counters { fine_interval, 
                         medium_interval,
-                        coarse_interval }}),
+                        coarse_interval },
           _n_reads(0) {
         
         //std::cout << counters[0].counter << " " << counters[1].counter << std::endl;
@@ -265,6 +270,13 @@ private:
 };
 
 
+/**
+ * @Synopsis  Generic processor for passing reads to a class
+ *            with an `insert_sequence` method.
+ *
+ * @tparam InserterType Class with insert_sequence.
+ * @tparam ParserType   Sequence parser type.
+ */
 template <class InserterType,
           class ParserType = parsing::FastxReader>
 class InserterProcessor : public FileProcessor<InserterProcessor<InserterType, ParserType>,
@@ -292,7 +304,27 @@ public:
     }
 
     void process_sequence(const parsing::Read& read) {
-        auto this_n_inserted = inserter->insert_sequence(read.cleaned_seq);
+        size_t this_n_inserted;
+        try {
+            this_n_inserted = inserter->insert_sequence(read.cleaned_seq);
+        } catch (hashing::InvalidCharacterException &e) {
+            std::cerr << "WARNING: Bad sequence encountered at "
+                      << this->_n_reads << ": "
+                      << read.cleaned_seq << ", exception was "
+                      << e.what() << std::endl;
+                                          return;
+        } catch (hashing::SequenceLengthException &e) {
+            std::cerr << "NOTE: Skipped sequence that was too short: read "
+                      << this->_n_reads << " with sequence "
+                      << read.cleaned_seq 
+                      << std::endl;
+            return;
+        } catch (std::exception &e) {
+            std::cerr << "ERROR: Exception thrown at " << this->_n_reads 
+                      << " with msg: " << e.what()
+                      <<  std::endl;
+            throw e;
+        }
         __sync_add_and_fetch(&_n_inserted, this_n_inserted);
     }
 

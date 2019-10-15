@@ -612,6 +612,17 @@ struct cDBG {
             metrics = std::make_unique<ComponentReporter::Metrics>(registry);
         }
 
+        static std::shared_ptr<ComponentReporter> build(std::shared_ptr<Graph>                 cdbg,
+                                                        const std::string&                     filename,
+                                                        std::shared_ptr<prometheus::Registry>  registry,
+                                                        size_t                                 sample_size = 10000) {
+            return std::make_shared<ComponentReporter>(cdbg,
+                                                       filename,
+                                                       registry,
+                                                       sample_size);
+        
+        }
+
         virtual void handle_msg(std::shared_ptr<events::Event> event) {
              if (event->msg_type == events::MSG_TIME_INTERVAL) {
                 auto _event = static_cast<events::TimeIntervalEvent*>(event.get());

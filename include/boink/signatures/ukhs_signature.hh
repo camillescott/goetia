@@ -103,8 +103,8 @@ struct UnikmerSignature {
             signature->insert(kmer);
         }
 
-        inline void insert_sequence(const std::string& sequence) {
-            signature->insert_sequence(sequence);
+        inline size_t insert_sequence(const std::string& sequence) {
+            return signature->insert_sequence(sequence);
         }
 
         size_t get_size() const {
@@ -133,22 +133,7 @@ struct UnikmerSignature {
         }
     };
 
-    /*
-    class Reporter : public reporting::SingleFileReporter {
-    public:
-
-        Reporter(const std::string& filename)
-            : SingleFileReporter(filename, "Test")
-        {
-        }
-
-        virtual void handle_msg(std::shared_ptr<events::Event> event) {
-
-        }
-
-    };
-    */    
-
+    
 
     class Processor : public FileProcessor<Processor,
                                            parsing::FastxReader> {
@@ -186,8 +171,7 @@ struct UnikmerSignature {
         }
     };
 
-/*
-    class Reporter : public reporting::SingleFileReporter; {
+    class Reporter : public reporting::SingleFileReporter {
 
     private:
 
@@ -208,7 +192,6 @@ struct UnikmerSignature {
         virtual void handle_msg(std::shared_ptr<events::Event> event);
     
     };
-*/
 
 };
 

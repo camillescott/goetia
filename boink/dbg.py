@@ -17,7 +17,8 @@ def get_graph_args(parser):
 def process_graph_args(args):
     process_storage_args(args)
 
-    args.graph_t = libboink.dBG[args.storage, getattr(libboink.hashing, args.hasher)]
+    args.hasher_t = getattr(libboink.hashing, args.hasher)
+    args.graph_t = libboink.dBG[args.storage, args.hasher_t]
 
 
 def print_dBG_args(args):

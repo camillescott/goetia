@@ -62,8 +62,10 @@ public:
         : BaseShifter(other.K()),
           hasher(other.K())
     {
-        this->load(other.get_cursor());
-        init();
+        if(other.is_initialized()) {
+            this->load(other.get_cursor());
+            init();
+        }
     }
 
     void init() {

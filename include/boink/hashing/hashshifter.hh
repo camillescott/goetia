@@ -170,6 +170,10 @@ public:
         result.kmer = get_cursor();
     }
 
+    bool is_initialized() const {
+        return initialized;
+    }
+
 private:
 
     HashShifter(const    std::string& start,
@@ -241,7 +245,7 @@ protected:
 
     void _validate(const char c) const {
         if(!this->is_valid(c)) {
-            std::string msg("Invalid symbol: ");
+            std::string msg("HashShifter: Invalid symbol: ");
             msg += c;
             throw InvalidCharacterException(msg.c_str());
         }
@@ -249,7 +253,7 @@ protected:
 
     void _validate(const char * sequence) const {
         if (!this->is_valid(sequence)) {
-            std::string msg("Invalid symbol in: ");
+            std::string msg("HashShifter: Invalid symbol in: ");
             msg += sequence;
             throw InvalidCharacterException(msg.c_str());
         }
@@ -257,7 +261,7 @@ protected:
 
     void _validate(const std::string& sequence) const {
         if (!is_valid(sequence)) {
-            std::string msg("Invalid symbol in ");
+            std::string msg("HashShifter: Invalid symbol in ");
             msg += sequence;
             msg += ", alphabet=";
             msg += symbols;

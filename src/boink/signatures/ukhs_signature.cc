@@ -19,10 +19,10 @@
 
 namespace boink {
 namespace signatures {
-/*
+
 template <class StorageType>
 UnikmerSignature<StorageType>::
-Reporter::Reporter(std::shared_ptr<Signature> signature,
+Reporter::Reporter(std::shared_ptr<UnikmerSignature<StorageType>::Signature> signature,
                    const std::string&         filename)
     : SingleFileReporter(filename, "UnikmerSignature::Reporter"),
       signature(signature)
@@ -50,7 +50,7 @@ Reporter::handle_msg(std::shared_ptr<events::Event> event) {
         }
     }       
 }
-*/
+
 }
 }
 
