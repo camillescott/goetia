@@ -248,15 +248,19 @@ struct StreamingCompactor {
             return report;
         }
 
-        size_t insert_sequence(const std::string& sequence) {
+        size_t insert_sequence(const std::string& sequence,
+                               std::shared_ptr<std::vector<hash_type>> hashes = nullptr) {
             std::set<hash_type> new_kmers;
             std::deque<compact_segment> segments;
             std::set<hash_type> new_decision_kmers;
             std::deque<NeighborBundle> decision_neighbors;
-            std::vector<hash_type> hashes;
+            //std::vector<hash_type> hashes;
+            if (hashes == nullptr) {
+                hashes = std::make_shared<std::vector<hash_type>>();
+            }
 
             find_new_segments(sequence,
-                              hashes,
+                              *hashes,
                               new_kmers,
                               segments,
                               new_decision_kmers,
@@ -268,11 +272,11 @@ struct StreamingCompactor {
                                  new_decision_kmers,
                                  decision_neighbors);
 
-            for (auto h : hashes) {
+            for (auto& h : *hashes) {
                 dbg->insert(h);
             }
 
-            return hashes.size();
+            return hashes->size();
         }
 
         compact_segment init_segment(hash_type left_anchor,

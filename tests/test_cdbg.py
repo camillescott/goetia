@@ -251,7 +251,7 @@ class TestFindNewSegments:
         sequence = linear_path()
         check_fp()
 
-        compactor.update_sequence(sequence)
+        compactor.insert_sequence(sequence)
         segments = benchmark(compactor.find_new_segments, sequence)
         assert len(segments) == 0
 
@@ -266,7 +266,7 @@ class TestFindNewSegments:
 
         wilds = [wild[:ksize], wild[pivotL+1:pivotR+ksize-1]]
         for wild in wilds:
-            compactor.update_sequence(wild)
+            compactor.insert_sequence(wild)
         assert compactor.cdbg.n_unodes == 2
         assert compactor.cdbg.n_dnodes == 0
         assert compactor.cdbg.n_unitig_ends == 3
@@ -301,11 +301,11 @@ class TestDecisionNodes(object):
         lower = core[:pivot+ksize-1]
         test = core[pivot:]
 
-        compactor.update_sequence(upper)
-        compactor.update_sequence(lower)
+        compactor.insert_sequence(upper)
+        compactor.insert_sequence(lower)
         assert compactor.cdbg.n_dnodes == 0
 
-        compactor.update_sequence(test)
+        compactor.insert_sequence(test)
         assert compactor.cdbg.n_dnodes == 1
         dnode_hash = graph.hash(test[:ksize])
         print('dnode hash:', dnode_hash)
@@ -323,12 +323,12 @@ class TestDecisionNodes(object):
         print('', core)
         print(branch)
 
-        compactor.update_sequence(core)
+        compactor.insert_sequence(core)
         assert compactor.cdbg.n_dnodes == 0
         assert compactor.cdbg.n_unodes == 1
 
         print(branch, len(branch))
-        compactor.update_sequence(branch)
+        compactor.insert_sequence(branch)
         assert compactor.cdbg.n_dnodes == 1
         assert compactor.cdbg.n_unodes == 3
         
@@ -362,10 +362,10 @@ class TestDecisionNodes(object):
         print(core, core[:pivot+1] + branch, sep='\n')
         print('d-dnode:', core[pivot:pivot+ksize])
 
-        compactor.update_sequence(core)
+        compactor.insert_sequence(core)
         assert compactor.cdbg.n_dnodes == 0
 
-        compactor.update_sequence(branch)
+        compactor.insert_sequence(branch)
         assert compactor.cdbg.n_dnodes == 1
         assert compactor.cdbg.n_unodes == 3
         dnode_hash = graph.hash(core[pivot:pivot+ksize])
@@ -399,10 +399,10 @@ class TestDecisionNodes(object):
         print(core, branch, sep='\n')
         print(core[pivot:pivot+ksize])
 
-        compactor.update_sequence(core)
+        compactor.insert_sequence(core)
         assert compactor.cdbg.n_dnodes == 0
 
-        compactor.update_sequence(branch)
+        compactor.insert_sequence(branch)
         assert compactor.cdbg.n_dnodes == 1
         dnode_hash = graph.hash(core[pivot:pivot+ksize])
         print('dnode hash:', dnode_hash)
@@ -422,10 +422,10 @@ class TestDecisionNodes(object):
         print(core, branch, sep='\n')
         print(core[pivot:pivot+ksize])
 
-        compactor.update_sequence(core)
+        compactor.insert_sequence(core)
         assert compactor.cdbg.n_dnodes == 0
 
-        compactor.update_sequence(branch)
+        compactor.insert_sequence(branch)
         assert compactor.cdbg.n_dnodes == 1
         dnode_hash = graph.hash(core[pivot:pivot+ksize])
         print('dnode hash:', dnode_hash)
@@ -439,7 +439,7 @@ class TestDecisionNodes(object):
         sequence, pivot = left_hairpin()
         check_fp()
         print('d-kmer: ', sequence[pivot:pivot+ksize], graph.hash(sequence[pivot:pivot+ksize]))
-        compactor.update_sequence(sequence)
+        compactor.insert_sequence(sequence)
 
         assert compactor.cdbg.n_dnodes == 1
         assert compactor.cdbg.has_dnode(graph.hash(sequence[pivot:pivot+ksize]))
@@ -450,11 +450,11 @@ class TestDecisionNodes(object):
         check_fp()
 
         decision = sequence[pivot:pivot+ksize]
-        compactor.update_sequence(decision)
+        compactor.insert_sequence(decision)
         assert compactor.cdbg.n_unodes == 1
         assert compactor.cdbg.n_unitig_ends == 1
 
-        compactor.update_sequence(sequence)
+        compactor.insert_sequence(sequence)
         assert compactor.cdbg.has_dnode(graph.hash(decision))
         assert compactor.cdbg.query_unode_end(graph.hash(decision)) is None
         assert compactor.cdbg.n_unitig_ends == 4
@@ -474,18 +474,18 @@ class TestUnitigBuildExtend(object):
         lower = core[:pivot+ksize-1]
         test = core[pivot:]
 
-        compactor.update_sequence(upper)
+        compactor.insert_sequence(upper)
         assert compactor.cdbg.n_unodes == 1
         upper_unode = compactor.cdbg.query_unode_end(graph.hash(upper[:ksize]))
         assert upper_unode.sequence == upper
 
-        compactor.update_sequence(lower)
+        compactor.insert_sequence(lower)
         assert compactor.cdbg.n_dnodes == 0
         assert compactor.cdbg.n_unodes == 2
         lower_unode = compactor.cdbg.query_unode_end(graph.hash(lower[:ksize]))
         assert lower_unode.sequence == lower
 
-        compactor.update_sequence(test)
+        compactor.insert_sequence(test)
         assert compactor.cdbg.n_dnodes == 1
         dnode_hash = graph.hash(test[:ksize])
         print('dnode hash:', dnode_hash)
@@ -498,12 +498,12 @@ class TestUnitigBuildExtend(object):
         sequence = linear_path()
         left = sequence[:length//2]
 
-        compactor.update_sequence(left);
+        compactor.insert_sequence(left);
         assert compactor.cdbg.n_unodes == 1
         assert compactor.cdbg.query_unode_end(graph.hash(left[:ksize])).sequence == left
         assert compactor.cdbg.n_unitig_ends == 2
 
-        compactor.update_sequence(sequence)
+        compactor.insert_sequence(sequence)
         assert compactor.cdbg.n_unodes == 1
         assert compactor.cdbg.query_unode_end(graph.hash(left[:ksize])).sequence == sequence
         assert compactor.cdbg.n_unitig_ends == 2
@@ -514,12 +514,12 @@ class TestUnitigBuildExtend(object):
 
         right = sequence[length//2:]
 
-        compactor.update_sequence(right);
+        compactor.insert_sequence(right);
         assert compactor.cdbg.n_unodes == 1
         assert compactor.cdbg.query_unode_end(graph.hash(right[:ksize])).sequence == right
         assert compactor.cdbg.n_unitig_ends == 2
 
-        compactor.update_sequence(sequence)
+        compactor.insert_sequence(sequence)
         assert compactor.cdbg.n_unodes == 1
         assert compactor.cdbg.query_unode_end(graph.hash(sequence[:ksize])).sequence == sequence
         assert compactor.cdbg.n_unitig_ends == 2
@@ -533,19 +533,19 @@ class TestUnitigBuildExtend(object):
         print(left)
         print(right)
 
-        compactor.update_sequence(left);
+        compactor.insert_sequence(left);
         assert compactor.cdbg.n_unodes == 1
         unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
         assert unode.sequence == left
         assert unode.meta == libboink.cdbg.ISLAND
 
-        compactor.update_sequence(right)
+        compactor.insert_sequence(right)
         assert compactor.cdbg.n_unodes == 2
         unode = compactor.cdbg.query_unode_end(graph.hash(right[:ksize]))
         assert unode.sequence == right
         assert unode.meta == libboink.cdbg.ISLAND
 
-        compactor.update_sequence(left + right)
+        compactor.insert_sequence(left + right)
         assert compactor.cdbg.n_unodes == 1
         unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
         assert unode.sequence == left + right
@@ -563,19 +563,19 @@ class TestUnitigBuildExtend(object):
         print(left)
         print(right)
 
-        compactor.update_sequence(left);
+        compactor.insert_sequence(left);
         assert compactor.cdbg.n_unodes == 1
         unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
         assert unode.sequence == left
         assert unode.meta == libboink.cdbg.ISLAND
 
-        compactor.update_sequence(right)
+        compactor.insert_sequence(right)
         assert compactor.cdbg.n_unodes == 2
         unode = compactor.cdbg.query_unode_end(graph.hash(right[:ksize]))
         assert unode.sequence == right
         assert unode.meta == libboink.cdbg.ISLAND
 
-        compactor.update_sequence(merger)
+        compactor.insert_sequence(merger)
         assert compactor.cdbg.n_unodes == 1
         unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
         assert unode.sequence == sequence
@@ -594,19 +594,19 @@ class TestUnitigBuildExtend(object):
         print(left)
         print(right)
 
-        compactor.update_sequence(left);
+        compactor.insert_sequence(left);
         assert compactor.cdbg.n_unodes == 1
         unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
         assert unode.sequence == left
         assert unode.meta == libboink.cdbg.ISLAND
 
-        compactor.update_sequence(right)
+        compactor.insert_sequence(right)
         assert compactor.cdbg.n_unodes == 2
         unode = compactor.cdbg.query_unode_end(graph.hash(right[:ksize]))
         assert unode.sequence == right
         assert unode.meta == libboink.cdbg.ISLAND
 
-        compactor.update_sequence(sequence)
+        compactor.insert_sequence(sequence)
         assert compactor.cdbg.n_unodes == 1
         unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
         assert unode.sequence == sequence
@@ -624,21 +624,21 @@ class TestUnitigBuildExtend(object):
         print(left)
         print(right)
 
-        compactor.update_sequence(left);
+        compactor.insert_sequence(left);
         assert compactor.cdbg.n_unodes == 1
         assert compactor.cdbg.n_unitig_ends == 1
         unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
         assert unode.sequence == left
         assert unode.meta == libboink.cdbg.TRIVIAL
 
-        compactor.update_sequence(right)
+        compactor.insert_sequence(right)
         assert compactor.cdbg.n_unodes == 2
         assert compactor.cdbg.n_unitig_ends == 3
         unode = compactor.cdbg.query_unode_end(graph.hash(right[:ksize]))
         assert unode.sequence == right
         assert unode.meta == libboink.cdbg.ISLAND
 
-        compactor.update_sequence(merger)
+        compactor.insert_sequence(merger)
         assert compactor.cdbg.n_unodes == 1
         assert compactor.cdbg.n_unitig_ends == 2
         unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
@@ -655,21 +655,21 @@ class TestUnitigBuildExtend(object):
         print(left)
         print(right)
 
-        compactor.update_sequence(left);
+        compactor.insert_sequence(left);
         assert compactor.cdbg.n_unodes == 1
         assert compactor.cdbg.n_unitig_ends == 2
         unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
         assert unode.sequence == left
         assert unode.meta == libboink.cdbg.ISLAND
 
-        compactor.update_sequence(right)
+        compactor.insert_sequence(right)
         assert compactor.cdbg.n_unodes == 2
         assert compactor.cdbg.n_unitig_ends == 3
         unode = compactor.cdbg.query_unode_end(graph.hash(right[:ksize]))
         assert unode.sequence == right
         assert unode.meta == libboink.cdbg.TRIVIAL
 
-        compactor.update_sequence(merger)
+        compactor.insert_sequence(merger)
         assert compactor.cdbg.n_unodes == 1
         assert compactor.cdbg.n_unitig_ends == 2
         unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
@@ -686,13 +686,13 @@ class TestUnitigBuildExtend(object):
         right = sequence[pivot+1:]
         print('\n', left, (' ' * (pivot + 1)) + right, sep='\n')
 
-        compactor.update_sequence(left);
+        compactor.insert_sequence(left);
         assert compactor.cdbg.n_unodes == 1
         unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
         assert unode.sequence == left
         assert unode.meta == libboink.cdbg.ISLAND
 
-        compactor.update_sequence(right)
+        compactor.insert_sequence(right)
         assert compactor.cdbg.n_unodes == 1
         unode = compactor.cdbg.query_unode_end(graph.hash(right[-ksize:]))
         assert unode.sequence == sequence
@@ -724,7 +724,7 @@ class TestUnitigSplit(object):
         to_split = to_split[1:-1]
 
         for s in [*lseqs, *rseqs, to_split]:
-            compactor.update_sequence(s)
+            compactor.insert_sequence(s)
 
         assert compactor.cdbg.n_dnodes == 2
         assert compactor.cdbg.n_unodes == (n_branches * 2) + 1
@@ -747,7 +747,7 @@ class TestUnitigSplit(object):
         splitter = list(sequence_generator.random_branches(to_split[1:1+ksize],
                                                            1,
                                                            n_tail_kmers=2))[0]
-        compactor.update_sequence(splitter)
+        compactor.insert_sequence(splitter)
         assert compactor.cdbg.n_dnodes == 3
         assert compactor.cdbg.n_unodes == (n_branches * 2) + 3
 
@@ -760,8 +760,8 @@ class TestUnitigSplit(object):
         top, bottom = right_comb()
         check_fp()
 
-        compactor.update_sequence(top)
-        compactor.update_sequence(bottom)
+        compactor.insert_sequence(top)
+        compactor.insert_sequence(bottom)
 
         assert compactor.cdbg.n_dnodes == 1
         assert compactor.cdbg.n_unodes == 2
@@ -791,8 +791,8 @@ class TestUnitigSplit(object):
         top, bottom = left_comb()
         check_fp()
 
-        compactor.update_sequence(top)
-        compactor.update_sequence(bottom)
+        compactor.insert_sequence(top)
+        compactor.insert_sequence(bottom)
 
         assert compactor.cdbg.n_dnodes == 1
         assert compactor.cdbg.n_unodes == 2
@@ -824,11 +824,11 @@ class TestUnitigSplit(object):
         waist_left = core[:ksize+2]
         waist_right = core[pivot+ksize:]
 
-        compactor.update_sequence(to_be_end_induced)
+        compactor.insert_sequence(to_be_end_induced)
         assert compactor.cdbg.n_dnodes == 0
         assert compactor.cdbg.n_unodes == 1
 
-        compactor.update_sequence(core)
+        compactor.insert_sequence(core)
         assert compactor.cdbg.n_dnodes == 1
         assert compactor.cdbg.n_unodes == 3
         assert compactor.cdbg.n_unitig_ends in [5,6]
@@ -858,12 +858,12 @@ class TestUnitigSplit(object):
         print(core, branch, sep='\n')
         print(core[pivot:pivot+ksize])
 
-        compactor.update_sequence(core)
+        compactor.insert_sequence(core)
         assert compactor.cdbg.n_dnodes == 0
         assert compactor.cdbg.n_unodes == 1
         assert compactor.cdbg.n_unitig_ends == 2
 
-        compactor.update_sequence(branch)
+        compactor.insert_sequence(branch)
         assert compactor.cdbg.n_dnodes == 1
         assert compactor.cdbg.n_unodes == 3
         assert compactor.cdbg.n_unodes == 3
@@ -903,12 +903,12 @@ class TestUnitigSplit(object):
         print(core, branch, sep='\n')
         print(core[pivot:pivot+ksize])
 
-        compactor.update_sequence(core)
+        compactor.insert_sequence(core)
         assert compactor.cdbg.n_dnodes == 0
         assert compactor.cdbg.n_unodes == 1
         assert compactor.cdbg.n_unitig_ends == 2
 
-        compactor.update_sequence(branch)
+        compactor.insert_sequence(branch)
         assert compactor.cdbg.n_dnodes == 1
         assert compactor.cdbg.n_unodes == 3
         assert compactor.cdbg.n_unitig_ends in [5,6]
@@ -943,13 +943,13 @@ class TestUnitigSplit(object):
         right_dkmer = core[right_pivot:right_pivot+ksize]
         print('left d-node:', left_dkmer, left_pivot, graph.hash(left_dkmer))
         print('right d-node:', right_dkmer, right_pivot, graph.hash(right_dkmer))
-        compactor.update_sequence(core)
+        compactor.insert_sequence(core)
         
         n_ends = 2
         n_unodes = 1
         for branch_num, branch in enumerate(left_branches):
             print('*** INSERT left branch', branch_num, file=sys.stderr)
-            compactor.update_sequence(branch)
+            compactor.insert_sequence(branch)
             if branch_num == 0:
                 n_ends += 4 # the first branch induces the dnode and splits core
                 n_unodes += 2
@@ -971,7 +971,7 @@ class TestUnitigSplit(object):
 
         for branch_num, branch in enumerate(right_branches):
             print('*** INSERT right branch', branch_num, file=sys.stderr)
-            compactor.update_sequence(branch)
+            compactor.insert_sequence(branch)
             n_ends += 2 # first branch induces the second d-node but clips
                         # the unitig rather than splitting it
             n_unodes += 1
@@ -1001,11 +1001,11 @@ class TestUnitigSplit(object):
         (wild, snp), L, R = snp_bubble()
         check_fp()
 
-        compactor.update_sequence(wild)
+        compactor.insert_sequence(wild)
         assert compactor.cdbg.n_dnodes == 0
         assert compactor.cdbg.n_unodes == 1
 
-        compactor.update_sequence(snp)
+        compactor.insert_sequence(snp)
         assert compactor.cdbg.n_dnodes == 2
         assert compactor.cdbg.n_unodes == 4
         assert compactor.cdbg.n_unitig_ends == 8
@@ -1040,11 +1040,11 @@ class TestUnitigSplit(object):
         (top, bottom), L = hourglass_tangle()
         check_fp()
 
-        compactor.update_sequence(top)
+        compactor.insert_sequence(top)
         assert compactor.cdbg.n_dnodes == 0
         assert compactor.cdbg.n_unodes == 1
 
-        compactor.update_sequence(bottom)
+        compactor.insert_sequence(bottom)
         assert compactor.cdbg.n_dnodes == 4
         assert compactor.cdbg.n_unodes == 4
         assert compactor.cdbg.n_unitig_ends == 8
@@ -1082,11 +1082,11 @@ class TestUnitigSplit(object):
         (top, bottom), L = bowtie_tangle()
         check_fp()
 
-        compactor.update_sequence(top)
+        compactor.insert_sequence(top)
         assert compactor.cdbg.n_dnodes == 0
         assert compactor.cdbg.n_unodes == 1
 
-        compactor.update_sequence(bottom)
+        compactor.insert_sequence(bottom)
         assert compactor.cdbg.n_dnodes == 1
         assert compactor.cdbg.n_unodes == 4
         assert compactor.cdbg.n_unitig_ends == 8
@@ -1118,7 +1118,7 @@ class TestCircularUnitigs:
         sequence = suffix_circular()
         check_fp()
 
-        compactor.update_sequence(sequence)
+        compactor.insert_sequence(sequence)
         assert compactor.cdbg.n_unodes == 1
         assert compactor.cdbg.n_unitig_ends == 1
         assert compactor.cdbg.n_dnodes == 0
@@ -1135,7 +1135,7 @@ class TestCircularUnitigs:
         sequence = circular()
         check_fp()
 
-        compactor.update_sequence(sequence)
+        compactor.insert_sequence(sequence)
         assert compactor.cdbg.n_unodes == 1
         assert compactor.cdbg.n_unitig_ends == 1
         unode = compactor.cdbg.query_unode_end(graph.hash(sequence[:ksize]))
@@ -1152,8 +1152,8 @@ class TestCircularUnitigs:
 
         start = sequence[:length - 2]
         
-        compactor.update_sequence(start)
-        compactor.update_sequence(sequence)
+        compactor.insert_sequence(start)
+        compactor.insert_sequence(sequence)
 
         assert compactor.cdbg.n_unodes == 1
         assert compactor.cdbg.n_unitig_ends == 1
@@ -1175,13 +1175,13 @@ class TestCircularUnitigs:
         print(sequence, pivot)
         expected = sequence[pivot+offset:] + sequence[ksize-1:pivot+offset+ksize-1]
         
-        compactor.update_sequence(start)
-        compactor.update_sequence(sequence[pivot+offset:])
+        compactor.insert_sequence(start)
+        compactor.insert_sequence(sequence[pivot+offset:])
 
         assert compactor.cdbg.n_unodes == 1
         assert compactor.cdbg.n_unitig_ends == 2
         
-        compactor.update_sequence(sequence)
+        compactor.insert_sequence(sequence)
 
         print('unitig should be:', expected)
 
@@ -1203,11 +1203,11 @@ class TestCircularUnitigs:
         start = sequence[:-ksize+1+offset]
         print(sequence, start)
         
-        compactor.update_sequence(start)
+        compactor.insert_sequence(start)
         assert compactor.cdbg.n_unodes == 1
         assert compactor.cdbg.n_unitig_ends == 2
 
-        compactor.update_sequence(sequence)
+        compactor.insert_sequence(sequence)
 
         assert compactor.cdbg.n_unodes == 1
         assert compactor.cdbg.n_unitig_ends == 1
@@ -1225,8 +1225,8 @@ class TestCircularUnitigs:
 
         # create circular unitig
         # already tested
-        compactor.update_sequence(loop)
-        compactor.update_sequence(inducer)
+        compactor.insert_sequence(loop)
+        compactor.insert_sequence(inducer)
 
         assert compactor.cdbg.n_unodes == 3
         assert compactor.cdbg.n_unitig_ends == 6
@@ -1247,7 +1247,7 @@ class TestCircularUnitigs:
         (loop, tail), pivot = circular_key()
         check_fp()
 
-        compactor.update_sequence(loop)
+        compactor.insert_sequence(loop)
         loop_unode = compactor.cdbg.query_unode_end(graph.hash(loop[:ksize]))
         assert loop_unode is not None
         assert loop_unode.right_end == graph.hash(loop[:ksize])
@@ -1255,7 +1255,7 @@ class TestCircularUnitigs:
         assert loop_unode.meta == libboink.cdbg.CIRCULAR
         loop_unode = libboink.cdbg.cDBG[type(graph)].UnitigNode.build(loop_unode)
 
-        compactor.update_sequence(tail)
+        compactor.insert_sequence(tail)
         assert compactor.cdbg.n_dnodes == 1
         assert compactor.cdbg.n_unodes == 2
         assert compactor.cdbg.n_unitig_ends == 3
@@ -1281,7 +1281,7 @@ class TestCircularUnitigs:
         print(loop, ' ' * pivot + tail)
         print(list(graph.hash(kmer) for kmer in kmers(loop, ksize)))
 
-        compactor.update_sequence(loop)
+        compactor.insert_sequence(loop)
         loop_unode = compactor.cdbg.query_unode_end(graph.hash(loop[:ksize]))
         assert loop_unode is not None
         assert loop_unode.right_end == graph.hash(loop[:ksize])
@@ -1289,7 +1289,7 @@ class TestCircularUnitigs:
         assert loop_unode.meta == libboink.cdbg.CIRCULAR
         loop_unode = libboink.cdbg.cDBG[type(graph)].UnitigNode.build(loop_unode)
 
-        compactor.update_sequence(tail)
+        compactor.insert_sequence(tail)
         assert compactor.cdbg.n_dnodes == 1
         assert compactor.cdbg.n_unodes == 2
         assert compactor.cdbg.n_unitig_ends == 3
@@ -1333,8 +1333,8 @@ class TestBreadthFirstTraversal:
         (wild, snp), L, R = snp_bubble()
         check_fp()
 
-        compactor.update_sequence(wild)
-        compactor.update_sequence(snp)
+        compactor.insert_sequence(wild)
+        compactor.insert_sequence(snp)
 
         left_unode_root = compactor.cdbg.query_unode_end(graph.hash(wild[:ksize]))
         nodes = benchmark(compactor.cdbg.traverse_breadth_first, left_unode_root)
@@ -1349,8 +1349,8 @@ class TestBreadthFirstTraversal:
         (wild, snp), L, R = snp_bubble()
         check_fp()
 
-        compactor.update_sequence(wild)
-        compactor.update_sequence(snp)
+        compactor.insert_sequence(wild)
+        compactor.insert_sequence(snp)
 
         root = compactor.cdbg.query_unode_end(graph.hash(wild[-ksize:]))
         nodes = benchmark(compactor.cdbg.traverse_breadth_first, root)
@@ -1364,8 +1364,8 @@ class TestBreadthFirstTraversal:
         (wild, snp), L, R = snp_bubble()
         check_fp()
 
-        compactor.update_sequence(wild)
-        compactor.update_sequence(snp)
+        compactor.insert_sequence(wild)
+        compactor.insert_sequence(snp)
 
         root = compactor.cdbg.query_dnode(graph.hash(wild[L:L+ksize]))
         nodes = benchmark(compactor.cdbg.traverse_breadth_first, root)
@@ -1383,8 +1383,8 @@ class TestFindConnectedComponents:
         (wild, snp), L, R = snp_bubble()
         check_fp()
 
-        compactor.update_sequence(wild)
-        compactor.update_sequence(snp)
+        compactor.insert_sequence(wild)
+        compactor.insert_sequence(snp)
 
         components = benchmark(compactor.cdbg.find_connected_components)
         assert len(components) == 1
@@ -1403,8 +1403,8 @@ class TestFindConnectedComponents:
             (wild, snp), L, R = snp_bubble()
             check_fp()
 
-            compactor.update_sequence(wild)
-            compactor.update_sequence(snp)
+            compactor.insert_sequence(wild)
+            compactor.insert_sequence(snp)
 
         components = benchmark(compactor.cdbg.find_connected_components)
         assert len(components) == n_components
