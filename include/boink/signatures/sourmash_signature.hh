@@ -21,8 +21,8 @@ namespace signatures {
 
 struct SourmashSignature {
 
-    class Signature: public KmerMinHash, 
-                     public kmers::KmerClient {
+   class Signature: public KmerMinHash, 
+                    public kmers::KmerClient {
     
     public:
 
