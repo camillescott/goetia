@@ -57,7 +57,7 @@ struct Read {
     {
         cleaned_seq = std::string(sequence.size(), 0);
         std::transform(sequence.begin(), sequence.end(), cleaned_seq.begin(),
-                       _to_valid_dna);
+                       ::toupper);
     }
 };
 
