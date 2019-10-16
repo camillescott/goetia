@@ -5,14 +5,6 @@
  * Author : Camille Scott <camille.scott.w@gmail.com>
  * Date   : 18.07.2019
  */
-/* compactor.hh -- streaming dBG compactor
- *
- * Copyright (C) 2018 Camille Scott
- * All rights reserved.
- *
- * This software may be modified and distributed under the terms
- * of the MIT license.  See the LICENSE file for details.
- */
 
 #ifndef BOINK_COMPACTOR_HH
 #define BOINK_COMPACTOR_HH
@@ -53,7 +45,6 @@ struct StreamingCompactor {
 
     using ShifterType    = typename GraphType::shifter_type;
     using TraversalType  = Traverse<GraphType>;
-    using MinimizerType  = WKMinimizer<ShifterType>;
     using cDBGType       = typename cDBG<GraphType>::Graph;
     using CompactNode    = typename cDBG<GraphType>::CompactNode;
     using UnitigNode     = typename cDBG<GraphType>::UnitigNode;
@@ -191,7 +182,6 @@ struct StreamingCompactor {
 
         typedef ShifterType   shifter_type;
         typedef GraphType     graph_type;
-        typedef MinimizerType minimizer_type;
         typedef cDBGType      cdbg_type;
 
         shared_ptr<GraphType> dbg;

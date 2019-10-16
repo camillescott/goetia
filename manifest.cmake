@@ -7,6 +7,7 @@ set(_headers
     include/boink/cdbg/metrics.hh
     include/boink/cdbg/udbg.hh
     include/boink/cdbg/ucompactor.hh
+    include/boink/cdbg/saturating_compactor.hh
     include/boink/dbg.hh
     include/boink/events.hh
     include/boink/event_types.hh
@@ -74,6 +75,7 @@ set(_sources
     src/boink/cdbg/compactor.cc
     src/boink/cdbg/udbg.cc
     src/boink/cdbg/ucompactor.cc
+    src/boink/cdbg/saturating_compactor.cc
     src/boink/parsing/readers.cc
     src/boink/parsing/parsing.cc
     src/boink/minimizers.cc

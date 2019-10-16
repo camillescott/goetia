@@ -397,7 +397,7 @@ public:
                       << this->_n_reads << ": "
                       << read.cleaned_seq << ", exception was "
                       << e.what() << std::endl;
-                                          return;
+            return;
         } catch (hashing::SequenceLengthException &e) {
             std::cerr << "NOTE: Skipped sequence that was too short: read "
                       << this->_n_reads << " with sequence "

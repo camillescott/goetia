@@ -51,6 +51,7 @@
 #include "boink/cdbg/cdbg.hh"
 #include "boink/cdbg/metrics.hh"
 #include "boink/cdbg/udbg.hh"
+#include "boink/cdbg/saturating_compactor.hh"
 //#include "boink/cdbg/ucompactor.hh"
 
 #include "boink/minimizers.hh"
@@ -230,6 +231,28 @@ template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::QFStor
 extern
 template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::SparseppSetStorage,
                                                boink::hashing::RollingHashShifter>>;
+
+extern
+template class boink::cdbg::SaturatingCompactor<boink::dBG<boink::storage::BitStorage,
+                                                           boink::hashing::RollingHashShifter>,
+                                                boink::signatures::SourmashSignature::Signature>;
+extern
+template class boink::cdbg::SaturatingCompactor<boink::dBG<boink::storage::ByteStorage,
+                                                           boink::hashing::RollingHashShifter>,
+                                                boink::signatures::SourmashSignature::Signature>;
+extern
+template class boink::cdbg::SaturatingCompactor<boink::dBG<boink::storage::NibbleStorage,
+                                                           boink::hashing::RollingHashShifter>,
+                                                boink::signatures::SourmashSignature::Signature>;
+extern
+template class boink::cdbg::SaturatingCompactor<boink::dBG<boink::storage::QFStorage,
+                                                           boink::hashing::RollingHashShifter>,
+                                                boink::signatures::SourmashSignature::Signature>;
+extern
+template class boink::cdbg::SaturatingCompactor<boink::dBG<boink::storage::SparseppSetStorage,
+                                                           boink::hashing::RollingHashShifter>,
+                                                boink::signatures::SourmashSignature::Signature>;
+
 /*
 extern
 template class boink::cdbg::UStreamingCompactor<boink::storage::BitStorage>;
