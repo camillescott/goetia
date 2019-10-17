@@ -1,10 +1,9 @@
-/* minimizers.hh -- rolling basic minimizers
- *
- * Copyright (C) 2018 Camille Scott
- * All rights reserved.
- *
- * This software may be modified and distributed under the terms
- * of the MIT license.  See the LICENSE file for details.
+/**
+ * (c) Camille Scott, 2019
+ * File   : minimizers.hh
+ * License: MIT
+ * Author : Camille Scott <camille.scott.w@gmail.com>
+ * Date   : 31.08.2019
  */
 
 #ifndef MINIMIZERS_HH
@@ -15,7 +14,6 @@
 #include <utility>
 #include <vector>
 
-#include "boink/hashing/hashing_types.hh"
 #include "boink/hashing/rollinghashshifter.hh"
 #include "boink/hashing/kmeriterator.hh"
 #include "boink/kmers/kmerclient.hh"
@@ -150,19 +148,22 @@ public:
 template <class ShifterType>
 struct WKMinimizer {
 
-    typedef ShifterType shifter_type;
+    typedef ShifterType                       shifter_type;
+    typedef typename shifter_type::hash_type  hash_type;
+    typedef typename shifter_type::kmer_type  kmer_type;
+    typedef typename shifter_type::shift_type shift_type;
 
-    class Minimizer : public InteriorMinimizer<hashing::hash_t>,
+    class Minimizer : public InteriorMinimizer<hash_type>,
                       public kmers::KmerClient {
 
     public:
 
-        using InteriorMinimizer<hashing::hash_t>::InteriorMinimizer;
-        using typename InteriorMinimizer<hashing::hash_t>::value_type;
+        using InteriorMinimizer<hash_type>::InteriorMinimizer;
+        using typename InteriorMinimizer<hash_type>::value_type;
 
         Minimizer(int64_t window_size,
                   uint16_t K)
-            : InteriorMinimizer<hashing::hash_t>(window_size),
+            : InteriorMinimizer<hash_type>(window_size),
               kmers::KmerClient(K) {
         }
 
@@ -171,23 +172,23 @@ struct WKMinimizer {
             this->reset();
             
             while(!iter.done()) {
-                hashing::hash_t h = iter.next();
-                InteriorMinimizer<hashing::hash_t>::update(h);
+                hash_type h = iter.next();
+                InteriorMinimizer<hash_type>::update(h);
             }
 
-            return InteriorMinimizer<hashing::hash_t>::get_minimizers();
+            return InteriorMinimizer<hash_type>::get_minimizers();
         }
 
-        std::vector<hashing::hash_t> get_minimizer_values(const std::string& sequence) {
+        std::vector<hash_type> get_minimizer_values(const std::string& sequence) {
             hashing::KmerIterator<ShifterType> iter(sequence, this->_K);
             this->reset();
 
             while(!iter.done()) {
-                hashing::hash_t h = iter.next();
-                InteriorMinimizer<hashing::hash_t>::update(h);
+                hash_type h = iter.next();
+                InteriorMinimizer<hash_type>::update(h);
             }
 
-            return InteriorMinimizer<hashing::hash_t>::get_minimizer_values();
+            return InteriorMinimizer<hash_type>::get_minimizer_values();
         }
 
         std::vector<std::pair<std::string, int64_t>> get_minimizer_kmers(const std::string& sequence) {

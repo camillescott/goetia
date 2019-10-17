@@ -1,10 +1,9 @@
-/* bitstorage.hh -- boink-modified oxli storage
- *
- * Copyright (C) 2018 Camille Scott
- * All rights reserved.
- *
- * This software may be modified and distributed under the terms
- * of the MIT license.  See the LICENSE file for details.
+/**
+ * (c) Camille Scott, 2019
+ * File   : bitstorage.hh
+ * License: MIT
+ * Author : Camille Scott <camille.scott.w@gmail.com>
+ * Date   : 30.08.2019
  *
  *** END BOINK LICENSE BLOCK
  *
@@ -55,7 +54,6 @@
 #include <mutex>
 #include <unordered_map>
 
-#include "boink/hashing/hashing_types.hh"
 #include "boink/storage/storage.hh"
 
 
@@ -76,7 +74,7 @@ namespace storage {
  *
  */
 
-class BitStorage : public Storage
+class BitStorage : public Storage<uint64_t>
 {
 protected:
     std::vector<uint64_t> _tablesizes;
@@ -86,6 +84,8 @@ protected:
     byte_t ** _counts;
 
 public:
+
+    using Storage<uint64_t>::value_type;
 
     BitStorage(uint64_t max_table, uint16_t N)
         : BitStorage(get_n_primes_near_x(N, max_table))
@@ -115,13 +115,11 @@ public:
         }
     }
 
-    std::unique_ptr<BitStorage> clone() const {
-        return std::make_unique<BitStorage>(this->_tablesizes);
+    std::shared_ptr<BitStorage> clone() const {
+        return std::make_shared<BitStorage>(this->_tablesizes);
     }
 
-    static std::unique_ptr<BitStorage> build(uint64_t max_table, uint16_t N) {
-        return std::make_unique<BitStorage>(max_table, N);
-    }
+    static std::shared_ptr<BitStorage> build(uint64_t max_table, uint16_t N);
 
     void _allocate_counters()
     {
@@ -174,12 +172,12 @@ public:
     // but, in the interests of efficiency and thread safety,
     // tests and mutations are being blended here against conventional
     // software engineering wisdom.
-    const bool insert( hashing::hash_t khash );
+    const bool insert( value_type khash );
 
-    const count_t insert_and_query(hashing::hash_t khash);
+    const count_t insert_and_query(value_type khash);
 
     // get the count for the given k-mer hash.
-    const count_t query(hashing::hash_t khash) const;
+    const count_t query(value_type khash) const;
 
     // Writing to the tables outside of defined methods has undefined behavior!
     // As such, this should only be used to return read-only interfaces
@@ -193,7 +191,7 @@ public:
     void update_from(const BitStorage&);
 };
 
-template<> 
+template<>
 struct is_probabilistic<BitStorage> { 
       static const bool value = true;
 };

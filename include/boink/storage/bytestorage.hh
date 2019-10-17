@@ -1,10 +1,9 @@
-/* bytestorage.hh -- boink-modified oxli bytestorage
- *
- * Copyright (C) 2018 Camille Scott
- * All rights reserved.
- *
- * This software may be modified and distributed under the terms
- * of the MIT license.  See the LICENSE file for details.
+/**
+ * (c) Camille Scott, 2019
+ * File   : bytestorage.hh
+ * License: MIT
+ * Author : Camille Scott <camille.scott.w@gmail.com>
+ * Date   : 30.08.2019
  *
  *** END BOINK LICENSE BLOCK
  *
@@ -54,7 +53,6 @@
 #include <mutex>
 #include <unordered_map>
 
-#include "boink/hashing/hashing_types.hh"
 #include "boink/storage/storage.hh"
 
 #   define MAX_KCOUNT 255
@@ -82,14 +80,20 @@ class ByteStorageFileWriter;
 class ByteStorageGzFileReader;
 class ByteStorageGzFileWriter;
 
-class ByteStorage: public Storage {
+class ByteStorage: public Storage<uint64_t> {
     friend class ByteStorageFile;
     friend class ByteStorageFileReader;
     friend class ByteStorageFileWriter;
     friend class ByteStorageGzFileReader;
     friend class ByteStorageGzFileWriter;
     friend class CountGraph;
+public:
+
+    typedef uint64_t value_type;
+    using Storage<uint64_t>::CountMap;
+
 protected:
+
     count_t         _max_count;
     unsigned int    _max_bigcount;
 
@@ -113,7 +117,7 @@ protected:
         }
     }
 public:
-    KmerCountMap _bigcounts;
+    CountMap _bigcounts;
 
     ByteStorage(uint64_t max_table, uint16_t N)
         : ByteStorage(get_n_primes_near_x(N, max_table))
@@ -159,12 +163,12 @@ public:
         }
     }
 
-    std::unique_ptr<ByteStorage> clone() const {
-        return std::make_unique<ByteStorage>(this->_tablesizes);
+    std::shared_ptr<ByteStorage> clone() const {
+        return std::make_shared<ByteStorage>(this->_tablesizes);
     }
 
-    static std::unique_ptr<ByteStorage> build(uint64_t max_table, uint16_t N) {
-        return std::make_unique<ByteStorage>(max_table, N);
+    static std::shared_ptr<ByteStorage> build(uint64_t max_table, uint16_t N) {
+        return std::make_shared<ByteStorage>(max_table, N);
     }
 
     std::vector<uint64_t> get_tablesizes() const
@@ -194,12 +198,12 @@ public:
     void save(std::string, uint16_t);
     void load(std::string, uint16_t&);
 
-    const bool insert(hashing::hash_t khash);
+    const bool insert(value_type khash);
 
-    const count_t insert_and_query(hashing::hash_t khash);
+    const count_t insert_and_query(value_type khash);
 
     // get the count for the given k-mer hash.
-    const count_t query(hashing::hash_t khash) const;
+    const count_t query(value_type khash) const;
     // Get direct access to the counts.
     //
     // Note:

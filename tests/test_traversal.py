@@ -1,14 +1,16 @@
-# boink/tests/test_assembly.py
-# Copyright (C) 2018 Camille Scott
-# All rights reserved.
-#
-# This software may be modified and distributed under the terms
-# of the MIT license.  See the LICENSE file for details.
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# (c) Camille Scott, 2019
+# File   : test_traversal.py
+# License: MIT
+# Author : Camille Scott <camille.scott.w@gmail.com>
+# Date   : 08.10.2019
+
 
 import pytest
 
 from boink import libboink
-from boink.assembly import Assembler, STATES
+from boink.traversal import Assembler, STATES
 
 from .utils import *
 
@@ -27,10 +29,11 @@ def test_assembler_cursor(asm, ksize):
     assert asm.cursor == seed
 
 
+@pytest.mark.parametrize('hasher_type', [libboink.hashing.RollingHashShifter], indirect=True)
 def test_assembler_cursor_wrong_size(asm, ksize):
     seed = 'A' * (ksize - 1)
-
-    with pytest.raises(TypeError):
+    
+    with pytest.raises(BaseException):
         asm.cursor = seed
 
 
@@ -50,8 +53,7 @@ class TestLinear:
             assert path == contig, (len(path), len(contig), start)
             assert lstate == rstate == STATES.STOP_FWD
 
-    @using_ksize(9)
-    @using_length(81)
+    @using(ksize=21, length=81)
     def test_all_left_to_beginning(self, ksize, length, linear_path, asm, consume, check_fp):
         # assemble directed left
         contig = linear_path()
@@ -66,8 +68,7 @@ class TestLinear:
             assert path == contig[:start + ksize], start
             assert state == STATES.STOP_FWD
 
-    @using_ksize(9)
-    @using_length(81)
+    @using(ksize=21, length=81)
     def test_all_right_to_end(self, ksize, length, linear_path, asm, consume, check_fp):
         # assemble directed right
         contig = linear_path()

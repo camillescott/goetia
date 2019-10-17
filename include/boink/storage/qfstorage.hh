@@ -1,3 +1,10 @@
+/**
+ * (c) Camille Scott, 2019
+ * File   : qfstorage.hh
+ * License: MIT
+ * Author : Camille Scott <camille.scott.w@gmail.com>
+ * Date   : 30.08.2019
+ */
 /* qfstorage.hh -- boink-modified oxli storage
  *
  * Copyright (C) 2018 Camille Scott
@@ -53,7 +60,6 @@
 #include <mutex>
 #include <unordered_map>
 
-#include "boink/hashing/hashing_types.hh"
 #include "boink/storage/storage.hh"
 
 struct quotient_filter;
@@ -67,26 +73,29 @@ namespace storage {
  *
  * \brief A Quotient Filter storage
  */
- class QFStorage : public Storage {
+class QFStorage : public Storage<uint64_t> {
 protected:
     std::shared_ptr<QF> cf;
     int _size;
 
 public:
+  
+  using Storage<uint64_t>::value_type;
+
   QFStorage(int size);
 
   ~QFStorage();
 
-  static std::unique_ptr<QFStorage> build(int size) {
-      return std::make_unique<QFStorage>(size);
+  static std::shared_ptr<QFStorage> build(int size) {
+      return std::make_shared<QFStorage>(size);
   }
-  std::unique_ptr<QFStorage> clone() const;
+  std::shared_ptr<QFStorage> clone() const;
 
-  const bool insert(hashing::hash_t khash);
-  const count_t insert_and_query(hashing::hash_t khash);
+  const bool insert(value_type khash);
+  const count_t insert_and_query(value_type khash);
 
   // get the count for the given k-mer hash.
-  const count_t query(hashing::hash_t khash) const;
+  const count_t query(value_type khash) const;
 
   // Accessors for protected/private table info members
   // xnslots is larger than nslots. It includes some extra slots to deal
@@ -111,7 +120,7 @@ public:
 };
 
 
-template<> 
+template<>
 struct is_probabilistic<QFStorage> { 
       static const bool value = true;
 };

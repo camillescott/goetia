@@ -1,10 +1,9 @@
-/* nibblestorage.hh -- boink-modified oxli storage
- *
- * Copyright (C) 2018 Camille Scott
- * All rights reserved.
- *
- * This software may be modified and distributed under the terms
- * of the MIT license.  See the LICENSE file for details.
+/**
+ * (c) Camille Scott, 2019
+ * File   : nibblestorage.hh
+ * License: MIT
+ * Author : Camille Scott <camille.scott.w@gmail.com>
+ * Date   : 30.08.2019
  *
  *** END BOINK LICENSE BLOCK
  *
@@ -54,7 +53,6 @@
 #include <mutex>
 #include <unordered_map>
 
-#include "boink/hashing/hashing_types.hh"
 #include "boink/storage/storage.hh"
 
 
@@ -75,8 +73,12 @@ namespace storage {
  * tracking statistics, as well as save/load, and not much else.
  *
  */
-class NibbleStorage : public Storage
+class NibbleStorage : public Storage<uint64_t>
 {
+public:
+
+    using Storage<uint64_t>::value_type;
+
 protected:
     // table size is measured in number of entries in the table, not in bytes
     std::vector<uint64_t> _tablesizes;
@@ -89,17 +91,17 @@ protected:
 
     // Compute index into the table, this retrieves the correct byte
     // which you then need to select the correct nibble from
-    uint64_t _table_index(const hashing::hash_t k, const uint64_t tablesize) const
+    uint64_t _table_index(const value_type k, const uint64_t tablesize) const
     {
         return (k % tablesize) / 2;
     }
     // Compute which half of the byte to use for this hash value
-    uint8_t _mask(const hashing::hash_t k, const uint64_t tablesize) const
+    uint8_t _mask(const value_type k, const uint64_t tablesize) const
     {
         return (k%tablesize)%2 ? 15 : 240;
     }
     // Compute which half of the byte to use for this hash value
-    uint8_t _shift(const hashing::hash_t k, const uint64_t tablesize) const
+    uint8_t _shift(const value_type k, const uint64_t tablesize) const
     {
         return (k%tablesize)%2 ? 0 : 4;
     }
@@ -134,12 +136,12 @@ public:
         }
     }
 
-    static std::unique_ptr<NibbleStorage> build(uint64_t max_table, uint16_t N) {
-        return std::make_unique<NibbleStorage>(max_table, N);
+    static std::shared_ptr<NibbleStorage> build(uint64_t max_table, uint16_t N) {
+        return std::make_shared<NibbleStorage>(max_table, N);
     }
 
-    std::unique_ptr<NibbleStorage> clone() const {
-        return std::make_unique<NibbleStorage>(this->_tablesizes);
+    std::shared_ptr<NibbleStorage> clone() const {
+        return std::make_shared<NibbleStorage>(this->_tablesizes);
     }
 
     void _allocate_counters()
@@ -164,12 +166,12 @@ public:
         }
     }
 
-    const bool insert(hashing::hash_t khash);
+    const bool insert(value_type khash);
 
-    const count_t insert_and_query(hashing::hash_t khash);
+    const count_t insert_and_query(value_type khash);
 
     // get the count for the given k-mer hash.
-    const count_t query(hashing::hash_t khash) const;
+    const count_t query(value_type khash) const;
 
     // Accessors for protected/private table info members
     std::vector<uint64_t> get_tablesizes() const
@@ -203,7 +205,7 @@ public:
 };
 
 
-template<> 
+template<>
 struct is_probabilistic<NibbleStorage> { 
       static const bool value = true;
 };

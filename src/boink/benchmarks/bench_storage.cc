@@ -12,12 +12,12 @@
 namespace boink {
 namespace bench {
 
-std::vector<hashing::hash_t> generate_hashes(size_t n_hashes) {
+std::vector<uint64_t> generate_hashes(size_t n_hashes) {
     std::random_device rd;
     std::mt19937_64 gen(rd());
-    std::uniform_int_distribution<hashing::hash_t> dis;
+    std::uniform_int_distribution<uint64_t> dis;
 
-    std::vector<hashing::hash_t> hashes;
+    std::vector<uint64_t> hashes;
     for (int n = 0; n < n_hashes; ++n) {
         hashes.push_back(dis(gen));
     }

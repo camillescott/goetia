@@ -8,26 +8,18 @@ import inspect
 import os
 import re
 import sys
-try:
-    #
-    # Python2.
-    #
-    from imp import load_source
-except ImportError:
-    #
-    # Python3.
-    #
-    import importlib.util
 
-    def load_source(module_name, file_path, add_to_sys=False):
-        spec = importlib.util.spec_from_file_location(module_name, file_path)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        # Optional; only necessary if you want to be able to import the module
-        # by name later.
-        if add_to_sys:
-            sys.modules[module_name] = module
-        return module
+import importlib.util
+
+def load_source(module_name, file_path, add_to_sys=False):
+    spec = importlib.util.spec_from_file_location(module_name, file_path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    # Optional; only necessary if you want to be able to import the module
+    # by name later.
+    if add_to_sys:
+        sys.modules[module_name] = module
+    return module
 
 import cppyy
 

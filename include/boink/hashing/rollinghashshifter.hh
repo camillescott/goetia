@@ -1,3 +1,10 @@
+/**
+ * (c) Camille Scott, 2019
+ * File   : rollinghashshifter.hh
+ * License: MIT
+ * Author : Camille Scott <camille.scott.w@gmail.com>
+ * Date   : 06.08.2019
+ */
 /* rollinghashshifter.hh -- k-mer hash functions
  *
  * Copyright (C) 2018 Camille Scott
@@ -12,7 +19,6 @@
 
 #include "boink/boink.hh"
 #include "boink/hashing/alphabets.hh"
-#include "boink/hashing/hashing_types.hh"
 #include "boink/hashing/hashshifter.hh"
 
 #include "boink/hashing/rollinghash/cyclichash.h"
@@ -21,18 +27,23 @@ namespace boink {
 namespace hashing {
 
 
-class RollingHashShifter : public HashShifter<RollingHashShifter> {
+class RollingHashShifter : public HashShifter<RollingHashShifter,
+                                              uint64_t> {
 protected:
-    typedef HashShifter<RollingHashShifter> BaseShifter;
+    typedef HashShifter<RollingHashShifter, uint64_t> BaseShifter;
 
-    CyclicHash<hash_t> hasher;
+    CyclicHash<uint64_t> hasher;
     using BaseShifter::_K;
 
 public:
-    using BaseShifter::symbols;
 
-    //using BaseShifter::HashShifter;
-    typedef hash_t hash_type;
+    using BaseShifter::symbols;
+    using BaseShifter::hash_type;
+    using BaseShifter::shift_type;
+    using BaseShifter::kmer_type;
+
+    using BaseShifter::set_cursor;
+    using BaseShifter::get_cursor;
 
     RollingHashShifter(const std::string& start,
                        uint16_t K)
@@ -51,8 +62,10 @@ public:
         : BaseShifter(other.K()),
           hasher(other.K())
     {
-        this->load(other.get_cursor());
-        init();
+        if(other.is_initialized()) {
+            this->load(other.get_cursor());
+            init();
+        }
     }
 
     void init() {
@@ -66,38 +79,38 @@ public:
         this->initialized = true;
     }
 
-    hash_t get() {
+    hash_type get() {
         return hasher.hashvalue;
     }
 
-    hash_t _hash(const std::string& sequence) const {
+    hash_type _hash(const std::string& sequence) const {
         return hash_cyclic(sequence, this->_K);
     }
 
-    hash_t _hash(const char * sequence) const {
-        CyclicHash<hash_t> tmp_hasher(this->_K);
+    hash_type _hash(const char * sequence) const {
+        CyclicHash<hash_type> tmp_hasher(this->_K);
         for (uint16_t i = 0; i < this->_K; ++i) {
             tmp_hasher.eat(sequence[i]);
         }
         return tmp_hasher.hashvalue;
     }
 
-    hash_t update_left(const char c) {
+    hash_type update_left(const char c) {
         hasher.reverse_update(c, this->kmer_window.back());
         return get();
     }
 
-    hash_t update_right(const char c) {
+    hash_type update_right(const char c) {
         hasher.update(this->kmer_window.front(), c);
         return get();
     }
 
-    std::vector<shift_t> gather_left() {
-        std::vector<shift_t> hashes;
+    std::vector<shift_type> gather_left() {
+        std::vector<shift_type> hashes;
         const char back = this->kmer_window.back();
         for (auto symbol : symbols) {
             hasher.reverse_update(symbol, back);
-            shift_t result(hasher.hashvalue, symbol);
+            shift_type result(hasher.hashvalue, symbol);
             hashes.push_back(result);
             hasher.update(symbol, back);
         }
@@ -105,12 +118,12 @@ public:
         return hashes;
     }
 
-    std::vector<shift_t> gather_right() {
-        std::vector<shift_t> hashes;
+    std::vector<shift_type> gather_right() {
+        std::vector<shift_type> hashes;
         const char front = this->kmer_window.front();
         for (auto symbol : symbols) {
             hasher.update(front, symbol);
-            hashes.push_back(shift_t(hasher.hashvalue, symbol));
+            hashes.push_back(shift_type(hasher.hashvalue, symbol));
             hasher.reverse_update(front, symbol);
         }
         return hashes;

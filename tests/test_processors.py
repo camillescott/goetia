@@ -10,11 +10,11 @@ import pytest
 import csv
 
 from .utils import *
-from boink import libboink
+from boink.dbg import dBG
 import screed
 
 def test_dbg_inserter(graph, datadir, ksize):
-    consumer = libboink.InserterProcessor[type(graph)].build(graph, 10000, 10000, 10000)
+    consumer = type(graph).Processor.build(graph, 10000, 10000, 10000)
     rfile = datadir('random-20-a.fa')
 
     n_reads = consumer.process(rfile)

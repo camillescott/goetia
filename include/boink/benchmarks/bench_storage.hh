@@ -1,6 +1,5 @@
 #include "boink/boink.hh"
 #include "boink/storage/storage.hh"
-#include "boink/hashing/hashing_types.hh"
 
 #include <chrono>
 #include <iostream>
@@ -14,7 +13,7 @@ namespace bench {
 
 template<class storage_type>
 void storage_insert_bench(std::unique_ptr<storage_type>& storage,
-                          std::vector<hashing::hash_t>& hashes) {
+                          std::vector<uint64_t>& hashes) {
 
     for (auto hash: hashes) {
         storage->insert(hash);
@@ -23,7 +22,7 @@ void storage_insert_bench(std::unique_ptr<storage_type>& storage,
 
 template<class storage_type>
 void storage_query_bench(std::unique_ptr<storage_type>& storage,
-                         std::vector<hashing::hash_t>& hashes) {
+                         std::vector<uint64_t>& hashes) {
 
     for (auto hash: hashes) {
         auto val = storage->query(hash);
@@ -35,7 +34,7 @@ void storage_query_bench(std::unique_ptr<storage_type>& storage,
 
 template<class storage_type>
 void storage_insert_and_query_bench(std::unique_ptr<storage_type>& storage,
-                                    std::vector<hashing::hash_t>& hashes)  {
+                                    std::vector<uint64_t>& hashes)  {
 
     for (auto hash: hashes) {
         auto val = storage->insert_and_query(hash);
@@ -46,7 +45,7 @@ void storage_insert_and_query_bench(std::unique_ptr<storage_type>& storage,
 template<class callable, class storage_type>
 double time_it(callable &&func,
                std::unique_ptr<storage_type>& storage,
-               std::vector<hashing::hash_t>& hashes)  {
+               std::vector<uint64_t>& hashes)  {
     
     auto time_start = std::chrono::system_clock::now();
     func(storage, hashes);
@@ -57,7 +56,7 @@ double time_it(callable &&func,
 
 template<class storage_type>
 void _run_storage_bench(std::unique_ptr<storage_type>& storage,
-                   std::vector<hashing::hash_t>& hashes,
+                   std::vector<uint64_t>& hashes,
                    std::string storage_name) {
 
     storage->reset();
@@ -67,7 +66,7 @@ void _run_storage_bench(std::unique_ptr<storage_type>& storage,
     std::cout << storage_name << ", " << hashes.size() << ", insert_and_query, " << time_it(storage_insert_and_query_bench<storage_type>, storage, hashes) << std::endl;
 }
 
-std::vector<hashing::hash_t> generate_hashes(size_t n_hashes);
+std::vector<uint64_t> generate_hashes(size_t n_hashes);
 
 
 void run_storage_bench();

@@ -1,3 +1,11 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# (c) Camille Scott, 2019
+# File   : cdbg.py
+# License: MIT
+# Author : Camille Scott <camille.scott.w@gmail.com>
+# Date   : 14.10.2019
+
 from boink import libboink
 from boink.cli import CommandRunner, get_output_interval_args
 from boink.dbg import get_graph_args, process_graph_args
@@ -7,6 +15,7 @@ from boink.serialization import cDBGSerialization
 from boink.metadata import CUR_TIME
 
 import os
+import sys
 
 
 def get_cdbg_args(parser):
@@ -116,28 +125,37 @@ class cDBGRunner(CommandRunner):
         process_cdbg_args(args)
 
     def setup(self, args):
+        print('boink cdbg: start setup.', file=sys.stderr)
         os.makedirs(args.results_dir, exist_ok=True)
 
         self.instrumentation = Instrumentation(args.port,
                                                expose=(args.port != None))
 
         self.dbg_t       = args.graph_t
-        self.dbg         = args.graph_t.build(args.ksize,
-                                              *args.storage_args)
+        self.hasher      = args.hasher_t(args.ksize)
+        self.storage     = args.storage.build(*args.storage_args)
+        self.dbg         = args.graph_t.build(self.hasher, self.storage)
 
         self.cdbg_t      = libboink.cdbg.cDBG[type(self.dbg)]
 
         self.compactor_t = libboink.cdbg.StreamingCompactor[type(self.dbg)]
         self.compactor = self.compactor_t.Compactor.build(self.dbg,
                                                           self.instrumentation.Registry)
-
-        self.processor = self.compactor_t.Processor[libboink.parsing.FastxReader].build(self.compactor,
-                                                                                        args.fine_interval,
-                                                                                        args.medium_interval,
-                                                                                        args.coarse_interval)
+        print(args)
+        if args.normalize:
+            self.processor = self.compactor_t.NormalizingCompactor[libboink.parsing.FastxReader].build(self.compactor,
+                                                                                                       args.normalize,
+                                                                                                       args.fine_interval,
+                                                                                                       args.medium_interval,
+                                                                                                       args.coarse_interval)
+        else:
+            self.processor = self.compactor_t.Processor.build(self.compactor,
+                                                              args.fine_interval,
+                                                              args.medium_interval,
+                                                              args.coarse_interval)
         if args.track_cdbg_stats:
-            self.cdbg_reporter = self.compactor_t.Reporter.build(args.track_cdbg_stats,
-                                                                 self.compactor)
+            self.cdbg_reporter = self.compactor_t.Reporter.build(self.compactor,
+                                                                 args.track_cdbg_stats)
             self.processor.register_listener(self.cdbg_reporter)
 
         if args.track_cdbg_unitig_bp:
@@ -145,30 +163,33 @@ class cDBGRunner(CommandRunner):
                 bins = [args.ksize, 100, 200, 500, 1000]
             else:
                 bins = args.unitig_bp_bins
-            self.unitig_reporter = self.cdbg_t.UnitigReporter.build(args.track_cdbg_unitig_bp,
-                                                                    self.compactor.cdbg.__smartptr__(),
+            self.unitig_reporter = self.cdbg_t.UnitigReporter.build(self.compactor.cdbg.__smartptr__(),
+                                                                    args.track_cdbg_unitig_bp,
                                                                     bins)
             self.processor.register_listener(self.unitig_reporter)
 
         if args.track_cdbg_components:
-            self.components = self.cdbg_t.ComponentReporter.build(args.track_cdbg_components,
-                                                                  self.compactor.cdbg.__smartptr__(),
-                                                                  args.component_sample_size,
-                                                                  self.instrumention.Registry)
+            self.components = self.cdbg_t.ComponentReporter.build(self.compactor.cdbg.__smartptr__(),
+                                                                  args.track_cdbg_components,
+                                                                  self.instrumentation.Registry,
+                                                                  args.component_sample_size)
             self.processor.register_listener(self.components)
 
         self.writers = []
         if args.save_cdbg:
             for cdbg_format in args.save_cdbg_format:
-                writer = self.cdbg_t.Writer.build(args.save_cdbg + '.' + cdbg_format,
+                writer = self.cdbg_t.Writer.build(self.compactor.cdbg.__smartptr__(),
                                                   cDBGSerialization.enum_from_str(cdbg_format),
-                                                  self.compactor.cdbg.__smartptr__())
+                                                  args.save_cdbg + '.' + cdbg_format)
                 self.processor.register_listener(writer)
                 self.writers.append(writer)
+        print('boink cdbg: finish setup.', file=sys.stderr)
                            
     def execute(self, args):
+        print('boink cdbg: start execution.', file=sys.stderr)
         for sample, prefix in iter_fastx_inputs(args.inputs, args.pairing_mode):
-            self.processor.process(*sample)
+            for n_reads, state in self.processor.chunked_process(*sample):
+                print('...processed {0} sequences.'.format(n_reads))
 
     def teardown(self):
         pass

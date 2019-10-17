@@ -12,7 +12,6 @@
 
 #include "boink/boink.hh"
 #include "boink/hashing/alphabets.hh"
-#include "boink/hashing/hashing_types.hh"
 #include "boink/hashing/hashshifter.hh"
 #include "boink/hashing/rollinghashshifter.hh"
 

@@ -1,10 +1,9 @@
-/* compactor.hh -- streaming dBG compactor
- *
- * Copyright (C) 2018 Camille Scott
- * All rights reserved.
- *
- * This software may be modified and distributed under the terms
- * of the MIT license.  See the LICENSE file for details.
+/**
+ * (c) Camille Scott, 2019
+ * File   : compactor.hh
+ * License: MIT
+ * Author : Camille Scott <camille.scott.w@gmail.com>
+ * Date   : 18.07.2019
  */
 
 #ifndef BOINK_COMPACTOR_HH
@@ -13,11 +12,11 @@
 #include <assert.h>
 #include <cstdint>
 
-#include "boink/assembly.hh"
-#include "boink/hashing/hashing_types.hh"
+#include "boink/traversal.hh"
 #include "boink/hashing/kmeriterator.hh"
 #include "boink/dbg.hh"
 #include "boink/storage/bytestorage.hh"
+#include "boink/storage/nibblestorage.hh"
 #include "boink/cdbg/cdbg.hh"
 #include "boink/minimizers.hh"
 
@@ -30,7 +29,6 @@
 namespace boink {
 namespace cdbg {
 
-using namespace boink::hashing;
 
 # ifdef DEBUG_CPTR
 #   define pdebug(x) do { std::cerr << std::endl << "@ " << __FILE__ <<\
@@ -42,93 +40,104 @@ using namespace boink::hashing;
 # endif
 
 
-/* Represents a segment of new k-mers from a sequence, relative to the current
- * state of the cDBG. Can either be: a null segment representing a portion
- * of the sequence already in the graph; a decision k-mer; or a new unitig or
- * portion of a unitig.
- */
-
-struct compact_segment {
-    hash_t left_anchor;
-    hash_t right_anchor;
-    hash_t left_flank;
-    hash_t right_flank;
-
-    // whether this segment represents a decision k-mer
-    bool is_decision_kmer;
-    // start position of the segment within the originating sequence
-    size_t start_pos;
-    // length of the segment sequence (from beginning of first k-mer to
-    // end of last k-mer)
-    size_t length;
-    // tags associated with this segment
-    std::vector<hash_t> tags;
-
-    // the default constructor creates a null segment
-    compact_segment()
-        : left_anchor(0),
-          right_anchor(0),
-          left_flank(0),
-          right_flank(0),
-          is_decision_kmer(false),
-          start_pos(0),
-          length(0) 
-    {
-    }
-
-    compact_segment(hash_t left_anchor,
-                    hash_t right_anchor,
-                    bool is_decision_kmer,
-                    size_t start_pos,
-                    size_t length)
-        : left_anchor(left_anchor),
-          right_anchor(right_anchor),
-          is_decision_kmer(is_decision_kmer),
-          start_pos(start_pos),
-          length(length) 
-    {
-    }
-
-    compact_segment(const compact_segment &obj)
-        : left_anchor(obj.left_anchor),
-          right_anchor(obj.right_anchor),
-          left_flank(obj.left_flank),
-          right_flank(obj.right_flank),
-          is_decision_kmer(obj.is_decision_kmer),
-          start_pos(obj.start_pos),
-          length(obj.length)
-    {
-    }
-
-    // return if the segment is default constructed / null
-    // used as a delimiter token between connected runs of segments
-    const bool is_null() const {
-        return length == 0 && (left_anchor == right_anchor) && !is_decision_kmer;
-    }
-};
-
-
-inline std::ostream& operator<<(std::ostream& os, const compact_segment& segment)
-{
-    os << "<compact_segment left_flank=" << segment.left_flank
-       << " left_anchor=" << segment.left_anchor
-       << " right_anchor=" << segment.right_anchor
-       << " right_flank=" << segment.right_flank
-       << " start=" << segment.start_pos
-       << " length=" << segment.length
-       << ">";
-    return os;
-}
-
-
 template <class GraphType>
 struct StreamingCompactor {
 
-    using ShifterType   = typename GraphType::shifter_type;
-    using TraversalType = Traverse<GraphType>;
-    using MinimizerType = WKMinimizer<ShifterType>;
-    using cDBGType      = typename cDBG<GraphType>::Graph;
-    using State         = typename TraversalType::State;
+    using ShifterType    = typename GraphType::shifter_type;
+    using TraversalType  = Traverse<GraphType>;
+    using cDBGType       = typename cDBG<GraphType>::Graph;
+    using CompactNode    = typename cDBG<GraphType>::CompactNode;
+    using UnitigNode     = typename cDBG<GraphType>::UnitigNode;
+    using DecisionNode   = typename cDBG<GraphType>::DecisionNode;
+    using State          = typename TraversalType::State;
+    using NeighborBundle = typename TraversalType::NeighborBundle;
+
+    typedef GraphType                         graph_type;
+
+    typedef ShifterType                       shifter_type;
+    typedef typename shifter_type::hash_type  hash_type;
+    typedef typename shifter_type::kmer_type  kmer_type;
+    typedef typename shifter_type::shift_type shift_type;
+
+    typedef std::pair<kmer_type, NeighborBundle> DecisionKmer;
+
+
+    /* Represents a segment of new k-mers from a sequence, relative to the current
+     * state of the cDBG. Can either be: a null segment representing a portion
+     * of the sequence already in the graph; a decision k-mer; or a new unitig or
+     * portion of a unitig.
+     */
+
+    struct compact_segment {
+        hash_type left_anchor;
+        hash_type right_anchor;
+        hash_type left_flank;
+        hash_type right_flank;
+
+        // whether this segment represents a decision k-mer
+        bool is_decision_kmer;
+        // start position of the segment within the originating sequence
+        size_t start_pos;
+        // length of the segment sequence (from beginning of first k-mer to
+        // end of last k-mer)
+        size_t length;
+        // tags associated with this segment
+        std::vector<hash_type> tags;
+
+        // the default constructor creates a null segment
+        compact_segment()
+            : left_anchor(0),
+              right_anchor(0),
+              left_flank(0),
+              right_flank(0),
+              is_decision_kmer(false),
+              start_pos(0),
+              length(0) 
+        {
+        }
+
+        compact_segment(hash_type left_anchor,
+                        hash_type right_anchor,
+                        bool is_decision_kmer,
+                        size_t start_pos,
+                        size_t length)
+            : left_anchor(left_anchor),
+              right_anchor(right_anchor),
+              is_decision_kmer(is_decision_kmer),
+              start_pos(start_pos),
+              length(length) 
+        {
+        }
+
+        compact_segment(const compact_segment &obj)
+            : left_anchor(obj.left_anchor),
+              right_anchor(obj.right_anchor),
+              left_flank(obj.left_flank),
+              right_flank(obj.right_flank),
+              is_decision_kmer(obj.is_decision_kmer),
+              start_pos(obj.start_pos),
+              length(obj.length)
+        {
+        }
+
+        // return if the segment is default constructed / null
+        // used as a delimiter token between connected runs of segments
+        const bool is_null() const {
+            return length == 0 && (left_anchor == right_anchor) && !is_decision_kmer;
+        }
+
+        friend inline std::ostream& operator<<(std::ostream& os, const compact_segment& segment) {
+            os << "<compact_segment left_flank=" << segment.left_flank
+               << " left_anchor=" << segment.left_anchor
+               << " right_anchor=" << segment.right_anchor
+               << " right_flank=" << segment.right_flank
+               << " start=" << segment.start_pos
+               << " length=" << segment.length
+               << ">";
+            return os;
+        }
+    };
+
 
     struct Report {
         uint64_t n_full;
@@ -173,7 +182,6 @@ struct StreamingCompactor {
 
         typedef ShifterType   shifter_type;
         typedef GraphType     graph_type;
-        typedef MinimizerType minimizer_type;
         typedef cDBGType      cdbg_type;
 
         shared_ptr<GraphType> dbg;
@@ -230,15 +238,19 @@ struct StreamingCompactor {
             return report;
         }
 
-        void update_sequence(const std::string& sequence) {
-            std::set<hash_t> new_kmers;
+        size_t insert_sequence(const std::string& sequence,
+                               std::shared_ptr<std::vector<hash_type>> hashes = nullptr) {
+            std::set<hash_type> new_kmers;
             std::deque<compact_segment> segments;
-            std::set<hash_t> new_decision_kmers;
+            std::set<hash_type> new_decision_kmers;
             std::deque<NeighborBundle> decision_neighbors;
-            std::vector<hash_t> hashes;
+            //std::vector<hash_type> hashes;
+            if (hashes == nullptr) {
+                hashes = std::make_shared<std::vector<hash_type>>();
+            }
 
             find_new_segments(sequence,
-                              hashes,
+                              *hashes,
                               new_kmers,
                               segments,
                               new_decision_kmers,
@@ -250,13 +262,15 @@ struct StreamingCompactor {
                                  new_decision_kmers,
                                  decision_neighbors);
 
-            for (auto h : hashes) {
+            for (auto& h : *hashes) {
                 dbg->insert(h);
             }
+
+            return hashes->size();
         }
 
-        compact_segment init_segment(hash_t left_anchor,
-                                     hash_t left_flank,
+        compact_segment init_segment(hash_type left_anchor,
+                                     hash_type left_flank,
                                      size_t start_pos) {
             compact_segment segment;
             segment.start_pos = start_pos;
@@ -272,8 +286,8 @@ struct StreamingCompactor {
 
         void finish_segment(compact_segment& segment,
                             size_t end,
-                            hash_t right_anchor,
-                            hash_t right_flank,
+                            hash_type right_anchor,
+                            hash_type right_flank,
                             std::deque<compact_segment>& segments) {
             
             segment.length = end - segment.start_pos + this->_K;
@@ -304,9 +318,9 @@ struct StreamingCompactor {
         void find_new_segments(const std::string& sequence,
                                std::deque<compact_segment>& result) {
             // convenience function for cython land
-            std::vector<hash_t> hashes;
-            std::set<hash_t> new_kmers;
-            std::set<hash_t> new_decision_kmers;
+            std::vector<hash_type> hashes;
+            std::set<hash_type> new_kmers;
+            std::set<hash_type> new_decision_kmers;
             std::deque<NeighborBundle> decision_neighbors;
 
             find_new_segments(sequence,
@@ -319,16 +333,16 @@ struct StreamingCompactor {
         }
 
         void find_new_segments(const std::string& sequence,
-                               std::vector<hash_t>& hashes,
-                               std::set<hash_t>& new_kmers,
+                               std::vector<hash_type>& hashes,
+                               std::set<hash_type>& new_kmers,
                                std::deque<compact_segment>& segments,
-                               std::set<hash_t>& new_decision_kmers,
+                               std::set<hash_type>& new_decision_kmers,
                                std::deque<NeighborBundle>& decision_neighbors) {
 
             pdebug("FIND SEGMENTS: " << sequence);
 
-            KmerIterator<ShifterType> kmers(sequence, this->_K);
-            hash_t prev_hash, cur_hash;
+            hashing::KmerIterator<ShifterType> kmers(sequence, this->_K);
+            hash_type prev_hash, cur_hash;
             size_t pos = 0;
             bool cur_new = false, prev_new = false, cur_seen = false, prev_seen = false;
 
@@ -378,8 +392,8 @@ struct StreamingCompactor {
             // make sure we close current segment if necessary
             if (cur_new && !cur_seen) {
                 pdebug("sequence ended on new k-mer");
-                hash_t right_flank = cur_hash;
-                std::vector<shift_t> rneighbors = filter_nodes(dbg.get(),
+                hash_type right_flank = cur_hash;
+                std::vector<shift_type> rneighbors = filter_nodes(dbg.get(),
                                                                kmers.shifter->gather_right(),
                                                                new_kmers);
                 if (rneighbors.size() == 1) {
@@ -400,7 +414,7 @@ struct StreamingCompactor {
 
             // handle edge case for left_flank of first segment if it starts at pos 0
             if (preprocess[1].start_pos == 0) {
-                std::vector<shift_t> lneighbors = filter_nodes(dbg.get(),
+                std::vector<shift_type> lneighbors = filter_nodes(dbg.get(),
                                                                segment_shifters[0].gather_left(),
                                                                new_kmers);
                 if (lneighbors.size() == 1) {
@@ -523,9 +537,9 @@ struct StreamingCompactor {
         }
 
        void update_from_segments(const std::string& sequence,
-                                  std::set<hash_t>& new_kmers,
+                                  std::set<hash_type>& new_kmers,
                                   std::deque<compact_segment>& segments,
-                                  std::set<hash_t> & new_decision_kmers,
+                                  std::set<hash_type> & new_decision_kmers,
                                   std::deque<NeighborBundle>& decision_neighbors
                                   ) {
 
@@ -551,7 +565,7 @@ struct StreamingCompactor {
                     continue;
                 } else if (v.is_decision_kmer) {
                     pdebug("Segment is decision k-mer.");
-                    kmer_t decision_kmer(v.left_anchor,
+                    kmer_type decision_kmer(v.left_anchor,
                                          sequence.substr(v.start_pos, this->_K));
                     _build_dnode(decision_kmer);
                     _find_induced_decision_nodes(decision_kmer,
@@ -567,7 +581,7 @@ struct StreamingCompactor {
                     if (u.is_null()) {
 
                         pdebug("Checking (u,v,w), u is null, left induce v...");
-                        kmer_t root(v.left_anchor,
+                        kmer_type root(v.left_anchor,
                                     sequence.substr(v.start_pos, this->_K));
                         // TODO: future optimization. we know root is not a decision
                         // k-mer, so in this case, unless v starts at pos = 0 in the sequence,
@@ -581,7 +595,7 @@ struct StreamingCompactor {
                     if (w.is_null()) {
 
                         pdebug("Checking (u,v,w), w is null, right induce v...");
-                        kmer_t root(v.right_anchor,
+                        kmer_type root(v.right_anchor,
                                     sequence.substr(v.start_pos + v.length - this->_K, this->_K));
                         // TODO: future optimization. we know root is not a decision
                         // k-mer, so in this case, unless v starts at pos = 0 in the sequence,
@@ -605,9 +619,9 @@ struct StreamingCompactor {
         }
 
         void _induce_decision_nodes(std::deque<DecisionKmer>& induced_decision_kmers,
-                                    std::set<hash_t>& new_kmers) {
+                                    std::set<hash_type>& new_kmers) {
 
-            std::set<hash_t> induced_decision_kmer_hashes;
+            std::set<hash_type> induced_decision_kmer_hashes;
 
             pdebug("Perform induction on " << induced_decision_kmers.size() <<
                    " new decision k-mers");
@@ -616,7 +630,7 @@ struct StreamingCompactor {
                 induced_decision_kmer_hashes.insert(dkmer.first.hash);
             }
 
-            std::set<hash_t> processed;
+            std::set<hash_type> processed;
             size_t n_attempts = 0;
             size_t max_attempts = 4 * induced_decision_kmer_hashes.size();
             while (induced_decision_kmers.size() > 0) {
@@ -648,11 +662,11 @@ struct StreamingCompactor {
             }
         }
 
-        virtual bool _try_split_unode(kmer_t root,
+        virtual bool _try_split_unode(kmer_type root,
                                   NeighborBundle& neighbors,
-                                  std::set<hash_t>& new_kmers,
-                                  std::set<hash_t>& induced_decision_kmer_hashes,
-                                  std::set<hash_t>& processed) {
+                                  std::set<hash_type>& new_kmers,
+                                  std::set<hash_type>& induced_decision_kmer_hashes,
+                                  std::set<hash_type>& processed) {
             pdebug("Attempt unitig split from " << root);
 
             UnitigNode * unode_to_split;
@@ -677,7 +691,7 @@ struct StreamingCompactor {
                     return true;
                 }
 
-                hash_t new_end;
+                hash_type new_end;
                 direction_t clip_from;
                 if (root.hash == unode_to_split->left_end()) {
                     new_end = this->hash(unode_to_split->sequence.c_str() + 1);
@@ -694,20 +708,20 @@ struct StreamingCompactor {
                 return true;
             }
 
-            std::vector<kmer_t> lfiltered;
+            std::vector<kmer_type> lfiltered;
             std::copy_if(neighbors.first.begin(),
                          neighbors.first.end(),
                          std::back_inserter(lfiltered),
-                         [&] (kmer_t neighbor) { return
+                         [&] (kmer_type neighbor) { return
                             !new_kmers.count(neighbor.hash) &&
                             !processed.count(neighbor.hash);
                          });
 
-            std::vector<kmer_t> rfiltered;
+            std::vector<kmer_type> rfiltered;
             std::copy_if(neighbors.second.begin(),
                          neighbors.second.end(),
                          std::back_inserter(rfiltered),
-                         [&] (kmer_t neighbor) { return
+                         [&] (kmer_type neighbor) { return
                             !new_kmers.count(neighbor.hash) &&
                             !processed.count(neighbor.hash);
                          });
@@ -722,18 +736,28 @@ struct StreamingCompactor {
                 auto start = lfiltered.back();
                 Path path;
                 auto stop_state = this->traverse_left(dbg.get(), start.kmer, path, processed);
-                hash_t end_hash = stop_state.second;
+                hash_type end_hash = stop_state.second;
 
                 if (stop_state.first != State::STOP_SEEN) {
+
+                    if (stop_state.first == State::DECISION_FWD) {
+
+                        shift_type right;
+                        auto n_found = this->try_traverse_right(dbg.get(), right);
+                        if (n_found == 1) {
+                            end_hash = right.hash;
+                            path.pop_front();
+                        }
+                    }
                     unode_to_split = cdbg->query_unode_end(end_hash);
                     size_t split_point = path.size() - this->_K  + 1;
-                    hash_t left_unode_new_right = start.hash;
+                    hash_type left_unode_new_right = start.hash;
 
                     pdebug("split point is " << split_point <<
                             " new_right is " << left_unode_new_right
                            << " root was " << root.hash);
 
-                    hash_t right_unode_new_left = this->hash(unode_to_split->sequence.c_str() + 
+                    hash_type right_unode_new_left = this->hash(unode_to_split->sequence.c_str() + 
                                                              split_point + 1);
                     if (rfiltered.size()) {
                         assert(right_unode_new_left == rfiltered.back().hash);
@@ -772,16 +796,27 @@ struct StreamingCompactor {
                 std::cout << "rstart: " << start.kmer << std::endl;
                 Path path;
                 auto stop_state = this->traverse_right(dbg.get(), start.kmer, path, processed);
-                hash_t end_hash = stop_state.second;
+                hash_type end_hash = stop_state.second;
 
                 if (stop_state.first != State::STOP_SEEN) {
+
+                    if (stop_state.first == State::DECISION_FWD) {
+
+                        shift_type right;
+                        auto n_found = this->try_traverse_left(dbg.get(), right);
+                        if (n_found == 1) {
+                            end_hash = right.hash;
+                            path.pop_back();
+                        }
+                    }
+
                     unode_to_split = cdbg->query_unode_end(end_hash);
                     size_t split_point = unode_to_split->sequence.size()
                                                          - path.size()
                                                          - 1;
-                    hash_t new_right = this->hash(unode_to_split->sequence.c_str() + 
+                    hash_type new_right = this->hash(unode_to_split->sequence.c_str() + 
                                                   split_point - 1);
-                    hash_t new_left = start.hash;
+                    hash_type new_left = start.hash;
                     if (lfiltered.size()) {
                         assert(lfiltered.back().hash == new_right);
                     }
@@ -884,17 +919,17 @@ struct StreamingCompactor {
             }
         }
 
-        uint8_t _find_induced_decision_nodes(kmer_t kmer,
+        uint8_t _find_induced_decision_nodes(kmer_type kmer,
                                           NeighborBundle& neighbors,
-                                          std::set<hash_t>& new_kmers,
+                                          std::set<hash_type>& new_kmers,
                                           std::deque<DecisionKmer>& induced) {
 
             return _find_induced_decision_nodes_left(kmer, neighbors, new_kmers, induced) +
                    _find_induced_decision_nodes_right(kmer, neighbors, new_kmers, induced);
         }
 
-        uint8_t _find_induced_decision_nodes_left(kmer_t kmer,
-                                                  std::set<hash_t>& new_kmers,
+        uint8_t _find_induced_decision_nodes_left(kmer_type kmer,
+                                                  std::set<hash_type>& new_kmers,
                                                   std::deque<DecisionKmer>& induced) {
 
             pdebug("Prepare to attempt left induction on " << kmer);
@@ -911,9 +946,9 @@ struct StreamingCompactor {
             return 0;
         }
 
-        uint8_t _find_induced_decision_nodes_left(kmer_t kmer,
+        uint8_t _find_induced_decision_nodes_left(kmer_type kmer,
                                                   NeighborBundle& neighbors,
-                                                  std::set<hash_t>& new_kmers,
+                                                  std::set<hash_type>& new_kmers,
                                                   std::deque<DecisionKmer>& induced) {
 
             // decision k-mers which are also new k-mers
@@ -950,8 +985,8 @@ struct StreamingCompactor {
             return n_found;
         }
 
-        uint8_t _find_induced_decision_nodes_right(kmer_t kmer,
-                                             std::set<hash_t>& new_kmers,
+        uint8_t _find_induced_decision_nodes_right(kmer_type kmer,
+                                             std::set<hash_type>& new_kmers,
                                              std::deque<DecisionKmer>& induced) {
 
             pdebug("Prepare to attempt right induction on " << kmer);
@@ -968,9 +1003,9 @@ struct StreamingCompactor {
             return 0;
         }
 
-        uint8_t _find_induced_decision_nodes_right(kmer_t kmer,
+        uint8_t _find_induced_decision_nodes_right(kmer_type kmer,
                                              NeighborBundle& neighbors,
-                                             std::set<hash_t>& new_kmers,
+                                             std::set<hash_type>& new_kmers,
                                              std::deque<DecisionKmer>& induced) {
 
             // see _induce_decision_nodes_left for information
@@ -1004,7 +1039,7 @@ struct StreamingCompactor {
             return n_found;
         }
 
-        virtual void _build_dnode(kmer_t kmer) {
+        virtual void _build_dnode(kmer_type kmer) {
             cdbg->build_dnode(kmer.hash, kmer.kmer);
         }
 
@@ -1015,11 +1050,11 @@ struct StreamingCompactor {
         void reverse_complement_cdbg() {
             for (auto it = cdbg->dnodes_begin(); it != cdbg->dnodes_end(); ++it) {
                 auto rc_sequence = it->second->revcomp();
-                update_sequence(rc_sequence);
+                insert_sequence(rc_sequence);
             }
             for (auto it = cdbg->unodes_begin(); it != cdbg->unodes_end(); ++it) {
                 auto rc_sequence = it->second->revcomp();
-                update_sequence(rc_sequence);
+                insert_sequence(rc_sequence);
             }
 
             std::vector<CompactNode*>  rc_nodes_to_delete;
@@ -1059,74 +1094,7 @@ struct StreamingCompactor {
     };
 
 
-
-    template <class ParserType = parsing::FastxReader>
-    class Processor : public FileProcessor<Processor<ParserType>,
-                                           ParserType> { //template class names like modern art
-
-    protected:
-
-        shared_ptr<Compactor> compactor;
-        shared_ptr<GraphType> graph;
-
-        typedef FileProcessor<Processor<ParserType>,
-                              ParserType> Base;
-
-    public:
-
-        using Base::process_sequence;
-        using events::EventNotifier::register_listener;
-        
-        Processor(shared_ptr<Compactor> compactor,
-                  uint64_t fine_interval   = DEFAULT_INTERVALS::FINE,
-                  uint64_t medium_interval = DEFAULT_INTERVALS::MEDIUM,
-                  uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE)
-            : Base(fine_interval, medium_interval, coarse_interval),
-              compactor(compactor),
-              graph(compactor->dbg)
-        {
-        }
-
-        static std::shared_ptr<Processor<ParserType>> build(shared_ptr<Compactor> compactor,
-                                                            uint64_t fine_interval   = DEFAULT_INTERVALS::FINE,
-                                                            uint64_t medium_interval = DEFAULT_INTERVALS::MEDIUM,
-                                                            uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE) {
-            return std::make_shared<Processor<ParserType>>(compactor,
-                                                           fine_interval,
-                                                           medium_interval,
-                                                           coarse_interval);
-        }
-
-        void process_sequence(const parsing::Read& read) {
-            try {
-                compactor->update_sequence(read.cleaned_seq);
-            } catch (hashing::InvalidCharacterException &e) {
-                std::cerr << "WARNING: Bad sequence encountered at "
-                          << this->_n_reads << ": "
-                          << read.cleaned_seq << ", exception was "
-                          << e.what() << std::endl;
-                return;
-            } catch (hashing::SequenceLengthException &e) {
-                std::cerr << "NOTE: Skipped sequence that was too short: read "
-                          << this->_n_reads << " with sequence "
-                          << read.cleaned_seq 
-                          << std::endl;
-                return;
-            } catch (std::exception &e) {
-                std::cerr << "ERROR: Exception thrown at " << this->_n_reads 
-                          << " with msg: " << e.what()
-                          <<  std::endl;
-                throw e;
-            }
-        }
-
-        void report() {
-            //std::cerr << "\tcurrently " << compactor->cdbg->n_decision_nodes()
-            //          << " d-nodes, " << compactor->cdbg->n_unitig_nodes()
-            //          << " u-nodes." << std::endl;
-        }
-
-    };
+    using Processor = InserterProcessor<Compactor>;
 
 
     class Reporter: public reporting::SingleFileReporter {
@@ -1207,7 +1175,7 @@ struct StreamingCompactor {
             // accumulate at least min_req worth of counts before checking to see
             // if we have enough high-abundance k-mers to indicate success.
             for (unsigned int i = 0; i < min_req; ++i) {
-                hash_t kmer = kmers->next();
+                hash_type kmer = kmers->next();
                 if (counts->query(kmer) >= cutoff) {
                     ++num_cutoff_kmers;
                 }
@@ -1219,7 +1187,7 @@ struct StreamingCompactor {
                 return true;
             }
             while(!kmers->done()) {
-                hash_t kmer = kmers->next();
+                hash_type kmer = kmers->next();
                 if (counts->query(kmer) >= cutoff) {
                     ++num_cutoff_kmers;
                     if (num_cutoff_kmers >= min_req) {
@@ -1257,10 +1225,19 @@ struct StreamingCompactor {
               cutoff(cutoff),
               n_seq_updates(0)
         {
+            auto storage = storage::ByteStorage::build(100000000, 4);
+            auto hasher = graph->get_hasher();
             counts = std::make_unique<dBG<storage::ByteStorage,
-                                          ShifterType>>(graph->K(),
-                                                        100000000,
-                                                        4);
+                                          ShifterType>>(hasher, storage);
+        }
+
+        static std::shared_ptr<NormalizingCompactor> build(std::shared_ptr<Compactor> compactor,
+                                                           unsigned int cutoff,
+                                                           uint64_t fine_interval   = DEFAULT_INTERVALS::FINE,
+                                                           uint64_t medium_interval = DEFAULT_INTERVALS::MEDIUM,
+                                                           uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE) {
+            return std::make_shared<NormalizingCompactor>(compactor, cutoff, fine_interval, medium_interval, coarse_interval);
+
         }
 
         void process_sequence(const parsing::Read& read) {
@@ -1272,7 +1249,7 @@ struct StreamingCompactor {
             counts->insert_sequence(read.cleaned_seq);
 
             try {
-                compactor->update_sequence(read.cleaned_seq);
+                compactor->insert_sequence(read.cleaned_seq);
             } catch (hashing::InvalidCharacterException &e) {
                 std::cerr << "WARNING: Bad sequence encountered at "
                           << this->_n_reads << ": "
@@ -1306,7 +1283,7 @@ struct StreamingCompactor {
 
     private:
 
-        std::unique_ptr<dBG<storage::ByteStorage,
+        std::unique_ptr<dBG<storage::NibbleStorage,
                             ShifterType>> abund_filter;
 
     public:
@@ -1325,14 +1302,24 @@ struct StreamingCompactor {
               dbg           (compactor->dbg),
               min_abund     (min_abund)
         {
-            abund_filter = std::make_unique<dBG<storage::ByteStorage,
-                                                ShifterType>>(dbg->K(),
-                                                              abund_table_size,
-                                                              n_abund_tables);
+            std::shared_ptr<storage::NibbleStorage> abund_storage = storage::NibbleStorage::build(abund_table_size,
+                                                                                                  n_abund_tables);
+            auto abund_hasher = dbg->get_hasher();
+            abund_filter = std::make_unique<dBG<storage::NibbleStorage,
+                                                ShifterType>>(abund_hasher,
+                                                              abund_storage);
         }
 
+        static std::shared_ptr<SolidCompactor> build(std::shared_ptr<Compactor> compactor,
+                                                     unsigned int               min_abund,
+                                                     uint64_t                   abund_table_size,
+                                                     uint16_t                   n_abund_tables) {
+            return std::make_shared<SolidCompactor>(compactor, min_abund, abund_table_size, n_abund_tables);
+        }
+                                                     
+
         std::vector<std::pair<size_t, size_t>> find_solid_segments(const std::string& sequence) {
-            std::vector<hash_t>  hashes;
+            std::vector<hash_type>  hashes;
             std::vector<storage::count_t> counts;
             abund_filter->insert_sequence(sequence, hashes, counts);
 
@@ -1340,7 +1327,7 @@ struct StreamingCompactor {
             auto hashes_iter = hashes.begin();
             auto counts_iter = counts.begin();
             size_t start, end, pos = 0;
-            hash_t cur_hash;
+            hash_type cur_hash;
             bool   prev_solid = false, cur_solid = false;
             while(hashes_iter != hashes.end()) {
                 cur_hash  = *hashes_iter;
@@ -1366,12 +1353,12 @@ struct StreamingCompactor {
             return segments;
         }
 
-        void update_sequence(const std::string& sequence) {
+        void insert_sequence(const std::string& sequence) {
 
             auto solid_segments = find_solid_segments(sequence);
             for (auto segment : solid_segments) {
                 auto length = segment.second - segment.first;
-                compactor->update_sequence(sequence.substr(segment.first,
+                compactor->insert_sequence(sequence.substr(segment.first,
                                                            length));
             }
         }

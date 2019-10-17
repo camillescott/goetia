@@ -1,10 +1,9 @@
-/* nibblestorage.cc -- boink-modified oxli storage
- *
- * Copyright (C) 2018 Camille Scott
- * All rights reserved.
- *
- * This software may be modified and distributed under the terms
- * of the MIT license.  See the LICENSE file for details.
+/**
+ * (c) Camille Scott, 2019
+ * File   : nibblestorage.cc
+ * License: MIT
+ * Author : Camille Scott <camille.scott.w@gmail.com>
+ * Date   : 30.08.2019
  *
  *** END BOINK LICENSE BLOCK
  *
@@ -53,16 +52,14 @@
 #include <iostream>
 
 #include "boink/boink.hh"
-#include "boink/hashing/hashing_types.hh"
 
 using namespace std;
 using namespace boink;
 using namespace boink::storage;
-using namespace boink::hashing;
 
 
 const bool
-NibbleStorage::insert(hashing::hash_t khash)
+NibbleStorage::insert(value_type khash)
 {
     bool is_new_kmer = false;
 
@@ -103,9 +100,8 @@ NibbleStorage::insert(hashing::hash_t khash)
     return is_new_kmer;
 }
 
-
 const count_t
-NibbleStorage::insert_and_query(hashing::hash_t khash)
+NibbleStorage::insert_and_query(value_type khash)
 {
     if (insert(khash)) {
         return 1;
@@ -115,7 +111,7 @@ NibbleStorage::insert_and_query(hashing::hash_t khash)
 
 // get the count for the given k-mer hash.
 const count_t
-NibbleStorage::query(hashing::hash_t khash) const
+NibbleStorage::query(value_type khash) const
 {
     uint8_t min_count = _max_count; // bound count by maximum
 
@@ -134,8 +130,8 @@ NibbleStorage::query(hashing::hash_t khash) const
     return min_count;
 }
 
-
-void NibbleStorage::save(std::string outfilename, uint16_t ksize)
+void
+NibbleStorage::save(std::string outfilename, uint16_t ksize)
 {
     if (!_counts[0]) {
         throw BoinkException();
@@ -168,7 +164,8 @@ void NibbleStorage::save(std::string outfilename, uint16_t ksize)
     }
 }
 
-void NibbleStorage::load(std::string infilename, uint16_t& ksize)
+void
+NibbleStorage::load(std::string infilename, uint16_t& ksize)
 {
     ifstream infile;
     // configure ifstream to raise exceptions for everything.

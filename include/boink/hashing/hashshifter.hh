@@ -1,3 +1,10 @@
+/**
+ * (c) Camille Scott, 2019
+ * File   : hashshifter.hh
+ * License: MIT
+ * Author : Camille Scott <camille.scott.w@gmail.com>
+ * Date   : 30.07.2019
+ */
 /* hashshifter.hh -- base CRTP HashShifter class
  *
  * Copyright (C) 2018 Camille Scott
@@ -20,7 +27,6 @@
 #include "boink/kmers/kmerclient.hh"
 #include "boink/boink.hh"
 #include "boink/hashing/alphabets.hh"
-#include "boink/hashing/hashing_types.hh"
 #include "boink/hashing/exceptions.hh"
 
 #include "boink/ring_span.hpp"
@@ -29,7 +35,8 @@ namespace boink {
 namespace hashing {
 
 
-template <class Derived>
+template <class Derived,
+          class HashType = uint64_t>
 class HashShifter : public kmers::KmerClient {
 protected:
 
@@ -38,66 +45,78 @@ protected:
 
 public:
 
-    typedef hashing::hash_t hash_type;
+    // the type to hash into. generally, uint64_t
+    typedef HashType hash_type;
 
+    // allowable alphabet
     const std::string& symbols;
 
-    //std::deque<char> symbol_deque;
-    
-    hash_t set_cursor(const std::string& sequence) {
-        if (sequence.length() < _K) {
-            throw SequenceLengthException("Sequence must at least length K");
-        }
-        if (!initialized) {
-            load(sequence);
-            derived().init();
-        } else {
-            for (auto cit = sequence.begin(); cit < sequence.begin() + _K; ++cit) {
-                shift_right(*cit);
-            }
-        }
-        return get();
-    }
+    // Type for representing a neighbor hash with its prefix or suffix symbol
+    struct shift_type {
+        hash_type hash;
+        char symbol;
 
-    hash_t set_cursor(const char * sequence) {
-        // less safe! does not check length
-        if(!initialized) {
-            load(sequence);
-            derived().init();
-        } else {
-            for (uint16_t i = 0; i < this->_K; ++i) {
-                shift_right(sequence[i]);
-            }
+        shift_type() : 
+            hash(0),
+            symbol('A') 
+        {
         }
-        return get();
-    }
+
+        shift_type(hash_type hash, char symbol) : 
+            hash(hash),
+            symbol(symbol)
+        {
+        }
+
+        friend inline std::ostream&
+        operator<<(std::ostream& os, const shift_type& shift) {
+            os << "<shift_type symbol=" << shift.symbol << " hash=" << shift.hash << ">";
+            return os;
+        }
+    };
+
+    // A k-mer string and its hash value.
+    struct kmer_type {
+        hash_type hash;
+        std::string kmer;
+
+        kmer_type() :
+            hash(0)
+        {
+        }
+
+        kmer_type(const hash_type hash, const std::string kmer) :
+            hash(hash),
+            kmer(kmer)
+        {
+        }
+
+        bool operator==(const kmer_type& other) const {
+            return other.hash == this->hash;
+        }
+
+        friend inline std::ostream&
+        operator<<(std::ostream& os, const kmer_type& kmer) {
+            os << "<kmer_type kmer=" << kmer.kmer << " hash=" << kmer.hash << ">";
+            return os;
+        }
+
+    };
+
+
+    hash_type set_cursor(const std::string& sequence);
+
+    hash_type set_cursor(const char * sequence);
 
     template <typename Iterator>
-    hash_t set_cursor(const Iterator begin, const Iterator end) {
-        Iterator _begin = begin, _end = end;
-        if(!initialized) {
-            load(begin, end);
-            derived().init();
-        } else {
-            uint16_t l = 0;
-            while (_begin != _end) {
-                shift_right(*_begin);
-                ++_begin;
-                ++l;
-            }
-            if (l < this->_K) {
-                throw SequenceLengthException("Sequence must at least length K");
-            }
-        }
-        return get();
-    }
+    hash_type set_cursor(const Iterator begin, const Iterator end);
 
     // shadowed by derived
-    hash_t get() {
+    hash_type get() {
         return derived().get();
     }
 
-    hash_t hash(const std::string& sequence) const {
+    hash_type hash(const std::string& sequence) const {
         if (sequence.length() < _K) {
             throw SequenceLengthException("Sequence must at least length K");
         }
@@ -105,31 +124,31 @@ public:
         return derived()._hash(sequence);
     }
 
-    hash_t hash(const char * sequence) const {
+    hash_type hash(const char * sequence) const {
         _validate(sequence);
         return derived()._hash(sequence);
     }
 
     // shadowed by derived impl
-    std::vector<shift_t> gather_left() {
+    std::vector<shift_type> gather_left() {
         return derived().gather_left();
     }
 
-    hash_t shift_left(const char c) {
+    hash_type shift_left(const char c) {
         _validate(c);
-        hash_t h = derived().update_left(c);
+        hash_type h = derived().update_left(c);
         kmer_window.push_front(c);
         return h;
     }
 
     // shadowed by derived impl
-    std::vector<shift_t> gather_right() {
+    std::vector<shift_type> gather_right() {
         return derived().gather_right();
     }
 
-    hash_t shift_right(const char c) {
+    hash_type shift_right(const char c) {
         _validate(c);
-        hash_t h = derived().update_right(c);
+        hash_type h = derived().update_right(c);
         kmer_window.push_back(c);
         return h;
     }
@@ -146,11 +165,20 @@ public:
         }
     }
 
+    void get_cursor(kmer_type& result) {
+        result.hash = get();
+        result.kmer = get_cursor();
+    }
+
+    bool is_initialized() const {
+        return initialized;
+    }
+
 private:
 
-    HashShifter(const std::string& start,
+    HashShifter(const    std::string& start,
                 uint16_t K,
-                const std::string& alphabet=DNA_SIMPLE)
+                const    std::string& alphabet=DNA_SIMPLE)
         : KmerClient(K),
           kmer_buffer(new char[K]),
           kmer_window(kmer_buffer, kmer_buffer + K, kmer_buffer, K),
@@ -161,7 +189,7 @@ private:
     }
 
     HashShifter(uint16_t K,
-                const std::string& alphabet=DNA_SIMPLE)
+                const    std::string& alphabet=DNA_SIMPLE)
         : KmerClient(K),
           kmer_buffer(new char[K]),
           kmer_window(kmer_buffer, kmer_buffer + K, kmer_buffer, K),
@@ -217,7 +245,7 @@ protected:
 
     void _validate(const char c) const {
         if(!this->is_valid(c)) {
-            std::string msg("Invalid symbol: ");
+            std::string msg("HashShifter: Invalid symbol: ");
             msg += c;
             throw InvalidCharacterException(msg.c_str());
         }
@@ -225,7 +253,7 @@ protected:
 
     void _validate(const char * sequence) const {
         if (!this->is_valid(sequence)) {
-            std::string msg("Invalid symbol in: ");
+            std::string msg("HashShifter: Invalid symbol in: ");
             msg += sequence;
             throw InvalidCharacterException(msg.c_str());
         }
@@ -233,7 +261,7 @@ protected:
 
     void _validate(const std::string& sequence) const {
         if (!is_valid(sequence)) {
-            std::string msg("Invalid symbol in ");
+            std::string msg("HashShifter: Invalid symbol in ");
             msg += sequence;
             msg += ", alphabet=";
             msg += symbols;
@@ -242,7 +270,10 @@ protected:
     }
 
     void load(const std::string& sequence) {
-        load(sequence.cbegin());
+        //load(sequence.cbegin());
+        for (uint16_t i = 0; i < this->_K; ++i)  {
+            kmer_window.push_back(sequence[i]);
+        }
     }
 
     void load(const char * sequence) {
@@ -265,12 +296,6 @@ protected:
     }
 
 };
-
-
-//template<class Derived, const std::string& Alphabet>
-//const std::string HashShifter<Derived, Alphabet>::symbols = Alphabet;
-
-
 
 } // hashing
 } // boink

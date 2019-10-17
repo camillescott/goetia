@@ -1,3 +1,10 @@
+/**
+ * (c) Camille Scott, 2019
+ * File   : pdbg.cc
+ * License: MIT
+ * Author : Camille Scott <camille.scott.w@gmail.com>
+ * Date   : 30.08.2019
+ */
 #include "boink/pdbg.hh"
 
 #include "boink/storage/nibblestorage.hh"
@@ -15,70 +22,73 @@ namespace boink {
 template <class BaseStorageType>
 const bool 
 PdBG<BaseStorageType>::insert(const std::string& kmer) {
-    partitioner.set_cursor(kmer);
-    partitioner.reset_unikmers();
 
-    return S->insert(partitioner.get(), partitioner.get_front_partition());
+    partitioner.set_cursor(kmer);
+    auto bh = partitioner.get();
+
+    return S->insert(bh.hash, bh.unikmer.partition);
 }
 
 
 template <class BaseStorageType>
 const bool 
-PdBG<BaseStorageType>::insert(const hashing::PartitionedHash ph) {
-    return S->insert(ph.first, ph.second);
+PdBG<BaseStorageType>::insert(const hash_type& h) {
+    return S->insert(h.hash, h.unikmer.partition);
 }
 
 
 template <class BaseStorageType>
 const storage::count_t 
 PdBG<BaseStorageType>::insert_and_query(const std::string& kmer) {
-    partitioner.set_cursor(kmer);
-    partitioner.reset_unikmers();
 
-    return S->insert_and_query(partitioner.get(), partitioner.get_front_partition());
+    partitioner.set_cursor(kmer);
+    auto h = partitioner.get();
+
+    return S->insert_and_query(h.hash, h.unikmer.partition);
 }
 
 
 template <class BaseStorageType>
 const storage::count_t 
-PdBG<BaseStorageType>::insert_and_query(const hashing::PartitionedHash ph) {
-    return S->insert_and_query(ph.first, ph.second);
+PdBG<BaseStorageType>::insert_and_query(const hash_type& h) {
+    return S->insert_and_query(h.hash, h.unikmer.partition);
 }
 
 
 template <class BaseStorageType>
 const storage::count_t 
 PdBG<BaseStorageType>::query(const std::string& kmer) {
-    partitioner.set_cursor(kmer);
-    partitioner.reset_unikmers();
 
-    return S->query(partitioner.get(), partitioner.get_front_partition());
+    partitioner.set_cursor(kmer);
+    auto h = partitioner.get();
+
+    return S->query(h.hash, h.unikmer.partition);
 }
 
 
 template <class BaseStorageType>
 const storage::count_t 
-PdBG<BaseStorageType>::query(const hashing::PartitionedHash ph) {
-    return S->query(ph.first, ph.second);
+PdBG<BaseStorageType>::query(const hash_type& h) {
+    return S->query(h.hash, h.unikmer.partition);
 }
 
 
 template <class BaseStorageType>
 uint64_t 
-PdBG<BaseStorageType>::insert_sequence(const std::string&          sequence,
-                         std::vector<hashing::hash_t>&  kmer_hashes,
-                         std::vector<storage::count_t>& counts) {
+PdBG<BaseStorageType>::insert_sequence(const std::string&             sequence,
+                                       std::vector<hash_type>&        kmer_hashes,
+                                       std::vector<storage::count_t>& counts) {
 
-    hashing::KmerIterator<UKHShifter> iter(sequence, &partitioner);
+    kmer_iter_type iter(sequence, partitioner);
 
     uint64_t         n_consumed = 0;
     size_t           pos = 0;
     storage::count_t count;
     while(!iter.done()) {
-        hashing::PartitionedHash h = iter.next();
+        auto h = iter.next();
         count = insert_and_query(h);
 
-        kmer_hashes.push_back(h.first);
+        kmer_hashes.push_back(h);
         counts.push_back(count);
 
         n_consumed += (count == 1);
@@ -91,18 +101,18 @@ PdBG<BaseStorageType>::insert_sequence(const std::string&          sequence,
 
 template <class BaseStorageType>
 uint64_t 
-PdBG<BaseStorageType>::insert_sequence(const std::string&      sequence,
-                      std::set<hashing::hash_t>& new_kmers) {
+PdBG<BaseStorageType>::insert_sequence(const std::string&   sequence,
+                                       std::set<hash_type>& new_kmers) {
 
-    hashing::KmerIterator<UKHShifter> iter(sequence, &partitioner);
+    kmer_iter_type iter(sequence, partitioner);
 
     uint64_t n_consumed = 0;
     size_t pos = 0;
     bool is_new;
     while(!iter.done()) {
-        hashing::PartitionedHash h = iter.next();
+        auto h = iter.next();
         if(insert(h)) {
-            new_kmers.insert(h.first);
+            new_kmers.insert(h);
             n_consumed += is_new;
         }
         ++pos;
@@ -115,11 +125,11 @@ PdBG<BaseStorageType>::insert_sequence(const std::string&      sequence,
 template <class BaseStorageType>
 uint64_t 
 PdBG<BaseStorageType>::insert_sequence(const std::string& sequence) {
-    hashing::KmerIterator<UKHShifter> iter(sequence, &partitioner);
+    kmer_iter_type iter(sequence, partitioner);
 
     uint64_t n_consumed = 0;
     while(!iter.done()) {
-        hashing::PartitionedHash h = iter.next();
+        hash_type h = iter.next();
         n_consumed += insert(h);
     }
 
@@ -130,21 +140,21 @@ PdBG<BaseStorageType>::insert_sequence(const std::string& sequence) {
 template <class BaseStorageType>
 uint64_t 
 PdBG<BaseStorageType>::insert_sequence_rolling(const std::string& sequence) {
-    hashing::KmerIterator<UKHShifter> iter(sequence, &partitioner);
+    kmer_iter_type iter(sequence, partitioner);
 
-    uint64_t n_consumed = 0;
-    hashing::PartitionedHash h = iter.next();
-    uint64_t          cur_pid       = h.second;
+    uint64_t          n_consumed    = 0;
+    auto              h             = iter.next();
+    uint64_t          cur_pid       = h.unikmer.partition;
     BaseStorageType * cur_partition = S->query_partition(cur_pid);
-    cur_partition->insert(h.first);
+    cur_partition->insert(h.hash);
 
     while(!iter.done()) {
         h = iter.next();
-        if (h.second != cur_pid) {
-            cur_pid = h.second;
+        if (h.unikmer.partition != cur_pid) {
+            cur_pid = h.unikmer.partition;
             cur_partition = S->query_partition(cur_pid);
         }
-        n_consumed += cur_partition->insert(h.first);
+        n_consumed += cur_partition->insert(h.hash);
     }
 
     return n_consumed;
@@ -155,12 +165,12 @@ template <class BaseStorageType>
 std::vector<storage::count_t> 
 PdBG<BaseStorageType>::insert_and_query_sequence(const std::string& sequence) {
 
-    hashing::KmerIterator<UKHShifter> iter(sequence, &partitioner);
+    kmer_iter_type iter(sequence, partitioner);
     std::vector<storage::count_t> counts(sequence.length() - _K + 1);
 
     size_t pos = 0;
     while(!iter.done()) {
-        hashing::PartitionedHash h = iter.next();
+        auto h = iter.next();
         counts[pos] = insert_and_query(h);
         ++pos;
     }
@@ -173,12 +183,12 @@ template <class BaseStorageType>
 std::vector<storage::count_t> 
 PdBG<BaseStorageType>::query_sequence(const std::string& sequence) {
 
-    hashing::KmerIterator<UKHShifter> iter(sequence, &partitioner);
+    kmer_iter_type iter(sequence, partitioner);
     std::vector<storage::count_t> counts(sequence.length() - _K + 1);
 
     size_t pos = 0;
     while(!iter.done()) {
-        hashing::PartitionedHash h = iter.next();
+        auto h = iter.next();
         counts[pos] = query(h);
         ++pos;
     }
@@ -191,22 +201,22 @@ template <class BaseStorageType>
 std::vector<storage::count_t> 
 PdBG<BaseStorageType>::query_sequence_rolling(const std::string& sequence) {
 
-    hashing::KmerIterator<UKHShifter> iter(sequence, &partitioner);
+    kmer_iter_type iter(sequence, partitioner);
     std::vector<storage::count_t> counts(sequence.length() - _K + 1);
     
-    hashing::PartitionedHash h      = iter.next();
-    uint64_t          cur_pid       = h.second;
+    hash_type         h             = iter.next();
+    uint64_t          cur_pid       = h.unikmer.partition;
     BaseStorageType * cur_partition = S->query_partition(cur_pid);
-    counts[0]                       = cur_partition->query(h.first);
+    counts[0]                       = cur_partition->query(h.hash);
 
     size_t pos = 1;
     while(!iter.done()) {
         h = iter.next();
-        if (h.second != cur_pid) {
-            cur_pid = h.second;
+        if (h.unikmer.partition != cur_pid) {
+            cur_pid = h.unikmer.partition;
             cur_partition = S->query_partition(cur_pid);
         }
-        counts[pos] = cur_partition->query(h.first);
+        counts[pos] = cur_partition->query(h.hash);
         ++pos;
     }
 
@@ -217,37 +227,37 @@ PdBG<BaseStorageType>::query_sequence_rolling(const std::string& sequence) {
 template <class BaseStorageType>
 void 
 PdBG<BaseStorageType>::query_sequence(const std::string&             sequence,
-                    std::vector<storage::count_t>& counts,
-                    std::vector<hashing::hash_t>&  hashes) {
+                                      std::vector<storage::count_t>& counts,
+                                      std::vector<hash_type>&        hashes) {
 
-    hashing::KmerIterator<UKHShifter> iter(sequence, &partitioner);
+    kmer_iter_type iter(sequence, partitioner);
 
     while(!iter.done()) {
-        hashing::PartitionedHash h = iter.next();
+        auto h = iter.next();
         storage::count_t result = query(h);
         counts.push_back(result);
-        hashes.push_back(h.first);
+        hashes.push_back(h);
     }
 }
 
 
 template <class BaseStorageType>
 void 
-PdBG<BaseStorageType>::query_sequence(const std::string& sequence,
-                    std::vector<storage::count_t>& counts,
-                    std::vector<hashing::hash_t>& hashes,
-                    std::set<hashing::hash_t>& new_hashes) {
+PdBG<BaseStorageType>::query_sequence(const std::string&             sequence,
+                                      std::vector<storage::count_t>& counts,
+                                      std::vector<hash_type>&        hashes,
+                                      std::set<hash_type>&           new_hashes) {
 
-    hashing::KmerIterator<UKHShifter> iter(sequence, &partitioner);
+    kmer_iter_type iter(sequence, partitioner);
 
     while(!iter.done()) {
-        hashing::PartitionedHash h = iter.next();
+        auto h = iter.next();
         auto result = query(h);
         if (result == 0) {
-            new_hashes.insert(h.first);
+            new_hashes.insert(h);
         }
         counts.push_back(result);
-        hashes.push_back(h.first);
+        hashes.push_back(h);
     }
 }
 

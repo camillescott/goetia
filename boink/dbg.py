@@ -1,7 +1,17 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# (c) Camille Scott, 2019
+# File   : dbg.py
+# License: MIT
+# Author : Camille Scott <camille.scott.w@gmail.com>
+# Date   : 14.10.2019
+
 from boink import libboink
 from boink.hashing import types as hasher_types
 from boink.storage import get_storage_args, process_storage_args
 
+
+dBG = libboink.dBG
 
 def get_graph_args(parser):
     group = parser.add_argument_group('dBG')
@@ -17,7 +27,8 @@ def get_graph_args(parser):
 def process_graph_args(args):
     process_storage_args(args)
 
-    args.graph_t = libboink.dBG[args.storage, getattr(libboink.hashing, args.hasher)]
+    args.hasher_t = getattr(libboink.hashing, args.hasher)
+    args.graph_t = libboink.dBG[args.storage, args.hasher_t]
 
 
 def print_dBG_args(args):

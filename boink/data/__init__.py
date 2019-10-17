@@ -1,3 +1,11 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# (c) Camille Scott, 2019
+# File   : __init__.py
+# License: MIT
+# Author : Camille Scott <camille.scott.w@gmail.com>
+# Date   : 06.08.2019
+
 import gzip
 import os
 
@@ -28,8 +36,8 @@ def parse_unikmers(W, K):
     return unikmers
 
 
-def load_ukhs(W, K):
+def load_unikmer_map(W, K):
     unikmers = parse_unikmers(W, K)
-    ukhs = std.make_shared[libboink.hashing.UKHS](K, unikmers)
+    ukhs = std.make_shared[libboink.hashing.UKHS.Map](W, K, unikmers)
     return ukhs
 

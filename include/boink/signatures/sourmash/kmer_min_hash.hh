@@ -10,6 +10,7 @@
 #include <string>
 
 #include "boink/hashing/smhasher/MurmurHash3.h"
+#include "boink/hashing/exceptions.hh"
 
 
 #define tbl \
@@ -17,11 +18,12 @@
   /*ABCDEFGHIJKLMNOPQRSTUVWXYZ      abcdefghijklmnopqrstuvwxyz    */\
   " TVGH FCD  M KN   YSAABW R       TVGH FCD  M KN   YSAABW R"
 
-inline uint64_t _hash_murmur(const std::string& kmer,
-                      const uint32_t seed) {
+inline uint64_t _hash_murmur(const char * kmer,
+                             unsigned int ksize,
+                             const uint32_t seed) {
     uint64_t out[2];
     out[0] = 0; out[1] = 0;
-    murmurhash::MurmurHash3_x64_128((void *)kmer.c_str(), kmer.size(), seed, &out);
+    murmurhash::MurmurHash3_x64_128((void *)kmer, ksize, seed, &out);
     return out[0];
 }
 
@@ -124,36 +126,48 @@ public:
         }
     }
 
-    void add_word(const std::string& word) {
-        const HashIntoType hash = _hash_murmur(word, seed);
+    void add_word(const char * word) {
+        const HashIntoType hash = _hash_murmur(word, ksize, seed);
         add_hash(hash);
     }
-    void add_sequence(const char * sequence, bool force=false) {
-        if (strlen(sequence) < ksize) {
+
+    /* Modifications by camillescott:
+     *  - Use std::string instead of C string
+     *  - Remove seq cleaning; it's already done in read parser
+     *  - Don't copy string for each k-mer: use char pointer
+     *  - Do revcomp on whole sequence rather than each k-mer
+     *  - Use lexicographical_compare in place of operator< (operator< has undefined
+     *    behavior on non-null-terminated C strings)
+     */
+    void add_sequence(const std::string& seq, bool force=false) {
+
+        if (seq.length() < ksize) {
             return;
         }
-        std::string seq = sequence;
-        transform(seq.begin(), seq.end(), seq.begin(), ::toupper);
 
         if (!is_protein) {
+            auto rc = _revcomp(seq);
             for (unsigned int i = 0; i < seq.length() - ksize + 1; i++) {
-                const std::string kmer = seq.substr(i, ksize);
-                if (! _checkdna(kmer)) {
+				auto fw_kmer = seq.c_str() + i;
+                auto rc_kmer = rc.c_str() + rc.length() - ksize - i;
+
+                if (! _checkkmerdna(fw_kmer)) {
                     if (force) {
                         continue;
                     } else {
                         std::string msg = "invalid DNA character in input k-mer: ";
-                        msg += kmer;
-                        throw minhash_exception(msg);
+                        msg += fw_kmer;
+                        throw boink::hashing::InvalidCharacterException(msg);
                     }
                 }
 
-                const std::string rc = _revcomp(kmer);
-
-                if (kmer < rc) {
-                    add_word(kmer);
+                if (std::lexicographical_compare(fw_kmer,
+                                                 fw_kmer + ksize,
+                                                 rc_kmer,
+                                                 rc_kmer + ksize)) {
+                    add_word(fw_kmer);
                 } else {
-                    add_word(rc);
+                    add_word(rc_kmer);
                 }
             }
         } else {                      // protein
@@ -165,7 +179,7 @@ public:
 
                 for (unsigned int j = 0; j < aa.length() - aa_ksize + 1; j++) {
                     kmer = aa.substr(j, aa_ksize);
-                    add_word(kmer);
+                    add_word(kmer.c_str());
                 }
 
                 aa = _dna_to_aa(rc.substr(i, rc.length() - i));
@@ -173,7 +187,7 @@ public:
 
                 for (unsigned int j = 0; j < aa.length() - aa_ksize + 1; j++) {
                     kmer = aa.substr(j, aa_ksize);
-                    add_word(kmer);
+                    add_word(kmer.c_str());
                 }
             }
         }
@@ -196,10 +210,26 @@ public:
         return aa;
     }
 
-    bool _checkdna(const std::string seq) const {
+    bool _checkdna(const std::string& seq) const {
 
         for (size_t i=0; i < seq.length(); ++i) {
             switch(seq[i]) {
+            case 'A':
+            case 'C':
+            case 'G':
+            case 'T':
+                break;
+            default:
+                return false;
+            }
+        }
+        return true;
+    }
+
+    bool _checkkmerdna(const char * kmer) const {
+
+        for (size_t i=0; i < ksize; ++i) {
+            switch(kmer[i]) {
             case 'A':
             case 'C':
             case 'G':

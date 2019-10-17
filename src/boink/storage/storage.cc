@@ -1,3 +1,10 @@
+/**
+ * (c) Camille Scott, 2019
+ * File   : storage.cc
+ * License: MIT
+ * Author : Camille Scott <camille.scott.w@gmail.com>
+ * Date   : 30.08.2019
+ */
 /* storage.cc -- boink-modified oxli storage
  *
  * Copyright (C) 2018 Camille Scott
@@ -54,14 +61,13 @@
 #include <zlib.h>
 
 #include "boink/boink.hh"
-#include "boink/hashing/hashing_types.hh"
 
 using namespace std;
 using namespace boink;
 using namespace boink::storage;
-using namespace boink::hashing;
 
-void Storage::set_use_bigcount(bool b)
+template<typename ValueType>
+void Storage<ValueType>::set_use_bigcount(bool b)
 {
     if (!_supports_bigcount) {
         throw BoinkException("bigcount is not supported for this storage.");
@@ -69,7 +75,9 @@ void Storage::set_use_bigcount(bool b)
     _use_bigcount = b;
 }
 
-bool Storage::get_use_bigcount()
+
+template<typename ValueType>
+bool Storage<ValueType>::get_use_bigcount()
 {
     return _use_bigcount;
 }

@@ -1,10 +1,9 @@
-/* qfstorage.cc -- boink-modified oxli storage
- *
- * Copyright (C) 2018 Camille Scott
- * All rights reserved.
- *
- * This software may be modified and distributed under the terms
- * of the MIT license.  See the LICENSE file for details.
+/**
+ * (c) Camille Scott, 2019
+ * File   : qfstorage.cc
+ * License: MIT
+ * Author : Camille Scott <camille.scott.w@gmail.com>
+ * Date   : 30.08.2019
  *
  *** END BOINK LICENSE BLOCK
  *
@@ -54,13 +53,11 @@
 #include <iostream>
 
 #include "boink/boink.hh"
-#include "boink/hashing/hashing_types.hh"
 #include "boink/storage/cqf/gqf.h"
 
 using namespace std;
 using namespace boink;
 using namespace boink::storage;
-using namespace boink::hashing;
 
 
 QFStorage::QFStorage(int size)
@@ -82,48 +79,57 @@ QFStorage::~QFStorage()
 }
 
 
-std::unique_ptr<QFStorage> QFStorage::clone() const {
-    return std::make_unique<QFStorage>(_size);
+std::shared_ptr<QFStorage>
+QFStorage::clone() const {
+    return std::make_shared<QFStorage>(_size);
 }
 
 
-const bool QFStorage::insert(hash_t khash) {
+const bool
+QFStorage::insert(value_type khash) {
     bool is_new = query(khash) == 0;
     qf_insert(cf.get(), khash % cf->range, 0, 1);
     return is_new;
 }
 
-const count_t QFStorage::insert_and_query(hash_t khash) {
+
+const count_t
+QFStorage::insert_and_query(value_type khash) {
     qf_insert(cf.get(), khash % cf->range, 0, 1);
     return query(khash);
 }
 
 
-const count_t QFStorage::query(hash_t khash) const 
+const count_t
+QFStorage::query(value_type khash) const 
 {
     return qf_count_key_value(cf.get(), khash % cf->range, 0);
 }
 
 
-std::vector<uint64_t> QFStorage::get_tablesizes() const 
+std::vector<uint64_t>
+QFStorage::get_tablesizes() const 
 { 
     return {cf->xnslots}; 
 }
 
 
-const uint64_t QFStorage::n_unique_kmers() const 
+const uint64_t
+QFStorage::n_unique_kmers() const 
 { 
     return cf->ndistinct_elts; 
 }
 
 
-const uint64_t QFStorage::n_occupied() const 
+const uint64_t
+QFStorage::n_occupied() const 
 { 
     return cf->noccupied_slots; 
 }
 
 
-void QFStorage::save(std::string outfilename, uint16_t ksize)
+void
+QFStorage::save(std::string outfilename, uint16_t ksize)
 {
     ofstream outfile(outfilename.c_str(), ios::binary);
 
@@ -162,7 +168,8 @@ void QFStorage::save(std::string outfilename, uint16_t ksize)
 }
 
 
-void QFStorage::load(std::string infilename, uint16_t &ksize)
+void
+QFStorage::load(std::string infilename, uint16_t &ksize)
 {
     ifstream infile;
     // configure ifstream to raise exceptions for everything.
@@ -249,3 +256,5 @@ void QFStorage::load(std::string infilename, uint16_t &ksize)
     #endif
     infile.close();
 }
+
+

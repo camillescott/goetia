@@ -16,20 +16,13 @@
 #include <string>
 #include <vector>
 
-#include "boink/boink.hh"
 #include "boink/events.hh"
-#include "boink/event_types.hh"
 
 namespace boink {
+
 namespace reporting {
 
-using std::shared_ptr;
-
-using boink::events::EventListener;
-using boink::events::Event;
-using boink::events::TimeIntervalEvent;
-
-class SingleFileReporter : public EventListener {
+class SingleFileReporter : public events::EventListener {
 
 protected:
 
@@ -39,25 +32,15 @@ protected:
 public:
 
     SingleFileReporter(const std::string& output_filename,
-                       const std::string& thread_name) 
-        : EventListener(thread_name),
-          _output_filename(output_filename),
-          _output_stream(_output_filename.c_str())
-    {
-    }
+                       const std::string& thread_name);
 
-    SingleFileReporter(const std::string& output_filename)
-        : SingleFileReporter(output_filename, "SingleFileReporter")
-    {
-    }
+    SingleFileReporter(const std::string& output_filename);
 
-    virtual ~SingleFileReporter() {
-        _output_stream.close();
-    }
+    virtual ~SingleFileReporter();
 };
 
 
-class MultiFileReporter : public EventListener {
+class MultiFileReporter : public events::EventListener {
 
 protected:
 
@@ -68,46 +51,20 @@ protected:
 public:
 
     MultiFileReporter(const std::string& prefix,
-                      const std::string& thread_name)
-        : EventListener(thread_name),
-          _file_prefix(prefix)
-    {
-    }
+                      const std::string& thread_name);
 
-    MultiFileReporter(const std::string& prefix)
-        : MultiFileReporter(prefix, "MultiFileReporter")
-    {
-    }
+    MultiFileReporter(const std::string& prefix);
 
-    std::ofstream& current_stream() {
-        return _streams.back();
-    }
+    std::ofstream& current_stream();
 
-    std::string& current_filename() {
-        return _filenames.back();
-    }
+    std::string& current_filename();
 
     std::ofstream& next_stream(uint64_t start_time, 
-                               const std::string& suffix) {
-        std::ostringstream name;
-        name << _file_prefix << "." << start_time << "."
-             << suffix;
-        std::string filename = name.str();
+                               const std::string& suffix);
 
-        if (_streams.size() > 0) {
-            current_stream().close();   
-        }
-        _streams.push_back(std::move(std::ofstream(filename.c_str())));
-        _filenames.push_back(filename);
-        return _streams.back();
-    }
-
-    virtual ~MultiFileReporter() {
-        current_stream().close();
-    }
+    virtual ~MultiFileReporter();
 
 };
-
 
 }
 }

@@ -1,8 +1,16 @@
 from boink.utils import find_common_basename, remove_fx_suffix, grouper
 
+from boink import libboink
+
 import os
 
-PAIRING_MODES = ('split', 'interleaved', 'single')
+PAIRING_MODES     = ('split', 'interleaved', 'single')
+
+ReadParser        = libboink.parsing.ReadParser
+FastxParser       = libboink.parsing.FastxReader
+
+FastxReader       = ReadParser[FastxParser]
+SplitPairedReader = libboink.parsing.SplitPairedReader[FastxParser]
 
 
 def get_pairing_args(parser):

@@ -1,3 +1,10 @@
+/**
+ * (c) Camille Scott, 2019
+ * File   : kmeriterator.hh
+ * License: MIT
+ * Author : Camille Scott <camille.scott.w@gmail.com>
+ * Date   : 23.07.2019
+ */
 /* kmeriterator.hh -- sequence k-mer iterators
  *
  * Copyright (C) 2018 Camille Scott
@@ -21,12 +28,9 @@
 namespace boink {
 namespace hashing {
 
-template<class T>
-struct hash_return{ typedef T type; };
-
-
 template <class ShifterType>
 class KmerIterator : public kmers::KmerClient {
+
     const std::string _seq;
     unsigned int index;
     unsigned int length;
@@ -34,9 +38,13 @@ class KmerIterator : public kmers::KmerClient {
 
 public:
 
+    typedef ShifterType shifter_type;
+    typedef typename ShifterType::hash_type hash_type;
+
     ShifterType * shifter;
 
-    KmerIterator(const std::string& seq, uint16_t K)
+    template<typename... Args>
+    KmerIterator(const std::string& seq, uint16_t K, Args&&... args)
         : KmerClient(K), 
           _seq(seq), 
           index(0), 
@@ -47,28 +55,11 @@ public:
         if (_seq.length() < _K) {
             throw SequenceLengthException("Sequence must have length >= K");
         }
-        shifter = new ShifterType(seq, K);
+        shifter = new ShifterType(seq, K, std::forward<Args>(args)...);
     }
 
-    KmerIterator(const std::string& seq, uint16_t K, uint16_t partition_K)
-        : KmerIterator(seq, K)
-    {
-    }
-
-    KmerIterator(const std::string& seq, ShifterType * shifter)
-        : KmerClient(shifter->K()), 
-          _seq(seq),
-          index(0), 
-          _initialized(false),
-          _shifter_owner(false), 
-          shifter(shifter) 
-    {
-        if (_seq.length() < _K) {
-            throw SequenceLengthException("Sequence must have length >= K");
-        }
-
-        shifter->set_cursor(seq);
-    }
+    KmerIterator(const std::string& seq, ShifterType * shifter);
+    KmerIterator(const std::string& seq, ShifterType& shifter_proto);
 
     ~KmerIterator() {
         if (_shifter_owner) {
@@ -76,33 +67,11 @@ public:
         }
     }
 
-    template<class HashType = typename ShifterType::hash_type>
-    typename hash_return<HashType>::type first() {
-        _initialized = true;
+    hash_type first();
 
-        index += 1;
-        return shifter->get();
-    }
+    hash_type next();
 
-    template<class HashType = typename ShifterType::hash_type>
-    typename hash_return<HashType>::type next() {
-        if (!_initialized) {
-            return first();
-        }
-
-        if (done()) {
-            throw InvalidCharacterException("past end of iterator");
-        }
-
-        shifter->shift_right(_seq[index + _K - 1]);
-        index += 1;
-
-        return shifter->get();
-    }
-
-    bool done() const {
-        return (index + _K > _seq.length());
-    }
+    bool done() const;
 
     unsigned int get_start_pos() const {
         if (!_initialized) { return 0; }

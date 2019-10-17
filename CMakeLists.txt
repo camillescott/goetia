@@ -42,6 +42,7 @@ if(NOT CMAKE_BUILD_TYPE)
         FORCE
     )
 endif(NOT CMAKE_BUILD_TYPE)
+set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 #
 # gfakluge has its own Makefile for produces its static library; run it.
