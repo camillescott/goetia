@@ -5,11 +5,13 @@
         <namespace pattern="boink::events::*"/>
         <namespace pattern="boink::signatures::*"/>
         <namespace pattern="boink::cdbg::*"/>
-        <class name="boink::reporting::*"/>
-        <class pattern="boink::signatures::UnikmerSignature<*>::Signature"/>
         <namespace pattern="boink::hashing::*"/>
         <namespace pattern="boink::metrics::*"/>
         <namespace pattern="boink::TraversalState::*"/>
+
+        <class name="boink::reporting::*"/>
+        <class pattern="boink::signatures::UnikmerSignature<*>::Signature"/>
+
         <enum name="boink::TraversalState::State"/>
         <class pattern="boink::Traverse<*>::*"/>
 
