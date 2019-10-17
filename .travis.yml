@@ -44,6 +44,7 @@ before_script:
     - pip install -r requirements.txt
     - pip install git+https://github.com/camillescott/debruijnal-enhance-o-tron#egg=debruijnal_enhance_o_tron
     - conda list
+    - ldd $CONDA_PREFIX/lib/python$PYVERSION/site-packages/cppyy_backend/lib/libcppyy_backend.so
     - which python
     - python -c "from clang.cindex import Config; Config.set_library_file('/home/travis/miniconda/envs/libboink/lib/libclang.so'); Config().lib"
     - mkdir -p build
