@@ -38,8 +38,9 @@ before_script:
     - conda config --add channels conda-forge
     - conda update -n base -c defaults conda
     - conda info -a
-    - conda create -n libboink python=$PYVERSION cmake cppyy cxx-compiler c-compiler clangdev=8 libcxx libstdcxx-ng libgcc-ng pytest numpy scipy openmp python-clang screed blessings pytest-benchmark pyfiglet py-cpuinfo
+    - conda create -n libboink python=$PYVERSION cmake cxx-compiler c-compiler clangdev=8 libcxx libstdcxx-ng libgcc-ng pytest numpy scipy openmp python-clang screed blessings pytest-benchmark pyfiglet py-cpuinfo
     - source activate libboink
+    - pip install cppyy
     - pip install -r requirements.txt
     - pip install git+https://github.com/camillescott/debruijnal-enhance-o-tron#egg=debruijnal_enhance_o_tron
     - which python
