@@ -38,13 +38,11 @@ before_script:
     - conda config --add channels conda-forge
     - conda update -n base -c defaults conda
     - conda info -a
-    - conda create -n libboink python=$PYVERSION cmake cxx-compiler c-compiler clangdev=8 libcxx libstdcxx-ng libgcc-ng pytest numpy scipy openmp python-clang screed blessings pytest-benchmark pyfiglet py-cpuinfo
+    - conda create -n libboink python=$PYVERSION cmake cppyy cxx-compiler c-compiler clangdev=8 libcxx libstdcxx-ng libgcc-ng pytest numpy scipy openmp python-clang screed blessings pytest-benchmark pyfiglet py-cpuinfo
     - source activate libboink
-    - pip install cppyy
     - pip install -r requirements.txt
     - pip install git+https://github.com/camillescott/debruijnal-enhance-o-tron#egg=debruijnal_enhance_o_tron
     - conda list
-    - ldd $CONDA_PREFIX/lib/python$PYVERSION/site-packages/cppyy_backend/lib/libCore.so
     - which python
     - python -c "from clang.cindex import Config; Config.set_library_file('/home/travis/miniconda/envs/libboink/lib/libclang.so'); Config().lib"
     - mkdir -p build
