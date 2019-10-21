@@ -347,8 +347,6 @@ struct cDBG {
 
         id_t     component_id_counter;
 
-        std::shared_ptr<prometheus::Registry> pr_registry;
-
     public:
 
         std::shared_ptr<GraphType> dbg;

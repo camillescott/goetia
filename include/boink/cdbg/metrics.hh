@@ -15,8 +15,6 @@
 #include <sstream>
 #include <vector>
 
-#include <prometheus/registry.h>
-
 #include "boink/metrics.hh"
 #include "boink/cdbg/cdbg_types.hh"
 
