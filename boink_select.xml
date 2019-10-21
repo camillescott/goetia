@@ -12,7 +12,6 @@
         <class name="boink::reporting::*"/>
         <class pattern="boink::signatures::UnikmerSignature<*>::Signature"/>
 
-        <enum name="boink::TraversalState::State"/>
         <class pattern="boink::Traverse<*>::*"/>
 
         <class pattern="boink::dBG<*, *>"/>
@@ -24,9 +23,6 @@
         <class pattern="boink::InteriorMinimizer<*>"/>
 
         <class name="boink::DEFAULT_INTERVALS"/>
-
-        <class name="prometheus::Registry"/>
-        <class name="prometheus::Exposer"/>
 
         <class pattern="std::make_unique<boink::*>"/>
         <class pattern="std::make_shared<boink::*>"/>

@@ -10,7 +10,6 @@ from boink import libboink
 from boink.cli import CommandRunner, get_output_interval_args
 from boink.dbg import get_graph_args, process_graph_args
 from boink.parsing import get_pairing_args, iter_fastx_inputs
-from boink.prometheus import Instrumentation, get_prometheus_args
 from boink.serialization import cDBGSerialization
 from boink.metadata import CUR_TIME
 
@@ -112,7 +111,6 @@ class cDBGRunner(CommandRunner):
     def __init__(self, parser):
         get_graph_args(parser)
         get_cdbg_args(parser)
-        get_prometheus_args(parser)
         get_output_interval_args(parser)
         group = get_pairing_args(parser)
         group.add_argument('-o', dest='output_filename', default='/dev/stdout')
@@ -128,9 +126,6 @@ class cDBGRunner(CommandRunner):
         print('boink cdbg: start setup.', file=sys.stderr)
         os.makedirs(args.results_dir, exist_ok=True)
 
-        self.instrumentation = Instrumentation(args.port,
-                                               expose=(args.port != None))
-
         self.dbg_t       = args.graph_t
         self.hasher      = args.hasher_t(args.ksize)
         self.storage     = args.storage.build(*args.storage_args)
@@ -139,8 +134,7 @@ class cDBGRunner(CommandRunner):
         self.cdbg_t      = libboink.cdbg.cDBG[type(self.dbg)]
 
         self.compactor_t = libboink.cdbg.StreamingCompactor[type(self.dbg)]
-        self.compactor = self.compactor_t.Compactor.build(self.dbg,
-                                                          self.instrumentation.Registry)
+        self.compactor = self.compactor_t.Compactor.build(self.dbg)
         print(args)
         if args.normalize:
             self.processor = self.compactor_t.NormalizingCompactor[libboink.parsing.FastxReader].build(self.compactor,
@@ -171,7 +165,6 @@ class cDBGRunner(CommandRunner):
         if args.track_cdbg_components:
             self.components = self.cdbg_t.ComponentReporter.build(self.compactor.cdbg.__smartptr__(),
                                                                   args.track_cdbg_components,
-                                                                  self.instrumentation.Registry,
                                                                   args.component_sample_size)
             self.processor.register_listener(self.components)
 

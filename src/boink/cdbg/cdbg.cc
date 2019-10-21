@@ -38,7 +38,6 @@ namespace cdbg {
 
 template <class GraphType>
 cDBG<GraphType>::Graph::Graph(std::shared_ptr<GraphType> dbg,
-                              std::shared_ptr<prometheus::Registry> metrics_registry,
                               uint64_t minimizer_window_size)
     : KmerClient(dbg->K()),
       EventNotifier(),
@@ -46,11 +45,9 @@ cDBG<GraphType>::Graph::Graph(std::shared_ptr<GraphType> dbg,
       _n_updates(0),
       _unitig_id_counter(UNITIG_START_ID),
       _n_unitig_nodes(0),
-      component_id_counter(0),
-      pr_registry(metrics_registry)
+      component_id_counter(0)
 {
-    pr_registry = metrics_registry;
-    metrics = make_shared<cDBGMetrics>(pr_registry);
+    metrics = make_shared<cDBGMetrics>();
 }
 
 
@@ -368,7 +365,7 @@ cDBG<GraphType>::Graph::build_dnode(hash_type hash,
         notify_history_new(dnode->node_id,
                            dnode->sequence,
                            dnode->meta());
-        metrics->n_dnodes.Increment();
+        metrics->n_dnodes++;
         pdebug("BUILD_DNODE complete: " << *dnode);
     } else {
         pdebug("BUILD_DNODE: d-node for " << hash << " already exists.");
@@ -399,7 +396,7 @@ cDBG<GraphType>::Graph::build_unode(const std::string& sequence,
     _unitig_id_counter++;
     _n_unitig_nodes++;
     _n_updates++;
-    metrics->n_unodes.Increment();
+    metrics->n_unodes++;
 
     // Link up its new tags
     unode_ptr->tags.insert(std::end(unode_ptr->tags),
@@ -440,7 +437,7 @@ cDBG<GraphType>::Graph::clip_unode(direction_t clip_from,
         delete_unode(unode);
         pdebug("CLIP complete: deleted null unode.");
     } else {
-        metrics->n_clips.Increment();
+        metrics->n_clips++;
         if (clip_from == DIR_LEFT) {
             unode->sequence = unode->sequence.substr(1);
             unode->set_left_end(new_unode_end);
@@ -503,7 +500,7 @@ cDBG<GraphType>::Graph::extend_unode(direction_t ext_dir,
         unitig_tag_map.insert(make_pair(tag, unode));
     }
 
-    metrics->n_extends.Increment();
+    metrics->n_extends++;
     metrics->decrement_cdbg_node(unode->meta());
     auto meta = recompute_node_meta(unode);
     metrics->increment_cdbg_node(meta);
@@ -547,7 +544,7 @@ cDBG<GraphType>::Graph::split_unode(id_t node_id,
             unode->set_left_end(new_left_end);
             unode->set_right_end(new_right_end);
 
-            metrics->n_splits.Increment();
+            metrics->n_splits++;
             unode->set_node_meta(FULL);
             metrics->decrement_cdbg_node(CIRCULAR);
             metrics->increment_cdbg_node(FULL);
@@ -571,7 +568,7 @@ cDBG<GraphType>::Graph::split_unode(id_t node_id,
         unode->set_right_end(new_right_end);
         unode->sequence = unode->sequence.substr(0, split_at + this->_K - 1);
         
-        metrics->n_splits.Increment();
+        metrics->n_splits++;
         metrics->decrement_cdbg_node(unode->meta());
         auto meta = recompute_node_meta(unode);
         metrics->increment_cdbg_node(meta);
@@ -630,7 +627,7 @@ cDBG<GraphType>::Graph::merge_unodes(const std::string& span_sequence,
     if (left_unode->node_id == right_unode->node_id) {
         pdebug("MERGE: CIRCULAR! Creating circular unitig, span is " << span_sequence);
         metrics->decrement_cdbg_node(right_unode->meta());
-        metrics->n_circular_merges.Increment();
+        metrics->n_circular_merges++;
         std::string extend = span_sequence;
         //if (n_span_kmers < this->_K - 1) {
             pdebug("Overlap between merged sequence, trimming right " << n_span_kmers);
@@ -666,7 +663,7 @@ cDBG<GraphType>::Graph::merge_unodes(const std::string& span_sequence,
                      left_end,
                      new_right_end,
                      new_tags);
-        metrics->n_merges.Increment();
+        metrics->n_merges++;
 
     }
     
@@ -696,8 +693,8 @@ cDBG<GraphType>::Graph::delete_unode(UnitigNode * unode) {
         unode = nullptr;
         _n_unitig_nodes--;
         _n_updates++;
-        metrics->n_unodes.Decrement();
-        metrics->n_deletes.Increment();
+        metrics->n_unodes--;
+        metrics->n_deletes++;
     }
 }
 
@@ -722,8 +719,8 @@ cDBG<GraphType>::Graph::delete_dnode(DecisionNode * dnode) {
     if (dnode != nullptr) {
         pdebug("Deleting " << *dnode);
         id_t id = dnode->node_id;
-        metrics->n_dnodes.Decrement();
-        metrics->n_deletes.Increment();
+        metrics->n_dnodes--;
+        metrics->n_deletes++;
         
         decision_nodes.erase(id);
         dnode = nullptr;

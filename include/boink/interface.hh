@@ -60,8 +60,6 @@
 
 #include "boink/benchmarks/bench_storage.hh"
 
-#include "prometheus/exposer.h"
-
 #include <set>
 
 #define STLTYPES_EXPLICIT_INSTANTIATION_DECL(STLTYPE, TTYPE)                      \

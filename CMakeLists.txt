@@ -21,6 +21,10 @@ endif()
 include(${CMAKE_SOURCE_DIR}/manifest.cmake)
 include(GNUInstallDirs)
 
+set(THREADS_PREFER_PTHREAD_FLAG TRUE)
+find_package (Threads REQUIRED)
+
+
 #
 # Add our project's cmake dir the the module path. This gives us the
 # Cppyy commands and targets.
@@ -73,17 +77,6 @@ target_include_directories(boink
                            ${CMAKE_SOURCE_DIR}/include
 )
 
-#
-# Prometheus has its own CMake files. We add it as a subdirectory, while also
-# grabbing its include dirs (TODO: is there a way to pull them from the CMake
-# exports before its installed?)
-#
-set(BUILD_SHARED_LIBS ON)
-set(ENABLE_COMPRESSION OFF)
-set(PROMETHEUS_DIR ${CMAKE_SOURCE_DIR}/third-party/prometheus-cpp)
-add_subdirectory(${PROMETHEUS_DIR})
-set(PROMETHEUS_INCLUDE_DIRS ${PROMETHEUS_DIR}/core/include ${PROMETHEUS_DIR}/pull/include ${PROMETHEUS_DIR}/push/include)
-#
 # Find zlib. This is a standard way of bringing it in.
 #
 find_package(ZLIB REQUIRED)
@@ -94,10 +87,8 @@ target_include_directories(boink PRIVATE ${ZLIB_INCLUDE_DIRS})
 # lib to the boink shared lib.
 #
 target_link_libraries(boink
+                      Threads::Threads
                       ${ZLIB_LIBRARIES} 
-                      prometheus-cpp::pull
-                      prometheus-cpp::push
-                      prometheus-cpp::core
                       "${CMAKE_SOURCE_DIR}/third-party/gfakluge/libgfakluge.a"
 )
 # Make sure CMake knows that boink depends on the gfakluge custom command target
@@ -110,7 +101,6 @@ add_dependencies(boink gfakluge)
 target_include_directories(boink PUBLIC third-party/gfakluge/src/)
 target_include_directories(boink PRIVATE third-party/)
 target_include_directories(boink PRIVATE include/)
-target_include_directories(boink PUBLIC ${PROMETHEUS_INCLUDE_DIRS})
 
 #
 # Configure the boink pc.

@@ -12,7 +12,6 @@ import pytest
 
 from tests.utils import *
 
-from boink.prometheus import Instrumentation
 from boink import libboink, nullptr
 
 
@@ -23,9 +22,7 @@ def compactor_type(ksize, graph):
 
 @pytest.fixture
 def compactor(ksize, graph, compactor_type):
-    instrumentation = Instrumentation('', expose=False)
-    compactor = compactor_type.Compactor.build(graph,
-                                               instrumentation.Registry)
+    compactor = compactor_type.Compactor.build(graph)
     return compactor
 
 
