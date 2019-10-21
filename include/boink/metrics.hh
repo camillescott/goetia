@@ -11,43 +11,12 @@
 #define BOINK_UTILITY_METRICS_HH
 
 #include <algorithm>
+#include <atomic>
 #include <iterator>
 #include <random>
 
 namespace boink {
 namespace metrics {
-
-// From https://gist.github.com/cbsmith/5538174
-template <typename RandomGenerator = std::default_random_engine>
-struct random_selector
-{
-    //On most platforms, you probably want to use std::random_device("/dev/urandom")()
-    random_selector(RandomGenerator g = RandomGenerator(std::random_device()()))
-        : gen(g) {}
-
-    template <typename Iter>
-    Iter select(Iter start, Iter end) {
-        std::uniform_int_distribution<> dis(0, std::distance(start, end) - 1);
-        std::advance(start, dis(gen));
-        return start;
-    }
-
-    //convenience function
-    template <typename Iter>
-    Iter operator()(Iter start, Iter end) {
-        return select(start, end);
-    }
-
-    //convenience function that works on anything with a sensible begin() and end(), and returns with a ref to the value type
-    template <typename Container>
-    auto operator()(const Container& c) -> decltype(*begin(c))& {
-        return *select(begin(c), end(c));
-    }
-
-private:
-    RandomGenerator gen;
-};
-
 
 /**
  * @Synopsis  Streaming reservoir sampling: continuously calling
@@ -62,8 +31,8 @@ struct ReservoirSample {
 private:
 
 	std::default_random_engine gen;
-    std::vector<T> samples;
-    size_t n_sampled;
+    std::vector<T>             samples;
+    size_t                     n_sampled;
 
 public:
 
@@ -105,6 +74,22 @@ public:
         n_sampled = 0;
     }
 
+};
+
+
+/**
+ * @Synopsis  Named atomic counter.
+ */
+struct Gauge : public std::atomic_uint64_t {
+    const std::string    family;
+    const std::string    name;
+
+    Gauge(const std::string& family,
+          const std::string& name)
+        : family(family),
+          name(name)
+    {
+    }    
 };
 
 

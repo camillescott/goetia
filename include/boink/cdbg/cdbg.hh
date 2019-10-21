@@ -42,10 +42,8 @@
 #include "boink/minimizers.hh"
 #include "boink/storage/storage.hh"
 
-#include <prometheus/registry.h>
-
 #include "boink/cdbg/cdbg_types.hh"
-#include "boink/cdbg/metrics.hh"\
+#include "boink/cdbg/metrics.hh"
 
 #include "utils/stringutils.h"
 
@@ -357,7 +355,6 @@ struct cDBG {
         std::shared_ptr<cDBGMetrics> metrics;
 
         Graph(std::shared_ptr<GraphType> dbg,
-              std::shared_ptr<prometheus::Registry> metrics_registry,
               uint64_t minimizer_window_size=8);
 
         std::unique_lock<std::mutex> lock_nodes() {
@@ -540,41 +537,18 @@ struct cDBG {
 
         class Metrics {
 
-            private:
-
-                prometheus::Family<prometheus::Summary>&   recompute_time_family;
-                prometheus::Summary::Quantiles             recompute_time_quantiles;
-                
-            public:
-                using Quantile = prometheus::detail::CKMSQuantiles::Quantile;
-
-                prometheus::Summary&                       recompute_time;
-
-            private:
-
-                prometheus::Family<prometheus::Gauge>&     component_counts_family;
 
             public:
 
-                prometheus::Gauge&                         n_components;
-                prometheus::Gauge&                         max_component_size;
-                prometheus::Gauge&                         min_component_size;
+                metrics::Gauge                         n_components;
+                metrics::Gauge                         max_component_size;
+                metrics::Gauge                         min_component_size;
 
-                Metrics(std::shared_ptr<prometheus::Registry> registry)
-                    : recompute_time_family     (prometheus::BuildSummary()
-                                                             .Name("boink_cdbg_components_compute_time_seconds")
-                                                             .Register(*registry)),
-                      recompute_time_quantiles  {{.75, .1},
-                                                 {.5,  .1},
-                                                 {.25, .1}},
-                      recompute_time            (recompute_time_family.Add({{"time", "quantiles"}},
-                                                                           recompute_time_quantiles)),
-                      component_counts_family   (prometheus::BuildGauge()
-                                                             .Name("boink_cdbg_components_current_total")
-                                                             .Register(*registry)),
-                      n_components              (component_counts_family.Add({{"size", "all_components"}})),
-                      max_component_size        (component_counts_family.Add({{"size", "max_component"}})),
-                      min_component_size        (component_counts_family.Add({{"size", "min_component"}}))
+                Metrics()
+                    : 
+                      n_components              {"size", "all_components"},
+                      max_component_size        {"size", "max_component"},
+                      min_component_size        {"size", "min_component"}
                 {
                 }
         };
@@ -596,7 +570,6 @@ struct cDBG {
 
         ComponentReporter(std::shared_ptr<Graph>                 cdbg,
                           const std::string&                     filename,
-                          std::shared_ptr<prometheus::Registry>  registry,
                           size_t                                 sample_size = 10000)
             : SingleFileReporter       (filename, "cDBG::ComponentReporter"),
               cdbg                     (cdbg),
@@ -609,16 +582,14 @@ struct cDBG {
             this->msg_type_whitelist.insert(events::MSG_TIME_INTERVAL);
             _output_stream << "read_n,n_components,max_component,min_component,sample_size,component_size_sample" << std::endl;
 
-            metrics = std::make_unique<ComponentReporter::Metrics>(registry);
+            metrics = std::make_unique<ComponentReporter::Metrics>();
         }
 
         static std::shared_ptr<ComponentReporter> build(std::shared_ptr<Graph>                 cdbg,
                                                         const std::string&                     filename,
-                                                        std::shared_ptr<prometheus::Registry>  registry,
                                                         size_t                                 sample_size = 10000) {
             return std::make_shared<ComponentReporter>(cdbg,
                                                        filename,
-                                                       registry,
                                                        sample_size);
         
         }
@@ -653,12 +624,11 @@ struct cDBG {
                 min_component = (component_size < min_component) ? component_size : min_component;
             }
 
-            metrics->n_components.Set(components.size());
-            metrics->max_component_size.Set(max_component);
-            metrics->min_component_size.Set(min_component);
+            metrics->n_components.store(components.size());
+            metrics->max_component_size.store(max_component);
+            metrics->min_component_size.store(min_component);
 
             auto time_elapsed = std::chrono::system_clock::now() - time_start;
-            metrics->recompute_time.Observe(std::chrono::duration<double>(time_elapsed).count());
             _cerr("Finished recomputing components. Elapsed time: " <<
                   std::chrono::duration<double>(time_elapsed).count());
 

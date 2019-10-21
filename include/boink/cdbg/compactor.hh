@@ -188,7 +188,6 @@ struct StreamingCompactor {
         shared_ptr<cDBGType> cdbg;
 
         Compactor(shared_ptr<GraphType> dbg,
-                  shared_ptr<prometheus::Registry> pr_registry,
                   uint64_t minimizer_window_size=8)
             : TraversalType::dBG(dbg->K()),
               EventNotifier(),
@@ -196,7 +195,6 @@ struct StreamingCompactor {
               dbg(dbg)
         {
             this->cdbg = make_shared<cDBGType>(dbg,
-                                               pr_registry,
                                                minimizer_window_size);
         }
 
@@ -208,29 +206,28 @@ struct StreamingCompactor {
         }
 
         static std::shared_ptr<Compactor> build(std::shared_ptr<GraphType> dbg,
-                                                std::shared_ptr<prometheus::Registry> pr_registry,
                                                 uint64_t minimizer_window_size=8) {
-            return std::make_shared<Compactor>(dbg, pr_registry, minimizer_window_size);
+            return std::make_shared<Compactor>(dbg, minimizer_window_size);
         }
         
         Report get_report() {
             Report report;
-            report.n_full            = cdbg->metrics->n_full.Value();
-            report.n_tips            = cdbg->metrics->n_tips.Value();
-            report.n_islands         = cdbg->metrics->n_islands.Value();
-            report.n_trivial         = cdbg->metrics->n_trivial.Value();
-            report.n_circular        = cdbg->metrics->n_circular.Value();
-            report.n_loops           = cdbg->metrics->n_loops.Value();
-            report.n_dnodes          = cdbg->metrics->n_dnodes.Value();
-            report.n_unodes          = cdbg->metrics->n_unodes.Value();
+            report.n_full            = cdbg->metrics->n_full;
+            report.n_tips            = cdbg->metrics->n_tips;
+            report.n_islands         = cdbg->metrics->n_islands;
+            report.n_trivial         = cdbg->metrics->n_trivial;
+            report.n_circular        = cdbg->metrics->n_circular;
+            report.n_loops           = cdbg->metrics->n_loops;
+            report.n_dnodes          = cdbg->metrics->n_dnodes;
+            report.n_unodes          = cdbg->metrics->n_unodes;
             report.n_tags            = cdbg->n_tags();
             report.n_updates         = cdbg->n_updates();
-            report.n_splits          = cdbg->metrics->n_splits.Value();
-            report.n_merges          = cdbg->metrics->n_merges.Value();
-            report.n_extends         = cdbg->metrics->n_extends.Value();
-            report.n_clips           = cdbg->metrics->n_clips.Value();
-            report.n_deletes         = cdbg->metrics->n_deletes.Value();
-            report.n_circular_merges = cdbg->metrics->n_circular_merges.Value();
+            report.n_splits          = cdbg->metrics->n_splits;
+            report.n_merges          = cdbg->metrics->n_merges;
+            report.n_extends         = cdbg->metrics->n_extends;
+            report.n_clips           = cdbg->metrics->n_clips;
+            report.n_deletes         = cdbg->metrics->n_deletes;
+            report.n_circular_merges = cdbg->metrics->n_circular_merges;
             report.n_unique          = dbg->n_unique();
             //report.estimated_fp      = dbg->estimated_fp();
             report.estimated_fp      = 0;
