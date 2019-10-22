@@ -58,9 +58,11 @@ find_library(LibCling_LIBRARY libCling.so PATHS ${Cppyy_DIR}/lib)
 #
 # Generate setup.py from the setup.py.in template.
 #
-function(cppyy_generate_setup pkg version lib_so_file rootmap_file pcm_file map_file)
+function(cppyy_generate_setup pkg version author author_email lib_so_file rootmap_file pcm_file map_file)
     set(SETUP_PY_FILE ${CMAKE_CURRENT_BINARY_DIR}/setup.py)
     set(CPPYY_PKG ${pkg})
+    set(AUTHOR ${author})
+    set(EMAIL ${author_email})
     get_filename_component(CPPYY_LIB_SO ${lib_so_file} NAME)
     get_filename_component(CPPYY_ROOTMAP ${rootmap_file} NAME)
     get_filename_component(CPPYY_PCM ${pcm_file} NAME)
@@ -391,6 +393,8 @@ function(cppyy_add_bindings pkg pkg_version author author_email)
     #
     cppyy_generate_setup(${pkg}
                          ${pkg_version}
+                         ${author}
+                         ${author_email}
                          ${lib_file}
                          ${rootmap_file}
                          ${pcm_file}

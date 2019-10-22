@@ -30,16 +30,7 @@ EXTRA_PY         = '@EXTRA_PY@'
 CPPYY_PKG_DATA = [CPPYY_LIB_SO, CPPYY_ROOTMAP, CPPYY_PCM, CPPYY_MAP]
 CPPYY_PKG_DATA.extend([ep for ep in EXTRA_PY.split(';') if ep])
 
-PKG_DESC = '''
-Bindings for {name}.
-These bindings are based on https://cppyy.readthedocs.io/en/latest/, and can be
-used as per the documentation provided via the cppyy.gbl namespace. The environment
-variable LD_LIBRARY_PATH must contain the path of the rootmap file. Use
-"import cppyy; from cppyy.gbl import <some-C++-entity>".
-
-Alternatively, use "import {name}". This convenience wrapper supports "discovery" of the
-available C++ entities using, for example Python 3's command line completion support.
-'''.format(name=PKG)
+PKG_DESC = 'boink: streaming de Bruijn graph compaction and sketching.'
 
 
 class cppyy_build_py(build_py):
@@ -99,8 +90,8 @@ CLASSIFIERS = [
     "Natural Language :: English",
     "Operating System :: POSIX :: Linux",
     "Programming Language :: C++",
-    "Programming Language :: Python :: 3.5",
     "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
     "Topic :: Scientific/Engineering",
 ]
 
@@ -109,18 +100,26 @@ SETUP_METADATA = \
     "name":                 PKG,
     "version":              VERSION,
     "description":          PKG_DESC,
-    "long_description":     open("README.rst").read(),
+    "long_description":     '\n' + open("README.rst").read(),
     "author":               AUTHOR,
     "author_email":         EMAIL,
     "packages":             find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     "include_package_data": True,
     "zip_safe":             False,
     "platforms":            ['any'],
+    "python_requires":      ">=3.6",
+    "install_requires":     ['plotille',
+                             'cppyy>=1.5.5',
+                             'clang',
+                             'py-cpuinfo',
+                             'screed',
+                             'blessings',
+                             'pyfiglet',
+                             'numpy'],
     "classifiers":          CLASSIFIERS,
     "cmdclass": {
         'build_py':    cppyy_build_py,
-        'clean':       cppyy_clean,
-        'bdist_wheel': cppyy_bdist_wheel,
+        'clean':       cppyy_clean
     },
     'entry_points': {
         'console_scripts': [
