@@ -33,7 +33,7 @@ list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_SOURCE_DIR}/cmake)
 find_package(Cppyy)
 
 #
-# Make the default build use c++14 and "RELEASE" (-O3)
+# Make the default build use c++17 and "RELEASE" (-O3)
 #
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -47,15 +47,6 @@ if(NOT CMAKE_BUILD_TYPE)
     )
 endif(NOT CMAKE_BUILD_TYPE)
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
-
-#
-# gfakluge has its own Makefile for produces its static library; run it.
-#
-add_custom_target(gfakluge
-                  COMMAND make PREFIX=${CONDA_PREFIX}
-                  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/third-party/gfakluge
-)
-set_property(TARGET gfakluge PROPERTY LINK_WHAT_YOU_USE TRUE)
 
 #
 # The boink shared library needs all the source files, the direct object
@@ -89,18 +80,12 @@ target_include_directories(boink PRIVATE ${ZLIB_INCLUDE_DIRS})
 target_link_libraries(boink
                       Threads::Threads
                       ${ZLIB_LIBRARIES} 
-                      "${CMAKE_SOURCE_DIR}/third-party/gfakluge/libgfakluge.a"
 )
-# Make sure CMake knows that boink depends on the gfakluge custom command target
-add_dependencies(boink gfakluge)
 
 #
 # Add all the include directories. Includes that are only used in boink's
 # source files are set private, so that they are not installed.
 #
-target_include_directories(boink PUBLIC ${CMAKE_SOURCE_DIR}/third-party/gfakluge/src/
-                                        ${CMAKE_SOURCE_DIR}/third-party/gfakluge/src/tinyFA
-                                        ${CMAKE_SOURCE_DIR}/third-party/gfakluge/src/tinyFA/pliib)
 target_include_directories(boink PRIVATE third-party/)
 target_include_directories(boink PRIVATE include/)
 

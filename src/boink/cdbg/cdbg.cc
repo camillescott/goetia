@@ -10,7 +10,7 @@
 #pragma GCC diagnostic push 
 #pragma GCC diagnostic ignored "-Wsign-compare"
 #pragma GCC diagnostic ignored "-Wchar-subscripts"
-#include <gfakluge.hpp>
+#include "boink/parsing/gfakluge/gfakluge.hpp"
 #pragma GCC diagnostic pop
 
 #include "boink/cdbg/cdbg_types.hh"
