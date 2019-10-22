@@ -12,6 +12,7 @@
 
 
 #include <algorithm>
+#include <iostream>
 #include <string>
 #include <utility>
 
@@ -23,9 +24,8 @@ namespace parsing {
 
 unsigned char _to_valid_dna(const unsigned char c);
 
-struct Read {
+struct Record {
     std::string name;
-    std::string description;
     std::string sequence;
     std::string quality;
     std::string cleaned_seq;
@@ -33,7 +33,6 @@ struct Read {
     inline void reset()
     {
         name.clear();
-        description.clear();
         sequence.clear();
         quality.clear();
         cleaned_seq.clear();
@@ -59,19 +58,24 @@ struct Read {
         std::transform(sequence.begin(), sequence.end(), cleaned_seq.begin(),
                        ::toupper);
     }
+
+    friend inline std::ostream& operator<<(std::ostream& o, const Record& record) {
+        o << "<Sequence name=" << record.name
+          << " seq=" << record.sequence
+          << " cleaned=" << record.cleaned_seq
+          << ">";
+        return o;
+    }
 };
 
 
-typedef std::pair<Read, Read> ReadPair;
-
-
-struct ReadBundle {
+struct RecordPair {
     
     bool has_left;
     bool has_right;
 
-    Read left;
-    Read right;
+    Record left;
+    Record right;
 
 };
 
@@ -86,7 +90,7 @@ bool check_is_left(const std::string& name);
 
 bool check_is_right(const std::string& name);
 
-void filter_length(ReadBundle& bundle, uint32_t length);
+void filter_length(RecordPair& bundle, uint32_t length);
 
 }
 }

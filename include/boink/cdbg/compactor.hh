@@ -1153,7 +1153,7 @@ struct StreamingCompactor {
         }
     };
 
-    template <class ParserType = parsing::FastxReader>
+    template <class ParserType = parsing::FastxParser>
     class NormalizingCompactor : public FileProcessor<NormalizingCompactor<ParserType>,
                                                       ParserType> { 
     protected:
@@ -1237,7 +1237,7 @@ struct StreamingCompactor {
 
         }
 
-        void process_sequence(const parsing::Read& read) {
+        void process_sequence(const parsing::Record& read) {
 
             if (median_count_at_least(read.cleaned_seq, cutoff, counts.get())) {
                 return;

@@ -6,11 +6,12 @@ def pythonize_boink(klass, name):
 
     if is_template_inst('FileProcessor', name):
         def chunked_process(self, filename, right_filename=None):
+            from boink.parsing import FastxReader, SplitPairedReader
             if right_filename is None:
-                parser = gbl.boink.parsing.FastxReader.build(filename)
+                parser = FastxReader.build(filename)
             else:
-                parser = gbl.boink.parsing.SplitPairedReader[gbl.boink.parsing.FastxReader](filename,
-                                                                                            right_filename)
+                parser = SplitPairedReader(filename,
+                                           right_filename)
             while True:
                 state = self.advance(parser)
                 yield self.n_reads(), state

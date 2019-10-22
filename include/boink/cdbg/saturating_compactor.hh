@@ -28,11 +28,11 @@ struct SaturatingCompactor {
 
 
     class Processor : public FileProcessor<Processor,
-                                           parsing::FastxReader> {
+                                           parsing::FastxParser> {
 
     protected:
 
-        typedef FileProcessor<Processor, parsing::FastxReader> BaseType;
+        typedef FileProcessor<Processor, parsing::FastxParser> BaseType;
 
     public:
         
@@ -53,7 +53,7 @@ struct SaturatingCompactor {
 
         }
 
-        void process_sequence(const parsing::Read& read) {
+        void process_sequence(const parsing::Record& read) {
             try {
                 compactor->insert_sequence(read.cleaned_seq);
                 signature->insert_sequence(read.cleaned_seq);

@@ -12,7 +12,6 @@
  *
  */
 
-
 #ifndef BOINK_PROCESSORS_HH
 #define BOINK_PROCESSORS_HH
 
@@ -115,7 +114,7 @@ struct interval_state {
  * @tparam ParserType Sequencing parsing type.
  */
 template <class Derived,
-          class ParserType = parsing::FastxReader>
+          class ParserType = parsing::FastxParser>
 class FileProcessor : public events::EventNotifier {
 
 protected:
@@ -211,9 +210,9 @@ public:
                      uint32_t min_length=0,
                      bool force_name_match=false) {
         parsing::SplitPairedReader<ParserType> reader(left_filename,
-                                             right_filename,
-                                             min_length,
-                                             force_name_match);
+                                                      right_filename,
+                                                      min_length,
+                                                      force_name_match);
         return process(reader);
     }
 
@@ -237,13 +236,13 @@ public:
      * @Returns   Number of sequences consumed.
      */
     uint64_t process(std::string const &filename) {
-        parsing::ReadParserPtr<ParserType> parser = parsing::get_parser<ParserType>(filename);
-        return process(parser);
+        auto reader  = parsing::SequenceReader<ParserType>::build(filename);
+        return process(reader);
     }
 
-    uint64_t process(parsing::ReadParserPtr<ParserType>& parser) {
+    uint64_t process(std::shared_ptr<parsing::SequenceReader<ParserType>>& reader) {
         while(1) {
-            auto state = advance(parser);
+            auto state = advance(reader);
             if (state.end) {
                 break;
             }
@@ -258,7 +257,7 @@ public:
      *
      * @Param bundle ReadBundle containing the two sequences.
      */
-    void process_sequence(parsing::ReadBundle& bundle) {
+    void process_sequence(parsing::RecordPair& bundle) {
         if (bundle.has_left) {
             derived().process_sequence(bundle.left);
         }
@@ -276,7 +275,7 @@ public:
      * @Returns   interval_state with current interval.
      */
     interval_state advance(parsing::SplitPairedReader<ParserType>& reader) {
-        parsing::ReadBundle bundle;
+        parsing::RecordPair bundle;
 
         while(!reader.is_complete()) {
             bundle = reader.next();
@@ -302,13 +301,13 @@ public:
      *
      * @Returns   interval_state with current interval.
      */
-    interval_state advance(parsing::ReadParserPtr<ParserType>& parser) {
-        parsing::Read read;
+    interval_state advance(std::shared_ptr<parsing::SequenceReader<ParserType>>& parser) {
+        parsing::Record read;
 
         // Iterate through the reads and consume their k-mers.
         while (!parser->is_complete()) {
             try {
-                read = parser->get_next_read( );
+                read = parser->next();
             } catch (parsing::NoMoreReadsAvailable) {
                 break;
             }
@@ -363,7 +362,7 @@ private:
  * @tparam ParserType   Sequence parser type.
  */
 template <class InserterType,
-          class ParserType = parsing::FastxReader>
+          class ParserType = parsing::FastxParser>
 class InserterProcessor : public FileProcessor<InserterProcessor<InserterType, ParserType>,
                                                ParserType> {
 
@@ -375,6 +374,10 @@ protected:
     typedef FileProcessor<InserterProcessor<InserterType, ParserType>,
                           ParserType> Base;
 
+    uint64_t _n_invalid;
+    uint64_t _n_too_short;
+    bool     _verbose;
+
 public:
 
     using Base::process_sequence;
@@ -382,27 +385,38 @@ public:
     InserterProcessor(std::shared_ptr<InserterType> inserter,
                       uint64_t fine_interval   = DEFAULT_INTERVALS::FINE,
                       uint64_t medium_interval = DEFAULT_INTERVALS::MEDIUM,
-                      uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE)
+                      uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE,
+                      bool     verbose         = false)
         : Base(fine_interval, medium_interval, coarse_interval),
-          inserter(inserter), _n_inserted(0) {
-
+          inserter(inserter),
+          _n_inserted(0),
+          _n_invalid(0),
+          _n_too_short(0),
+          _verbose(verbose)
+    {
     }
 
-    void process_sequence(const parsing::Read& read) {
+    void process_sequence(const parsing::Record& read) {
         size_t this_n_inserted;
         try {
             this_n_inserted = inserter->insert_sequence(read.cleaned_seq);
         } catch (hashing::InvalidCharacterException &e) {
-            std::cerr << "WARNING: Bad sequence encountered at "
-                      << this->_n_reads << ": "
-                      << read.cleaned_seq << ", exception was "
-                      << e.what() << std::endl;
+            if (_verbose) {
+                std::cerr << "WARNING: Bad sequence encountered at "
+                          << this->_n_reads << ": "
+                          << read.cleaned_seq << ", exception was "
+                          << e.what() << std::endl;
+            }
+            _n_invalid++;
             return;
         } catch (hashing::SequenceLengthException &e) {
-            std::cerr << "NOTE: Skipped sequence that was too short: read "
-                      << this->_n_reads << " with sequence "
-                      << read.cleaned_seq 
-                      << std::endl;
+            if (_verbose) {
+                std::cerr << "WARNING: Skipped sequence that was too short: read "
+                          << this->_n_reads << " with sequence "
+                          << read.cleaned_seq 
+                          << std::endl;
+            }
+            _n_too_short++;
             return;
         } catch (std::exception &e) {
             std::cerr << "ERROR: Exception thrown at " << this->_n_reads 
@@ -414,10 +428,19 @@ public:
     }
 
     void report() {
+
     }
 
     uint64_t n_inserted() const {
         return _n_inserted;
+    }
+
+    uint64_t n_invalid() const {
+        return _n_invalid;
+    }
+
+    uint64_t n_too_short() const {
+        return _n_too_short;
     }
 
     static std::shared_ptr<InserterProcessor<InserterType, ParserType>> build(std::shared_ptr<InserterType> inserter,

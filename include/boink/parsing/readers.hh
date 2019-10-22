@@ -48,29 +48,26 @@
 #ifndef BOINK_READERS_HH
 #define BOINK_READERS_HH
 
-#include <regex.h>
 #include <stddef.h>
-#include <stdint.h>
+#include <cstdint>
 #include <cstdlib>
 #include <iostream>
 #include <string>
 #include <utility>
 #include <memory>
+#include <zlib.h>
 
 #include "boink/boink.hh"
 #include "boink/parsing/parsing.hh"
 
-
-namespace seqan
-{
-    class SequenceStream; // forward dec seqan dep
+extern "C" {
+#include "kseq.h"
 }
+KSEQ_INIT(gzFile, gzread)
 
-namespace boink
-{
 
-namespace parsing
-{
+namespace boink {
+namespace parsing {
 
 struct NoMoreReadsAvailable : public  BoinkFileException {
     explicit NoMoreReadsAvailable(const std::string& msg) :
@@ -86,13 +83,6 @@ struct InvalidRead : public  BoinkException {
         BoinkException("Invalid FASTA/Q read") {}
 };
 
-struct UnknownPairReadingMode : public  BoinkException {
-    explicit UnknownPairReadingMode(const std::string& msg) :
-        BoinkException(msg) {}
-    UnknownPairReadingMode() :
-        BoinkException("Unknown pair reading mode supplied.") {}
-};
-
 struct InvalidReadPair : public  BoinkException {
     explicit InvalidReadPair(const std::string& msg) :
         BoinkException(msg) {}
@@ -102,97 +92,70 @@ struct InvalidReadPair : public  BoinkException {
 
 
 template<typename SeqIO>
-class ReadParser
-{
-protected:
-    std::unique_ptr<SeqIO> _parser;
-    regex_t _re_read_2_nosub;
-    regex_t _re_read_1;
-    regex_t _re_read_2;
-    void _init();
+class SequenceReader {
 
-    ReadPair _get_next_read_pair_in_ignore_mode();
-    ReadPair _get_next_read_pair_in_error_mode();
-    bool _is_valid_read_pair(
-        ReadPair &the_read_pair,
-        regmatch_t &match_1,
-        regmatch_t &match_2
-    );
+protected:
+
+    std::unique_ptr<SeqIO> _parser;
 
 public:
-    enum {
-        PAIR_MODE_IGNORE_UNPAIRED,
-        PAIR_MODE_ERROR_ON_UNPAIRED
-    };
 
-    ReadParser(std::unique_ptr<SeqIO> pf);
+    SequenceReader(std::unique_ptr<SeqIO> pf);
 
-    ReadParser(ReadParser& other);
-    ReadParser& operator=(ReadParser& other);
+    SequenceReader(SequenceReader& other);
+    SequenceReader& operator=(SequenceReader& other);
 
-    ReadParser(ReadParser&&) noexcept;
-    ReadParser& operator=(ReadParser&&) noexcept;
+    SequenceReader(SequenceReader&&) noexcept;
+    SequenceReader& operator=(SequenceReader&&) noexcept;
 
-    virtual ~ReadParser();
+    static std::shared_ptr<SequenceReader<SeqIO>> build(const std::string& filename);
 
-    Read get_next_read();
-    ReadPair get_next_read_pair(uint8_t mode = PAIR_MODE_ERROR_ON_UNPAIRED);
+    virtual ~SequenceReader() {}
 
-    size_t get_num_reads();
-    bool is_complete();
-    void close();
-}; // class ReadParser
+    Record next();
 
-// Alias for generic/templated ReadParser pointer
-template<typename T> using ReadParserPtr = std::shared_ptr<ReadParser<T>>;
-template<typename T> using WeakReadParserPtr = std::weak_ptr<ReadParser<T>>;
-
-// Convenience function
-template<typename SeqIO>
-ReadParserPtr<SeqIO> get_parser(const std::string& filename);
+    size_t num_parsed() const;
+    bool is_complete() const;
+}; // class SequenceReader
 
 
-class FastxReader
+class FastxParser
 {
 private:
     std::string _filename;
-    std::unique_ptr<seqan::SequenceStream> _stream;
-    uint32_t _spin_lock;
-    size_t _num_reads;
-    bool _have_qualities;
-    void _init();
+    kseq_t *    _kseq;
+    gzFile      _fp;
+    uint32_t    _spin_lock;
+    size_t      _num_parsed;
+    bool        _have_qualities;
+    bool        _is_complete;
 
 public:
-    FastxReader();
-    FastxReader(const std::string& infile);
+    FastxParser();
+    FastxParser(const std::string& infile);
 
-    FastxReader(FastxReader& other);
-    FastxReader& operator=(FastxReader& other);
+    FastxParser(FastxParser& other);
+    FastxParser& operator=(FastxParser& other) = delete;;
 
-    FastxReader(FastxReader&&) noexcept;
-    FastxReader& operator=(FastxReader&&) noexcept;
+    FastxParser(FastxParser&&) noexcept;
+    FastxParser& operator=(FastxParser&&)  = delete;
 
-    ~FastxReader();
+    ~FastxParser();
 
-    static std::shared_ptr<ReadParser<FastxReader>> build(const std::string& filename) {
-        return get_parser<FastxReader>(filename);
+    static std::shared_ptr<SequenceReader<FastxParser>> build(const std::string& filename) {
+        return SequenceReader<FastxParser>::build(filename);
     }
 
-    Read get_next_read();
-    bool is_complete();
-    size_t get_num_reads();
-    void close();
-}; // class FastxReader
+    Record next();
+    size_t num_parsed() const;
+    bool is_complete() const;
+}; // class FastxParser
 
-
-// Alias for instantiated ReadParsers
-typedef std::shared_ptr<ReadParser<FastxReader>> FastxParserPtr;
-typedef std::weak_ptr<ReadParser<FastxReader>> WeakFastxParserPtr;
 
 /*
 class BrokenPairedReader {
 
-    std::unique_ptr<ReadParserPtr<FastxReader>> _parser;
+    std::unique_ptr<SequenceReaderPtr<FastxParser>> _parser;
     uint32_t                                    _min_length;
     bool                                        _force_single;
     bool                                        _require_paired;
@@ -201,7 +164,7 @@ class BrokenPairedReader {
     bool                                        _buffer_full;
 
 
-    ReadBundle next() {
+    RecordBundle next() {
         Read first, second;
         bool is_pair;
 
@@ -221,26 +184,28 @@ class BrokenPairedReader {
 */
 
 
-template <class ParserType = FastxReader>
+template <class ParserType = FastxParser>
 class SplitPairedReader {
 
-    ReadParserPtr<ParserType> left_parser;
-    ReadParserPtr<ParserType> right_parser;
-    uint32_t _min_length;
-    bool     _force_name_match;
-    uint64_t _n_reads;
+    typedef SequenceReader<ParserType> reader_type;
+
+    std::shared_ptr<reader_type> left_parser;
+    std::shared_ptr<reader_type> right_parser;
+    uint32_t                     _min_length;
+    bool                         _force_name_match;
+    uint64_t                     _n_reads;
 
 public:
 
     SplitPairedReader(const std::string &left,
-                 const std::string &right,
-                 uint32_t min_length=0,
-                 bool force_name_match=false)
+                      const std::string &right,
+                      uint32_t min_length=0,
+                      bool force_name_match=false)
         : _min_length(min_length),
           _force_name_match(force_name_match) {
         
-        left_parser = get_parser<ParserType>(left);
-        right_parser = get_parser<ParserType>(right);
+        left_parser = reader_type::build(left);
+        right_parser = reader_type::build(right);
     }
 
     bool is_complete() const {
@@ -250,13 +215,17 @@ public:
         return left_parser->is_complete();
     }
 
-    ReadBundle next() {
-        ReadBundle result;
+    RecordPair next() {
+        RecordPair result;
         try {
-            result.left = this->left_parser->get_next_read();
-            result.right = this->right_parser->get_next_read();
+            result.left = this->left_parser->next();
         } catch (NoMoreReadsAvailable) {
             result.has_left = false;
+        }
+
+        try {
+            result.right = this->right_parser->next();
+        } catch (NoMoreReadsAvailable) {
             result.has_right = false;
             return result;
         }

@@ -50,7 +50,7 @@ bool check_char(const char c, const std::string against) {
 
 
 std::pair<std::string, std::string> split_on_first(const std::string& name,
-                                    const std::string delims=" \t") {
+                                                   const std::string delims=" \t") {
     std::string left = "";
     std::string right = "";
     for (size_t i = 0; i < name.length(); ++i) {
@@ -74,7 +74,9 @@ std::pair<std::string, std::string> split_on_first(const std::string& name,
 }
 
 
-bool check_is_pair(const std::string& left, const std::string& right) {
+bool check_is_pair(const std::string& left,
+                   const std::string& right) {
+
     auto left_split = split_on_first(left);
     auto right_split = split_on_first(right);
     
@@ -126,7 +128,7 @@ bool check_is_right(const std::string& name) {
     return false;
 }
 
-void filter_length(ReadBundle& bundle, uint32_t length) {
+void filter_length(RecordPair& bundle, uint32_t length) {
     if (bundle.left.sequence.length() < length) {
         bundle.has_left = false;
     }

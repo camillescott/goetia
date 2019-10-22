@@ -32,8 +32,8 @@
 #include "boink/parsing/parsing.hh"
 #include "boink/parsing/readers.hh"
 
-#include "boink/events.hh"
-#include "boink/event_types.hh"
+//#include "boink/events.hh"
+//#include "boink/event_types.hh"
 
 #include "boink/metrics.hh"
 
@@ -72,6 +72,13 @@ template bool operator==(const std::STLTYPE< TTYPE >::iterator&,                
 template bool operator!=(const std::STLTYPE< TTYPE >::iterator&,                  \
                          const std::STLTYPE< TTYPE >::iterator&);                 \
 }
+
+extern
+template class boink::parsing::SequenceReader<boink::parsing::FastxParser>;
+extern
+template class boink::parsing::SplitPairedReader<boink::parsing::FastxParser>;
+
+
 
 
 extern

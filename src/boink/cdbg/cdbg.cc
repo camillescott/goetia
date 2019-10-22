@@ -6,6 +6,13 @@
  * Date   : 03.09.2019
  */
 
+// save diagnostic state
+#pragma GCC diagnostic push 
+#pragma GCC diagnostic ignored "-Wsign-compare"
+#pragma GCC diagnostic ignored "-Wchar-subscripts"
+#include <gfakluge.hpp>
+#pragma GCC diagnostic pop
+
 #include "boink/cdbg/cdbg_types.hh"
 #include "boink/cdbg/cdbg.hh"
 #include "boink/dbg.hh"

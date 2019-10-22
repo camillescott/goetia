@@ -2,7 +2,7 @@
     <selection>
         <!-- <namespace pattern="boink::*"/> -->
         <namespace pattern="boink::storage::*"/>
-        <namespace pattern="boink::events::*"/>
+            <!-- <namespace pattern="boink::events::*"/> -->
         <namespace pattern="boink::signatures::*"/>
         <namespace pattern="boink::cdbg::*"/>
         <namespace pattern="boink::hashing::*"/>
@@ -24,22 +24,21 @@
 
         <class name="boink::DEFAULT_INTERVALS"/>
 
-        <class pattern="std::make_unique<boink::*>"/>
-        <class pattern="std::make_shared<boink::*>"/>
 
         <class pattern="std::pair<*,*>"/>
-        <class pattern="std::enable_shared_from_this<*>" />
+            <!-- <class pattern="std::enable_shared_from_this<*>" /> -->
         <class pattern="std::vector<*>" />
         <class pattern="std::vector<*>::iterator" />
         <function name="__gnu_cxx::operator=="/>
         <function name="__gnu_cxx::operator!="/>
     </selection>        
     <exclusion>
+        <namespace pattern="Catch::*" />
         <class pattern="boink::hashing::HashShifter*"/>
         <class pattern="std::vector<prometheus::*>"/>
         <class pattern="std::vector<boink::Traverse<*>>::*"/>
         <class pattern="std::vector<boink::*shift_type"/>
-        <class pattern="std::vector<std::basic_ofstream<char>>"/>
-		<class pattern="std::shared_ptr<boink::parsing::ReadParser<boink::parsing::FastxReader>>"/>
+        <class name="std::vector<std::basic_ofstream<char>>"/>
+        <namespace pattern="boink::events::*" />
     </exclusion>
 </lcgdict>

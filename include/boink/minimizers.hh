@@ -204,7 +204,7 @@ struct WKMinimizer {
 
 
     class Processor : public FileProcessor<Processor,
-                                           parsing::FastxReader> {
+                                           parsing::FastxParser> {
 
     protected:
 
@@ -212,7 +212,7 @@ struct WKMinimizer {
         std::string   _output_filename;
         std::ofstream _output_stream;
 
-        typedef FileProcessor<Processor, parsing::FastxReader> Base;
+        typedef FileProcessor<Processor, parsing::FastxParser> Base;
     public:
 
         using Base::process_sequence;
@@ -234,7 +234,7 @@ struct WKMinimizer {
             _output_stream.close();
         }
 
-        void process_sequence(const parsing::Read& read) {
+        void process_sequence(const parsing::Record& read) {
             std::vector<typename Minimizer::value_type> minimizers;
             minimizers = M.get_minimizers(read.cleaned_seq);
 

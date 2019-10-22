@@ -22,6 +22,7 @@ def test_dbg_inserter(graph, datadir, ksize):
     graph2 = graph.shallow_clone()
     for record in screed.open(rfile):
         for kmer in kmers(record.sequence, ksize):
+            assert graph.get(kmer)
             assert not graph2.get(kmer)
             assert graph.get(kmer) != graph2.get(kmer)
 

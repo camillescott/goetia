@@ -183,6 +183,7 @@ class cDBGRunner(CommandRunner):
         for sample, prefix in iter_fastx_inputs(args.inputs, args.pairing_mode):
             for n_reads, state in self.processor.chunked_process(*sample):
                 print('...processed {0} sequences.'.format(n_reads))
+                print('\t', self.processor.n_invalid(), 'invalid,', self.processor.n_too_short(), 'too short.')
 
     def teardown(self):
         pass

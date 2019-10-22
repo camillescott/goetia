@@ -52,7 +52,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 # gfakluge has its own Makefile for produces its static library; run it.
 #
 add_custom_target(gfakluge
-                  COMMAND make
+                  COMMAND make PREFIX=${CONDA_PREFIX}
                   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/third-party/gfakluge
 )
 set_property(TARGET gfakluge PROPERTY LINK_WHAT_YOU_USE TRUE)
@@ -98,7 +98,9 @@ add_dependencies(boink gfakluge)
 # Add all the include directories. Includes that are only used in boink's
 # source files are set private, so that they are not installed.
 #
-target_include_directories(boink PUBLIC third-party/gfakluge/src/)
+target_include_directories(boink PUBLIC ${CMAKE_SOURCE_DIR}/third-party/gfakluge/src/
+                                        ${CMAKE_SOURCE_DIR}/third-party/gfakluge/src/tinyFA
+                                        ${CMAKE_SOURCE_DIR}/third-party/gfakluge/src/tinyFA/pliib)
 target_include_directories(boink PRIVATE third-party/)
 target_include_directories(boink PRIVATE include/)
 
@@ -134,9 +136,7 @@ cppyy_add_bindings(
    HEADERS        ${LIB_HEADERS}
    INCLUDE_DIRS   ${CMAKE_CURRENT_SOURCE_DIR}/include
                   ${CMAKE_CURRENT_SOURCE_DIR}/third-party
-                  ${CMAKE_CURRENT_SOURCE_DIR}/third-party/gfakluge/src
                   ${ZLIB_INCLUDE_DIRS}
-                  ${PROMETHEUS_INCLUDE_DIRS}
    LINK_LIBRARIES boink
 )
 
@@ -149,16 +149,12 @@ install(TARGETS boink
         INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
-install(DIRECTORY include/boink/
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/boink
-)
+#install(DIRECTORY include/boink/
+#        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/boink
+#)
 
 install(FILES ${CMAKE_BINARY_DIR}/boink.pc
         DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig
-)
-
-install(FILES third-party/gfakluge/src/gfakluge.hpp third-party/gfakluge/src/pliib.hpp
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
 install(CODE "execute_process(COMMAND pip install -U ${PY_WHEEL_FILE})")
