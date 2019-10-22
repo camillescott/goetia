@@ -8,5 +8,5 @@ Description: @PROJECT_DESCRIPTION@
 Version: @PROJECT_VERSION@
 
 Requires:
-Libs: -L${libdir} -lz -lprometheus-cpp-push -lprometheus-cpp-pull -lprometheus-cpp-core
+Libs: -L${libdir} -lz 
 Cflags: -I${includedir}
