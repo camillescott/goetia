@@ -1,6 +1,0 @@
-#!/usr/bin/env python
-
-from boink.draff import run_draff
-
-if __name__ == '__main__':
-    run_draff()
