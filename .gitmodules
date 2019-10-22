@@ -1,6 +1,3 @@
 [submodule "third-party/utils"]
 	path = third-party/utils
 	url = https://github.com/TUM-I5/utils.git
-[submodule "third-party/gfakluge"]
-	path = third-party/gfakluge
-	url = https://github.com/camillescott/gfakluge.git
