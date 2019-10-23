@@ -38,15 +38,19 @@ def get_version(cmake=False):
         except subprocess.CalledProcessError:
             print('Unable to get version number from git tags')
             exit(1)
-        tag = tag.strip('v')
+        if cmake:
+            tag = tag.strip('v')
 
         vlevels = tag.split('.')
 
         # PEP 386 compatibility
         if '-' in vlevels[-1]:
-            postname = 'post'.join(tag[-1].split('-')[:2])
-            version.extend(vlevels[:-1])
-            versiona.append(postname)
+            lastlevel, _, post = vlevels[-1].partition('-')
+            version.extend(vlevels[:-1] + [lastlevel])
+            post, _, chash = post.partition('-')
+            if not cmake:
+                post = 'post' + post
+            version.append(post)
         else:
             version = vlevels
 
@@ -65,15 +69,16 @@ def get_version(cmake=False):
             exit(1)
 
         if dirty != '':
-            version.append('dev1')
+            if not cmake:
+                version.append('dev1')
+            else:
+                version.append('1')
 
     else:
         # Extract the version from the PKG-INFO file.
         with open(join(d, 'PKG-INFO')) as f:
             version = version_re.search(f.read()).group(1)
 
-
-    print(version)
     return '.'.join(version)
 
 

@@ -3,9 +3,20 @@ cmake_minimum_required(VERSION 3.9)
 #
 # libboink
 #
+
+execute_process(COMMAND python ../version.py --cmake
+                OUTPUT_VARIABLE LIB_VERSION
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+                )
+execute_process(COMMAND python ../version.py 
+                OUTPUT_VARIABLE PKG_VERSION
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+                )
+message(STATUS "${LIB_VERSION} ${PKG_VERSION}")
+
 project(boink
         LANGUAGES CXX  C
-        VERSION 0.1 
+        VERSION "${LIB_VERSION}"
         HOMEPAGE_URL "https://github.com/camillescott/boink"
         DESCRIPTION "streaming cDBG and dBG sketching algorithms")
 
@@ -111,7 +122,7 @@ target_link_libraries(do_bench_storage boink)
 # more modern way anyhow? Code was modified from the versions cppyy distributes.
 #
 cppyy_add_bindings(
-    "boink" "${PROJECT_VERSION}" "Camille Scott" "cswel@ucdavis.edu"
+    "boink" "${PKG_VERSION}" "Camille Scott" "cswel@ucdavis.edu"
    LICENSE "MIT"
    LANGUAGE_STANDARD "17"
    SELECTION_XML  ${CMAKE_SOURCE_DIR}/boink_select.xml
