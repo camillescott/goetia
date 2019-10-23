@@ -3,17 +3,9 @@ channels:
     - conda-forge
 dependencies:
     - python
-    - numpy
     - pandas
     - seaborn
     - pip
     - pip:
-        - cppyy>=1.5.5
-        - plotille
-        - clang
-        - py-cpuinfo
-        - screed
-        - blessings
-        - pyfiglet
-        - ficus
+        - boink
         - sourmash
