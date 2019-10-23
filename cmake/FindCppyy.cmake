@@ -457,7 +457,8 @@ function(cppyy_add_bindings pkg pkg_version author author_email)
     #     CONFIGURE_DEPENDS
     #     "${PKG_SRC_DIR}/*.py")
     string(TOLOWER ${CMAKE_SYSTEM_NAME} SYSTEM_STR)
-    set(pkg_whl "${CMAKE_BINARY_DIR}/dist/${pkg}-${pkg_version}-py3-none-${SYSTEM_STR}_${CMAKE_SYSTEM_PROCESSOR}.whl")
+    string(REGEX REPLACE "^v" "" fixed_pkg_version ${pkg_version})
+    set(pkg_whl "${CMAKE_BINARY_DIR}/dist/${pkg}-${fixed_pkg_version}-py3-none-any.whl")
     add_custom_command(OUTPUT  ${pkg_whl}
                        COMMAND python setup.py bdist_wheel
                        DEPENDS ${SETUP_PY_FILE} ${lib_name} ${setup_cfg}
