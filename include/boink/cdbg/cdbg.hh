@@ -44,7 +44,6 @@
 #include "boink/cdbg/cdbg_types.hh"
 #include "boink/cdbg/metrics.hh"
 
-#include "utils/stringutils.h"
 
 # ifdef DEBUG_CDBG
 #   define pdebug(x) do { std::ostringstream stream; \
@@ -799,20 +798,7 @@ struct cDBG {
             return std::make_shared<UnitigReporter>(cdbg, filename, bins);
         }
 
-        virtual void handle_msg(std::shared_ptr<events::Event> event) {
-             if (event->msg_type == events::MSG_TIME_INTERVAL) {
-                auto _event = static_cast<events::TimeIntervalEvent*>(event.get());
-                if (_event->level == events::TimeIntervalEvent::MEDIUM ||
-                    _event->level == events::TimeIntervalEvent::END) {
-                    
-                    auto bin_sums = this->compute_bins();
-                    auto row      = utils::StringUtils::join(bin_sums, ", ");
-                    _output_stream << _event->t << ","
-                                   << row 
-                                   << std::endl;
-                }
-            }       
-        }
+        virtual void handle_msg(std::shared_ptr<events::Event> event);
 
         std::vector<size_t> compute_bins() {
             auto time_start = std::chrono::system_clock::now();

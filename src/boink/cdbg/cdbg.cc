@@ -28,6 +28,8 @@
 
 #include "boink/boink.hh"
 
+#include "boink/utils/stringutils.h"
+
 
 # ifdef DEBUG_CDBG
 #   define pdebug(x) do { std::ostringstream stream; \
@@ -1055,6 +1057,24 @@ cDBG<GraphType>::Graph::write_graphml(std::ofstream& out,
 
     //out << "</graph>" << std::endl;
     //out << "</graphml>" << std::endl;
+}
+
+
+template <class GraphType>
+void
+cDBG<GraphType>::UnitigReporter::handle_msg(std::shared_ptr<events::Event> event) {
+    if (event->msg_type == events::MSG_TIME_INTERVAL) {
+        auto _event = static_cast<events::TimeIntervalEvent*>(event.get());
+        if (_event->level == events::TimeIntervalEvent::MEDIUM ||
+            _event->level == events::TimeIntervalEvent::END) {
+            
+            auto bin_sums = this->compute_bins();
+            auto row      = utils::StringUtils::join(bin_sums, ", ");
+            _output_stream << _event->t << ","
+                           << row 
+                           << std::endl;
+        }
+    }       
 }
 
 }

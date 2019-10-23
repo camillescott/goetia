@@ -8,7 +8,7 @@
  */
 
 #include "boink/parsing/parsing.hh"
-#include "utils/stringutils.h"
+#include "boink/utils/stringutils.h"
 
 #include <utility>
 #include <string>
