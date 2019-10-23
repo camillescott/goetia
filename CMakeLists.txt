@@ -4,14 +4,19 @@ cmake_minimum_required(VERSION 3.9)
 # libboink
 #
 
-execute_process(COMMAND python ../version.py --cmake
-                OUTPUT_VARIABLE sharedlib_version
-                OUTPUT_STRIP_TRAILING_WHITESPACE
-                )
-execute_process(COMMAND python ../version.py
-                OUTPUT_VARIABLE python_pkg_version
-                OUTPUT_STRIP_TRAILING_WHITESPACE
-                )
+if(DEFINED ENV{BOINK_VERSION})
+    set(sharedlib_version "$ENV{BOINK_VERSION}")
+    set(python_pkg_version "$ENV{BOINK_VERSION}")
+else()
+    execute_process(COMMAND python ../version.py --cmake
+                    OUTPUT_VARIABLE sharedlib_version
+                    OUTPUT_STRIP_TRAILING_WHITESPACE
+                    )
+    execute_process(COMMAND python ../version.py
+                    OUTPUT_VARIABLE python_pkg_version
+                    OUTPUT_STRIP_TRAILING_WHITESPACE
+                    )
+endif()
 message(STATUS "version: ${python_pkg_version}")
 
 project(boink

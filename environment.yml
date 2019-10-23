@@ -5,7 +5,7 @@ dependencies:
     - python
     - pandas
     - seaborn
+    - cppyy
     - pip
     - pip:
-        - boink
         - sourmash

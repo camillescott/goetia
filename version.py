@@ -75,9 +75,8 @@ def get_version(cmake=False):
                 version.append('1')
 
     else:
-        # Extract the version from the PKG-INFO file.
-        with open(join(d, 'PKG-INFO')) as f:
-            version = version_re.search(f.read()).group(1)
+        print('Not a git repo!')
+        exit(1)
 
     return '.'.join(version)
 
