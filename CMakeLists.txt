@@ -5,20 +5,21 @@ cmake_minimum_required(VERSION 3.9)
 #
 
 execute_process(COMMAND python ../version.py --cmake
-                OUTPUT_VARIABLE LIB_VERSION
+                OUTPUT_VARIABLE sharedlib_version
                 OUTPUT_STRIP_TRAILING_WHITESPACE
                 )
-execute_process(COMMAND python ../version.py 
-                OUTPUT_VARIABLE PKG_VERSION
+execute_process(COMMAND python ../version.py
+                OUTPUT_VARIABLE python_pkg_version
                 OUTPUT_STRIP_TRAILING_WHITESPACE
                 )
-message(STATUS "${LIB_VERSION} ${PKG_VERSION}")
+message(STATUS "version: ${python_pkg_version}")
 
 project(boink
         LANGUAGES CXX  C
-        VERSION "${LIB_VERSION}"
+        VERSION ${sharedlib_version}
+        DESCRIPTION "streaming cDBG and dBG sketching algorithms"
         HOMEPAGE_URL "https://github.com/camillescott/boink"
-        DESCRIPTION "streaming cDBG and dBG sketching algorithms")
+        )
 
 if(DEFINED ENV{CONDA_PREFIX})
     message(STATUS "Building in a conda environment.")
@@ -63,7 +64,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 # The boink shared library needs all the source files, the direct object
 # targets, and the gfakluge static library.
 #
-add_library(boink SHARED
+add_library(boink STATIC
             ${LIB_SOURCES}
 )
 set_target_properties(boink PROPERTIES LINKER_LANGUAGE CXX)
@@ -122,7 +123,7 @@ target_link_libraries(do_bench_storage boink)
 # more modern way anyhow? Code was modified from the versions cppyy distributes.
 #
 cppyy_add_bindings(
-    "boink" "${PKG_VERSION}" "Camille Scott" "cswel@ucdavis.edu"
+    "boink" ${python_pkg_version} "Camille Scott" "cswel@ucdavis.edu"
    LICENSE "MIT"
    LANGUAGE_STANDARD "17"
    SELECTION_XML  ${CMAKE_SOURCE_DIR}/boink_select.xml

@@ -1,2 +1,3 @@
 recursive-include @PKG@ *.pcm *.so *.rootmap *.map
 recursive-include @PKG@/data *.txt.gz
+include lib@PKG@.so
