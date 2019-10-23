@@ -69,7 +69,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 # The boink shared library needs all the source files, the direct object
 # targets, and the gfakluge static library.
 #
-add_library(boink STATIC
+add_library(boink SHARED
             ${LIB_SOURCES}
 )
 set_target_properties(boink PROPERTIES LINKER_LANGUAGE CXX)
