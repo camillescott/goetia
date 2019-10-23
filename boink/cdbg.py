@@ -135,7 +135,7 @@ class cDBGRunner(CommandRunner):
 
         self.compactor_t = libboink.cdbg.StreamingCompactor[type(self.dbg)]
         self.compactor = self.compactor_t.Compactor.build(self.dbg)
-        print(args)
+
         if args.normalize:
             self.processor = self.compactor_t.NormalizingCompactor[libboink.parsing.FastxReader].build(self.compactor,
                                                                                                        args.normalize,
