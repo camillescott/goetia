@@ -9,6 +9,11 @@
 #ifndef BOINK_INTERFACE_HH
 #define BOINK_INTERFACE_HH
 
+// make sure that <condition_variable> does
+// not included from the standard lib because
+// it breaks conda builds with cppyy=1.5.5
+#define _GLIBCXX_CONDITION_VARIABLE 1
+
 #include "boink/boink.hh"
 
 #include "boink/storage/storage.hh"

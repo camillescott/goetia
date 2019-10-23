@@ -1,14 +1,13 @@
-/* events.hh -- event listeners and senders
- * 
+/**
+ * (c) Camille Scott, 2019
+ * File   : events.hh
+ * License: MIT
+ * Author : Camille Scott <camille.scott.w@gmail.com>
+ * Date   : 23.10.2019
+ *
  * Code in this file modified and extended from:
  * `https://www.codeproject.com/Articles/1169105/Cplusplus-
  * std-thread-Event-Loop-with-Message-Queue`
- *
- * Copyright (C) 2018 Camille Scott
- * All rights reserved.
- *
- * This software may be modified and distributed under the terms
- * of the MIT license.  See the LICENSE file for details.
  */
 
 #ifndef BOINK_EVENTS_HH
@@ -21,12 +20,18 @@
 #include <memory>
 #include <mutex>
 #include <atomic>
-#include <condition_variable>
 #include <set>
 #include <chrono>
 
 #include "boink/event_types.hh"
 
+// We forward-declare condition_variable and use a pointer
+// member in EventListener becasue including <condition_variable>
+// in a header parsed by genreflex is broken as of cppyy 1.5.5 when
+// cppyy is installed from conda. This should be fixed eventually...
+namespace std {
+    class condition_variable;
+}
 
 namespace boink {
 namespace events {
@@ -58,7 +63,7 @@ class EventListener  {
 protected:
 
     std::mutex                                 msg_mutex;
-    std::condition_variable                    msg_cv;
+    std::condition_variable*                   msg_cv;
     std::unique_ptr<ScopedThread>              listener_thread;
     std::deque<std::shared_ptr<events::Event>> msg_queue;
     std::set<events::event_t>                  msg_type_whitelist;

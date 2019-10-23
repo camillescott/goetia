@@ -7,6 +7,7 @@
  * of the MIT license.  See the LICENSE file for details.
  */
 
+#include <condition_variable>
 #include <thread>
 
 #include "boink/events.hh"
@@ -41,12 +42,13 @@ EventListener::~EventListener() {
         exit_thread();
     }
     // thread joined through RAII
+    delete msg_cv;
 }
 
 
 EventListener::EventListener(const std::string& thread_name)
     : msg_mutex(),
-      msg_cv(),
+      msg_cv(new std::condition_variable()),
       _shutdown(false),
       _to_process(0),
       MAX_EVENTS(50000),
@@ -65,11 +67,11 @@ void EventListener::exit_thread() {
         std::unique_lock<std::mutex> lock(msg_mutex);
         msg_queue.push_back(_exit_event);
     }
-    msg_cv.notify_all();
+    msg_cv->notify_all();
 
     {
         std::unique_lock<std::mutex> lk(msg_mutex);
-        msg_cv.wait(lk, [this]{ return _shutdown; });
+        msg_cv->wait(lk, [this]{ return _shutdown; });
     }
 }
 
@@ -98,7 +100,7 @@ void EventListener::notify(std::shared_ptr<events::Event> event) {
             ++_to_process;
             msg_queue.push_back(event);
         }
-        msg_cv.notify_one();
+        msg_cv->notify_one();
     } else {
         pdebug("Filtered event of type " << event->msg_type);
     }
@@ -112,7 +114,7 @@ void EventListener::clear_events() {
 
 void EventListener::wait_on_processing(uint64_t min_events_restart) {
     std::unique_lock<std::mutex> lock(msg_mutex);
-    msg_cv.wait(lock, [&]{ return _to_process <= min_events_restart; });
+    msg_cv->wait(lock, [&]{ return _to_process <= min_events_restart; });
 }
 
 void EventListener::process() {
@@ -124,7 +126,7 @@ void EventListener::process() {
         {
             // Wait for a message to be added to the queue
             std::unique_lock<std::mutex> lk(msg_mutex);
-            msg_cv.wait(lk, [this]{ return !msg_queue.empty(); });
+            msg_cv->wait(lk, [this]{ return !msg_queue.empty(); });
 
             if (msg_queue.empty())
                 continue;
@@ -133,7 +135,7 @@ void EventListener::process() {
             msg_queue.pop_front();
 
             if (msg_queue.size() < MIN_EVENTS_RESTART) {
-                msg_cv.notify_one();
+                msg_cv->notify_one();
             }
         }
 
@@ -145,7 +147,7 @@ void EventListener::process() {
                 std::unique_lock<std::mutex> lk(msg_mutex);
                 _shutdown = true;
             }
-            msg_cv.notify_all();
+            msg_cv->notify_all();
             return;
         }
 
@@ -154,7 +156,7 @@ void EventListener::process() {
         {
             std::unique_lock<std::mutex> lk(msg_mutex);
             --_to_process;
-            msg_cv.notify_all();
+            msg_cv->notify_all();
         }
     }
 }
