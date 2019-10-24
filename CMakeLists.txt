@@ -159,4 +159,4 @@ install(FILES ${CMAKE_BINARY_DIR}/boink.pc
         DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig
 )
 
-install(CODE "execute_process(COMMAND pip install -U ${PY_WHEEL_FILE})")
+install(CODE "execute_process(COMMAND pip install --no-deps -U ${PY_WHEEL_FILE})")
