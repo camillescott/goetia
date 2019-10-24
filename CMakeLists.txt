@@ -115,7 +115,7 @@ configure_file(src/boink/boink.pc.in boink.pc @ONLY)
 #
 # Benchmark exes
 #
-add_executable(do_bench_storage ${CMAKE_SOURCE_DIR}/src/boink/benchmarks/do_bench_storage.cc)
+add_executable(do_bench_storage EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/src/boink/benchmarks/do_bench_storage.cc)
 target_link_libraries(do_bench_storage boink)
 
 
@@ -132,11 +132,11 @@ cppyy_add_bindings(
    LICENSE "MIT"
    LANGUAGE_STANDARD "17"
    SELECTION_XML  ${CMAKE_SOURCE_DIR}/boink_select.xml
-   INTERFACE_FILE ${CMAKE_SOURCE_DIR}/include/boink/interface.hh
+   INTERFACE_FILE ${BOINK_INCLUDE_ROOT}/include/boink/interface.hh
    PKG_SRC_DIR    ${CMAKE_SOURCE_DIR}/boink
    TESTS_DIR      ${CMAKE_SOURCE_DIR}/tests
    HEADERS        ${LIB_HEADERS}
-   INCLUDE_DIRS   ${CMAKE_CURRENT_SOURCE_DIR}/include
+   INCLUDE_DIRS   ${BOINK_INCLUDE_ROOT}/include
                   ${CMAKE_CURRENT_SOURCE_DIR}/third-party
                   ${ZLIB_INCLUDE_DIRS}
    LINK_LIBRARIES boink

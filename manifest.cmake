@@ -40,7 +40,6 @@ set(_headers
     include/boink/signatures/ukhs_signature.hh
     include/boink/signatures/sourmash/kmer_min_hash.hh
     include/boink/signatures/sourmash_signature.hh
-    include/boink/benchmarks/bench_storage.hh
 )
 
 set(_sources
@@ -111,8 +110,15 @@ set(_data
     res_9_90_4_0.txt.gz
 )
 
+if(DEFINED ENV{CONDA_BUILD_DEPLOY})
+    message(STATUS "Building a conda deployment, use installed headers.")
+    set(BOINK_INCLUDE_ROOT $ENV{CONDA_PREFIX})
+else()
+    set(BOINK_INCLUDE_ROOT ${CMAKE_SOURCE_DIR})
+endif()
+
 foreach (path ${_headers})
-    list(APPEND LIB_HEADERS ${CMAKE_SOURCE_DIR}/${path})
+    list(APPEND LIB_HEADERS ${BOINK_INCLUDE_ROOT}/${path})
 endforeach(path)
 
 foreach (path ${_sources})
