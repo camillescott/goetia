@@ -1,11 +1,13 @@
 name: boink
 channels:
+    - bioconda
     - conda-forge
 dependencies:
     - python
     - pandas
     - seaborn
-    - cppyy
-    - pip
-    - pip:
-        - sourmash
+    - ficus
+    - sourmash
+    - screed
+    - graph-boink
+    - numpy
