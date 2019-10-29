@@ -127,3 +127,6 @@ include/gfakluge/
 include/prometheus/
 include/sparsepp/
 include/smhasher/
+
+*.fastq
+*.fastq.gz
