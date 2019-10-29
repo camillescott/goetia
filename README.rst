@@ -2,8 +2,7 @@
     :target: https://travis-ci.org/camillescott/boink
 
 .. image:: https://mybinder.org/badge_logo.svg
-  :target:
-  https://mybinder.org/v2/gh/camillescott/boink/master?filepath=examples%2FStreaming%20Sourmash%20Demo.ipynb
+    :target: https://mybinder.org/v2/gh/camillescott/boink/master?filepath=examples%2FStreaming%20Sourmash%20Demo.ipynb
     
 boink
 -----
@@ -12,7 +11,7 @@ Installation
 ============
 
 Conda
------
+~~~~~
 
 We recommend using `conda <https://docs.conda.io/en/latest/miniconda.html>`_. Within a conda
 environment, install with::
@@ -23,7 +22,7 @@ This will install the boink python package, and install the `libboink` shared li
 and its headers into your conda prefix.
 
 Building from Source
---------------------
+~~~~~~~~~~~~~~~~~~~~
 
 To build and install from source, first clone the repo::
 
