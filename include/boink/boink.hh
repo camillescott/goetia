@@ -10,6 +10,7 @@
 #ifndef BOINK_MISC_HH
 #define BOINK_MISC_HH
 
+#include <cstdint>
 #include <exception>
 #include <string>
 #include <iostream>
@@ -20,6 +21,7 @@
 #include <string>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 namespace boink {
 
@@ -63,6 +65,24 @@ std::string repr(const Container<T,A>& v) {
     }
     os << "]";
     return os.str();
+}
+
+template<template<typename, typename> class Container, class T, class A>
+bool contains(const Container<T,A>& collection,
+              T&                    item) {
+    return collection.count(item);
+}
+
+
+template<typename T>
+bool contains(std::vector<T> collection,
+              T item) {
+    for (auto& i : collection) {
+        if (i == item) {
+            return true;
+        }
+    }
+    return false;
 }
 
 

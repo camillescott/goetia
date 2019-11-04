@@ -6,6 +6,7 @@ set(_headers
     include/boink/cdbg/compactor.hh
     include/boink/cdbg/metrics.hh
     include/boink/cdbg/udbg.hh
+    include/boink/cdbg/utagger.hh
     include/boink/cdbg/ucompactor.hh
     include/boink/cdbg/saturating_compactor.hh
     include/boink/dbg.hh
@@ -19,6 +20,7 @@ set(_headers
     include/boink/hashing/ukhshashshifter.hh
     include/boink/hashing/smhasher/MurmurHash3.h
     include/boink/hashing/ukhs.hh
+    include/boink/hashing/hash_combine.hh
     include/boink/interface.hh
     include/boink/kmers/kmerclient.hh
     include/boink/metrics.hh
@@ -73,6 +75,7 @@ set(_sources
     src/boink/cdbg/cdbg.cc
     src/boink/cdbg/compactor.cc
     src/boink/cdbg/udbg.cc
+    src/boink/cdbg/utagger.cc
     src/boink/cdbg/ucompactor.cc
     src/boink/cdbg/saturating_compactor.cc
     src/boink/parsing/readers.cc

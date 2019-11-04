@@ -56,6 +56,7 @@
 #include "boink/cdbg/cdbg.hh"
 #include "boink/cdbg/metrics.hh"
 #include "boink/cdbg/udbg.hh"
+#include "boink/cdbg/utagger.hh"
 #include "boink/cdbg/saturating_compactor.hh"
 //#include "boink/cdbg/ucompactor.hh"
 
@@ -193,6 +194,17 @@ extern
 template class boink::cdbg::uDBG<boink::storage::QFStorage>;
 extern
 template class boink::cdbg::uDBG<boink::storage::SparseppSetStorage>;
+
+extern
+template class boink::cdbg::UTagger<boink::storage::BitStorage>;
+extern
+template class boink::cdbg::UTagger<boink::storage::ByteStorage>;
+extern
+template class boink::cdbg::UTagger<boink::storage::NibbleStorage>;
+extern
+template class boink::cdbg::UTagger<boink::storage::QFStorage>;
+extern
+template class boink::cdbg::UTagger<boink::storage::SparseppSetStorage>;
 
 
 extern

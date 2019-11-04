@@ -207,6 +207,34 @@ struct Traverse {
                                              const std::vector<shift_type>& nodes,
                                              std::set<hash_type>&           extra);
 
+        std::pair<std::vector<shift_type>,
+                  std::vector<shift_type>> filter_nodes(GraphType * graph,
+                                                        const std::pair<std::vector<shift_type>,
+                                                                        std::vector<shift_type>>& nodes);
+
+        std::pair<std::vector<shift_type>,
+                  std::vector<shift_type>> filter_nodes(GraphType *                               graph,
+                                                        const std::pair<std::vector<shift_type>,
+                                                                        std::vector<shift_type>>& nodes,
+                                                        std::set<hash_type>&                      extras);
+
+        std::vector<shift_type> in_neighbors(GraphType * graph) {
+            auto root = this->get_cursor();
+            return filter_nodes(graph, this->gather_left());
+        }
+
+        std::vector<shift_type> out_neighbors(GraphType * graph) {
+            auto root = this->get_cursor();
+            return filter_nodes(graph, this->gather_right());
+        }
+
+        std::pair<std::vector<shift_type>,
+                  std::vector<shift_type>> neighbors(GraphType * graph) {
+            auto _in = in_neighbors(graph);
+            auto _out = out_neighbors(graph);
+            return std::make_pair(_in, _out);
+        }
+
         std::vector<kmer_type> find_left_kmers(GraphType * graph) {
             auto root = this->get_cursor();
             auto filtered = filter_nodes(graph, this->gather_left());

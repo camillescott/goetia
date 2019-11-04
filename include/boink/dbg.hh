@@ -26,27 +26,27 @@ namespace boink {
 
 
 template <class StorageType,
-          class HashShifter>
+          class ShifterType>
 class dBG : public kmers::KmerClient {
 
 public:
 
-    typedef HashShifter                             shifter_type;
-    typedef typename HashShifter::hash_type         hash_type;
-    typedef typename HashShifter::kmer_type         kmer_type;
-    typedef typename HashShifter::shift_type        shift_type;
+    typedef ShifterType                             shifter_type;
+    typedef typename ShifterType::hash_type         hash_type;
+    typedef typename ShifterType::kmer_type         kmer_type;
+    typedef typename ShifterType::shift_type        shift_type;
     typedef StorageType                             storage_type;
-    typedef Traverse<dBG<StorageType, HashShifter>> traversal_type;
-    typedef hashing::KmerIterator<HashShifter>      kmer_iter_type;
+    typedef Traverse<dBG<StorageType, ShifterType>> traversal_type;
+    typedef hashing::KmerIterator<ShifterType>      kmer_iter_type;
 
 protected:
 
     std::shared_ptr<StorageType> S;
-    HashShifter hasher;
+    ShifterType hasher;
 
 public:
 
-    dBG(HashShifter& hasher, std::shared_ptr<StorageType> S);
+    dBG(ShifterType& hasher, std::shared_ptr<StorageType> S);
 
     /**
      * @Synopsis Build a dBG instance owned by a shared_ptr. 
@@ -56,18 +56,18 @@ public:
      * @Returns     shared_ptr owning the dBG.
      */
 
-    static std::shared_ptr<dBG<StorageType, HashShifter>>
-    __attribute__((used)) build(HashShifter& hasher, std::shared_ptr<StorageType> S);
+    static std::shared_ptr<dBG<StorageType, ShifterType>>
+    __attribute__((used)) build(ShifterType& hasher, std::shared_ptr<StorageType> S);
 
     /**
      * @Synopsis  Makes a shallow clone of the dBG.
      *
      * @Returns   shared_ptr owning the clone.
      */
-    std::shared_ptr<dBG<StorageType, HashShifter>> clone();
+    std::shared_ptr<dBG<StorageType, ShifterType>> clone();
 
     /**
-     * @Synopsis  Hash a k-mer using the templated HashShifter.
+     * @Synopsis  Hash a k-mer using the templated ShifterType.
      *
      * @Param kmer String of length K.
      *
@@ -76,7 +76,7 @@ public:
     hash_type hash(const std::string& kmer);
 
     /**
-     * @Synopsis  Hash a k-mer using the templated HashShifter.
+     * @Synopsis  Hash a k-mer using the templated ShifterType.
      *
      * @Param kmer c-string with the k-mer; if longer than K, will only use
      *             first K characters.
@@ -90,7 +90,7 @@ public:
      *
      * @Param kmer The k-mer.
      *
-     * @Returns   True if the k-mer was new; fals otherwise.
+     * @Returns   True if the k-mer was new; false otherwise.
      */
     inline const bool insert(const std::string& kmer) {
         return S->insert(hash(kmer));
@@ -356,8 +356,8 @@ public:
         S->reset();
     }
 
-    std::shared_ptr<hashing::KmerIterator<HashShifter>> get_hash_iter(const std::string& sequence);
-    HashShifter                                         get_hasher();
+    std::shared_ptr<hashing::KmerIterator<ShifterType>> get_hash_iter(const std::string& sequence);
+    ShifterType                                         get_hasher();
 
     using Processor = InserterProcessor<dBG>;
 

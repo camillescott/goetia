@@ -410,7 +410,7 @@ struct cDBG {
 
         DecisionNode* query_dnode(hash_type hash);
 
-        vector<DecisionNode*> query_dnodes(const std::string& sequence);
+        std::vector<DecisionNode*> query_dnodes(const std::string& sequence);
 
         UnitigNode * query_unode_end(hash_type end_kmer);
 
@@ -433,7 +433,7 @@ struct cDBG {
 
         std::pair<DecisionNode*, DecisionNode*> find_unode_neighbors(UnitigNode * unode);
 
-        vector<CompactNode*> traverse_breadth_first(CompactNode* root);
+        std::vector<CompactNode*> traverse_breadth_first(CompactNode* root);
 
         spp::sparse_hash_map<id_t, std::vector<id_t>> find_connected_components();
 
@@ -839,7 +839,7 @@ struct cDBG {
 
         Writer(std::shared_ptr<Graph> cdbg,
                    cdbg::cDBGFormat format,
-                   const string& output_prefix)
+                   const std::string& output_prefix)
             : MultiFileReporter(output_prefix,
                                 "cDBGWriter[" + cdbg_format_repr(format) + "]"),
               cdbg(cdbg),
@@ -852,7 +852,7 @@ struct cDBG {
 
         static std::shared_ptr<Writer> build(std::shared_ptr<Graph> cdbg,
                                              cdbg::cDBGFormat format,
-                                             const string& output_prefix) {
+                                             const std::string& output_prefix) {
             return std::make_shared<Writer>(cdbg, format, output_prefix);
         }
 

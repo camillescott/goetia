@@ -129,6 +129,29 @@ Traverse<GraphType>::dBG::filter_nodes(GraphType *                 graph,
 
 
 template <class GraphType>
+std::pair<std::vector<typename GraphType::shifter_type::shift_type>,
+          std::vector<typename GraphType::shifter_type::shift_type>>
+Traverse<GraphType>::dBG::filter_nodes(GraphType * graph,
+                                       const std::pair<std::vector<shift_type>,
+                                                       std::vector<shift_type>>& nodes) {
+    return std::make_pair(filter_nodes(graph, nodes.first),
+                          filter_nodes(graph, nodes.second));
+}
+
+
+template <class GraphType>
+std::pair<std::vector<typename GraphType::shifter_type::shift_type>,
+          std::vector<typename GraphType::shifter_type::shift_type>>
+Traverse<GraphType>::dBG::filter_nodes(GraphType *                               graph,
+                                       const std::pair<std::vector<shift_type>,
+                                                       std::vector<shift_type>>& nodes,
+                                       std::set<hash_type>&                      extras) {
+    return std::make_pair(filter_nodes(graph, nodes.first, extras),
+                          filter_nodes(graph, nodes.second, extras));
+}
+
+
+template <class GraphType>
 typename Traverse<GraphType>::EndState
 Traverse<GraphType>::dBG::traverse_left(GraphType *        graph,
                                         const std::string& seed,

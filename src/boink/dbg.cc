@@ -5,6 +5,7 @@
  * Author : Camille Scott <camille.scott.w@gmail.com>
  * Date   : 30.08.2019
  */
+
 #include "boink/dbg.hh"
 
 #include "boink/hashing/rollinghashshifter.hh"
@@ -22,22 +23,10 @@
 
 
 namespace boink {
-/*
 
 template<class StorageType,
-         class HashShifter>
-template<typename... HashArgs,
-         typename... StorageArgs>
-std::shared_ptr<dBG<StorageType, HashShifter>>
-dBG<StorageType, HashShifter>::build(std::tuple<HashArgs...> hashargs,
-                                     std::tuple<StorageArgs... > storageargs) {
-    return std::make_shared<dBG<StorageType, HashShifter>>(hashargs, storageargs);
-}
-*/
-
-template<class StorageType,
-         class HashShifter>
-dBG<StorageType, HashShifter>::dBG(HashShifter& hasher, std::shared_ptr<StorageType> S)
+         class ShifterType>
+dBG<StorageType, ShifterType>::dBG(ShifterType& hasher, std::shared_ptr<StorageType> S)
     : KmerClient(hasher.K()),
       hasher(hasher),
       S(S->clone())
@@ -46,59 +35,59 @@ dBG<StorageType, HashShifter>::dBG(HashShifter& hasher, std::shared_ptr<StorageT
 
 
 template<class StorageType,
-         class HashShifter>
-std::shared_ptr<dBG<StorageType, HashShifter>>
-dBG<StorageType, HashShifter>::build(HashShifter& hasher, std::shared_ptr<StorageType> S) {
-    return std::make_shared<dBG<StorageType, HashShifter>>(hasher, S);
+         class ShifterType>
+std::shared_ptr<dBG<StorageType, ShifterType>>
+dBG<StorageType, ShifterType>::build(ShifterType& hasher, std::shared_ptr<StorageType> S) {
+    return std::make_shared<dBG<StorageType, ShifterType>>(hasher, S);
 }
 
 
 template<class StorageType,
-         class HashShifter>
-std::shared_ptr<dBG<StorageType, HashShifter>>
-dBG<StorageType, HashShifter>::clone() {
-    return std::make_shared<dBG<StorageType, HashShifter>>(hasher, S);
+         class ShifterType>
+std::shared_ptr<dBG<StorageType, ShifterType>>
+dBG<StorageType, ShifterType>::clone() {
+    return std::make_shared<dBG<StorageType, ShifterType>>(hasher, S);
 }
 
 
 template<class StorageType,
-         class HashShifter>
-typename HashShifter::hash_type
-dBG<StorageType, HashShifter>::hash(const std::string& kmer) {
+         class ShifterType>
+typename ShifterType::hash_type
+dBG<StorageType, ShifterType>::hash(const std::string& kmer) {
     hasher.set_cursor(kmer);
     return hasher.get();
 }
 
 
 template<class StorageType,
-         class HashShifter>
-typename HashShifter::hash_type
-dBG<StorageType, HashShifter>::hash(const char * kmer) {
+         class ShifterType>
+typename ShifterType::hash_type
+dBG<StorageType, ShifterType>::hash(const char * kmer) {
     hasher.set_cursor(kmer);
     return hasher.get();
 }
 
 
 template<class StorageType,
-         class HashShifter>
+         class ShifterType>
 const storage::count_t
-dBG<StorageType, HashShifter>::query(hash_type hashed_kmer) const {
+dBG<StorageType, ShifterType>::query(hash_type hashed_kmer) const {
     return S->query(hashed_kmer);
 }
 
 
 template<class StorageType,
-         class HashShifter>
+         class ShifterType>
 const storage::count_t
-dBG<StorageType, HashShifter>::query(const std::string& kmer) {
+dBG<StorageType, ShifterType>::query(const std::string& kmer) {
     return S->query(hash(kmer));
 }
 
 
 template <class StorageType,
-          class HashShifter>
-std::vector<typename HashShifter::shift_type> 
-dBG<StorageType, HashShifter>::left_neighbors(const std::string& root) {
+          class ShifterType>
+std::vector<typename ShifterType::shift_type> 
+dBG<StorageType, ShifterType>::left_neighbors(const std::string& root) {
     typename traversal_type::dBG traverser(hasher);
     traverser.set_cursor(root);
     return traverser.filter_nodes(this, traverser.gather_left());
@@ -106,9 +95,9 @@ dBG<StorageType, HashShifter>::left_neighbors(const std::string& root) {
 
 
 template <class StorageType,
-          class HashShifter>
-std::vector<typename HashShifter::shift_type>
-dBG<StorageType, HashShifter>::right_neighbors(const std::string& root) {
+          class ShifterType>
+std::vector<typename ShifterType::shift_type>
+dBG<StorageType, ShifterType>::right_neighbors(const std::string& root) {
     typename traversal_type::dBG traverser(hasher);
     traverser.set_cursor(root);
     return traverser.filter_nodes(this, traverser.gather_right());
@@ -116,10 +105,10 @@ dBG<StorageType, HashShifter>::right_neighbors(const std::string& root) {
 
 
 template <class StorageType,
-          class HashShifter>
-std::pair<std::vector<typename HashShifter::shift_type>,
-          std::vector<typename HashShifter::shift_type>>
-dBG<StorageType, HashShifter>::neighbors(const std::string& root) {
+          class ShifterType>
+std::pair<std::vector<typename ShifterType::shift_type>,
+          std::vector<typename ShifterType::shift_type>>
+dBG<StorageType, ShifterType>::neighbors(const std::string& root) {
     typename traversal_type::dBG traverser(hasher);
     traverser.set_cursor(root);
     auto lfiltered = traverser.filter_nodes(this, traverser.gather_left());
@@ -129,13 +118,13 @@ dBG<StorageType, HashShifter>::neighbors(const std::string& root) {
 
 
 template <class StorageType,
-          class HashShifter>
+          class ShifterType>
 uint64_t
-dBG<StorageType, HashShifter>::insert_sequence(const std::string& sequence,
+dBG<StorageType, ShifterType>::insert_sequence(const std::string& sequence,
                                                std::vector<hash_type>&  kmer_hashes,
                                                std::vector<storage::count_t>& counts) {
     
-    hashing::KmerIterator<HashShifter> iter(sequence, &hasher);
+    hashing::KmerIterator<ShifterType> iter(sequence, &hasher);
 
     uint64_t         n_consumed = 0;
     size_t           pos = 0;
@@ -156,12 +145,12 @@ dBG<StorageType, HashShifter>::insert_sequence(const std::string& sequence,
 
 
 template <class StorageType,
-          class HashShifter>
+          class ShifterType>
 uint64_t
-dBG<StorageType, HashShifter>::insert_sequence(const std::string&         sequence,
+dBG<StorageType, ShifterType>::insert_sequence(const std::string&         sequence,
                                                std::set<hash_type>& new_kmers) {
 
-    hashing::KmerIterator<HashShifter> iter(sequence, &hasher);
+    hashing::KmerIterator<ShifterType> iter(sequence, &hasher);
 
     uint64_t n_consumed = 0;
     size_t pos = 0;
@@ -180,11 +169,11 @@ dBG<StorageType, HashShifter>::insert_sequence(const std::string&         sequen
 
 
 template <class StorageType,
-          class HashShifter>
+          class ShifterType>
 uint64_t
-dBG<StorageType, HashShifter>::insert_sequence(const std::string& sequence) {
+dBG<StorageType, ShifterType>::insert_sequence(const std::string& sequence) {
     
-    hashing::KmerIterator<HashShifter> iter(sequence, &hasher);
+    hashing::KmerIterator<ShifterType> iter(sequence, &hasher);
 
     uint64_t n_consumed = 0;
     while(!iter.done()) {
@@ -197,11 +186,11 @@ dBG<StorageType, HashShifter>::insert_sequence(const std::string& sequence) {
 
 
 template <class StorageType,
-          class HashShifter>
+          class ShifterType>
 std::vector<storage::count_t>
-dBG<StorageType, HashShifter>::insert_and_query_sequence(const std::string& sequence) {
+dBG<StorageType, ShifterType>::insert_and_query_sequence(const std::string& sequence) {
 
-    hashing::KmerIterator<HashShifter> iter(sequence, &hasher);
+    hashing::KmerIterator<ShifterType> iter(sequence, &hasher);
     std::vector<storage::count_t> counts(sequence.length() - _K + 1);
 
     size_t pos = 0;
@@ -216,11 +205,11 @@ dBG<StorageType, HashShifter>::insert_and_query_sequence(const std::string& sequ
 
 
 template <class StorageType,
-          class HashShifter>
+          class ShifterType>
 std::vector<storage::count_t>
-dBG<StorageType, HashShifter>::query_sequence(const std::string& sequence) {
+dBG<StorageType, ShifterType>::query_sequence(const std::string& sequence) {
 
-    hashing::KmerIterator<HashShifter> iter(sequence, &hasher);
+    hashing::KmerIterator<ShifterType> iter(sequence, &hasher);
     std::vector<storage::count_t> counts(sequence.length() - _K + 1);
 
     size_t pos = 0;
@@ -235,13 +224,13 @@ dBG<StorageType, HashShifter>::query_sequence(const std::string& sequence) {
 
 
 template <class StorageType,
-          class HashShifter>
+          class ShifterType>
 void
-dBG<StorageType, HashShifter>::query_sequence(const std::string&             sequence,
+dBG<StorageType, ShifterType>::query_sequence(const std::string&             sequence,
                                               std::vector<storage::count_t>& counts,
                                               std::vector<hash_type>&  hashes) {
 
-    hashing::KmerIterator<HashShifter> iter(sequence, &hasher);
+    hashing::KmerIterator<ShifterType> iter(sequence, &hasher);
 
     while(!iter.done()) {
         hash_type h = iter.next();
@@ -253,14 +242,14 @@ dBG<StorageType, HashShifter>::query_sequence(const std::string&             seq
 
 
 template <class StorageType,
-          class HashShifter>
+          class ShifterType>
 void
-dBG<StorageType, HashShifter>::query_sequence(const std::string& sequence,
+dBG<StorageType, ShifterType>::query_sequence(const std::string& sequence,
                                               std::vector<storage::count_t>& counts,
                                               std::vector<hash_type>& hashes,
                                               std::set<hash_type>& new_hashes) {
 
-	hashing::KmerIterator<HashShifter> iter(sequence, &hasher);
+	hashing::KmerIterator<ShifterType> iter(sequence, &hasher);
 
 	while(!iter.done()) {
 		hash_type h = iter.next();
@@ -275,79 +264,21 @@ dBG<StorageType, HashShifter>::query_sequence(const std::string& sequence,
 
 
 template<class StorageType,
-         class HashShifter>
-std::shared_ptr<hashing::KmerIterator<HashShifter>>
-dBG<StorageType, HashShifter>::get_hash_iter(const std::string& sequence) {
+         class ShifterType>
+std::shared_ptr<hashing::KmerIterator<ShifterType>>
+dBG<StorageType, ShifterType>::get_hash_iter(const std::string& sequence) {
     // Return a KmerIterator with a *copy* of the hasher
-    return std::make_shared<hashing::KmerIterator<HashShifter>>(sequence, hasher);
+    return std::make_shared<hashing::KmerIterator<ShifterType>>(sequence, hasher);
 }
 
 
 template<class StorageType,
-         class HashShifter>
-HashShifter
-dBG<StorageType, HashShifter>::get_hasher() {
-    return HashShifter(hasher);
+         class ShifterType>
+ShifterType
+dBG<StorageType, ShifterType>::get_hasher() {
+    return ShifterType(hasher);
 }
 
-
-//
-// Specialization for UKHS Shifters
-//
-/*
-template<>
-const bool
-dBG<boink::storage::SparseppSetStorage,
-    boink::hashing::UKHS::LazyShifter>::
-insert(const std::string& kmer) {
-    return S->insert(hash(kmer).hash);
-}
-
-
-template<>
-const bool
-dBG<boink::storage::SparseppSetStorage,
-    boink::hashing::UKHS::LazyShifter>::
-insert(hash_type kmer) {
-    return S->insert(kmer.hash);
-}
-
-
-template<>
-const storage::count_t 
-dBG<boink::storage::SparseppSetStorage,
-    boink::hashing::UKHS::LazyShifter>::
-insert_and_query(hash_type kmer) {
-    return S->insert_and_query(kmer.hash);
-}
-
-
-template<>
-const storage::count_t 
-dBG<boink::storage::SparseppSetStorage,
-    boink::hashing::UKHS::LazyShifter>::
-insert_and_query(const std::string& kmer) {
-    return S->insert_and_query(hash(kmer).hash);
-}
-
-
-template<>
-const storage::count_t 
-dBG<boink::storage::SparseppSetStorage,
-    boink::hashing::UKHS::LazyShifter>::
-query(const std::string& kmer) {
-    return S->query(hash(kmer).hash);
-}
-
-
-template<>
-const storage::count_t 
-dBG<boink::storage::SparseppSetStorage,
-    boink::hashing::UKHS::LazyShifter>::
-query(hash_type hashed_kmer) const {
-    return S->query(hashed_kmer.hash);
-}
-*/
 }
 
 template class boink::dBG<boink::storage::BitStorage,

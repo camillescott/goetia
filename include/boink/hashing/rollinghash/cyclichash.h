@@ -33,7 +33,7 @@ public:
         maskn(maskfnc<hashvaluetype>(wordsize-myr))
     {
         if(static_cast<uint>(wordsize) > 8*sizeof(hashvaluetype)) {
-            cerr<<"Can't create "<<wordsize<<"-bit hash values"<<endl;
+            std::cerr<<"Can't create "<<wordsize<<"-bit hash values"<< std::endl;
             throw "abord";
         }
     }

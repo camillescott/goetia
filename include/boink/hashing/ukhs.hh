@@ -21,6 +21,7 @@
 #include <climits>
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <utility>
 
 #include "boink/boink.hh"
@@ -297,7 +298,7 @@ struct UKHS {
                 unikmer_hasher_on_left = true;
             } else {
                 // othewise just shift the new symbol on
-                //std::cout << "Reverse update, "
+                   //std::cout << "Reverse update, "
                 //          << *(kmer_window.begin() + _unikmer_K - 1)
                 //          << " => "
                 //          << c << std::endl;
@@ -506,12 +507,47 @@ struct UKHS {
 
         std::vector<shift_type> gather_left() {
             std::vector<shift_type> hashes;
+
+            // First get the min unikmer in the W-1 prefix, if there is one
+            auto _last = unikmer_indices.back() > this->_K - _unikmer_K ? 
+                         std::end(window_unikmers) - 1 :
+                         std::end(window_unikmers);
+            auto _min = std::min_element(std::begin(window_unikmers),
+                                         _last);
+            std::optional<Unikmer> current_min;
+            if (_min != _last) {
+                current_min = *_min;
+            }
+            
+            if (!unikmer_hasher_on_left) {
+                unikmer_hasher.reset();
+                for (uint16_t i = 0; i < _unikmer_K; ++i) {
+                    unikmer_hasher.eat(*(kmer_window.begin() + i));
+                }
+                unikmer_hasher_on_left = true;
+            }
+
+            // now compare each neighbor unikmer to the current min
+            // to see if the neighbor w-mer has a different minimizer
             const char back = this->kmer_window.back();
-            for (auto symbol : symbols) {
+            const char uback = *(this->kmer_window.begin() + _unikmer_K - 1);
+            for (auto& symbol : symbols) {
                 window_hasher.reverse_update(symbol, back);
-                shift_type result(window_hasher.hashvalue, symbol);
-                hashes.push_back(result);
+                unikmer_hasher.reverse_update(symbol, uback);
+
+                Unikmer cur_unikmer(unikmer_hasher.hashvalue);
+                if (!current_min || (ukhs_map->query(cur_unikmer) && cur_unikmer < current_min.value())) {
+                    hashes.push_back(shift_type(BinnedKmer(window_hasher.hashvalue, cur_unikmer),
+                                     symbol));
+                } else {
+                    hashes.push_back(shift_type(BinnedKmer(window_hasher.hashvalue, current_min.value()),
+                                     symbol));
+                }
+
+                // update hashers back to root 0
                 window_hasher.update(symbol, back);
+                unikmer_hasher.update(symbol, uback);
+
             }
 
             return hashes;
@@ -519,12 +555,45 @@ struct UKHS {
 
         std::vector<shift_type> gather_right() {
             std::vector<shift_type> hashes;
-            const char front = this->kmer_window.front();
-            for (auto symbol : symbols) {
-                window_hasher.update(front, symbol);
-                hashes.push_back(shift_type(window_hasher.hashvalue, symbol));
-                window_hasher.reverse_update(front, symbol);
+
+            // First get the min unikmer in the W-1 prefix, if there is one
+            auto _first = unikmer_indices.front() == 0 ? 
+                          std::begin(window_unikmers) + 1 :
+                          std::begin(window_unikmers);
+            auto _min = std::min_element(_first, std::end(window_unikmers));
+            std::optional<Unikmer> current_min;
+            if (_min != std::end(window_unikmers)) {
+                current_min = *_min;
             }
+            
+            if (unikmer_hasher_on_left) {
+                unikmer_hasher.reset();
+                for (uint16_t i = this->_K - _unikmer_K; i < this->_K; ++i) {
+                    unikmer_hasher.eat(*(kmer_window.begin() + i));
+                }
+                unikmer_hasher_on_left = false;
+            }
+
+            const char front = this->kmer_window.front();
+            const char ufront = *(kmer_window.begin() + this->_K - _unikmer_K);
+
+            for (auto& symbol : symbols) {
+                window_hasher.update(front, symbol);
+                unikmer_hasher.update(ufront, symbol);
+
+                Unikmer cur_unikmer(unikmer_hasher.hashvalue);
+                if (!current_min || (ukhs_map->query(cur_unikmer) && cur_unikmer < current_min.value())) {
+                    hashes.push_back(shift_type(BinnedKmer(window_hasher.hashvalue, cur_unikmer),
+                                     symbol));
+                } else {
+                    hashes.push_back(shift_type(BinnedKmer(window_hasher.hashvalue, current_min.value()),
+                                     symbol));
+                }
+                // update hashers back to root 0
+                window_hasher.reverse_update(front, symbol);
+                unikmer_hasher.reverse_update(ufront, symbol);
+            }
+
             return hashes;
         }
     };

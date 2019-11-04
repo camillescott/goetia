@@ -2,11 +2,10 @@
 #define CHARACTERHASH
 
 #include <cassert>
+#include <cstdint>
 #include <iostream>
 #include <random>
 #include <stdexcept>
-
-using namespace std;
 
 
 template <typename hashvaluetype> hashvaluetype maskfnc(int bits) {

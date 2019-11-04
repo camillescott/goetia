@@ -98,11 +98,11 @@ struct UStreamingCompactor {
 
 
         // Graphs: underling dBG, cDBG tip graph
-        shared_ptr<dbg_type>                 dbg;
-        shared_ptr<typename cdbg_type::Graph> cdbg;
+        std::shared_ptr<dbg_type>                 dbg;
+        std::shared_ptr<typename cdbg_type::Graph> cdbg;
 
         // Universal k-mer hitting set
-        shared_ptr<hashing::UKHS::Map>       ukhs;
+        std::shared_ptr<hashing::UKHS::Map>       ukhs;
         const uint16_t                       unikmer_k;
 
         Compactor(std::shared_ptr<dbg_type> dbg,

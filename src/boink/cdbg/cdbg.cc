@@ -56,7 +56,7 @@ cDBG<GraphType>::Graph::Graph(std::shared_ptr<GraphType> dbg,
       _n_unitig_nodes(0),
       component_id_counter(0)
 {
-    metrics = make_shared<cDBGMetrics>();
+    metrics = std::make_shared<cDBGMetrics>();
 }
 
 
@@ -135,11 +135,11 @@ cDBG<GraphType>::Graph::query_dnode(hash_type hash) {
 
 
 template <class GraphType>
-vector<typename cDBG<GraphType>::DecisionNode*>
+std::vector<typename cDBG<GraphType>::DecisionNode*>
 cDBG<GraphType>::Graph::query_dnodes(const std::string& sequence) {
 
     hashing::KmerIterator<ShifterType> kmers(sequence, this->_K);
-    vector<DecisionNode*> result;
+    std::vector<DecisionNode*> result;
     while(!kmers.done()) {
         hash_type h = kmers.next();
         DecisionNode * dnode;
@@ -234,8 +234,8 @@ std::vector<typename cDBG<GraphType>::CompactNode*>
 cDBG<GraphType>::Graph::traverse_breadth_first(CompactNode* root) {
 
     std::set<id_t> seen;
-    vector<CompactNode*> node_q( {root} );
-    vector<CompactNode*> result;
+    std::vector<CompactNode*> node_q( {root} );
+    std::vector<CompactNode*> result;
 
     while(!node_q.empty()) {
         root = node_q.back();
@@ -347,7 +347,7 @@ cDBG<GraphType>::Graph::switch_unode_ends(hash_type old_unode_end,
 
     UnitigNode * unode = unode_end_it->second;
     unitig_end_map.erase(unode_end_it);
-    unitig_end_map.insert(make_pair(new_unode_end, unode));
+    unitig_end_map.insert(std::make_pair(new_unode_end, unode));
 
     pdebug("Swap " << old_unode_end << " to " << new_unode_end
            << " for " << unode->node_id);
@@ -368,7 +368,7 @@ cDBG<GraphType>::Graph::build_dnode(hash_type hash,
     if (dnode == nullptr) {
         pdebug("BUILD_DNODE: " << hash << ", " << kmer);
         decision_nodes.emplace(hash,
-                               std::move(make_unique<DecisionNode>(hash, kmer)));
+                               std::move(std::make_unique<DecisionNode>(hash, kmer)));
         // the memory location changes after the move; get a fresh address
         dnode = query_dnode(hash);
         notify_history_new(dnode->node_id,
@@ -396,7 +396,7 @@ cDBG<GraphType>::Graph::build_unode(const std::string& sequence,
     
     // Transfer the UnitigNode's ownership to the map;
     // get its new memory address
-    unitig_nodes.emplace(id, std::move(make_unique<UnitigNode>(id,
+    unitig_nodes.emplace(id, std::move(std::make_unique<UnitigNode>(id,
                                                                left_end,
                                                                right_end,
                                                                sequence)));
@@ -412,10 +412,10 @@ cDBG<GraphType>::Graph::build_unode(const std::string& sequence,
                            std::begin(tags),
                            std::end(tags));
     for (auto tag: tags) {
-        unitig_tag_map.insert(make_pair(tag, unode_ptr));
+        unitig_tag_map.insert(std::make_pair(tag, unode_ptr));
     }
-    unitig_end_map.insert(make_pair(left_end, unode_ptr));
-    unitig_end_map.insert(make_pair(right_end, unode_ptr));
+    unitig_end_map.insert(std::make_pair(left_end, unode_ptr));
+    unitig_end_map.insert(std::make_pair(right_end, unode_ptr));
 
     auto unode_meta = recompute_node_meta(unode_ptr);
     unode_ptr->set_node_meta(unode_meta);
@@ -488,7 +488,7 @@ cDBG<GraphType>::Graph::extend_unode(direction_t ext_dir,
 
     auto unode = switch_unode_ends(old_unode_end, new_unode_end);
     if (unode->meta() == TRIVIAL) {
-        unitig_end_map.insert(make_pair(old_unode_end, unode));
+        unitig_end_map.insert(std::make_pair(old_unode_end, unode));
     }
 
     assert(unode != nullptr); 
@@ -506,7 +506,7 @@ cDBG<GraphType>::Graph::extend_unode(direction_t ext_dir,
 
     std::copy(new_tags.begin(), new_tags.end(), std::back_inserter(unode->tags));
     for (auto tag: new_tags) {
-        unitig_tag_map.insert(make_pair(tag, unode));
+        unitig_tag_map.insert(std::make_pair(tag, unode));
     }
 
     metrics->n_extends++;
@@ -548,7 +548,7 @@ cDBG<GraphType>::Graph::split_unode(id_t node_id,
             unode->sequence = unode->sequence.substr(split_at + 1) +
                               unode->sequence.substr((this->_K - 1), split_at);
             switch_unode_ends(unode->left_end(), new_left_end);
-            unitig_end_map.insert(make_pair(new_right_end, unode));
+            unitig_end_map.insert(std::make_pair(new_right_end, unode));
 
             unode->set_left_end(new_left_end);
             unode->set_right_end(new_right_end);
@@ -742,7 +742,7 @@ template <class GraphType>
 void
 cDBG<GraphType>::Graph::notify_history_new(id_t id, std::string& sequence, node_meta_t meta) {
 
-    auto event = make_shared<HistoryNewEvent>();
+    auto event = std::make_shared<HistoryNewEvent>();
     event->id = id;
     event->sequence = sequence;
     event->meta = meta;
@@ -755,7 +755,7 @@ void
 cDBG<GraphType>::Graph::notify_history_merge(id_t lparent, id_t rparent, id_t child,
                                              std::string& sequence, node_meta_t meta) {
 
-    auto event = make_shared<HistoryMergeEvent>();
+    auto event = std::make_shared<HistoryMergeEvent>();
     event->lparent = lparent;
     event->rparent = rparent;
     event->child = child;
@@ -769,7 +769,7 @@ template <class GraphType>
 void
 cDBG<GraphType>::Graph::notify_history_extend(id_t id, std::string& sequence, node_meta_t meta) {
 
-    auto event = make_shared<HistoryExtendEvent>();
+    auto event = std::make_shared<HistoryExtendEvent>();
     event->id = id;
     event->sequence = sequence;
     event->meta = meta;
@@ -781,7 +781,7 @@ template <class GraphType>
 void
 cDBG<GraphType>::Graph::notify_history_clip(id_t id, std::string& sequence, node_meta_t meta) {
     
-    auto event = make_shared<HistoryClipEvent>();
+    auto event = std::make_shared<HistoryClipEvent>();
     event->id = id;
     event->sequence = sequence;
     event->meta = meta;
@@ -796,7 +796,7 @@ cDBG<GraphType>::Graph::notify_history_split(id_t parent, id_t lchild, id_t rchi
                                              std::string& lsequence, std::string& rsequence,
                                              node_meta_t lmeta, node_meta_t rmeta) {
 
-    auto event = make_shared<HistorySplitEvent>();
+    auto event = std::make_shared<HistorySplitEvent>();
     event->parent = parent;
     event->lchild = lchild;
     event->rchild = rchild;
@@ -812,7 +812,7 @@ template <class GraphType>
 void
 cDBG<GraphType>::Graph::notify_history_split_circular(id_t id, std::string& sequence, node_meta_t meta) {
 
-    auto event = make_shared<HistorySplitCircularEvent>();
+    auto event = std::make_shared<HistorySplitCircularEvent>();
     event->id = id;
     event->sequence = sequence;
     event->meta = meta;

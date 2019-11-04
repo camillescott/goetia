@@ -8,3 +8,7 @@
  */
 
 #include "boink/boink.hh"
+
+namespace boink {
+
+}

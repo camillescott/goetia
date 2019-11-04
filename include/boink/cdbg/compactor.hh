@@ -184,18 +184,18 @@ struct StreamingCompactor {
         typedef GraphType     graph_type;
         typedef cDBGType      cdbg_type;
 
-        shared_ptr<GraphType> dbg;
-        shared_ptr<cDBGType> cdbg;
+        std::shared_ptr<GraphType> dbg;
+        std::shared_ptr<cDBGType> cdbg;
 
-        Compactor(shared_ptr<GraphType> dbg,
+        Compactor(std::shared_ptr<GraphType> dbg,
                   uint64_t minimizer_window_size=8)
             : TraversalType::dBG(dbg->K()),
               EventNotifier(),
               _minimizer_window_size(minimizer_window_size),
               dbg(dbg)
         {
-            this->cdbg = make_shared<cDBGType>(dbg,
-                                               minimizer_window_size);
+            this->cdbg = std::make_shared<cDBGType>(dbg,
+                                                    minimizer_window_size);
         }
 
         ~Compactor() {
@@ -1122,7 +1122,7 @@ struct StreamingCompactor {
             return std::make_shared<Reporter>(compactor, output_filename);
         }
 
-        virtual void handle_msg(shared_ptr<events::Event> event) {
+        virtual void handle_msg(std::shared_ptr<events::Event> event) {
             if (event->msg_type == events::MSG_TIME_INTERVAL) {
                 auto _event = static_cast<events::TimeIntervalEvent*>(event.get());
                 if (_event->level == events::TimeIntervalEvent::FINE ||
@@ -1211,8 +1211,8 @@ struct StreamingCompactor {
         using Base::process_sequence;
         using events::EventNotifier::register_listener;
         
-        NormalizingCompactor(shared_ptr<Compactor> compactor,
-                             unsigned int cutoff,
+        NormalizingCompactor(std::shared_ptr<Compactor> compactor,
+                             unsigned int               cutoff,
                              uint64_t fine_interval   = DEFAULT_INTERVALS::FINE,
                              uint64_t medium_interval = DEFAULT_INTERVALS::MEDIUM,
                              uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE)
