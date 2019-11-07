@@ -1,87 +1,97 @@
 set(_headers
-    include/boink/traversal.hh
+    include/boink/benchmarks/bench_storage.hh
     include/boink/boink.hh
     include/boink/cdbg/cdbg.hh
     include/boink/cdbg/cdbg_types.hh
     include/boink/cdbg/compactor.hh
     include/boink/cdbg/metrics.hh
+    include/boink/cdbg/saturating_compactor.hh
+    include/boink/cdbg/ucompactor.hh
     include/boink/cdbg/udbg.hh
     include/boink/cdbg/utagger.hh
-    include/boink/cdbg/ucompactor.hh
-    include/boink/cdbg/saturating_compactor.hh
     include/boink/dbg.hh
     include/boink/events.hh
     include/boink/event_types.hh
     include/boink/hashing/alphabets.hh
     include/boink/hashing/exceptions.hh
+    include/boink/hashing/hash_combine.hh
     include/boink/hashing/hashshifter.hh
     include/boink/hashing/kmeriterator.hh
+    include/boink/hashing/rollinghash/characterhash.h
+    include/boink/hashing/rollinghash/cyclichash.h
     include/boink/hashing/rollinghashshifter.hh
-    include/boink/hashing/ukhshashshifter.hh
     include/boink/hashing/smhasher/MurmurHash3.h
+    include/boink/hashing/ukhshashshifter.hh
     include/boink/hashing/ukhs.hh
-    include/boink/hashing/hash_combine.hh
     include/boink/interface.hh
     include/boink/kmers/kmerclient.hh
+    include/boink/meta.hh
     include/boink/metrics.hh
     include/boink/minimizers.hh
+    include/boink/parsing/kseq.h
     include/boink/parsing/parsing.hh
     include/boink/parsing/readers.hh
     include/boink/pdbg.hh
     include/boink/processors.hh
     include/boink/reporting/reporters.hh
+    include/boink/ring_span.hpp
+    include/boink/signatures/sourmash/kmer_min_hash.hh
+    include/boink/signatures/sourmash_signature.hh
+    include/boink/signatures/ukhs_signature.hh
     include/boink/storage/bitstorage.hh
     include/boink/storage/bytestorage.hh
+    include/boink/storage/cqf/gqf.h
     include/boink/storage/nibblestorage.hh
     include/boink/storage/partitioned_storage.hh
     include/boink/storage/qfstorage.hh
+    include/boink/storage/sparsepp/serialize.hh
     include/boink/storage/sparseppstorage.hh
     include/boink/storage/storage.hh
     include/boink/storage/storage_types.hh
-    include/boink/storage/cqf/gqf.h
-    include/boink/signatures/ukhs_signature.hh
-    include/boink/signatures/sourmash/kmer_min_hash.hh
-    include/boink/signatures/sourmash_signature.hh
+    include/boink/traversal.hh
+    include/boink/utils/stringutils.h
 )
 
 set(_sources
-    src/boink/storage/partitioned_storage.cc
-    src/boink/storage/storage.cc
-    src/boink/storage/qfstorage.cc
-    src/boink/storage/bytestorage.cc
-    src/boink/storage/bitstorage.cc
-    src/boink/storage/sparseppstorage.cc
-    src/boink/storage/nibblestorage.cc
-    src/boink/storage/cqf/gqf.c
-    src/boink/processors.cc
-    src/boink/metrics.cc
-    src/boink/events.cc
-    src/boink/reporting/reporters.cc
-    src/boink/hashing/smhasher/MurmurHash3.cc
-    src/boink/hashing/hashshifter.cc
-    src/boink/hashing/alphabets.cc
-    src/boink/hashing/kmeriterator.cc
-    src/boink/hashing/rollinghashshifter.cc
-    src/boink/hashing/ukhs.cc
-    src/boink/signatures/ukhs_signature.cc
-    src/boink/signatures/sourmash_signature.cc
-    src/boink/traversal.cc
-    src/boink/dbg.cc
-    src/boink/pdbg.cc
+    src/boink/benchmarks/bench_storage.cc
+    src/boink/benchmarks/do_bench_storage.cc
     src/boink/boink.cc
-    src/boink/event_types.cc
-    src/boink/cdbg/metrics.cc
-    src/boink/cdbg/cdbg_types.cc
     src/boink/cdbg/cdbg.cc
+    src/boink/cdbg/cdbg_types.cc
     src/boink/cdbg/compactor.cc
+    src/boink/cdbg/metrics.cc
+    src/boink/cdbg/saturating_compactor.cc
+    src/boink/cdbg/ucompactor.cc
     src/boink/cdbg/udbg.cc
     src/boink/cdbg/utagger.cc
-    src/boink/cdbg/ucompactor.cc
-    src/boink/cdbg/saturating_compactor.cc
-    src/boink/parsing/readers.cc
-    src/boink/parsing/parsing.cc
+    src/boink/dbg.cc
+    src/boink/events.cc
+    src/boink/event_types.cc
+    src/boink/hashing/alphabets.cc
+    src/boink/hashing/hashshifter.cc
+    src/boink/hashing/kmeriterator.cc
+    src/boink/hashing/rollinghashshifter.cc
+    src/boink/hashing/smhasher/MurmurHash3.cc
+    src/boink/hashing/ukhs.cc
+    src/boink/meta.cc
+    src/boink/metrics.cc
     src/boink/minimizers.cc
-    src/boink/benchmarks/bench_storage.cc
+    src/boink/parsing/parsing.cc
+    src/boink/parsing/readers.cc
+    src/boink/pdbg.cc
+    src/boink/processors.cc
+    src/boink/reporting/reporters.cc
+    src/boink/signatures/sourmash_signature.cc
+    src/boink/signatures/ukhs_signature.cc
+    src/boink/storage/bitstorage.cc
+    src/boink/storage/bytestorage.cc
+    src/boink/storage/cqf/gqf.c
+    src/boink/storage/nibblestorage.cc
+    src/boink/storage/partitioned_storage.cc
+    src/boink/storage/qfstorage.cc
+    src/boink/storage/sparseppstorage.cc
+    src/boink/storage/storage.cc
+    src/boink/traversal.cc
 )
 
 set(_data
