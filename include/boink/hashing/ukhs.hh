@@ -25,6 +25,7 @@
 #include <utility>
 
 #include "boink/boink.hh"
+#include "boink/meta.hh"
 #include "boink/hashing/alphabets.hh"
 #include "boink/hashing/hashshifter.hh"
 #include "boink/hashing/rollinghash/cyclichash.h"
@@ -206,7 +207,8 @@ struct UKHS {
         }
     };
 
-    class LazyShifter : public HashShifter<LazyShifter, BinnedKmer> {
+    class LazyShifter : public HashShifter<LazyShifter, BinnedKmer>,
+                        public Tagged<LazyShifter> {
 
         /* Shifter that keeps track of each k-mer's associated
          * Unikmer. The hash_type will end being composed as:

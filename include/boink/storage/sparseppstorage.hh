@@ -10,10 +10,12 @@
 #ifndef BOINK_SPARSEPPSETSTORAGE_HH
 #define BOINK_SPARSEPPSETSTORAGE_HH
 
+#include "boink/meta.hh"
 #include "boink/storage/storage.hh"
 #include "boink/storage/sparsepp/spp.h"
 
 #include <cstdint>
+#include <fstream>
 #include <memory>
 #include <vector>
 
@@ -21,7 +23,8 @@ namespace boink {
 namespace storage {
 
 
-class SparseppSetStorage : public Storage<uint64_t> {
+class SparseppSetStorage : public Storage<uint64_t>,
+                           public Tagged<SparseppSetStorage> {
 
 public:
     
@@ -41,6 +44,10 @@ public:
     }
 
     static std::shared_ptr<SparseppSetStorage> build();
+
+    static std::shared_ptr<SparseppSetStorage> deserialize(std::ifstream& in);
+
+    void serialize(std::ofstream& out);
 
     std::shared_ptr<SparseppSetStorage> clone() const;
 
@@ -64,13 +71,9 @@ public:
         return n_buckets();
     }
 
-    void save(std::string, uint16_t ) {
-     
-    }
+    void save(std::string, uint16_t );
 
-    void load(std::string, uint16_t &) {
-
-    }
+    void load(std::string, uint16_t &);
 
     const bool insert(value_type h);
 

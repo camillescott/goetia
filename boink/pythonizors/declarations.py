@@ -17,7 +17,7 @@ for storage_t, args in storage_types:
             hasher = hasher_t(21)
         storage = storage_t.build(*args)
         hasher.set_cursor('A' * 21)
-        dbg = libboink.dBG[storage_t, hasher_t].build(hasher, storage)
+        dbg = libboink.dBG[storage_t, hasher_t].build(storage, hasher)
         _ = libboink.cdbg.cDBG[type(dbg)].CompactNode
         _ = libboink.cdbg.cDBG[type(dbg)].UnitigNode
         _ = libboink.cdbg.cDBG[type(dbg)].DecisionNode

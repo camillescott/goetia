@@ -80,7 +80,7 @@ typedef std::pair<count_t, count_t> full_count_t;
 
 template<class Storage> 
 struct is_probabilistic { 
-      static const bool value = false;
+    static const bool value = false;
 };
 
 template<class Storage>
@@ -125,6 +125,8 @@ public:
 
     void set_use_bigcount(bool b);
     bool get_use_bigcount();
+
+    virtual void serialize(std::ofstream& out) {}
 };
 
 

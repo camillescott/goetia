@@ -70,6 +70,8 @@ bool UKHS::Map::query(Unikmer& unikmer) {
     return false;
 }
 
-
 }
+
+template<> const std::string Tagged<hashing::UKHS::LazyShifter>::NAME = "Boink::CyclicHash<uint64_t>::NonRandom";
+
 }

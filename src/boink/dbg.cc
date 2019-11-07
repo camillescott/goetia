@@ -24,36 +24,78 @@
 
 namespace boink {
 
+/*
+ * CONSTRUCTORS
+ */ 
+
 template<class StorageType,
          class ShifterType>
-dBG<StorageType, ShifterType>::dBG(ShifterType& hasher, std::shared_ptr<StorageType> S)
+dBG<StorageType, ShifterType>
+
+::dBG(std::shared_ptr<StorageType> S, ShifterType& hasher)
     : KmerClient(hasher.K()),
       hasher(hasher),
-      S(S->clone())
+      S(S)
 {
 }
 
+template<class StorageType,
+         class ShifterType>
+template<typename... Args>
+dBG<StorageType, ShifterType>
+
+::dBG(std::shared_ptr<StorageType> S, uint16_t K, Args&&... args)
+    : KmerClient(K),
+      hasher(K, std::forward<Args>(args)...),
+      S(S)
+{
+}
+
+/*
+ * FACTORIES
+ */
 
 template<class StorageType,
          class ShifterType>
 std::shared_ptr<dBG<StorageType, ShifterType>>
-dBG<StorageType, ShifterType>::build(ShifterType& hasher, std::shared_ptr<StorageType> S) {
-    return std::make_shared<dBG<StorageType, ShifterType>>(hasher, S);
+dBG<StorageType, ShifterType>
+
+::build(std::shared_ptr<StorageType> S, ShifterType& hasher) {
+    return std::make_shared<dBG<StorageType, ShifterType>>(S, hasher);
+}
+
+
+template<class StorageType,
+         class ShifterType>
+template<typename... Args>
+std::shared_ptr<dBG<StorageType, ShifterType>>
+dBG<StorageType, ShifterType>
+
+::build(std::shared_ptr<StorageType> S, uint16_t K, Args&&... args) {
+    return std::make_shared<dBG<StorageType, ShifterType>>(S, K, std::forward<Args>(args)...);
 }
 
 
 template<class StorageType,
          class ShifterType>
 std::shared_ptr<dBG<StorageType, ShifterType>>
-dBG<StorageType, ShifterType>::clone() {
-    return std::make_shared<dBG<StorageType, ShifterType>>(hasher, S);
+dBG<StorageType, ShifterType>
+
+::clone() {
+    return std::make_shared<dBG<StorageType, ShifterType>>(S->clone(), hasher);
 }
 
+
+/*
+ * METHODS
+ */
 
 template<class StorageType,
          class ShifterType>
 typename ShifterType::hash_type
-dBG<StorageType, ShifterType>::hash(const std::string& kmer) {
+dBG<StorageType, ShifterType>
+
+::hash(const std::string& kmer) {
     hasher.set_cursor(kmer);
     return hasher.get();
 }
@@ -62,16 +104,24 @@ dBG<StorageType, ShifterType>::hash(const std::string& kmer) {
 template<class StorageType,
          class ShifterType>
 typename ShifterType::hash_type
-dBG<StorageType, ShifterType>::hash(const char * kmer) {
+dBG<StorageType, ShifterType>
+
+::hash(const char * kmer) {
     hasher.set_cursor(kmer);
     return hasher.get();
 }
 
+
+//
+// query
+//
 
 template<class StorageType,
          class ShifterType>
 const storage::count_t
-dBG<StorageType, ShifterType>::query(hash_type hashed_kmer) const {
+dBG<StorageType, ShifterType>
+
+::query(hash_type hashed_kmer) const {
     return S->query(hashed_kmer);
 }
 
@@ -79,15 +129,22 @@ dBG<StorageType, ShifterType>::query(hash_type hashed_kmer) const {
 template<class StorageType,
          class ShifterType>
 const storage::count_t
-dBG<StorageType, ShifterType>::query(const std::string& kmer) {
+dBG<StorageType, ShifterType>
+
+::query(const std::string& kmer) {
     return S->query(hash(kmer));
 }
 
+//
+// neighbor searchings
+//
 
 template <class StorageType,
           class ShifterType>
 std::vector<typename ShifterType::shift_type> 
-dBG<StorageType, ShifterType>::left_neighbors(const std::string& root) {
+dBG<StorageType, ShifterType>
+
+::left_neighbors(const std::string& root) {
     typename traversal_type::dBG traverser(hasher);
     traverser.set_cursor(root);
     return traverser.filter_nodes(this, traverser.gather_left());
@@ -97,7 +154,9 @@ dBG<StorageType, ShifterType>::left_neighbors(const std::string& root) {
 template <class StorageType,
           class ShifterType>
 std::vector<typename ShifterType::shift_type>
-dBG<StorageType, ShifterType>::right_neighbors(const std::string& root) {
+dBG<StorageType, ShifterType>
+
+::right_neighbors(const std::string& root) {
     typename traversal_type::dBG traverser(hasher);
     traverser.set_cursor(root);
     return traverser.filter_nodes(this, traverser.gather_right());
@@ -108,7 +167,9 @@ template <class StorageType,
           class ShifterType>
 std::pair<std::vector<typename ShifterType::shift_type>,
           std::vector<typename ShifterType::shift_type>>
-dBG<StorageType, ShifterType>::neighbors(const std::string& root) {
+dBG<StorageType, ShifterType>
+
+::neighbors(const std::string& root) {
     typename traversal_type::dBG traverser(hasher);
     traverser.set_cursor(root);
     auto lfiltered = traverser.filter_nodes(this, traverser.gather_left());
@@ -116,6 +177,9 @@ dBG<StorageType, ShifterType>::neighbors(const std::string& root) {
     return std::make_pair(lfiltered, rfiltered);
 }
 
+//
+// inserts
+//
 
 template <class StorageType,
           class ShifterType>

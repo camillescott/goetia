@@ -1225,7 +1225,7 @@ struct StreamingCompactor {
             auto storage = storage::ByteStorage::build(100000000, 4);
             auto hasher = graph->get_hasher();
             counts = std::make_unique<dBG<storage::ByteStorage,
-                                          ShifterType>>(hasher, storage);
+                                          ShifterType>>(storage, hasher);
         }
 
         static std::shared_ptr<NormalizingCompactor> build(std::shared_ptr<Compactor> compactor,
@@ -1303,8 +1303,8 @@ struct StreamingCompactor {
                                                                                                   n_abund_tables);
             auto abund_hasher = dbg->get_hasher();
             abund_filter = std::make_unique<dBG<storage::NibbleStorage,
-                                                ShifterType>>(abund_hasher,
-                                                              abund_storage);
+                                                ShifterType>>(abund_storage,
+                                                              abund_hasher);
         }
 
         static std::shared_ptr<SolidCompactor> build(std::shared_ptr<Compactor> compactor,

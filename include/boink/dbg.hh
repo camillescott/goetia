@@ -9,6 +9,7 @@
 #ifndef BOINK_DBG_HH
 #define BOINK_DBG_HH
 
+#include "boink/meta.hh"
 #include "boink/hashing/kmeriterator.hh"
 #include "boink/kmers/kmerclient.hh"
 #include "boink/processors.hh"
@@ -46,7 +47,11 @@ protected:
 
 public:
 
-    dBG(ShifterType& hasher, std::shared_ptr<StorageType> S);
+    //dBG(ShifterType& hasher, std::shared_ptr<StorageType> S);
+    dBG(std::shared_ptr<StorageType> S, ShifterType& hasher);
+
+    template<typename... Args>
+    dBG(std::shared_ptr<StorageType> S, uint16_t K, Args&&... args);
 
     /**
      * @Synopsis Build a dBG instance owned by a shared_ptr. 
@@ -56,8 +61,17 @@ public:
      * @Returns     shared_ptr owning the dBG.
      */
 
+    //static std::shared_ptr<dBG<StorageType, ShifterType>>
+    //__attribute__((used)) build(ShifterType& hasher, std::shared_ptr<StorageType> S);
     static std::shared_ptr<dBG<StorageType, ShifterType>>
-    __attribute__((used)) build(ShifterType& hasher, std::shared_ptr<StorageType> S);
+    __attribute__((used)) build(std::shared_ptr<StorageType> S,
+                                ShifterType& hasher);
+
+    template<typename... Args>
+    static std::shared_ptr<dBG<StorageType, ShifterType>>
+    __attribute__((used)) build(std::shared_ptr<StorageType> S,
+                                uint16_t K,
+                                Args&&... args);
 
     /**
      * @Synopsis  Makes a shallow clone of the dBG.
@@ -347,6 +361,13 @@ public:
     void load(std::string filename) {
         uint16_t ksize = _K;
         S->load(filename, ksize);
+    }
+
+    void serialize(std::string& filename) {
+        std::ofstream out(filename.c_str(), std::ios::binary);
+        out.write(Tagged<ShifterType>::NAME.c_str(),
+                  Tagged<ShifterType>::NAME.size());
+
     }
 
     /**

@@ -59,7 +59,9 @@
 #include <memory>
 #include <mutex>
 #include <unordered_map>
+#include <string>
 
+#include "boink/meta.hh"
 #include "boink/storage/storage.hh"
 
 struct quotient_filter;
@@ -73,7 +75,8 @@ namespace storage {
  *
  * \brief A Quotient Filter storage
  */
-class QFStorage : public Storage<uint64_t> {
+class QFStorage : public Storage<uint64_t>,
+                  public Tagged<QFStorage> {
 protected:
     std::shared_ptr<QF> cf;
     int _size;
@@ -117,6 +120,12 @@ public:
       fp = pow(fp, n_tables());
       return fp;
   }
+
+  static std::shared_ptr<QFStorage> deserialize(std::ifstream& in) {}
+
+  void serialize(std::ofstream& out) {}
+
+
 };
 
 

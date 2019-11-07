@@ -59,6 +59,8 @@ using namespace std;
 using namespace boink;
 using namespace boink::storage;
 
+template<> const std::string Tagged<QFStorage>::NAME = "Boink::QFStorage";
+
 
 QFStorage::QFStorage(int size)
     : _size(size)

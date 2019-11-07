@@ -53,6 +53,7 @@
 #include <mutex>
 #include <unordered_map>
 
+#include "boink/meta.hh"
 #include "boink/storage/storage.hh"
 
 #   define MAX_KCOUNT 255
@@ -80,7 +81,9 @@ class ByteStorageFileWriter;
 class ByteStorageGzFileReader;
 class ByteStorageGzFileWriter;
 
-class ByteStorage: public Storage<uint64_t> {
+class ByteStorage: public Storage<uint64_t>,
+                   public Tagged<ByteStorage> {
+
     friend class ByteStorageFile;
     friend class ByteStorageFileReader;
     friend class ByteStorageFileWriter;
@@ -213,7 +216,10 @@ public:
     {
         return _counts;
     }
+    // not implemented
+    static std::shared_ptr<ByteStorage> deserialize(std::ifstream& in) {}
 
+    void serialize(std::ofstream& out) {}
 };
 
 

@@ -53,6 +53,7 @@
 #include <mutex>
 #include <unordered_map>
 
+#include "boink/meta.hh"
 #include "boink/storage/storage.hh"
 
 
@@ -73,7 +74,8 @@ namespace storage {
  * tracking statistics, as well as save/load, and not much else.
  *
  */
-class NibbleStorage : public Storage<uint64_t>
+class NibbleStorage : public Storage<uint64_t>,
+                      public Tagged<NibbleStorage>
 {
 public:
 
@@ -202,6 +204,11 @@ public:
     {
         return _counts;
     }
+
+    // not implemented
+    static std::shared_ptr<NibbleStorage> deserialize(std::ifstream& in) {}
+
+    void serialize(std::ofstream& out) {}
 };
 
 

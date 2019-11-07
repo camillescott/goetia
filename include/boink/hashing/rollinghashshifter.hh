@@ -18,6 +18,7 @@
 #define BOINK_ROLLINGHASHSHIFTER_HH
 
 #include "boink/boink.hh"
+#include "boink/meta.hh"
 #include "boink/hashing/alphabets.hh"
 #include "boink/hashing/hashshifter.hh"
 
@@ -28,7 +29,8 @@ namespace hashing {
 
 
 class RollingHashShifter : public HashShifter<RollingHashShifter,
-                                              uint64_t> {
+                                              uint64_t>,
+                           public Tagged<RollingHashShifter> {
 protected:
     typedef HashShifter<RollingHashShifter, uint64_t> BaseShifter;
 
@@ -36,6 +38,7 @@ protected:
     using BaseShifter::_K;
 
 public:
+
 
     using BaseShifter::symbols;
     using BaseShifter::hash_type;

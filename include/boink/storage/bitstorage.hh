@@ -54,6 +54,7 @@
 #include <mutex>
 #include <unordered_map>
 
+#include "boink/meta.hh"
 #include "boink/storage/storage.hh"
 
 
@@ -74,7 +75,8 @@ namespace storage {
  *
  */
 
-class BitStorage : public Storage<uint64_t>
+class BitStorage : public Storage<uint64_t>,
+                   public Tagged<BitStorage>
 {
 protected:
     std::vector<uint64_t> _tablesizes;
@@ -189,6 +191,11 @@ public:
     void reset();
 
     void update_from(const BitStorage&);
+
+    // not implemented
+    static std::shared_ptr<BitStorage> deserialize(std::ifstream& in) {}
+
+    void serialize(std::ofstream& out) {}
 };
 
 template<>

@@ -10,4 +10,10 @@
 #include "boink/hashing/rollinghashshifter.hh"
 #include "boink/hashing/kmeriterator.hh"
 
+namespace boink {
+
+template <> const std::string Tagged<hashing::RollingHashShifter>::NAME = "Boink::CyclicHash<uint64_t>::NonRandom";
+
+}
+
 template class boink::hashing::KmerIterator<boink::hashing::RollingHashShifter>;
