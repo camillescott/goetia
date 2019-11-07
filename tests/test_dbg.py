@@ -290,6 +290,17 @@ def test_get_counts(graph, random_sequence, ksize, benchmark):
     assert all((count > 0 for count in counts))
 
 
+@using(ksize=[21, 51, 101])
+def test_clone(graph, ksize, random_sequence):
+    # basic get/add test
+    seq = random_sequence()
+    graph.insert_sequence(seq)
+    graph2 = graph.clone()
+    
+    assert graph.n_unique() > 0
+    assert graph2.n_unique() == 0
+
+
 @using(ksize=[21, 31, 41], length=[50000, 500000])
 @pytest.mark.benchmark(group='dbg-sequence')
 def test_pdbg_n_unique(random_sequence, ksize, length, benchmark, storage_type):

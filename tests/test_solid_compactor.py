@@ -40,7 +40,7 @@ class TestFindSolidSegments:
         sequence = linear_path()
 
         segments = solid_compactor.find_solid_segments(sequence)
-        assert segments == []
+        assert len(segments) == 0
 
     @using(ksize=21, length=100)
     def test_one_segments(self, ksize, length, graph, compactor, solid_compactor,
@@ -48,7 +48,7 @@ class TestFindSolidSegments:
         sequence = linear_path()
 
         for _ in range(min_abund):
-            solid_compactor.update_sequence(sequence)
+            solid_compactor.insert_sequence(sequence)
 
         segments = solid_compactor.find_solid_segments(sequence)
-        assert segments == [(0, len(sequence))]
+        assert [tuple(segments[0])] == [(0, len(sequence))]

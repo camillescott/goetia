@@ -60,7 +60,7 @@ def graph(store, hasher, ksize):
 
     _graph_type = libboink.dBG[type(store), type(hasher)]
     
-    return _graph_type.build(hasher, store)
+    return _graph_type.build(store, hasher)
 
 
 def counting_backends(*args):
