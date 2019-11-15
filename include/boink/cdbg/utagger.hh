@@ -131,6 +131,12 @@ struct UTagger {
                 auto hash = kmer_iter.next();
                 if (dbg->insert(hash)) {
                     hashes.push_back(hash);
+                    // Note that gather_left() and gather_right() only collect
+                    // up the *potential* neighbors for the cursor. We do this here
+                    // for all new k-mers in order to minimize the amount of hashing
+                    // we have to do; actually querying them against the graph and filtering
+                    // them out has to wait until all the new k-mers from the sequence
+                    // have been inserted.
                     neighbors.push_back(std::make_pair(this->gather_left(),
                                                        this->gather_right()));
                 } 
@@ -142,6 +148,8 @@ struct UTagger {
             }
  
             for (const auto& hash : hashes) {
+                // Now that all the new k-mers have been inserted, we can filter the nodes
+                // against the dBG and reduce the collection down to only the actual neighbors.
                 create_neighborhood_tags(hash,
                                          this->filter_nodes(dbg.get(),
                                                             neighbors.front()),
@@ -262,7 +270,7 @@ struct UTagger {
                 u = v;
             }
 
-            return tags;
+            return std::move(tags);
         }
                             
         /**
@@ -294,7 +302,7 @@ struct UTagger {
                 }
             }
 
-            return found;
+            return std::move(found);
         }
 
     };
