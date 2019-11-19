@@ -153,7 +153,7 @@ Traverse<GraphType>::dBG::filter_nodes(GraphType *                              
 
 template <class GraphType>
 typename Traverse<GraphType>::EndState
-Traverse<GraphType>::dBG::traverse_left(GraphType *        graph,
+Traverse<GraphType>::dBG::walk_left(GraphType *        graph,
                                         const std::string& seed,
                                         Path&              path,
                                         std::set<hash_type>&  mask) {
@@ -164,13 +164,13 @@ Traverse<GraphType>::dBG::traverse_left(GraphType *        graph,
         return {State::BAD_SEED, seed_hash};
     } 
     this->get_cursor(path);
-    return traverse_left(graph, path, mask);
+    return walk_left(graph, path, mask);
 }
 
 
 template <class GraphType>
 typename Traverse<GraphType>::EndState
-Traverse<GraphType>::dBG::traverse_left(GraphType * graph,
+Traverse<GraphType>::dBG::walk_left(GraphType * graph,
                                         Path&       path,
                                         std::set<hash_type>& mask) {
 
@@ -179,32 +179,29 @@ Traverse<GraphType>::dBG::traverse_left(GraphType * graph,
     this->seen.insert(prev_hash);
 
     // take the first step without check for reverse d-nodes
-    std::pair<State, shift_type> step = step_left(graph);
+    auto step = step_left(graph, mask);
 
-    if (step.first != State::STEP_LEFT) {
+    if (step.first != State::STEP) {
         return {step.first, this->get()};
     } else {
-        this->shift_left(step.second.symbol);
-        path.push_front(step.second.symbol);
-        this->seen.insert(step.second.hash);
+        path.push_front(step.second.front().symbol);
     }
 
     while (1) {
         if (out_degree(graph) > 1) {
             pdebug("Stop: reverse d-node");
             path.pop_front();
+            this->seen.erase(this->get());
             return {State::DECISION_RC, prev_hash};
         }
 
         prev_hash = this->get();
-        std::pair<State, shift_type> step = step_left(graph);
+        step = step_left(graph, mask);
 
-        if (step.first != State::STEP_LEFT) {
+        if (step.first != State::STEP) {
             return {step.first, this->get()};
         } else {
-            this->shift_left(step.second.symbol);
-            path.push_front(step.second.symbol);
-            this->seen.insert(step.second.hash);
+            path.push_front(step.second.front().symbol);
         }
     }
 }
@@ -212,7 +209,7 @@ Traverse<GraphType>::dBG::traverse_left(GraphType * graph,
 
 template <class GraphType>
 typename Traverse<GraphType>::EndState
-Traverse<GraphType>::dBG::traverse_right(GraphType *        graph,
+Traverse<GraphType>::dBG::walk_right(GraphType *        graph,
                                          const std::string& seed,
                                          Path&              path,
                                          std::set<hash_type>&  mask) {
@@ -222,13 +219,13 @@ Traverse<GraphType>::dBG::traverse_right(GraphType *        graph,
         return {State::BAD_SEED, this->get()};
     }
     this->get_cursor(path);
-    return traverse_right(graph, path, mask);
+    return walk_right(graph, path, mask);
 }
 
 
 template <class GraphType>
 typename Traverse<GraphType>::EndState
-Traverse<GraphType>::dBG::traverse_right(GraphType *       graph,
+Traverse<GraphType>::dBG::walk_right(GraphType *       graph,
                                          Path&             path,
                                          std::set<hash_type>& mask) {
 
@@ -236,19 +233,18 @@ Traverse<GraphType>::dBG::traverse_right(GraphType *       graph,
     this->seen.clear();
     this->seen.insert(prev_hash);
 
-    std::pair<State, shift_type> step = step_right(graph);
+    auto step = step_right(graph, mask);
 
-    if (step.first != State::STEP_RIGHT) {
+    if (step.first != State::STEP) {
         return {step.first, this->get()};
     } else {
-        this->shift_right(step.second.symbol);
-        path.push_back(step.second.symbol);
-        this->seen.insert(step.second.hash);
+        path.push_back(step.second.front().symbol);
     }
     
     while (1) {
         if (in_degree(graph) > 1) {
             path.pop_back();
+            this->seen.erase(this->get());
             return {State::DECISION_RC, prev_hash};
         }
 
@@ -256,14 +252,12 @@ Traverse<GraphType>::dBG::traverse_right(GraphType *       graph,
         // we need to move backwards because of a reverse decision
         // k-mer
         prev_hash = this->get();
-        std::pair<State, shift_type> step = step_right(graph);
+        step = step_right(graph, mask);
 
-        if (step.first != State::STEP_RIGHT) {
+        if (step.first != State::STEP) {
             return {step.first, this->get()};
         } else {
-            this->shift_right(step.second.symbol);
-            path.push_back(step.second.symbol);
-            this->seen.insert(step.second.hash);
+            path.push_back(step.second.front().symbol);
         }
     }
 }
@@ -271,10 +265,10 @@ Traverse<GraphType>::dBG::traverse_right(GraphType *       graph,
 
 template <class GraphType>
 std::pair<typename Traverse<GraphType>::EndState, typename Traverse<GraphType>::EndState>
-Traverse<GraphType>::dBG::traverse(GraphType *        graph,
-                                   const std::string& seed,
-                                   Path&              path,
-                                   std::set<hash_type>   mask) {
+Traverse<GraphType>::dBG::walk(GraphType *        graph,
+                               const std::string& seed,
+                               Path&              path,
+                               std::set<hash_type>   mask) {
 
     this->set_cursor(seed);
     if (!graph->query(this->hash(seed))) {
@@ -282,9 +276,9 @@ Traverse<GraphType>::dBG::traverse(GraphType *        graph,
                 {State::BAD_SEED, this->get()}};
     }
     this->get_cursor(path);
-    auto state_left = traverse_left(graph, path, mask);
+    auto state_left = walk_left(graph, path, mask);
     this->set_cursor(seed);
-    auto state_right = traverse_right(graph, path, mask);
+    auto state_right = walk_right(graph, path, mask);
     return {state_left, state_right};
 }
 

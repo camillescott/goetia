@@ -91,8 +91,8 @@ struct UStreamingCompactor {
         using traverser_type::find_right_kmers;
         using traverser_type::gather_left;
         using traverser_type::gather_right;
-        using traverser_type::traverse_left;
-        using traverser_type::traverse_right;
+        using traverser_type::walk_left;
+        using traverser_type::walk_right;
         using traverser_type::get_decision_neighbors;
 
 

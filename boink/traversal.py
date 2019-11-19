@@ -49,17 +49,17 @@ class Assembler:
     def assemble_right(self, seed):
         path = libboink.Path()
         mask = std.set[self.hash_type]()
-        end_state = self.traverser.traverse_right(self.graphptr, seed, path, mask)
+        end_state = self.traverser.walk_right(self.graphptr, seed, path, mask)
         return self.traverser.to_string(path), end_state
 
     def assemble_left(self, seed):
         path = libboink.Path()
         mask = std.set[self.hash_type]()
-        end_state = self.traverser.traverse_left(self.graphptr, seed, path, mask)
+        end_state = self.traverser.walk_left(self.graphptr, seed, path, mask)
         return self.traverser.to_string(path), end_state
     
     def assemble(self, seed):
         path = libboink.Path()
         mask = std.set[self.hash_type]()
-        left_end_state, right_end_state = self.traverser.traverse(self.graphptr, seed, path, mask)
+        left_end_state, right_end_state = self.traverser.walk(self.graphptr, seed, path, mask)
         return self.traverser.to_string(path), left_end_state, right_end_state

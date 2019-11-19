@@ -28,7 +28,7 @@
 
 namespace boink {
 namespace cdbg {
-
+#define DEBUG_CPTR
 
 # ifdef DEBUG_CPTR
 #   define pdebug(x) do { std::cerr << std::endl << "@ " << __FILE__ <<\
@@ -176,8 +176,8 @@ struct StreamingCompactor {
         using TraversalType::dBG::find_right_kmers;
         using TraversalType::dBG::gather_left;
         using TraversalType::dBG::gather_right;
-        using TraversalType::dBG::traverse_left;
-        using TraversalType::dBG::traverse_right;
+        using TraversalType::dBG::walk_left;
+        using TraversalType::dBG::walk_right;
         using TraversalType::dBG::get_decision_neighbors;
 
         typedef ShifterType   shifter_type;
@@ -344,9 +344,6 @@ struct StreamingCompactor {
             bool cur_new = false, prev_new = false, cur_seen = false, prev_seen = false;
 
             std::deque<compact_segment> preprocess;
-#ifdef DEBUG_CPTR
-            std::vector<count_t> counts;
-#endif
             compact_segment current_segment; // start null
             std::vector<typename TraversalType::dBG> segment_shifters;
             while(!kmers.done()) {
@@ -354,9 +351,6 @@ struct StreamingCompactor {
                 cur_new = this->dbg->query(cur_hash) == 0;
                 cur_seen = new_kmers.count(cur_hash);
                 hashes.push_back(cur_hash);
-#ifdef DEBUG_CPTR
-                counts.push_back(this->dbg->query(cur_hash));
-#endif
 
                 if(cur_new && !cur_seen) {
 
@@ -520,17 +514,6 @@ struct StreamingCompactor {
 
                 ++shifter_iter;
             }
-
-#ifdef DEBUG_CPTR
-            std::ostringstream os;
-            os << "k-mers: [";
-            for (size_t i = 0; i < counts.size(); ++i) {
-                os << std::to_string(counts[i]) << ":" << hashes[i] << ",";
-            }
-            os << "]";
-            pdebug("FIND SEGMENTS complete: " << os.str()
-                    << std::endl <<  segments);
-#endif
         }
 
        void update_from_segments(const std::string& sequence,
@@ -732,27 +715,30 @@ struct StreamingCompactor {
                        << lfiltered.size() << " in filtered set, should always be 1.)");
                 auto start = lfiltered.back();
                 Path path;
-                auto stop_state = this->traverse_left(dbg.get(), start.kmer, path, processed);
+                auto stop_state = this->walk_left(dbg.get(), start.kmer, path, processed);
                 hash_type end_hash = stop_state.second;
 
                 if (stop_state.first != State::STOP_SEEN) {
+                    this->clear_seen();
 
                     if (stop_state.first == State::DECISION_FWD) {
-
-                        shift_type right;
-                        std::pair<State, shift_type> step = this->step_left(dbg.get());
-                        if (step.first == State::STEP_LEFT) {
-                            end_hash = right.hash;
+                        auto step = this->step_right(dbg.get());
+                        pdebug("stopped on DECISION_FWD " << step.first);
+                        if (step.first == State::STEP) {
+                            pdebug("pop off path");
+                            end_hash = step.second.front().hash;
                             path.pop_front();
                         }
                     }
                     unode_to_split = cdbg->query_unode_end(end_hash);
+
                     size_t split_point = path.size() - this->_K  + 1;
                     hash_type left_unode_new_right = start.hash;
 
                     pdebug("split point is " << split_point <<
                             " new_right is " << left_unode_new_right
                            << " root was " << root.hash);
+                    assert(unode_to_split != nullptr);
 
                     hash_type right_unode_new_left = this->hash(unode_to_split->sequence.c_str() + 
                                                              split_point + 1);
@@ -792,17 +778,17 @@ struct StreamingCompactor {
                 auto start = rfiltered.back();
                 std::cout << "rstart: " << start.kmer << std::endl;
                 Path path;
-                auto stop_state = this->traverse_right(dbg.get(), start.kmer, path, processed);
+                auto stop_state = this->walk_right(dbg.get(), start.kmer, path, processed);
                 hash_type end_hash = stop_state.second;
 
                 if (stop_state.first != State::STOP_SEEN) {
+                    this->clear_seen();
 
                     if (stop_state.first == State::DECISION_FWD) {
 
-                        shift_type right;
-                        std::pair<State, shift_type> step = this->step_right(dbg.get());
-                        if (step.first == State::STEP_RIGHT) {
-                            end_hash = right.hash;
+                        auto step = this->step_left(dbg.get());
+                        if (step.first == State::STEP) {
+                            end_hash = step.second.front().hash;
                             path.pop_back();
                         }
                     }

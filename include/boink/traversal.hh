@@ -63,8 +63,7 @@ namespace TraversalState {
         STOP_MASKED,
         BAD_SEED,
         GRAPH_ERROR,
-        STEP_LEFT,
-        STEP_RIGHT
+        STEP
     };
 }
 
@@ -239,83 +238,92 @@ struct Traverse {
             return graph->build_right_kmers(filtered, root);
         }
 
-        std::pair<State, shift_type> step_left(GraphType * graph) {
-            shift_type next;
-            auto n_left = this->reduce_nodes(graph,
-                                             this->gather_left(),
-                                             next);
-
-            if (n_left > 1) {
+        State look_state(std::vector<shift_type>& neighbors) {
+            if (neighbors.size() > 1) {
                 pdebug("Stop: forward d-node");
-                return {State::DECISION_FWD, next};
-            }
-
-            if (n_left == 0) {
+                return State::DECISION_FWD;
+            } else if (neighbors.size() == 0) {
                 pdebug("Stop: no neighbors.");
-                return {State::STOP_FWD, next};
-            }
-
-            if (this->seen.count(next.hash)) {
+                return State::STOP_FWD;
+            } else if (this->seen.count(neighbors.front().hash)) {
                 pdebug("Stop: hit seen k-mer.");
-                return {State::STOP_SEEN, next};       
-                   
+                return State::STOP_SEEN;
+            } else {
+                return State::STEP;
             }
-
-            return {State::STEP_LEFT, next};
-
-            //if (mask.count(next.hash)) {
-            //    pdebug("Stop: hit masked k-mer.");
-            //    return {State::STOP_MASKED, next};     
-            //}
-
         }
 
-        std::pair<State, shift_type> step_right(GraphType * graph) {
-
-            shift_type next;
-            auto n_right = this->reduce_nodes(graph,
-                                              this->gather_right(),
-                                              next);
-            if (n_right > 1) {
-                return {State::DECISION_FWD, next};
+        std::pair<State, std::vector<shift_type>> step_left(GraphType * graph) {
+            auto neighbors = this->filter_nodes(graph, this->gather_left());
+            auto state = look_state(neighbors);
+            if (state == State::STEP) {
+                this->shift_left(neighbors.front().symbol);
+                this->seen.insert(neighbors.front().hash);
             }
-
-            if (n_right == 0) {
-                return {State::STOP_FWD, next};
-            }
-
-            if (this->seen.count(next.hash)) {
-                pdebug("Stop: hit seen k-mer.");
-                return {State::STOP_SEEN, next};       
-                   
-            }
-            //if (mask.count(next.hash)) {
-            //   pdebug("Stop: hit masked k-mer.");
-            //    return {State::STOP_MASKED, end_hash};     
-            //}
-
-            return {State::STEP_RIGHT, next};
+            return {state, std::move(neighbors)};
         }
 
-        EndState traverse_left(GraphType *          graph,
+        std::pair<State, std::vector<shift_type>> step_left(GraphType * graph,
+                                                            std::set<hash_type>& mask) {
+
+            auto neighbors = this->filter_nodes(graph, this->gather_left());
+            auto state = look_state(neighbors);
+            if (state == State::STEP) {
+                if (mask.count(neighbors.front().hash)) {
+                    state = State::STOP_MASKED;
+                } else {
+                    this->shift_left(neighbors.front().symbol);
+                    this->seen.insert(neighbors.front().hash);
+                }
+            }
+            return {state, std::move(neighbors)};
+        }
+
+        std::pair<State, std::vector<shift_type>> step_right(GraphType * graph) {
+
+            auto neighbors = this->filter_nodes(graph, this->gather_right());
+            auto state = look_state(neighbors);
+            if (state == State::STEP) {
+                this->shift_right(neighbors.front().symbol);
+                this->seen.insert(neighbors.front().hash);
+            }
+            return {state, std::move(neighbors)};
+        }
+
+        std::pair<State, std::vector<shift_type>> step_right(GraphType * graph,
+                                                             std::set<hash_type>& mask) {
+            auto neighbors = this->filter_nodes(graph, this->gather_right());
+            auto state = look_state(neighbors);
+            if (state == State::STEP) {
+                if (mask.count(neighbors.front().hash)) {
+                    state = State::STOP_MASKED;
+                } else {
+                    this->shift_right(neighbors.front().symbol);
+                    this->seen.insert(neighbors.front().hash);
+                }
+            }
+            return {state, std::move(neighbors)};
+        }
+
+        EndState walk_left(GraphType *          graph,
                                const std::string&   seed,
                                Path&                path,
                                std::set<hash_type>& mask);
 
-        EndState traverse_left(GraphType *          graph,
+        EndState walk_left(GraphType *          graph,
                                Path&                path,
                                std::set<hash_type>& mask);
 
-        EndState traverse_right(GraphType *          graph,
+        EndState walk_right(GraphType *          graph,
                                 const std::string&   seed,
                                 Path&                path,
                                 std::set<hash_type>& mask);
 
-        EndState traverse_right(GraphType *       graph,
+        EndState walk_right(GraphType *       graph,
                                 Path&             path,
                                 std::set<hash_type>& mask);
 
-        std::pair<EndState, EndState> traverse(GraphType *         graph,
+        std::pair<EndState, EndState> walk(GraphType *         graph,
                                                const std::string&  seed,
                                                Path&               path,
                                                std::set<hash_type> mask);
