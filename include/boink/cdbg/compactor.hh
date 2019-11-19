@@ -740,8 +740,8 @@ struct StreamingCompactor {
                     if (stop_state.first == State::DECISION_FWD) {
 
                         shift_type right;
-                        auto n_found = this->try_traverse_right(dbg.get(), right);
-                        if (n_found == 1) {
+                        std::pair<State, shift_type> step = this->step_left(dbg.get());
+                        if (step.first == State::STEP_LEFT) {
                             end_hash = right.hash;
                             path.pop_front();
                         }
@@ -800,8 +800,8 @@ struct StreamingCompactor {
                     if (stop_state.first == State::DECISION_FWD) {
 
                         shift_type right;
-                        auto n_found = this->try_traverse_left(dbg.get(), right);
-                        if (n_found == 1) {
+                        std::pair<State, shift_type> step = this->step_right(dbg.get());
+                        if (step.first == State::STEP_RIGHT) {
                             end_hash = right.hash;
                             path.pop_back();
                         }

@@ -124,10 +124,28 @@ class TestDecisions:
         assert graph.left_degree(path[:ksize]) == 1
         assert graph.right_degree(path[:ksize]) == 1
         assert lstate == STATES.DECISION_RC
+        print('Hash:', graph.hash(sequence[S:S+ksize]))
         assert lend == graph.hash(branch[:ksize])
         assert rstate == STATES.STOP_FWD
         assert rend == graph.hash(branch[-ksize:])
 
+    def test_start_from_reverse_decision_left(self, ksize, right_fork, asm, graph, consume, check_fp):
+        (sequence, branch), S = right_fork()
+        check_fp()
+        consume()
+
+        path, (lstate, lend) = asm.assemble_left(sequence[S:S+ksize])
+        assert path == sequence[:S+ksize]
+        assert lstate == STATES.STOP_FWD
+
+    def test_start_from_reverse_decision_right(self, ksize, left_fork, asm, graph, consume, check_fp):
+        (sequence, branch), S = left_fork()
+        check_fp()
+        consume()
+
+        path, (rstate, rend) = asm.assemble_right(sequence[S:S+ksize])
+        assert path == sequence[S:]
+        assert rstate == STATES.STOP_FWD
 
     def test_triple_decision_fwd(self, ksize, right_triple_fork,
                                  asm, consume, check_fp):

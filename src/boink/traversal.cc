@@ -159,8 +159,9 @@ Traverse<GraphType>::dBG::traverse_left(GraphType *        graph,
                                         std::set<hash_type>&  mask) {
 
     this->set_cursor(seed);
-    if (!graph->query(this->get())) {
-        return {State::BAD_SEED, this->get()};
+    auto seed_hash = this->get();
+    if (!graph->query(seed_hash)) {
+        return {State::BAD_SEED, seed_hash};
     } 
     this->get_cursor(path);
     return traverse_left(graph, path, mask);
@@ -173,47 +174,38 @@ Traverse<GraphType>::dBG::traverse_left(GraphType * graph,
                                         Path&       path,
                                         std::set<hash_type>& mask) {
 
-    auto end_hash = this->get();
+    hash_type prev_hash = this->get();
     this->seen.clear();
-    this->seen.insert(this->get());
+    this->seen.insert(prev_hash);
 
-    shift_type next;
-    uint8_t n_left;
+    // take the first step without check for reverse d-nodes
+    std::pair<State, shift_type> step = step_left(graph);
+
+    if (step.first != State::STEP_LEFT) {
+        return {step.first, this->get()};
+    } else {
+        this->shift_left(step.second.symbol);
+        path.push_front(step.second.symbol);
+        this->seen.insert(step.second.hash);
+    }
+
     while (1) {
         if (out_degree(graph) > 1) {
             pdebug("Stop: reverse d-node");
             path.pop_front();
-            return {State::DECISION_RC, end_hash};
+            return {State::DECISION_RC, prev_hash};
         }
 
-        n_left = this->reduce_nodes(graph,
-                                    this->gather_left(),
-                                    next);
-        end_hash = this->get();
+        prev_hash = this->get();
+        std::pair<State, shift_type> step = step_left(graph);
 
-        if (n_left > 1) {
-            pdebug("Stop: forward d-node");
-            return {State::DECISION_FWD, end_hash};
+        if (step.first != State::STEP_LEFT) {
+            return {step.first, this->get()};
+        } else {
+            this->shift_left(step.second.symbol);
+            path.push_front(step.second.symbol);
+            this->seen.insert(step.second.hash);
         }
-
-        if (n_left == 0) {
-            pdebug("Stop: no neighbors.");
-            return {State::STOP_FWD, end_hash};
-        }
-
-        if (this->seen.count(next.hash)) {
-            pdebug("Stop: hit seen k-mer.");
-            return {State::STOP_SEEN, end_hash};       
-               
-        }
-        if (mask.count(next.hash)) {
-            pdebug("Stop: hit masked k-mer.");
-            return {State::STOP_MASKED, end_hash};     
-        }
-        
-        this->shift_left(next.symbol);
-        path.push_front(next.symbol);
-        this->seen.insert(next.hash);
     }
 }
 
@@ -240,44 +232,39 @@ Traverse<GraphType>::dBG::traverse_right(GraphType *       graph,
                                          Path&             path,
                                          std::set<hash_type>& mask) {
 
-    auto end_hash = this->get();
+    hash_type prev_hash = this->get();
     this->seen.clear();
-    this->seen.insert(this->get());
+    this->seen.insert(prev_hash);
+
+    std::pair<State, shift_type> step = step_right(graph);
+
+    if (step.first != State::STEP_RIGHT) {
+        return {step.first, this->get()};
+    } else {
+        this->shift_right(step.second.symbol);
+        path.push_back(step.second.symbol);
+        this->seen.insert(step.second.hash);
+    }
     
-    shift_type next;
-    uint8_t n_right;
     while (1) {
         if (in_degree(graph) > 1) {
             path.pop_back();
-            return {State::DECISION_RC, end_hash};
+            return {State::DECISION_RC, prev_hash};
         }
 
-        n_right = this->reduce_nodes(graph,
-                                     this->gather_right(),
-                                     next);
-        end_hash = this->get();
+        // save the current cursor as prev_hash in case
+        // we need to move backwards because of a reverse decision
+        // k-mer
+        prev_hash = this->get();
+        std::pair<State, shift_type> step = step_right(graph);
 
-        if (n_right > 1) {
-            return {State::DECISION_FWD, end_hash};
+        if (step.first != State::STEP_RIGHT) {
+            return {step.first, this->get()};
+        } else {
+            this->shift_right(step.second.symbol);
+            path.push_back(step.second.symbol);
+            this->seen.insert(step.second.hash);
         }
-
-        if (n_right == 0) {
-            return {State::STOP_FWD, end_hash};
-        }
-
-        if (this->seen.count(next.hash)) {
-            pdebug("Stop: hit seen k-mer.");
-            return {State::STOP_SEEN, end_hash};       
-               
-        }
-        if (mask.count(next.hash)) {
-            pdebug("Stop: hit masked k-mer.");
-            return {State::STOP_MASKED, end_hash};     
-        }
-
-        this->shift_right(next.symbol);
-        path.push_back(next.symbol);
-        this->seen.insert(next.hash);
     }
 }
 

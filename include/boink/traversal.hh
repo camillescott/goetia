@@ -62,7 +62,9 @@ namespace TraversalState {
         STOP_SEEN,
         STOP_MASKED,
         BAD_SEED,
-        GRAPH_ERROR
+        GRAPH_ERROR,
+        STEP_LEFT,
+        STEP_RIGHT
     };
 }
 
@@ -160,30 +162,6 @@ struct Traverse {
             return in_degree(graph, extras) + out_degree(graph, extras);
         }
 
-        size_t try_traverse_left(GraphType * graph,
-                                 shift_type& result) {
-
-            std::vector<shift_type> neighbors = this->gather_left();
-            auto n_left = reduce_nodes(graph, neighbors, result);
-
-            if (n_left == 1) {
-                this->shift_left(result.symbol);
-            }
-            return n_left;
-        }
-
-        size_t try_traverse_right(GraphType * graph,
-                                  shift_type& result) {
-            std::vector<shift_type> neighbors = this->gather_right();
-            auto n_right = reduce_nodes(graph, neighbors, result);
-
-            if (n_right == 1) {
-                this->shift_right(result.symbol);
-            }
-            return n_right;
-        }
-
-
         size_t count_nodes(GraphType *                    graph,
                            const std::vector<shift_type>& nodes);
 
@@ -259,6 +237,64 @@ struct Traverse {
             auto root = this->get_cursor();
             auto filtered = filter_nodes(graph, this->gather_right(), extras);
             return graph->build_right_kmers(filtered, root);
+        }
+
+        std::pair<State, shift_type> step_left(GraphType * graph) {
+            shift_type next;
+            auto n_left = this->reduce_nodes(graph,
+                                             this->gather_left(),
+                                             next);
+
+            if (n_left > 1) {
+                pdebug("Stop: forward d-node");
+                return {State::DECISION_FWD, next};
+            }
+
+            if (n_left == 0) {
+                pdebug("Stop: no neighbors.");
+                return {State::STOP_FWD, next};
+            }
+
+            if (this->seen.count(next.hash)) {
+                pdebug("Stop: hit seen k-mer.");
+                return {State::STOP_SEEN, next};       
+                   
+            }
+
+            return {State::STEP_LEFT, next};
+
+            //if (mask.count(next.hash)) {
+            //    pdebug("Stop: hit masked k-mer.");
+            //    return {State::STOP_MASKED, next};     
+            //}
+
+        }
+
+        std::pair<State, shift_type> step_right(GraphType * graph) {
+
+            shift_type next;
+            auto n_right = this->reduce_nodes(graph,
+                                              this->gather_right(),
+                                              next);
+            if (n_right > 1) {
+                return {State::DECISION_FWD, next};
+            }
+
+            if (n_right == 0) {
+                return {State::STOP_FWD, next};
+            }
+
+            if (this->seen.count(next.hash)) {
+                pdebug("Stop: hit seen k-mer.");
+                return {State::STOP_SEEN, next};       
+                   
+            }
+            //if (mask.count(next.hash)) {
+            //   pdebug("Stop: hit masked k-mer.");
+            //    return {State::STOP_MASKED, end_hash};     
+            //}
+
+            return {State::STEP_RIGHT, next};
         }
 
         EndState traverse_left(GraphType *          graph,
