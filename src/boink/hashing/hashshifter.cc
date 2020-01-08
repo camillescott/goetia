@@ -73,9 +73,30 @@ HashShifter<Derived, HashType>::set_cursor(const Iterator begin, const Iterator 
     return get();
 }
 
+
+template <class ShifterType>
+typename ShifterType::hash_type
+BiDirectionalShifter<ShifterType>::shift_left(const char c) {
+    hash_type fw = fw_shifter.shift_left(c);
+    hash_type rc = rc_shifter.shift_right(complement(c));
+    return fw < rc ? fw : rc;
+}
+
+
+template <class ShifterType>
+typename ShifterType::hash_type
+BiDirectionalShifter<ShifterType>::shift_right(const char c) {
+    hash_type fw = fw_shifter.shift_right(c);
+    hash_type rc = rc_shifter.shift_left(complement(c));
+    return fw < rc ? fw : rc;
+}
+
+
 }
 }
 
 template class boink::hashing::HashShifter<boink::hashing::RollingHashShifter>;
 template class boink::hashing::HashShifter<boink::hashing::UKHS::LazyShifter,
                                            boink::hashing::UKHS::BinnedKmer>;
+
+template class boink::hashing::BiDirectionalShifter<boink::hashing::RollingHashShifter>;

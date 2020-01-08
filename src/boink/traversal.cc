@@ -35,7 +35,7 @@ Traverse<GraphType>::dBG::count_nodes(GraphType *                 graph,
                            const std::vector<shift_type>& nodes) {
     uint8_t n_found = 0;
     for (auto node: nodes) {
-        if(graph->query(node.hash)) {
+        if(graph->query(node.value())) {
             ++n_found;
         }
     }
@@ -50,8 +50,8 @@ Traverse<GraphType>::dBG::count_nodes(GraphType *                 graph,
                            std::set<hash_type>&           extras) {
     uint8_t n_found = 0;
     for (auto node: nodes) {
-        if(graph->query(node.hash) ||
-           extras.count(node.hash)) {
+        if(graph->query(node.value()) ||
+           extras.count(node.value())) {
             ++n_found;
         }
     }
@@ -66,7 +66,7 @@ Traverse<GraphType>::dBG::reduce_nodes(GraphType *                 graph,
                                        shift_type&                    result) {
     uint8_t n_found = 0;
     for (auto node : nodes) {
-        if(graph->query(node.hash)) {
+        if(graph->query(node.value())) {
             ++n_found;
             if (n_found > 1) {
                 return n_found;
@@ -85,8 +85,8 @@ Traverse<GraphType>::dBG::reduce_nodes(GraphType *                 graph,
                                        std::set<hash_type>&           extra) {
     uint8_t n_found = 0;
     for (auto node : nodes) {
-        if(graph->query(node.hash) ||
-           extra.count(node.hash)) {
+        if(graph->query(node.value()) ||
+           extra.count(node.value())) {
             ++n_found;
             if (n_found > 1) {
                 return n_found;
@@ -104,7 +104,7 @@ Traverse<GraphType>::dBG::filter_nodes(GraphType * graph,
                                        const std::vector<shift_type>& nodes) {
     std::vector<shift_type> result;
     for (auto node : nodes) {
-        if (graph->query(node.hash)) {
+        if (graph->query(node.value())) {
             result.push_back(node);
         }
     }
@@ -119,8 +119,8 @@ Traverse<GraphType>::dBG::filter_nodes(GraphType *                 graph,
                                        std::set<hash_type>&           extra) {
     std::vector<shift_type> result;
     for (auto node : nodes) {
-        if (graph->query(node.hash) ||
-            extra.count(node.hash)) {
+        if (graph->query(node.value()) ||
+            extra.count(node.value())) {
             result.push_back(node);
         }
     }

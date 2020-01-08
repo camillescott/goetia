@@ -77,6 +77,20 @@ def test_rolling_setcursor_seq_too_large():
     assert hasher.get() == 13194817695400542713
 
 
+def test_bidirectional_rolling_hash(ksize, length, random_sequence):
+    seq = random_sequence()
+
+    bdhasher = libboink.hashing.BiDirectionalShifter[libboink.hashing.RollingHashShifter](ksize)
+    fwhasher = libboink.hashing.RollingHashShifter(ksize)
+
+    for kmer in kmers(seq, ksize):
+        rc_kmer = libboink.hashing.revcomp(kmer)
+        fw, rc = fwhasher.hash(kmer), fwhasher.hash(rc_kmer)
+        can = fw if fw < rc else rc
+
+        assert bdhasher.hash(kmer) == can
+
+
 def test_unikmer_shifter_shift_left(ksize, length, random_sequence, unikmer_shifter):
     shifter, uk_ksize, uk_map = unikmer_shifter
     seq = random_sequence()

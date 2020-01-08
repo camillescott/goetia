@@ -177,7 +177,7 @@ public:
         std::vector<kmer_type> kmers;
         auto _prefix = prefix(root);
         for (auto neighbor : nodes) {
-            kmers.push_back(kmer_type(neighbor.hash,
+            kmers.push_back(kmer_type(neighbor.value(),
                                       neighbor.symbol + _prefix));
         }
         return kmers;
@@ -188,7 +188,7 @@ public:
         std::vector<kmer_type> kmers;
         auto _suffix = suffix(root);
         for (auto neighbor : nodes) {
-            kmers.push_back(kmer_type(neighbor.hash,
+            kmers.push_back(kmer_type(neighbor.value(),
                                       _suffix + neighbor.symbol));
         }
 

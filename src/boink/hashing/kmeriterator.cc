@@ -101,6 +101,7 @@ KmerIterator<ShifterType>::done() const {
 
 template class boink::hashing::KmerIterator<boink::hashing::RollingHashShifter>;
 template class boink::hashing::KmerIterator<boink::hashing::UKHS::LazyShifter>;
+template class boink::hashing::KmerIterator<boink::hashing::BiDirectionalShifter<boink::hashing::RollingHashShifter>>;
 
 template class boink::hashing::KmerIterator<boink::Traverse<boink::dBG<boink::storage::SparseppSetStorage,
                                                                        boink::hashing::RollingHashShifter>>::dBG>;

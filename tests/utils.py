@@ -32,7 +32,9 @@ def storage_type(request):
     return _storage_type, params
 
 
-@pytest.fixture(params=hashing_types, ids=lambda t: t.__name__)
+@pytest.fixture(params=hashing_types +
+                       [libboink.hashing.BiDirectionalShifter[libboink.hashing.RollingHashShifter]],
+                ids=lambda t: t.__name__)
 def hasher_type(request, ksize):
     _hasher_type = request.param
     if _hasher_type is libboink.hashing.UKHS.LazyShifter:

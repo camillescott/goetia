@@ -67,9 +67,14 @@ namespace hashing {
 
 
 extern std::string DNA_SIMPLE;
+extern std::string DNA_SIMPLE_CMP;
+
 extern std::string DNAN_SIMPLE;
+extern std::string DNAN_SIMPLE_CMP;
+
 extern std::string RNA_SIMPLE;
 extern std::string RNAN_SIMPLE;
+
 extern std::string IUPAC_NUCL;
 extern std::string IUPAC_AA;
 

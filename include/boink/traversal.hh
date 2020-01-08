@@ -161,13 +161,44 @@ struct Traverse {
             return in_degree(graph, extras) + out_degree(graph, extras);
         }
 
+        /**
+         * @Synopsis  Count how many nodes from the vector
+         *            exist in the graph.
+         *
+         * @Param graph
+         * @Param nodes
+         *
+         * @Returns   Number of nodes that exist in graph.
+         */
         size_t count_nodes(GraphType *                    graph,
                            const std::vector<shift_type>& nodes);
 
+
+        /**
+         * @Synopsis  Count how many nodes are in the in the induced
+         *            graph resulting from the input graph and the 
+         *            nodes and implicit edges from extras.
+         *
+         * @Param graph
+         * @Param nodes
+         * @Param extras
+         *
+         * @Returns   Number of nodes.
+         */
         size_t count_nodes(GraphType *                    graph,
                            const std::vector<shift_type>& nodes,
                            std::set<hash_type>&           extras);
 
+        /**
+         * @Synopsis  Count nodes that short-circuits when more
+         *            than one is found (for traversal).
+         *
+         * @Param graph
+         * @Param nodes
+         * @Param result The shift if n_bound is one.
+         *
+         * @Returns   
+         */
         size_t reduce_nodes(GraphType *                    graph,
                             const std::vector<shift_type>& nodes,
                             shift_type&                    result);
@@ -177,13 +208,42 @@ struct Traverse {
                             shift_type&                    result,
                             std::set<hash_type>&           extra);
 
+
+        /**
+         * @Synopsis  Return only the shifts from nodes that exist in the graph.
+         *
+         * @Param graph
+         * @Param nodes
+         *
+         * @Returns   The valid shifts.
+         */
         std::vector<shift_type> filter_nodes(GraphType *                    graph,
                                              const std::vector<shift_type>& nodes);
 
+
+        /**
+         * @Synopsis  Return only the shifts from nodes that exist in the induced
+         *            graph of extra on to graph.
+         *
+         * @Param graph
+         * @Param nodes
+         * @Param extra
+         *
+         * @Returns   
+         */
         std::vector<shift_type> filter_nodes(GraphType *                    graph,
                                              const std::vector<shift_type>& nodes,
                                              std::set<hash_type>&           extra);
 
+
+        /**
+         * @Synopsis  Filter from a pair of shift vectors (convenience for traversal)
+         *
+         * @Param graph
+         * @Param nodes
+         *
+         * @Returns   
+         */
         std::pair<std::vector<shift_type>,
                   std::vector<shift_type>> filter_nodes(GraphType * graph,
                                                         const std::pair<std::vector<shift_type>,
@@ -195,16 +255,39 @@ struct Traverse {
                                                                         std::vector<shift_type>>& nodes,
                                                         std::set<hash_type>&                      extras);
 
+        /**
+         * @Synopsis  In-neighbors for the node given by the current cursor.
+         *
+         * @Param graph
+         *
+         * @Returns   Vector of valid shifts in the graph.
+         */
         std::vector<shift_type> in_neighbors(GraphType * graph) {
             auto root = this->get_cursor();
             return filter_nodes(graph, this->gather_left());
         }
 
+        /**
+         * @Synopsis  Out-neighbors for the node given by the current cursor.
+         *
+         * @Param graph
+         *
+         * @Returns   Vector of valid shifts in the graph.
+         */
         std::vector<shift_type> out_neighbors(GraphType * graph) {
             auto root = this->get_cursor();
             return filter_nodes(graph, this->gather_right());
         }
 
+
+        /**
+         * @Synopsis  In and out-neighbors, respectively, for the node
+         *            given by the current cursor.
+         *
+         * @Param graph
+         *
+         * @Returns   pair of vectors of valid shifts in the graph.
+         */
         std::pair<std::vector<shift_type>,
                   std::vector<shift_type>> neighbors(GraphType * graph) {
             auto _in = in_neighbors(graph);
@@ -238,6 +321,17 @@ struct Traverse {
             return graph->build_right_kmers(filtered, root);
         }
 
+        /**
+         * @Synopsis  Given a vector of neighbors prior to stepping, deduce the traversal
+         *            state from them. 
+         *
+         * @Param neighbors
+         *
+         * @Returns   DECISION_FWD if there is more than 1 neighbor;
+         *            STOP_FWD if there are no neighbors;
+         *            STOP_SEEN if the single node is in the seen set;
+         *            STEP if there is a single node not in the seen set.
+         */
         State look_state(std::vector<shift_type>& neighbors) {
             if (neighbors.size() > 1) {
                 pdebug("Stop: forward d-node");
@@ -245,7 +339,7 @@ struct Traverse {
             } else if (neighbors.size() == 0) {
                 pdebug("Stop: no neighbors.");
                 return State::STOP_FWD;
-            } else if (this->seen.count(neighbors.front().hash)) {
+            } else if (this->seen.count(neighbors.front().value())) {
                 pdebug("Stop: hit seen k-mer.");
                 return State::STOP_SEEN;
             } else {
@@ -253,27 +347,43 @@ struct Traverse {
             }
         }
 
+        /**
+         * @Synopsis  Gather and filter left neighbors from the current cursor,
+         *            then step left is the look_state was STEP.
+         *
+         * @Param graph
+         *
+         * @Returns   Pair of the traversal state and any found neighbors.
+         */
         std::pair<State, std::vector<shift_type>> step_left(GraphType * graph) {
             auto neighbors = this->filter_nodes(graph, this->gather_left());
             auto state = look_state(neighbors);
             if (state == State::STEP) {
                 this->shift_left(neighbors.front().symbol);
-                this->seen.insert(neighbors.front().hash);
+                this->seen.insert(neighbors.front().value());
             }
             return {state, std::move(neighbors)};
         }
 
+        /**
+         * @Synopsis  Step left, while masking the nodes in mask.
+         *
+         * @Param graph
+         * @Param mask
+         *
+         * @Returns   
+         */
         std::pair<State, std::vector<shift_type>> step_left(GraphType * graph,
                                                             std::set<hash_type>& mask) {
 
             auto neighbors = this->filter_nodes(graph, this->gather_left());
             auto state = look_state(neighbors);
             if (state == State::STEP) {
-                if (mask.count(neighbors.front().hash)) {
+                if (mask.count(neighbors.front().value())) {
                     state = State::STOP_MASKED;
                 } else {
                     this->shift_left(neighbors.front().symbol);
-                    this->seen.insert(neighbors.front().hash);
+                    this->seen.insert(neighbors.front().value());
                 }
             }
             return {state, std::move(neighbors)};
@@ -285,7 +395,7 @@ struct Traverse {
             auto state = look_state(neighbors);
             if (state == State::STEP) {
                 this->shift_right(neighbors.front().symbol);
-                this->seen.insert(neighbors.front().hash);
+                this->seen.insert(neighbors.front().value());
             }
             return {state, std::move(neighbors)};
         }
@@ -295,21 +405,44 @@ struct Traverse {
             auto neighbors = this->filter_nodes(graph, this->gather_right());
             auto state = look_state(neighbors);
             if (state == State::STEP) {
-                if (mask.count(neighbors.front().hash)) {
+                if (mask.count(neighbors.front().value())) {
                     state = State::STOP_MASKED;
                 } else {
                     this->shift_right(neighbors.front().symbol);
-                    this->seen.insert(neighbors.front().hash);
+                    this->seen.insert(neighbors.front().value());
                 }
             }
             return {state, std::move(neighbors)};
         }
 
+        /**
+         * @Synopsis  Make as many steps left as possible, starting at seed,
+         *            stopping when a STOP state is encountered. If seed
+         *            does not exist in the graph, terminates immediately
+         *            on BAD_SEED.
+         *
+         * @Param graph
+         * @Param seed
+         * @Param path The string spelled out by the walk.
+         * @Param mask Nodes the mask out of the graph.
+         *
+         * @Returns   
+         */
         EndState walk_left(GraphType *          graph,
                                const std::string&   seed,
                                Path&                path,
                                std::set<hash_type>& mask);
 
+
+        /**
+         * @Synopsis  Walk left, from the current cursor position.
+         *
+         * @Param graph
+         * @Param path
+         * @Param mask
+         *
+         * @Returns   
+         */
         EndState walk_left(GraphType *          graph,
                                Path&                path,
                                std::set<hash_type>& mask);

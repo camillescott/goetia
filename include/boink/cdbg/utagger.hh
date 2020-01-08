@@ -174,14 +174,14 @@ struct UTagger {
                                       tag_map_t&                                tags) {
             // check in-neighbors
             for (auto& in_neighbor : neighbors.first) {
-                auto tag = create_tag(in_neighbor.hash, root);
+                auto tag = create_tag(in_neighbor.value(), root);
                 if (tag) {
                     tags[tag.value().link] = std::move(tag.value());
                 }
             }
             // and out neighbors
             for (auto& out_neighbor : neighbors.second) {
-                auto tag = create_tag(root, out_neighbor.hash);
+                auto tag = create_tag(root, out_neighbor.value());
                 if (tag) {
                     tags[tag.value().link] = std::move(tag.value());
                 }
@@ -290,13 +290,13 @@ struct UTagger {
                                                        std::make_pair(this->gather_left(),
                                                                       this->gather_right()));
                 for (auto& in_neighbor : neighborhood.first) {
-                    if (auto tag = query_tag(in_neighbor.hash, root)) {
+                    if (auto tag = query_tag(in_neighbor.value(), root)) {
                         found.insert(tag.value().link);
                     }
                 }
                 // and out neighbors
                 for (auto& out_neighbor : neighborhood.second) {
-                    if (auto tag = query_tag(root, out_neighbor.hash)) {
+                    if (auto tag = query_tag(root, out_neighbor.value())) {
                         found.insert(tag.value().link);
                     }
                 }

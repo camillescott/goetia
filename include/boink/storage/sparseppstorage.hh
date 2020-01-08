@@ -100,5 +100,8 @@ struct is_counting<SparseppSetStorage> {
 };
 
 }
+
+template <> const std::string Tagged<storage::SparseppSetStorage>::NAME;
+
 }
 #endif

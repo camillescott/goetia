@@ -388,7 +388,7 @@ struct StreamingCompactor {
                                                                kmers.shifter->gather_right(),
                                                                new_kmers);
                 if (rneighbors.size() == 1) {
-                    right_flank = rneighbors.front().hash;
+                    right_flank = rneighbors.front().value();
                 }
                 finish_segment(current_segment,
                                pos - 1, // we incr'd pos...
@@ -409,7 +409,7 @@ struct StreamingCompactor {
                                                                segment_shifters[0].gather_left(),
                                                                new_kmers);
                 if (lneighbors.size() == 1) {
-                    preprocess[1].left_flank = lneighbors.front().hash;
+                    preprocess[1].left_flank = lneighbors.front().value();
                 } else {
                     preprocess[1].left_flank = preprocess[1].left_anchor;
                 }
@@ -607,7 +607,7 @@ struct StreamingCompactor {
                    " new decision k-mers");
             for (auto dkmer : induced_decision_kmers) {
                 _build_dnode(dkmer.first);
-                induced_decision_kmer_hashes.insert(dkmer.first.hash);
+                induced_decision_kmer_hashes.insert(dkmer.first.value());
             }
 
             std::set<hash_type> processed;
@@ -620,7 +620,7 @@ struct StreamingCompactor {
                 DecisionKmer d_kmer = induced_decision_kmers.front();
                 induced_decision_kmers.pop_front();
 
-                if (processed.count(d_kmer.first.hash)) {
+                if (processed.count(d_kmer.first.value())) {
                     pdebug("Processed " << d_kmer.first << " already");
                     continue;
                 }
@@ -631,7 +631,7 @@ struct StreamingCompactor {
                                      induced_decision_kmer_hashes,
                                      processed)) {
                     pdebug("Split successful on " << d_kmer.first);
-                    processed.insert(d_kmer.first.hash);
+                    processed.insert(d_kmer.first.value());
                 } else {
                     induced_decision_kmers.push_back(d_kmer);
                 }
@@ -651,7 +651,7 @@ struct StreamingCompactor {
 
             UnitigNode * unode_to_split;
             
-            if ((unode_to_split = cdbg->query_unode_end(root.hash)) != nullptr) {
+            if ((unode_to_split = cdbg->query_unode_end(root.value())) != nullptr) {
                 // special case: induced an end k-mer, just have to trim the u-node,
                 // no need to create a new one
 
@@ -673,7 +673,7 @@ struct StreamingCompactor {
 
                 hash_type new_end;
                 direction_t clip_from;
-                if (root.hash == unode_to_split->left_end()) {
+                if (root.value() == unode_to_split->left_end()) {
                     new_end = this->hash(unode_to_split->sequence.c_str() + 1);
                     clip_from = DIR_LEFT;
                 } else {
@@ -683,7 +683,7 @@ struct StreamingCompactor {
                     clip_from = DIR_RIGHT;
                 }
                 cdbg->clip_unode(clip_from,
-                                 root.hash,
+                                 root.value(),
                                  new_end);
                 return true;
             }
@@ -693,8 +693,8 @@ struct StreamingCompactor {
                          neighbors.first.end(),
                          std::back_inserter(lfiltered),
                          [&] (kmer_type neighbor) { return
-                            !new_kmers.count(neighbor.hash) &&
-                            !processed.count(neighbor.hash);
+                            !new_kmers.count(neighbor.value()) &&
+                            !processed.count(neighbor.value());
                          });
 
             std::vector<kmer_type> rfiltered;
@@ -702,8 +702,8 @@ struct StreamingCompactor {
                          neighbors.second.end(),
                          std::back_inserter(rfiltered),
                          [&] (kmer_type neighbor) { return
-                            !new_kmers.count(neighbor.hash) &&
-                            !processed.count(neighbor.hash);
+                            !new_kmers.count(neighbor.value()) &&
+                            !processed.count(neighbor.value());
                          });
             // EDGE CASE: split k-mer has no unitig to split because of previous processed
             // nodes or because neighbor is a properly oriented unitig end
@@ -726,24 +726,24 @@ struct StreamingCompactor {
                         pdebug("stopped on DECISION_FWD " << step.first);
                         if (step.first == State::STEP) {
                             pdebug("pop off path");
-                            end_hash = step.second.front().hash;
+                            end_hash = step.second.front().value();
                             path.pop_front();
                         }
                     }
                     unode_to_split = cdbg->query_unode_end(end_hash);
 
                     size_t split_point = path.size() - this->_K  + 1;
-                    hash_type left_unode_new_right = start.hash;
+                    hash_type left_unode_new_right = start.value();
 
                     pdebug("split point is " << split_point <<
                             " new_right is " << left_unode_new_right
-                           << " root was " << root.hash);
+                           << " root was " << root.value());
                     assert(unode_to_split != nullptr);
 
                     hash_type right_unode_new_left = this->hash(unode_to_split->sequence.c_str() + 
                                                              split_point + 1);
                     if (rfiltered.size()) {
-                        assert(right_unode_new_left == rfiltered.back().hash);
+                        assert(right_unode_new_left == rfiltered.back().value());
                     }
 
                     cdbg->split_unode(unode_to_split->node_id,
@@ -764,8 +764,8 @@ struct StreamingCompactor {
                         cdbg->split_unode(unode_to_split->node_id,
                                           0,
                                           root.kmer,
-                                          lfiltered.back().hash,
-                                          rfiltered.back().hash);
+                                          lfiltered.back().value(),
+                                          rfiltered.back().value());
                         return true;
                     }
                 }
@@ -788,7 +788,7 @@ struct StreamingCompactor {
 
                         auto step = this->step_left(dbg.get());
                         if (step.first == State::STEP) {
-                            end_hash = step.second.front().hash;
+                            end_hash = step.second.front().value();
                             path.pop_back();
                         }
                     }
@@ -799,9 +799,9 @@ struct StreamingCompactor {
                                                          - 1;
                     hash_type new_right = this->hash(unode_to_split->sequence.c_str() + 
                                                   split_point - 1);
-                    hash_type new_left = start.hash;
+                    hash_type new_left = start.value();
                     if (lfiltered.size()) {
-                        assert(lfiltered.back().hash == new_right);
+                        assert(lfiltered.back().value() == new_right);
                     }
 
                     cdbg->split_unode(unode_to_split->node_id,
@@ -822,8 +822,8 @@ struct StreamingCompactor {
                         cdbg->split_unode(unode_to_split->node_id,
                                           0,
                                           root.kmer,
-                                          lfiltered.back().hash,
-                                          rfiltered.back().hash);
+                                          lfiltered.back().value(),
+                                          rfiltered.back().value());
                         return true;
                     }
                 }
@@ -945,8 +945,8 @@ struct StreamingCompactor {
 
             uint8_t n_found = 0;
             for (auto lneighbor : neighbors.first) {
-                if (new_kmers.count(lneighbor.hash) ||
-                    cdbg->has_dnode(lneighbor.hash)) {
+                if (new_kmers.count(lneighbor.value()) ||
+                    cdbg->has_dnode(lneighbor.value())) {
                     continue;
                 }
                 NeighborBundle inductee_neighbors;
@@ -955,7 +955,7 @@ struct StreamingCompactor {
                                            inductee_neighbors,
                                            new_kmers)) {
 
-                    pdebug("Found induced d-node: " << lneighbor.hash << ", " << lneighbor.kmer);
+                    pdebug("Found induced d-node: " << lneighbor.value() << ", " << lneighbor.kmer);
                     induced.push_back(make_pair(lneighbor, inductee_neighbors));
                     ++n_found;
                     //_build_dnode(lneighbor);
@@ -994,12 +994,12 @@ struct StreamingCompactor {
             // see _induce_decision_nodes_left for information
 
             pdebug("Attempt right d-node induction from " << kmer.kmer
-                    << ", " << kmer.hash);
+                    << ", " << kmer.value());
 
             uint8_t n_found = 0;
             for (auto rneighbor : neighbors.second) {
-                if (new_kmers.count(rneighbor.hash) ||
-                    cdbg->has_dnode(rneighbor.hash)) {
+                if (new_kmers.count(rneighbor.value()) ||
+                    cdbg->has_dnode(rneighbor.value())) {
                     continue;
                 }
 
@@ -1009,7 +1009,7 @@ struct StreamingCompactor {
                                            inductee_neighbors,
                                            new_kmers)) {
                     // induced decision k-mer
-                    pdebug("Found induced d-node: " << rneighbor.hash << ", " << rneighbor.kmer);
+                    pdebug("Found induced d-node: " << rneighbor.value() << ", " << rneighbor.kmer);
                     induced.push_back(make_pair(rneighbor, inductee_neighbors));
                     ++n_found;
                     //_build_dnode(rneighbor);
@@ -1023,7 +1023,7 @@ struct StreamingCompactor {
         }
 
         virtual void _build_dnode(kmer_type kmer) {
-            cdbg->build_dnode(kmer.hash, kmer.kmer);
+            cdbg->build_dnode(kmer.value(), kmer.kmer);
         }
 
         uint8_t _add_neighbor_bundle(NeighborBundle& bundle) {

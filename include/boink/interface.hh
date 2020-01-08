@@ -84,13 +84,17 @@ template class boink::parsing::SequenceReader<boink::parsing::FastxParser>;
 extern
 template class boink::parsing::SplitPairedReader<boink::parsing::FastxParser>;
 
-
+extern
+template class boink::hashing::BiDirectionalShifter<boink::hashing::RollingHashShifter>;
 
 
 extern
 template class boink::hashing::KmerIterator<boink::hashing::RollingHashShifter>;
 extern
 template class boink::hashing::KmerIterator<boink::hashing::UKHS::LazyShifter>;
+extern
+template class boink::hashing::KmerIterator<boink::hashing::BiDirectionalShifter<boink::hashing::RollingHashShifter>>;
+
 extern
 template class boink::hashing::KmerIterator<boink::Traverse<boink::dBG<boink::storage::SparseppSetStorage,
                                                                        boink::hashing::RollingHashShifter>>::dBG>;
