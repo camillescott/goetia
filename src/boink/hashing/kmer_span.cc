@@ -11,31 +11,6 @@
 
 namespace boink::hashing {
 
-struct HasSpan : KmerSpanMixin<>::type {
-
-    HasSpan(int K)
-        : KmerSpanMixin<>::type(K) {}
-};
-
-struct NoSpan {
-
-};
-
-struct DoubleSpan : HasSpan,
-                    KmerSpanMixin<HasSpan>::type
-{
-    DoubleSpan(int K)
-        : HasSpan(K),
-          KmerSpanMixin<HasSpan>::type(K) {}
-};
-
-
-
-void test() {
-    HasSpan s(11);
-    DoubleSpan d(11);
-    //KmerSpanMixin<HasSpan>::type mx(11);
-    //mx.K();
-}
-
+template class KmerSpanMixinImpl<false>;
+template class KmerSpanMixinImpl<true>;
 }

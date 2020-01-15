@@ -10,9 +10,10 @@
         <namespace pattern="boink::TraversalState::*"/>
 
         <class name="boink::reporting::*"/>
+        <class name="boink::hashing::Direction_t"/>
         <class pattern="boink::signatures::UnikmerSignature<*>::Signature"/>
 
-        <class pattern="boink::Traverse<*>::*"/>
+        <class pattern="boink::dBGWalker<*>"/>
 
         <class pattern="boink::dBG<*, *>"/>
         <class pattern="boink::dBG*" />
@@ -23,7 +24,6 @@
         <class pattern="boink::InteriorMinimizer<*>"/>
 
         <class name="boink::DEFAULT_INTERVALS"/>
-
 
         <class pattern="std::pair<*,*>"/>
             <!-- <class pattern="std::enable_shared_from_this<*>" /> -->
@@ -36,9 +36,6 @@
         <namespace pattern="Catch::*" />
         <class name="std::condition_variable" />
         <class pattern="boink::hashing::HashShifter*"/>
-        <class pattern="std::vector<prometheus::*>"/>
-        <class pattern="std::vector<boink::Traverse<*>>::*"/>
-        <class pattern="std::vector<boink::*shift_type"/>
         <class name="std::vector<std::basic_ofstream<char>>"/>
         <namespace pattern="boink::events::*" />
     </exclusion>

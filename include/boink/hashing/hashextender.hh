@@ -71,8 +71,8 @@ public:
     typedef typename shifter_type::hash_type hash_type;
     typedef typename hash_type::value_type   value_type;
 
-    template<Direction_t D>
-        using shift_type = ShiftModel<hash_type, D>;
+    template<bool Dir>
+        using shift_type = ShiftModel<hash_type, Dir>;
     typedef ShiftModel<hash_type, DIR_LEFT>  shift_left_type;
     typedef ShiftModel<hash_type, DIR_RIGHT> shift_right_type;
 
@@ -280,6 +280,9 @@ public:
      * @Returns   
      */
     hash_type set_cursor(const std::string& sequence) {
+        if (sequence.length() < _K) {
+            throw SequenceLengthException("Sequence must at least length K");
+        }
         this->hash_base(sequence.c_str());
         this->load(sequence);
         return get();

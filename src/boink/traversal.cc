@@ -30,10 +30,10 @@
 namespace boink {
 
 template<class GraphType>
-template<Direction_t D>
+template<bool Dir>
 size_t dBGWalker<GraphType>
 ::count_nodes(GraphType *                       graph,
-              const std::vector<shift_type<D>>& extensions) {
+              const std::vector<shift_type<Dir>>& extensions) {
 
     uint8_t n_found = 0;
     for (const auto& ext : extensions) {
@@ -46,10 +46,10 @@ size_t dBGWalker<GraphType>
 
 
 template<class GraphType>
-template<Direction_t D>
+template<bool Dir>
 size_t dBGWalker<GraphType>
 ::count_nodes(GraphType *                graph,
-              const std::vector<shift_type<D>>& extensions,
+              const std::vector<shift_type<Dir>>& extensions,
               std::set<hash_type>&              extras) {
 
     uint8_t n_found = 0;
@@ -64,14 +64,14 @@ size_t dBGWalker<GraphType>
 
 
 template<class GraphType>
-template<Direction_t D>
+template<bool Dir>
 auto dBGWalker<GraphType>
 ::reduce_nodes(GraphType *                       graph,
-               const std::vector<shift_type<D>>& extensions)
--> shift_type<D> {
+               const std::vector<shift_type<Dir>>& extensions)
+-> shift_type<Dir> {
 
     uint8_t n_found = 0;
-    shift_type<D> result;
+    shift_type<Dir> result;
     for (const auto& ext : extensions) {
         if(graph->query(ext.value())) {
             ++n_found;
@@ -86,14 +86,14 @@ auto dBGWalker<GraphType>
 
 
 template<class GraphType>
-template<Direction_t D>
+template<bool Dir>
 auto dBGWalker<GraphType>
 ::reduce_nodes(GraphType *                       graph,
-               const std::vector<shift_type<D>>& extensions,
+               const std::vector<shift_type<Dir>>& extensions,
                std::set<hash_type>&              extra)
--> shift_type<D> {
+-> shift_type<Dir> {
     uint8_t n_found = 0;
-    shift_type<D> result;
+    shift_type<Dir> result;
     for (const auto& ext : extensions ) {
         if(graph->query(ext.value()) ||
            extra.count(ext.value())) {
@@ -102,42 +102,6 @@ auto dBGWalker<GraphType>
                 return n_found;
             }
             result = ext;
-        }
-    }
-    return result;
-}
-
-
-template<class GraphType>
-template<Direction_t D>
-auto dBGWalker<GraphType>
-::filter_nodes(GraphType * graph,
-               const std::vector<shift_type<D>>& extensions)
--> std::vector<shift_type<D>> {
-
-    std::vector<shift_type<D>> result;
-    for (const auto& ext : extensions) {
-        if (graph->query(ext.value())) {
-            result.push_back(ext);
-        }
-    }
-    return result;
-}
-
-
-template<class GraphType>
-template<Direction_t D>
-auto dBGWalker<GraphType>
-::filter_nodes(GraphType *                       graph,
-               const std::vector<shift_type<D>>& extensions,
-               std::set<hash_type>&              extra)
--> std::vector<shift_type<D>> {
-
-    std::vector<shift_type<D>> result;
-    for (const auto& ext : extensions) {
-        if (graph->query(ext.value()) ||
-            extra.count(ext.value())) {
-            result.push_back(ext);
         }
     }
     return result;

@@ -35,7 +35,6 @@ namespace boink {
 
 typedef std::deque<char> Path;
 typedef std::vector<std::string> StringVector;
-using hashing::Direction_t;
 
 
 /**
@@ -81,15 +80,15 @@ public:
     typedef typename extender_type::hash_type       hash_type;
     typedef typename hash_type::value_type          value_type;
 
-    template<Direction_t D>
-        using shift_type = hashing::ShiftModel<hash_type, D>;
+    template<bool Dir>
+        using shift_type = hashing::ShiftModel<hash_type, Dir>;
     typedef typename extender_type::shift_left_type  shift_left_type;
     typedef typename extender_type::shift_right_type shift_right_type;
 
     typedef typename extender_type::kmer_type        kmer_type;
 
     typedef std::pair<std::vector<kmer_type>,
-                      std::vector<kmer_type>>                      neighbor_pair_type;
+                      std::vector<kmer_type>>        neighbor_pair_type;
     typedef std::pair<std::vector<shift_type<hashing::DIR_LEFT>>,
                       std::vector<shift_type<hashing::DIR_RIGHT>>> shift_pair_type;
 
@@ -97,10 +96,10 @@ public:
 
 protected:
 
-    template<Direction_t D>
+    template<bool Dir>
     struct WalkBase {
         kmer_type                  start;
-        std::vector<shift_type<D>> path;
+        std::vector<shift_type<Dir>> path;
         State                      end_state;
 
         const hash_type head() const {
@@ -113,11 +112,11 @@ protected:
 
     };
 
-    template<Direction_t D = hashing::DIR_RIGHT, typename Dummy = void>
-    struct WalkImpl : public WalkBase<D> {
-        using WalkBase<D>::start;
-        using WalkBase<D>::path;
-        using WalkBase<D>::end_state;
+    template<bool Dir = hashing::DIR_RIGHT, typename Dummy = void>
+    struct WalkImpl : public WalkBase<Dir> {
+        using WalkBase<Dir>::start;
+        using WalkBase<Dir>::path;
+        using WalkBase<Dir>::end_state;
 
         const std::string to_string() const {
             std::string str(0, ' ');
@@ -154,8 +153,8 @@ protected:
 
 public:
 
-    template<Direction_t D>
-        using Walk = WalkImpl<D>;
+    template<bool Dir>
+        using Walk = WalkImpl<Dir>;
     typedef std::pair<Walk<hashing::DIR_LEFT>, Walk<hashing::DIR_RIGHT>> walk_pair_type;
 
     using extender_type::set_cursor;
@@ -242,9 +241,9 @@ public:
      *
      * @Returns   Number of nodes that exist in graph.
      */
-    template<Direction_t D>
-    size_t count_nodes(GraphType *                       graph,
-                       const std::vector<shift_type<D>>& extensions);
+    template<bool Dir>
+    size_t count_nodes(GraphType *                         graph,
+                       const std::vector<shift_type<Dir>>& extensions);
 
 
     /**
@@ -258,10 +257,10 @@ public:
      *
      * @Returns   Number of nodes.
      */
-    template<Direction_t D>
-    size_t count_nodes(GraphType *                       graph,
-                       const std::vector<shift_type<D>>& extensions,
-                       std::set<hash_type>&              extras);
+    template<bool Dir>
+    size_t count_nodes(GraphType *                         graph,
+                       const std::vector<shift_type<Dir>>& extensions,
+                       std::set<hash_type>&                extras);
 
     /**
      * @Synopsis  Count nodes that short-circuits when more
@@ -273,14 +272,14 @@ public:
      *
      * @Returns   
      */
-    template<Direction_t D>
-    shift_type<D> reduce_nodes(GraphType *                       graph,
-                               const std::vector<shift_type<D>>& extensions);
+    template<bool Dir>
+    shift_type<Dir> reduce_nodes(GraphType *                         graph,
+                               const std::vector<shift_type<Dir>>& extensions);
 
-    template<Direction_t D>
-    shift_type<D> reduce_nodes(GraphType *                       graph,
-                               const std::vector<shift_type<D>>& extensions,
-                               std::set<hash_type>&              extra);
+    template<bool Dir>
+    shift_type<Dir> reduce_nodes(GraphType *                         graph,
+                               const std::vector<shift_type<Dir>>& extensions,
+                               std::set<hash_type>&                extra);
 
 
     /**
@@ -291,10 +290,18 @@ public:
      *
      * @Returns   The valid shifts.
      */
-    template<Direction_t D>
-    auto filter_nodes(GraphType *                       graph,
-                      const std::vector<shift_type<D>>& extensions)
-    -> std::vector<shift_type<D>>;
+    template<bool Dir>
+    auto filter_nodes(GraphType *                         graph,
+                      const std::vector<shift_type<Dir>>& extensions)
+    -> std::vector<shift_type<Dir>> {
+        std::vector<shift_type<Dir>> result;
+        for (const auto& ext : extensions) {
+            if (graph->query(ext.value())) {
+                result.push_back(ext);
+            }
+        }
+        return result;
+    }
 
 
     /**
@@ -307,11 +314,21 @@ public:
      *
      * @Returns   
      */
-    template<Direction_t D>
-    auto filter_nodes(GraphType *                       graph,
-                       const std::vector<shift_type<D>>& extensions,
-                       std::set<hash_type>&              extra)
-    -> std::vector<shift_type<D>>;
+    template<bool Dir>
+    auto filter_nodes(GraphType *                          graph,
+                       const std::vector<shift_type<Dir>>& extensions,
+                       std::set<hash_type>&                extra)
+    -> std::vector<shift_type<Dir>> {
+        
+        std::vector<shift_type<Dir>> result;
+        for (const auto& ext : extensions) {
+            if (graph->query(ext.value()) ||
+                extra.count(ext.value())) {
+                result.push_back(ext);
+            }
+        }
+        return result;
+    }
 
 
     /**
@@ -405,8 +422,8 @@ public:
      *            STOP_SEEN if the single node is in the seen set;
      *            STEP if there is a single node not in the seen set.
      */
-    template<Direction_t D>
-    State look_state(std::vector<shift_type<D>>& neighbors) {
+    template<bool Dir>
+    State look_state(std::vector<shift_type<Dir>>& neighbors) {
         if (neighbors.size() > 1) {
             pdebug("Stop: forward d-node");
             return State::DECISION_FWD;

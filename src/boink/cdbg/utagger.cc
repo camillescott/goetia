@@ -10,13 +10,13 @@
 #include "boink/storage/storage_types.hh"
 
 namespace boink {
-namespace cdbg {
+
+template class cdbg::UTagger<storage::BitStorage>;
+template class cdbg::UTagger<storage::ByteStorage>;
+template class cdbg::UTagger<storage::NibbleStorage>;
+template class cdbg::UTagger<storage::QFStorage>;
+template class cdbg::UTagger<storage::SparseppSetStorage>;
 
 }
-}
 
-template class boink::cdbg::UTagger<boink::storage::BitStorage>;
-//template class boink::cdbg::UTagger<boink::storage::ByteStorage>;
-//template class boink::cdbg::UTagger<boink::storage::NibbleStorage>;
-//template class boink::cdbg::UTagger<boink::storage::QFStorage>;
-//template class boink::cdbg::UTagger<boink::storage::SparseppSetStorage>;
+

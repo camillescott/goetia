@@ -46,17 +46,8 @@ UKHS<ShifterType>::UKHS(uint16_t W,
 }
 
 
-template <class ShifterType>
-std::optional<Partitioned<typename ShifterType::hash_type>>
-UKHS<ShifterType>::query(hash_type unikmer_hash) {
-
-    auto search = pmap.find(unikmer_hash.value());
-    if (search != pmap.end()) {
-        return {unikmer_hash, search->second};
-    } else {
-        return {};
-    }
-}
+template class UKHS<FwdRollingShifter>;
+template class UKHS<CanRollingShifter>;
 
 }
 

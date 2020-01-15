@@ -24,10 +24,10 @@
 namespace boink {
 
 template class cdbg::uDBG<storage::BitStorage>;
-//template class cdbg::uDBG<storage::ByteStorage>;
-//template class cdbg::uDBG<storage::NibbleStorage>;
-//template class cdbg::uDBG<storage::QFStorage>;
-//template class cdbg::uDBG<storage::SparseppSetStorage>;
+template class cdbg::uDBG<storage::ByteStorage>;
+template class cdbg::uDBG<storage::NibbleStorage>;
+template class cdbg::uDBG<storage::QFStorage>;
+template class cdbg::uDBG<storage::SparseppSetStorage>;
 
 }
 

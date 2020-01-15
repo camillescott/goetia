@@ -12,8 +12,10 @@
 #include "boink/hashing/kmeriterator.hh"
 #include "boink/hashing/rollinghashshifter.hh"
 #include "boink/hashing/ukhshashshifter.hh"
+#include "boink/hashing/hashextender.hh"
 #include "boink/storage/storage_types.hh"
 #include "boink/traversal.hh"
+#include "boink/dbg.hh"
 
 namespace boink::hashing {
 
@@ -95,36 +97,44 @@ KmerIterator<ShifterType>::done() const {
 
 template class KmerIterator<FwdRollingShifter>;
 template class KmerIterator<CanRollingShifter>;
+
 template class KmerIterator<FwdUnikmerShifter>;
 template class KmerIterator<CanUnikmerShifter>;
 
+template class KmerIterator<HashExtender<FwdRollingShifter>>;
+template class KmerIterator<HashExtender<CanRollingShifter>>;
+
+template class KmerIterator<HashExtender<FwdUnikmerShifter>>;
+template class KmerIterator<HashExtender<CanUnikmerShifter>>;
+
 }
 
+namespace boink {
 
-/*
-template class boink::hashing::KmerIterator<boink::hashing::UKHS::LazyShifter>;
+template class hashing::KmerIterator<dBGWalker<dBG<storage::BitStorage, hashing::FwdRollingShifter>>>;
+template class hashing::KmerIterator<dBGWalker<dBG<storage::BitStorage, hashing::CanRollingShifter>>>;
+template class hashing::KmerIterator<dBGWalker<dBG<storage::BitStorage, hashing::FwdUnikmerShifter>>>;
+template class hashing::KmerIterator<dBGWalker<dBG<storage::BitStorage, hashing::CanUnikmerShifter>>>;
 
-template class boink::hashing::KmerIterator<boink::Traverse<boink::dBG<boink::storage::SparseppSetStorage,
-                                                                       boink::hashing::RollingHashShifter>>::dBG>;
-template class boink::hashing::KmerIterator<boink::Traverse<boink::dBG<boink::storage::BitStorage,
-                                                                       boink::hashing::RollingHashShifter>>::dBG>;
-template class boink::hashing::KmerIterator<boink::Traverse<boink::dBG<boink::storage::ByteStorage,
-                                                                       boink::hashing::RollingHashShifter>>::dBG>;
-template class boink::hashing::KmerIterator<boink::Traverse<boink::dBG<boink::storage::NibbleStorage,
-                                                                       boink::hashing::RollingHashShifter>>::dBG>;
-template class boink::hashing::KmerIterator<boink::Traverse<boink::dBG<boink::storage::QFStorage,
-                                                                       boink::hashing::RollingHashShifter>>::dBG>;
+template class hashing::KmerIterator<dBGWalker<dBG<storage::SparseppSetStorage, hashing::FwdRollingShifter>>>;
+template class hashing::KmerIterator<dBGWalker<dBG<storage::SparseppSetStorage, hashing::CanRollingShifter>>>;
+template class hashing::KmerIterator<dBGWalker<dBG<storage::SparseppSetStorage, hashing::FwdUnikmerShifter>>>;
+template class hashing::KmerIterator<dBGWalker<dBG<storage::SparseppSetStorage, hashing::CanUnikmerShifter>>>;
 
+template class hashing::KmerIterator<dBGWalker<dBG<storage::ByteStorage, hashing::FwdRollingShifter>>>;
+template class hashing::KmerIterator<dBGWalker<dBG<storage::ByteStorage, hashing::CanRollingShifter>>>;
+template class hashing::KmerIterator<dBGWalker<dBG<storage::ByteStorage, hashing::FwdUnikmerShifter>>>;
+template class hashing::KmerIterator<dBGWalker<dBG<storage::ByteStorage, hashing::CanUnikmerShifter>>>;
 
-template class boink::hashing::KmerIterator<boink::Traverse<boink::dBG<boink::storage::SparseppSetStorage,
-                                                                       boink::hashing::UKHS::LazyShifter>>::dBG>;
-template class boink::hashing::KmerIterator<boink::Traverse<boink::dBG<boink::storage::BitStorage,
-                                                                       boink::hashing::UKHS::LazyShifter>>::dBG>;
-template class boink::hashing::KmerIterator<boink::Traverse<boink::dBG<boink::storage::ByteStorage,
-                                                                       boink::hashing::UKHS::LazyShifter>>::dBG>;
-template class boink::hashing::KmerIterator<boink::Traverse<boink::dBG<boink::storage::NibbleStorage,
-                                                                       boink::hashing::UKHS::LazyShifter>>::dBG>;
-template class boink::hashing::KmerIterator<boink::Traverse<boink::dBG<boink::storage::QFStorage,
-                                                                       boink::hashing::UKHS::LazyShifter>>::dBG>;
+template class hashing::KmerIterator<dBGWalker<dBG<storage::NibbleStorage, hashing::FwdRollingShifter>>>;
+template class hashing::KmerIterator<dBGWalker<dBG<storage::NibbleStorage, hashing::CanRollingShifter>>>;
+template class hashing::KmerIterator<dBGWalker<dBG<storage::NibbleStorage, hashing::FwdUnikmerShifter>>>;
+template class hashing::KmerIterator<dBGWalker<dBG<storage::NibbleStorage, hashing::CanUnikmerShifter>>>;
 
-*/
+template class hashing::KmerIterator<dBGWalker<dBG<storage::QFStorage, hashing::FwdRollingShifter>>>;
+template class hashing::KmerIterator<dBGWalker<dBG<storage::QFStorage, hashing::CanRollingShifter>>>;
+template class hashing::KmerIterator<dBGWalker<dBG<storage::QFStorage, hashing::FwdUnikmerShifter>>>;
+template class hashing::KmerIterator<dBGWalker<dBG<storage::QFStorage, hashing::CanUnikmerShifter>>>;
+
+}
+

@@ -67,7 +67,15 @@ public:
         return std::make_shared<UKHS>(W, K, ukhs);
     }
 
-    std::optional<Unikmer> query(hash_type unikmer_hash);
+    std::optional<Unikmer> query(hash_type unikmer_hash) {
+
+        auto search = pmap.find(unikmer_hash.value());
+        if (search != pmap.end()) {
+            return {{unikmer_hash, search->second}};
+        } else {
+            return {};
+        }
+    }
 
     std::vector<hash_type> get_hashes() const {
         return hashes;

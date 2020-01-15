@@ -448,11 +448,11 @@ public:
                                  hash_type left_end,
                                  hash_type right_end);
 
-        void clip_unode(Direction_t clip_from,
+        void clip_unode(bool      clip_from,
                         hash_type old_unode_end,
                         hash_type new_unode_end);
 
-        void extend_unode(Direction_t ext_dir,
+        void extend_unode(bool               ext_dir,
                           const std::string& new_sequence,
                           hash_type old_unode_end,
                           hash_type new_unode_end,

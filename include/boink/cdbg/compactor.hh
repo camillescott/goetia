@@ -56,12 +56,12 @@ struct StreamingCompactor {
 	typedef typename hash_type::value_type      value_type;
     typedef typename shifter_type::kmer_type    kmer_type;
 
-    template<Direction_t D>
-        using shift_type = hashing::ShiftModel<hash_type, D>;
+    template<bool Dir>
+        using shift_type = hashing::ShiftModel<hash_type, Dir>;
 
     typedef dBGWalker<graph_type>               walker_type;
-    template<Direction_t D>
-        using walk_type = typename walker_type::template Walk<D>;
+    template<bool Dir>
+        using walk_type = typename walker_type::template Walk<Dir>;
     
     typedef typename walker_type::shift_pair_type shift_pair_type;
     typedef typename walker_type::neighbor_pair_type neighbor_pair_type;
@@ -392,7 +392,7 @@ struct StreamingCompactor {
             if (cur_new && !cur_seen) {
                 pdebug("sequence ended on new k-mer");
                 hash_type right_flank = cur_hash;
-                std::vector<shift_type<DIR_RIGHT>> rneighbors = filter_nodes(dbg.get(),
+                std::vector<shift_type<hashing::DIR_RIGHT>> rneighbors = filter_nodes(dbg.get(),
                                                                              kmers.shifter->right_extensions(),
                                                                              new_kmers);
                 if (rneighbors.size() == 1) {
@@ -413,7 +413,7 @@ struct StreamingCompactor {
 
             // handle edge case for left_flank of first segment if it starts at pos 0
             if (preprocess[1].start_pos == 0) {
-                std::vector<shift_type<DIR_LEFT>> lneighbors = filter_nodes(dbg.get(),
+                std::vector<shift_type<hashing::DIR_LEFT>> lneighbors = filter_nodes(dbg.get(),
                                                                segment_shifters[0].left_extensions(),
                                                                new_kmers);
                 if (lneighbors.size() == 1) {
@@ -680,15 +680,15 @@ struct StreamingCompactor {
                 }
 
                 hash_type new_end;
-                Direction_t clip_from;
+                bool clip_from;
                 if (root.value() == unode_to_split->left_end()) {
                     new_end = this->hash(unode_to_split->sequence.c_str() + 1);
-                    clip_from = DIR_LEFT;
+                    clip_from = hashing::DIR_LEFT;
                 } else {
                     new_end = this->hash(unode_to_split->sequence.c_str()
                                          + unode_to_split->sequence.size()
                                          - this->_K - 1);
-                    clip_from = DIR_RIGHT;
+                    clip_from = hashing::DIR_RIGHT;
                 }
                 cdbg->clip_unode(clip_from,
                                  root.value(),
@@ -868,7 +868,7 @@ struct StreamingCompactor {
             if (has_left_unode && !has_right_unode) {
                 auto trimmed_seq = sequence.substr(segment.start_pos + this->_K - 1,
                                                    segment.length - this->_K + 1);
-                cdbg->extend_unode(DIR_RIGHT,
+                cdbg->extend_unode(hashing::DIR_RIGHT,
                                    trimmed_seq,
                                    segment.left_flank,
                                    segment.right_anchor,
@@ -877,7 +877,7 @@ struct StreamingCompactor {
             } else if (!has_left_unode && has_right_unode) {
                 auto trimmed_seq = sequence.substr(segment.start_pos,
                                                    segment.length - this->_K + 1);
-                cdbg->extend_unode(DIR_LEFT,
+                cdbg->extend_unode(hashing::DIR_LEFT,
                                    trimmed_seq,
                                    segment.right_flank,
                                    segment.left_anchor,

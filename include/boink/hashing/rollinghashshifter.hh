@@ -171,7 +171,21 @@ template<>
 template<class It>
 CanonicalModel<uint64_t>
 RollingHashShifter<CanonicalModel<uint64_t>>
-::_hash_base(It begin, It end);
+::_hash_base(It begin, It end) {
+
+    hasher.reset();
+    rc_hasher.reset();
+
+    It _begin = begin, _end = end;
+
+    while (_begin != end) {
+        hasher.eat(*_begin);
+        rc_hasher.eat(alphabet::complement(*_end));
+
+        ++_begin;
+        --_end;
+    }
+}
 
 template<>
 CanonicalModel<uint64_t>

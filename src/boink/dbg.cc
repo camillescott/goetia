@@ -147,7 +147,7 @@ template <class StorageType,
           class ShifterType>
 auto dBG<StorageType, ShifterType>
 ::left_neighbors(const std::string& root)
--> std::vector<shift_type<DIR_LEFT>>{
+-> std::vector<shift_type<hashing::DIR_LEFT>>{
     walker_type walker(hasher);
     walker.set_cursor(root);
     return walker.in_neighbors(this);
@@ -158,7 +158,7 @@ template <class StorageType,
           class ShifterType>
 auto dBG<StorageType, ShifterType>
 ::right_neighbors(const std::string& root)
--> std::vector<shift_type<DIR_RIGHT>> {
+-> std::vector<shift_type<hashing::DIR_RIGHT>> {
     walker_type walker(hasher);
     walker.set_cursor(root);
     return walker.out_neighbors(this);

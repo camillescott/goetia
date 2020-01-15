@@ -57,13 +57,13 @@ struct uDBG {
     struct UnitigTip {
         std::string             kmer;
         std::vector<value_type> neighbors;
-        Direction_t             position;
+        bool                    position;
         value_type              partner;
 
         UnitigTip() {}
 
         UnitigTip(std::string kmer,
-                  Direction_t position)
+                  bool position)
             : kmer(kmer),
               position(position) {
 

@@ -25,10 +25,6 @@
 
 namespace boink {
 
-using hashing::DIR_LEFT;
-using hashing::DIR_RIGHT;
-
-
 template <class StorageType,
           class ShifterType>
 class dBG : public kmers::KmerClient {
@@ -45,11 +41,11 @@ public:
     typedef typename ShifterType::hash_type          hash_type;
     typedef typename ShifterType::kmer_type          kmer_type;
 
-    template<Direction_t D>
-        using shift_type = hashing::ShiftModel<hash_type, D>;
+    template<bool Dir>
+        using shift_type = hashing::ShiftModel<hash_type, Dir>;
 
-    typedef std::pair<std::vector<shift_type<DIR_LEFT>>,
-                      std::vector<shift_type<DIR_RIGHT>>> shift_pair_type;
+    typedef std::pair<std::vector<shift_type<hashing::DIR_LEFT>>,
+                      std::vector<shift_type<hashing::DIR_RIGHT>>> shift_pair_type;
 
     typedef std::pair<std::vector<kmer_type>,
                       std::vector<kmer_type>>             neighbor_pair_type;
@@ -206,7 +202,7 @@ public:
      *
      * @Returns   kmer_t objects with the left k-mers.
      */
-    std::vector<kmer_type> build_left_kmers(const std::vector<shift_type<DIR_LEFT>>& nodes,
+    std::vector<kmer_type> build_left_kmers(const std::vector<shift_type<hashing::DIR_LEFT>>& nodes,
                                             const std::string&                       root) {
         std::vector<kmer_type> kmers;
         auto _prefix = prefix(root);
@@ -226,7 +222,7 @@ public:
      *
      * @Returns   kmer_t objects with the right k-mers.
      */
-    std::vector<kmer_type> build_right_kmers(const std::vector<shift_type<DIR_RIGHT>>& nodes,
+    std::vector<kmer_type> build_right_kmers(const std::vector<shift_type<hashing::DIR_RIGHT>>& nodes,
                                              const std::string& root) {
         std::vector<kmer_type> kmers;
         auto _suffix = suffix(root);
@@ -245,7 +241,7 @@ public:
      *
      * @Returns   shift_t objects with the prefix bases and hashes.
      */
-    std::vector<shift_type<DIR_LEFT>> left_neighbors(const std::string& root);
+    std::vector<shift_type<hashing::DIR_LEFT>> left_neighbors(const std::string& root);
 
     /**
      * @Synopsis  Find the left-neighbors (in-neighbors) of root in the graph.
@@ -266,7 +262,7 @@ public:
      *
      * @Returns   shift_t objects with the suffix bases and hashes.
      */
-    std::vector<shift_type<DIR_RIGHT>> right_neighbors(const std::string& root);
+    std::vector<shift_type<hashing::DIR_RIGHT>> right_neighbors(const std::string& root);
 
     /**
      * @Synopsis  Finds the right-neighbors (out-neighbors) of root in the graph.

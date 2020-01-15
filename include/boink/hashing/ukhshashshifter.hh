@@ -77,9 +77,7 @@ public:
 
 
     typedef HashShifter<UnikmerShifter<ShifterType>, wmer_type> BaseShifter;
-
-    // pull kmer_type from BaseShifter
-    using BaseShifter::alphabet;
+    typedef typename BaseShifter::alphabet                      alphabet;
 
 protected:
 

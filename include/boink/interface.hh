@@ -27,8 +27,10 @@
 
 #include "boink/hashing/kmeriterator.hh"
 #include "boink/hashing/hashshifter.hh"
+#include "boink/hashing/hashextender.hh"
 #include "boink/hashing/ukhs.hh"
 #include "boink/hashing/rollinghashshifter.hh"
+#include "boink/hashing/ukhshashshifter.hh"
 
 #include "boink/kmers/kmerclient.hh"
 #include "boink/sequences/alphabets.hh"
@@ -78,235 +80,268 @@ template bool operator==(const std::STLTYPE< TTYPE >::iterator&,                
 template bool operator!=(const std::STLTYPE< TTYPE >::iterator&,                  \
                          const std::STLTYPE< TTYPE >::iterator&);                 \
 }
-extern
-template class boink::parsing::FastxParser<boink::DNA_SIMPLE>;
-extern
-template class boink::parsing::SequenceReader<boink::parsing::FastxParser<boink::DNA_SIMPLE>>;
-extern
-template class boink::parsing::SplitPairedReader<boink::parsing::FastxParser<boink::DNA_SIMPLE>>;
 
-extern
-template class boink::hashing::BiDirectionalShifter<boink::hashing::RollingHashShifter>;
+namespace boink {
 
+//
+// Readers
+//
 
-extern
-template class boink::hashing::KmerIterator<boink::hashing::RollingHashShifter>;
-extern
-template class boink::hashing::KmerIterator<boink::hashing::UKHS::LazyShifter>;
-extern
-template class boink::hashing::KmerIterator<boink::hashing::BiDirectionalShifter<boink::hashing::RollingHashShifter>>;
+extern template class parsing::FastxParser<DNA_SIMPLE>;
+extern template class parsing::SequenceReader<parsing::FastxParser<DNA_SIMPLE>>;
+extern template class parsing::SplitPairedReader<parsing::FastxParser<DNA_SIMPLE>>;
 
-extern
-template class boink::hashing::KmerIterator<boink::Traverse<boink::dBG<boink::storage::SparseppSetStorage,
-                                                                       boink::hashing::RollingHashShifter>>::dBG>;
-extern
-template class boink::hashing::KmerIterator<boink::Traverse<boink::dBG<boink::storage::BitStorage,
-                                                                       boink::hashing::RollingHashShifter>>::dBG>;
-extern
-template class boink::hashing::KmerIterator<boink::Traverse<boink::dBG<boink::storage::ByteStorage,
-                                                                       boink::hashing::RollingHashShifter>>::dBG>;
-extern
-template class boink::hashing::KmerIterator<boink::Traverse<boink::dBG<boink::storage::NibbleStorage,
-                                                                       boink::hashing::RollingHashShifter>>::dBG>;
-extern
-template class boink::hashing::KmerIterator<boink::Traverse<boink::dBG<boink::storage::QFStorage,
-                                                                       boink::hashing::RollingHashShifter>>::dBG>;
+namespace hashing {
 
-extern
-template class boink::hashing::KmerIterator<boink::Traverse<boink::dBG<boink::storage::SparseppSetStorage,
-                                                                       boink::hashing::UKHS::LazyShifter>>::dBG>;
-extern
-template class boink::hashing::KmerIterator<boink::Traverse<boink::dBG<boink::storage::BitStorage,
-                                                                       boink::hashing::UKHS::LazyShifter>>::dBG>;
-extern
-template class boink::hashing::KmerIterator<boink::Traverse<boink::dBG<boink::storage::ByteStorage,
-                                                                       boink::hashing::UKHS::LazyShifter>>::dBG>;
-extern
-template class boink::hashing::KmerIterator<boink::Traverse<boink::dBG<boink::storage::NibbleStorage,
-                                                                       boink::hashing::UKHS::LazyShifter>>::dBG>;
-extern
-template class boink::hashing::KmerIterator<boink::Traverse<boink::dBG<boink::storage::QFStorage,
-                                                                       boink::hashing::UKHS::LazyShifter>>::dBG>;
+    //
+    // Kmer Models
+    //
 
-extern
-template class boink::dBG<boink::storage::BitStorage,
-                          boink::hashing::RollingHashShifter>;
-extern
-template class boink::dBG<boink::storage::ByteStorage,
-                          boink::hashing::RollingHashShifter>;
-extern
-template class boink::dBG<boink::storage::NibbleStorage,
-                          boink::hashing::RollingHashShifter>;
-extern
-template class boink::dBG<boink::storage::QFStorage,
-                          boink::hashing::RollingHashShifter>;
-extern
-template class boink::dBG<boink::storage::SparseppSetStorage,
-                          boink::hashing::RollingHashShifter>;
+    extern template class HashModel<uint64_t>;
+    extern template class CanonicalModel<HashModel<uint64_t>>;
 
-extern
-template class boink::dBG<boink::storage::BitStorage,
-                          boink::hashing::UKHS::LazyShifter>;
-extern
-template class boink::dBG<boink::storage::ByteStorage,
-                          boink::hashing::UKHS::LazyShifter>;
-extern
-template class boink::dBG<boink::storage::NibbleStorage,
-                          boink::hashing::UKHS::LazyShifter>;
-extern
-template class boink::dBG<boink::storage::QFStorage,
-                          boink::hashing::UKHS::LazyShifter>;
-extern
-template class boink::dBG<boink::storage::SparseppSetStorage,
-                          boink::hashing::UKHS::LazyShifter>;
+    extern template class Partitioned<HashModel<uint64_t>>;
+    extern template class Partitioned<CanonicalModel<uint64_t>>;
+
+    extern template class KmerModel<HashModel<uint64_t>>;
+    extern template class KmerModel<CanonicalModel<HashModel<uint64_t>>>;
+    extern template class KmerModel<UnikmerWmer>;
+    extern template class KmerModel<CanonicalUnikmerWmer>;
+
+    extern template class ShiftModel<Hash, DIR_LEFT>;
+    extern template class ShiftModel<Hash, DIR_RIGHT>;
+    extern template class ShiftModel<Canonical, DIR_LEFT>;
+    extern template class ShiftModel<Canonical, DIR_RIGHT>;
+
+    //
+    // Shifters
+    //
+
+    extern template class RollingHashShifter<HashModel<uint64_t>>;
+    extern template class RollingHashShifter<CanonicalModel<uint64_t>>;
+
+    extern template class UnikmerShifter<FwdRollingShifter>;
+    extern template class UnikmerShifter<CanRollingShifter>;
+
+    //
+    // HashExtenders
+    //
+
+    extern template class HashExtender<FwdRollingShifter>;
+    extern template class HashExtender<CanRollingShifter>;
+
+    extern template class HashExtender<FwdUnikmerShifter>;
+    extern template class HashExtender<CanUnikmerShifter>;
+
+    //
+    // KmerIterator
+    //
+
+    extern template class KmerIterator<FwdRollingShifter>;
+    extern template class KmerIterator<CanRollingShifter>;
+
+    extern template class KmerIterator<FwdUnikmerShifter>;
+    extern template class KmerIterator<CanUnikmerShifter>;
+
+    extern template class KmerIterator<HashExtender<FwdRollingShifter>>;
+    extern template class KmerIterator<HashExtender<CanRollingShifter>>;
+
+    extern template class KmerIterator<HashExtender<FwdUnikmerShifter>>;
+    extern template class KmerIterator<HashExtender<CanUnikmerShifter>>;
+
+    extern template class KmerSpanMixinImpl<false>;
+    extern template class KmerSpanMixinImpl<true>;
+
+    //
+    // UKHS
+    //
+
+    extern template class UKHS<FwdRollingShifter>;
+    extern template class UKHS<CanRollingShifter>;
 
 
-extern
-template class boink::PdBG<boink::storage::BitStorage>;
-extern
-template class boink::PdBG<boink::storage::ByteStorage>;
-extern
-template class boink::PdBG<boink::storage::NibbleStorage>;
-extern
-template class boink::PdBG<boink::storage::QFStorage>;
-extern
-template class boink::PdBG<boink::storage::SparseppSetStorage>;
+}
+
+//
+// dBG
+//
+
+extern template class dBG<storage::BitStorage, hashing::FwdRollingShifter>;
+extern template class dBG<storage::BitStorage, hashing::CanRollingShifter>;
+extern template class dBG<storage::BitStorage, hashing::FwdUnikmerShifter>;
+extern template class dBG<storage::BitStorage, hashing::CanUnikmerShifter>;
+
+extern template class dBG<storage::SparseppSetStorage, hashing::FwdRollingShifter>;
+extern template class dBG<storage::SparseppSetStorage, hashing::CanRollingShifter>;
+extern template class dBG<storage::SparseppSetStorage, hashing::FwdUnikmerShifter>;
+extern template class dBG<storage::SparseppSetStorage, hashing::CanUnikmerShifter>;
+
+extern template class dBG<storage::ByteStorage, hashing::FwdRollingShifter>;
+extern template class dBG<storage::ByteStorage, hashing::CanRollingShifter>;
+extern template class dBG<storage::ByteStorage, hashing::FwdUnikmerShifter>;
+extern template class dBG<storage::ByteStorage, hashing::CanUnikmerShifter>;
+
+extern template class dBG<storage::NibbleStorage, hashing::FwdRollingShifter>;
+extern template class dBG<storage::NibbleStorage, hashing::CanRollingShifter>;
+extern template class dBG<storage::NibbleStorage, hashing::FwdUnikmerShifter>;
+extern template class dBG<storage::NibbleStorage, hashing::CanUnikmerShifter>;
+
+extern template class dBG<storage::QFStorage, hashing::FwdRollingShifter>;
+extern template class dBG<storage::QFStorage, hashing::CanRollingShifter>;
+extern template class dBG<storage::QFStorage, hashing::FwdUnikmerShifter>;
+extern template class dBG<storage::QFStorage, hashing::CanUnikmerShifter>;
+
+//
+//  PdBG
+//
+
+extern template class PdBG<storage::BitStorage, hashing::FwdRollingShifter>;
+extern template class PdBG<storage::BitStorage, hashing::CanRollingShifter>;
+
+extern template class PdBG<storage::SparseppSetStorage, hashing::FwdRollingShifter>;
+extern template class PdBG<storage::SparseppSetStorage, hashing::CanRollingShifter>;
+
+extern template class PdBG<storage::ByteStorage, hashing::FwdRollingShifter>;
+extern template class PdBG<storage::ByteStorage, hashing::CanRollingShifter>;
+
+extern template class PdBG<storage::NibbleStorage, hashing::FwdRollingShifter>;
+extern template class PdBG<storage::NibbleStorage, hashing::CanRollingShifter>;
+
+extern template class PdBG<storage::QFStorage, hashing::FwdRollingShifter>;
+extern template class PdBG<storage::QFStorage, hashing::CanRollingShifter>;
+
+//
+// Walkers
+//
+
+extern template class dBGWalker<dBG<storage::BitStorage, hashing::FwdRollingShifter>>;
+extern template class dBGWalker<dBG<storage::BitStorage, hashing::CanRollingShifter>>;
+extern template class dBGWalker<dBG<storage::BitStorage, hashing::FwdUnikmerShifter>>;
+extern template class dBGWalker<dBG<storage::BitStorage, hashing::CanUnikmerShifter>>;
+
+extern template class dBGWalker<dBG<storage::SparseppSetStorage, hashing::FwdRollingShifter>>;
+extern template class dBGWalker<dBG<storage::SparseppSetStorage, hashing::CanRollingShifter>>;
+extern template class dBGWalker<dBG<storage::SparseppSetStorage, hashing::FwdUnikmerShifter>>;
+extern template class dBGWalker<dBG<storage::SparseppSetStorage, hashing::CanUnikmerShifter>>;
+
+extern template class dBGWalker<dBG<storage::ByteStorage, hashing::FwdRollingShifter>>;
+extern template class dBGWalker<dBG<storage::ByteStorage, hashing::CanRollingShifter>>;
+extern template class dBGWalker<dBG<storage::ByteStorage, hashing::FwdUnikmerShifter>>;
+extern template class dBGWalker<dBG<storage::ByteStorage, hashing::CanUnikmerShifter>>;
+
+extern template class dBGWalker<dBG<storage::NibbleStorage, hashing::FwdRollingShifter>>;
+extern template class dBGWalker<dBG<storage::NibbleStorage, hashing::CanRollingShifter>>;
+extern template class dBGWalker<dBG<storage::NibbleStorage, hashing::FwdUnikmerShifter>>;
+extern template class dBGWalker<dBG<storage::NibbleStorage, hashing::CanUnikmerShifter>>;
+
+extern template class dBGWalker<dBG<storage::QFStorage, hashing::FwdRollingShifter>>;
+extern template class dBGWalker<dBG<storage::QFStorage, hashing::CanRollingShifter>>;
+extern template class dBGWalker<dBG<storage::QFStorage, hashing::FwdUnikmerShifter>>;
+extern template class dBGWalker<dBG<storage::QFStorage, hashing::CanUnikmerShifter>>;
+
+extern template class hashing::KmerIterator<dBGWalker<dBG<storage::BitStorage, hashing::FwdRollingShifter>>>;
+extern template class hashing::KmerIterator<dBGWalker<dBG<storage::BitStorage, hashing::CanRollingShifter>>>;
+extern template class hashing::KmerIterator<dBGWalker<dBG<storage::BitStorage, hashing::FwdUnikmerShifter>>>;
+extern template class hashing::KmerIterator<dBGWalker<dBG<storage::BitStorage, hashing::CanUnikmerShifter>>>;
+
+extern template class hashing::KmerIterator<dBGWalker<dBG<storage::SparseppSetStorage, hashing::FwdRollingShifter>>>;
+extern template class hashing::KmerIterator<dBGWalker<dBG<storage::SparseppSetStorage, hashing::CanRollingShifter>>>;
+extern template class hashing::KmerIterator<dBGWalker<dBG<storage::SparseppSetStorage, hashing::FwdUnikmerShifter>>>;
+extern template class hashing::KmerIterator<dBGWalker<dBG<storage::SparseppSetStorage, hashing::CanUnikmerShifter>>>;
+
+extern template class hashing::KmerIterator<dBGWalker<dBG<storage::ByteStorage, hashing::FwdRollingShifter>>>;
+extern template class hashing::KmerIterator<dBGWalker<dBG<storage::ByteStorage, hashing::CanRollingShifter>>>;
+extern template class hashing::KmerIterator<dBGWalker<dBG<storage::ByteStorage, hashing::FwdUnikmerShifter>>>;
+extern template class hashing::KmerIterator<dBGWalker<dBG<storage::ByteStorage, hashing::CanUnikmerShifter>>>;
+
+extern template class hashing::KmerIterator<dBGWalker<dBG<storage::NibbleStorage, hashing::FwdRollingShifter>>>;
+extern template class hashing::KmerIterator<dBGWalker<dBG<storage::NibbleStorage, hashing::CanRollingShifter>>>;
+extern template class hashing::KmerIterator<dBGWalker<dBG<storage::NibbleStorage, hashing::FwdUnikmerShifter>>>;
+extern template class hashing::KmerIterator<dBGWalker<dBG<storage::NibbleStorage, hashing::CanUnikmerShifter>>>;
+
+extern template class hashing::KmerIterator<dBGWalker<dBG<storage::QFStorage, hashing::FwdRollingShifter>>>;
+extern template class hashing::KmerIterator<dBGWalker<dBG<storage::QFStorage, hashing::CanRollingShifter>>>;
+extern template class hashing::KmerIterator<dBGWalker<dBG<storage::QFStorage, hashing::FwdUnikmerShifter>>>;
+extern template class hashing::KmerIterator<dBGWalker<dBG<storage::QFStorage, hashing::CanUnikmerShifter>>>;
 
 
-extern
-template class boink::cdbg::cDBG<boink::dBG<boink::storage::BitStorage,
-                                            boink::hashing::RollingHashShifter>>;
-extern
-template class boink::cdbg::cDBG<boink::dBG<boink::storage::ByteStorage,
-                                            boink::hashing::RollingHashShifter>>;
-extern
-template class boink::cdbg::cDBG<boink::dBG<boink::storage::NibbleStorage,
-                                            boink::hashing::RollingHashShifter>>;
-extern
-template class boink::cdbg::cDBG<boink::dBG<boink::storage::QFStorage,
-                                            boink::hashing::RollingHashShifter>>;
-extern
-template class boink::cdbg::cDBG<boink::dBG<boink::storage::SparseppSetStorage,
-                                            boink::hashing::RollingHashShifter>>;
+//
+// cDBG
+//
 
-extern
-template class boink::cdbg::uDBG<boink::storage::BitStorage>;
-extern
-template class boink::cdbg::uDBG<boink::storage::ByteStorage>;
-extern
-template class boink::cdbg::uDBG<boink::storage::NibbleStorage>;
-extern
-template class boink::cdbg::uDBG<boink::storage::QFStorage>;
-extern
-template class boink::cdbg::uDBG<boink::storage::SparseppSetStorage>;
+extern template class cdbg::cDBG<dBG<storage::BitStorage, hashing::FwdRollingShifter>>;
+extern template class cdbg::cDBG<dBG<storage::BitStorage, hashing::CanRollingShifter>>;
 
-extern
-template class boink::cdbg::UTagger<boink::storage::BitStorage>;
-extern
-template class boink::cdbg::UTagger<boink::storage::ByteStorage>;
-extern
-template class boink::cdbg::UTagger<boink::storage::NibbleStorage>;
-extern
-template class boink::cdbg::UTagger<boink::storage::QFStorage>;
-extern
-template class boink::cdbg::UTagger<boink::storage::SparseppSetStorage>;
+extern template class cdbg::cDBG<dBG<storage::SparseppSetStorage, hashing::FwdRollingShifter>>;
+extern template class cdbg::cDBG<dBG<storage::SparseppSetStorage, hashing::CanRollingShifter>>;
+
+extern template class cdbg::cDBG<dBG<storage::ByteStorage, hashing::FwdRollingShifter>>;
+extern template class cdbg::cDBG<dBG<storage::ByteStorage, hashing::CanRollingShifter>>;
+
+extern template class cdbg::cDBG<dBG<storage::NibbleStorage, hashing::FwdRollingShifter>>;
+extern template class cdbg::cDBG<dBG<storage::NibbleStorage, hashing::CanRollingShifter>>;
+
+extern template class cdbg::cDBG<dBG<storage::QFStorage, hashing::FwdRollingShifter>>;
+extern template class cdbg::cDBG<dBG<storage::QFStorage, hashing::CanRollingShifter>>;
+
+//
+// uDBG
+//
+
+extern template class cdbg::uDBG<storage::BitStorage>;
+extern template class cdbg::uDBG<storage::ByteStorage>;
+extern template class cdbg::uDBG<storage::NibbleStorage>;
+extern template class cdbg::uDBG<storage::QFStorage>;
+extern template class cdbg::uDBG<storage::SparseppSetStorage>;
+
+//
+// UTagger
+//
+
+extern template class cdbg::UTagger<storage::BitStorage>;
+extern template class cdbg::UTagger<storage::ByteStorage>;
+extern template class cdbg::UTagger<storage::NibbleStorage>;
+extern template class cdbg::UTagger<storage::QFStorage>;
+extern template class cdbg::UTagger<storage::SparseppSetStorage>;
+
+//
+// StreamingCompactor
+//
+
+extern template class cdbg::StreamingCompactor<dBG<storage::SparseppSetStorage, hashing::FwdRollingShifter>>;
+extern template class cdbg::StreamingCompactor<dBG<storage::BitStorage, hashing::FwdRollingShifter>>;
+extern template class cdbg::StreamingCompactor<dBG<storage::ByteStorage, hashing::FwdRollingShifter>>;
+extern template class cdbg::StreamingCompactor<dBG<storage::NibbleStorage, hashing::FwdRollingShifter>>;
+extern template class cdbg::StreamingCompactor<dBG<storage::QFStorage, hashing::FwdRollingShifter>>;
+
+//
+// UnikmerSignature
+//
+
+extern template class signatures::UnikmerSignature<storage::BitStorage, hashing::FwdRollingShifter>;
+extern template class signatures::UnikmerSignature<storage::BitStorage, hashing::CanRollingShifter>;
+
+extern template class signatures::UnikmerSignature<storage::SparseppSetStorage, hashing::FwdRollingShifter>;
+extern template class signatures::UnikmerSignature<storage::SparseppSetStorage, hashing::CanRollingShifter>;
+
+extern template class signatures::UnikmerSignature<storage::ByteStorage, hashing::FwdRollingShifter>;
+extern template class signatures::UnikmerSignature<storage::ByteStorage, hashing::CanRollingShifter>;
+
+extern template class signatures::UnikmerSignature<storage::NibbleStorage, hashing::FwdRollingShifter>;
+extern template class signatures::UnikmerSignature<storage::NibbleStorage, hashing::CanRollingShifter>;
+
+extern template class signatures::UnikmerSignature<storage::QFStorage, hashing::FwdRollingShifter>;
+extern template class signatures::UnikmerSignature<storage::QFStorage, hashing::CanRollingShifter>;
+
+//
+// Minimizers
+//
+
+extern template class InteriorMinimizer<uint64_t>;
+extern template class WKMinimizer<hashing::FwdRollingShifter>;
+extern template class WKMinimizer<hashing::CanRollingShifter>;
 
 
-extern
-template struct boink::Traverse<boink::dBG<boink::storage::BitStorage,
-                                           boink::hashing::RollingHashShifter>>;
-extern
-template struct boink::Traverse<boink::dBG<boink::storage::ByteStorage,
-                                           boink::hashing::RollingHashShifter>>;
-extern
-template struct boink::Traverse<boink::dBG<boink::storage::NibbleStorage,
-                                           boink::hashing::RollingHashShifter>>;
-extern
-template struct boink::Traverse<boink::dBG<boink::storage::QFStorage,
-                                           boink::hashing::RollingHashShifter>>;
-extern
-template struct boink::Traverse<boink::dBG<boink::storage::SparseppSetStorage,
-                                           boink::hashing::RollingHashShifter>>;
-extern
-template struct boink::Traverse<boink::dBG<boink::storage::SparseppSetStorage,
-                                          boink::hashing::UKHS::LazyShifter>>;
-extern
-template struct boink::Traverse<boink::dBG<boink::storage::BitStorage,
-                                           boink::hashing::UKHS::LazyShifter>>;
-extern
-template struct boink::Traverse<boink::dBG<boink::storage::ByteStorage,
-                                           boink::hashing::UKHS::LazyShifter>>;
-extern
-template struct boink::Traverse<boink::dBG<boink::storage::NibbleStorage,
-                                           boink::hashing::UKHS::LazyShifter>>;
-extern
-template struct boink::Traverse<boink::dBG<boink::storage::QFStorage,
-                                           boink::hashing::UKHS::LazyShifter>>;
-
-extern
-template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::BitStorage,
-                                               boink::hashing::RollingHashShifter>>;
-extern
-template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::ByteStorage,
-                                               boink::hashing::RollingHashShifter>>;
-extern
-template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::NibbleStorage,
-                                               boink::hashing::RollingHashShifter>>;
-extern
-template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::QFStorage,
-                                               boink::hashing::RollingHashShifter>>;
-extern
-template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::SparseppSetStorage,
-                                               boink::hashing::RollingHashShifter>>;
-
-extern
-template class boink::cdbg::SaturatingCompactor<boink::dBG<boink::storage::BitStorage,
-                                                           boink::hashing::RollingHashShifter>,
-                                                boink::signatures::SourmashSignature::Signature>;
-extern
-template class boink::cdbg::SaturatingCompactor<boink::dBG<boink::storage::ByteStorage,
-                                                           boink::hashing::RollingHashShifter>,
-                                                boink::signatures::SourmashSignature::Signature>;
-extern
-template class boink::cdbg::SaturatingCompactor<boink::dBG<boink::storage::NibbleStorage,
-                                                           boink::hashing::RollingHashShifter>,
-                                                boink::signatures::SourmashSignature::Signature>;
-extern
-template class boink::cdbg::SaturatingCompactor<boink::dBG<boink::storage::QFStorage,
-                                                           boink::hashing::RollingHashShifter>,
-                                                boink::signatures::SourmashSignature::Signature>;
-extern
-template class boink::cdbg::SaturatingCompactor<boink::dBG<boink::storage::SparseppSetStorage,
-                                                           boink::hashing::RollingHashShifter>,
-                                                boink::signatures::SourmashSignature::Signature>;
-
-/*
-extern
-template class boink::cdbg::UStreamingCompactor<boink::storage::BitStorage>;
-extern
-template class boink::cdbg::UStreamingCompactor<boink::storage::ByteStorage>;
-extern
-template class boink::cdbg::UStreamingCompactor<boink::storage::NibbleStorage>;
-extern
-template class boink::cdbg::UStreamingCompactor<boink::storage::QFStorage>;
-extern
-template class boink::cdbg::UStreamingCompactor<boink::storage::SparseppSetStorage>;
-*/
-extern
-template class boink::signatures::UnikmerSignature<boink::storage::BitStorage>;
-extern
-template class boink::signatures::UnikmerSignature<boink::storage::ByteStorage>;
-extern
-template class boink::signatures::UnikmerSignature<boink::storage::NibbleStorage>;
-extern
-template class boink::signatures::UnikmerSignature<boink::storage::QFStorage>;
-extern
-template class boink::signatures::UnikmerSignature<boink::storage::SparseppSetStorage>;
-
-template class boink::InteriorMinimizer<uint64_t>;
-
-extern
-template class boink::WKMinimizer<boink::hashing::RollingHashShifter>;
-
+}
 
 #endif

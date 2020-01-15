@@ -15,10 +15,8 @@
 
 namespace boink::hashing {
 
-enum Direction_t {
-    DIR_LEFT,
-    DIR_RIGHT,
-};
+constexpr bool DIR_LEFT = false;
+constexpr bool DIR_RIGHT = true;
 
 
 /**
@@ -281,7 +279,7 @@ struct KmerModel<HashType<ValueType, Extras...>> {
  * @tparam T
  * @tparam Direction 
  */
-template <class T, Direction_t Direction>
+template <class T, bool Direction>
 struct ShiftModel;
 
 /**
@@ -290,12 +288,12 @@ struct ShiftModel;
  *
  */
 template <template<class, class...> class HashType, class ValueType, class... Extras,
-          Direction_t Direction>
+          bool Direction>
 struct ShiftModel<HashType<ValueType, Extras...>, Direction> {
     
     typedef HashType<ValueType, Extras...> hash_type;
     typedef ValueType                      value_type;
-    static const Direction_t direction = Direction;
+    static const bool direction = Direction;
 
     hash_type hash;
     char symbol;
@@ -397,8 +395,10 @@ typedef KmerModel<HashModel<uint64_t>> Kmer;
 typedef KmerModel<CanonicalModel<uint64_t>> CanonicalKmer;
 
 typedef Partitioned<Hash> Unikmer;
+typedef Partitioned<Canonical> CanonicalUnikmer;
+
 typedef WmerModel<Hash, Unikmer> UnikmerWmer;
-typedef WmerModel<Canonical, Unikmer> CanonicalUnikmerWmer;
+typedef WmerModel<Canonical, CanonicalUnikmer> CanonicalUnikmerWmer;
 
 typedef ShiftModel<Hash, DIR_LEFT> LeftShift;
 typedef ShiftModel<Hash, DIR_RIGHT> RightShift;

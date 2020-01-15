@@ -430,7 +430,7 @@ cDBG<GraphType>::Graph::build_unode(const std::string& sequence,
 
 template <class GraphType>
 void
-cDBG<GraphType>::Graph::clip_unode(Direction_t clip_from,
+cDBG<GraphType>::Graph::clip_unode(bool clip_from,
                                    hash_type old_unode_end,
                                    hash_type new_unode_end) {
     
@@ -438,7 +438,7 @@ cDBG<GraphType>::Graph::clip_unode(Direction_t clip_from,
 
     auto unode = switch_unode_ends(old_unode_end, new_unode_end);
     assert(unode != nullptr);
-    pdebug("CLIP: " << *unode << " from " << (clip_from == DIR_LEFT ? std::string("LEFT") : std::string("RIGHT")) <<
+    pdebug("CLIP: " << *unode << " from " << (clip_from == hashing::DIR_LEFT ? std::string("LEFT") : std::string("RIGHT")) <<
            " and swap " << old_unode_end << " to " << new_unode_end);
 
     if (unode->sequence.length() == this->_K) {
@@ -447,7 +447,7 @@ cDBG<GraphType>::Graph::clip_unode(Direction_t clip_from,
         pdebug("CLIP complete: deleted null unode.");
     } else {
         metrics->n_clips++;
-        if (clip_from == DIR_LEFT) {
+        if (clip_from == hashing::DIR_LEFT) {
             unode->sequence = unode->sequence.substr(1);
             unode->set_left_end(new_unode_end);
 
@@ -478,7 +478,7 @@ cDBG<GraphType>::Graph::clip_unode(Direction_t clip_from,
 
 template <class GraphType>
 void
-cDBG<GraphType>::Graph::extend_unode(Direction_t ext_dir,
+cDBG<GraphType>::Graph::extend_unode(bool ext_dir,
                                      const std::string& new_sequence,
                                      hash_type old_unode_end,
                                      hash_type new_unode_end,
@@ -494,11 +494,11 @@ cDBG<GraphType>::Graph::extend_unode(Direction_t ext_dir,
     assert(unode != nullptr); 
 
     pdebug("EXTEND: from " << old_unode_end << " to " << new_unode_end
-           << (ext_dir == DIR_LEFT ? std::string(" to LEFT") : std::string(" to RIGHT"))
+           << (ext_dir == hashing::DIR_LEFT ? std::string(" to LEFT") : std::string(" to RIGHT"))
            << " adding " << new_sequence << " to"
            << std::endl << *unode);
     
-    if (ext_dir == DIR_RIGHT) {
+    if (ext_dir == hashing::DIR_RIGHT) {
         unode->extend_right(new_unode_end, new_sequence);
     } else {
         unode->extend_left(new_unode_end, new_sequence);
@@ -642,7 +642,7 @@ cDBG<GraphType>::Graph::merge_unodes(const std::string& span_sequence,
             pdebug("Overlap between merged sequence, trimming right " << n_span_kmers);
             extend = span_sequence.substr(this->_K-1, n_span_kmers);
         //} 
-        extend_unode(DIR_RIGHT,
+        extend_unode(hashing::DIR_RIGHT,
                      extend,
                      left_end, // this is left_unode's right_end
                      left_unode->left_end(),
@@ -667,7 +667,7 @@ cDBG<GraphType>::Graph::merge_unodes(const std::string& span_sequence,
         new_right_end = right_unode->right_end();
 
         delete_unode(right_unode);
-        extend_unode(DIR_RIGHT,
+        extend_unode(hashing::DIR_RIGHT,
                      right_sequence,
                      left_end,
                      new_right_end,

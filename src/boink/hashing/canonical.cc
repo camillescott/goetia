@@ -19,6 +19,9 @@ template class KmerModel<CanonicalModel<HashModel<uint64_t>>>;
 template class KmerModel<UnikmerWmer>;
 template class KmerModel<CanonicalUnikmerWmer>;
 
+template class WmerModel<Hash, Unikmer>;
+template class WmerModel<Canonical, CanonicalUnikmer>;
+
 template class ShiftModel<Hash, DIR_LEFT>;
 template class ShiftModel<Hash, DIR_RIGHT>;
 template class ShiftModel<Canonical, DIR_LEFT>;

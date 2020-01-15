@@ -160,11 +160,9 @@ struct WKMinimizer {
 
     public:
 
-        using minimizer_type::InteriorMinimizer;
-
         Minimizer(int64_t window_size,
                   uint16_t K)
-            : InteriorMinimizer<value_type>(window_size),
+            : minimizer_type(window_size),
               kmers::KmerClient(K) {
         }
 
