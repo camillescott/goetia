@@ -29,13 +29,15 @@
 
 namespace boink {
 
-template <class GraphType>
-size_t
-Traverse<GraphType>::dBG::count_nodes(GraphType *                 graph,
-                           const std::vector<shift_type>& nodes) {
+template<class GraphType>
+template<Direction_t D>
+size_t dBGWalker<GraphType>
+::count_nodes(GraphType *                       graph,
+              const std::vector<shift_type<D>>& extensions) {
+
     uint8_t n_found = 0;
-    for (auto node: nodes) {
-        if(graph->query(node.value())) {
+    for (const auto& ext : extensions) {
+        if(graph->query(ext.value())) {
             ++n_found;
         }
     }
@@ -43,15 +45,17 @@ Traverse<GraphType>::dBG::count_nodes(GraphType *                 graph,
 }
 
 
-template <class GraphType>
-size_t
-Traverse<GraphType>::dBG::count_nodes(GraphType *                 graph,
-                           const std::vector<shift_type>& nodes,
-                           std::set<hash_type>&           extras) {
+template<class GraphType>
+template<Direction_t D>
+size_t dBGWalker<GraphType>
+::count_nodes(GraphType *                graph,
+              const std::vector<shift_type<D>>& extensions,
+              std::set<hash_type>&              extras) {
+
     uint8_t n_found = 0;
-    for (auto node: nodes) {
-        if(graph->query(node.value()) ||
-           extras.count(node.value())) {
+    for (const auto& ext : extensions) {
+        if(graph->query(ext.value()) ||
+           extras.count(ext.value())) {
             ++n_found;
         }
     }
@@ -59,53 +63,81 @@ Traverse<GraphType>::dBG::count_nodes(GraphType *                 graph,
 }
 
 
-template <class GraphType>
-size_t
-Traverse<GraphType>::dBG::reduce_nodes(GraphType *                 graph,
-                                       const std::vector<shift_type>& nodes,
-                                       shift_type&                    result) {
-    uint8_t n_found = 0;
-    for (auto node : nodes) {
-        if(graph->query(node.value())) {
-            ++n_found;
-            if (n_found > 1) {
-                return n_found;
-            }
-            result = node;
-        }
-    }
-    return n_found;
-}
+template<class GraphType>
+template<Direction_t D>
+auto dBGWalker<GraphType>
+::reduce_nodes(GraphType *                       graph,
+               const std::vector<shift_type<D>>& extensions)
+-> shift_type<D> {
 
-template <class GraphType>
-size_t
-Traverse<GraphType>::dBG::reduce_nodes(GraphType *                 graph,
-                                       const std::vector<shift_type>& nodes,
-                                       shift_type&                    result,
-                                       std::set<hash_type>&           extra) {
     uint8_t n_found = 0;
-    for (auto node : nodes) {
-        if(graph->query(node.value()) ||
-           extra.count(node.value())) {
+    shift_type<D> result;
+    for (const auto& ext : extensions) {
+        if(graph->query(ext.value())) {
             ++n_found;
             if (n_found > 1) {
                 return n_found;
             }
-            result = node;
+            result = ext;
         }
     }
-    return n_found;
+    return result;
 }
 
 
-template <class GraphType>
-std::vector<typename GraphType::shifter_type::shift_type> 
-Traverse<GraphType>::dBG::filter_nodes(GraphType * graph,
-                                       const std::vector<shift_type>& nodes) {
-    std::vector<shift_type> result;
-    for (auto node : nodes) {
-        if (graph->query(node.value())) {
-            result.push_back(node);
+template<class GraphType>
+template<Direction_t D>
+auto dBGWalker<GraphType>
+::reduce_nodes(GraphType *                       graph,
+               const std::vector<shift_type<D>>& extensions,
+               std::set<hash_type>&              extra)
+-> shift_type<D> {
+    uint8_t n_found = 0;
+    shift_type<D> result;
+    for (const auto& ext : extensions ) {
+        if(graph->query(ext.value()) ||
+           extra.count(ext.value())) {
+            ++n_found;
+            if (n_found > 1) {
+                return n_found;
+            }
+            result = ext;
+        }
+    }
+    return result;
+}
+
+
+template<class GraphType>
+template<Direction_t D>
+auto dBGWalker<GraphType>
+::filter_nodes(GraphType * graph,
+               const std::vector<shift_type<D>>& extensions)
+-> std::vector<shift_type<D>> {
+
+    std::vector<shift_type<D>> result;
+    for (const auto& ext : extensions) {
+        if (graph->query(ext.value())) {
+            result.push_back(ext);
+        }
+    }
+    return result;
+}
+
+
+template<class GraphType>
+template<Direction_t D>
+auto dBGWalker<GraphType>
+::filter_nodes(GraphType *                       graph,
+               const std::vector<shift_type<D>>& extensions,
+               std::set<hash_type>&              extra)
+-> std::vector<shift_type<D>> {
+
+    std::vector<shift_type<D>> result;
+    for (const auto& ext : extensions) {
+        if (graph->query(ext.value()) ||
+            extra.count(ext.value())) {
+            result.push_back(ext);
         }
     }
     return result;
@@ -113,199 +145,200 @@ Traverse<GraphType>::dBG::filter_nodes(GraphType * graph,
 
 
 template <class GraphType>
-std::vector<typename GraphType::shifter_type::shift_type> 
-Traverse<GraphType>::dBG::filter_nodes(GraphType *                 graph,
-                                       const std::vector<shift_type>& nodes,
-                                       std::set<hash_type>&           extra) {
-    std::vector<shift_type> result;
-    for (auto node : nodes) {
-        if (graph->query(node.value()) ||
-            extra.count(node.value())) {
-            result.push_back(node);
-        }
-    }
-    return result;
+auto dBGWalker<GraphType>::filter_nodes(GraphType *            graph,
+                                        const shift_pair_type& extensions)
+-> shift_pair_type {
+    return std::make_pair(filter_nodes(graph, extensions.first),
+                          filter_nodes(graph, extensions.second));
 }
 
 
 template <class GraphType>
-std::pair<std::vector<typename GraphType::shifter_type::shift_type>,
-          std::vector<typename GraphType::shifter_type::shift_type>>
-Traverse<GraphType>::dBG::filter_nodes(GraphType * graph,
-                                       const std::pair<std::vector<shift_type>,
-                                                       std::vector<shift_type>>& nodes) {
-    return std::make_pair(filter_nodes(graph, nodes.first),
-                          filter_nodes(graph, nodes.second));
+auto dBGWalker<GraphType>
+::filter_nodes(GraphType *            graph,
+               const shift_pair_type& extensions,
+               std::set<hash_type>&   extras)
+-> shift_pair_type {
+    return std::make_pair(filter_nodes(graph, extensions.first, extras),
+                          filter_nodes(graph, extensions.second, extras));
 }
 
 
 template <class GraphType>
-std::pair<std::vector<typename GraphType::shifter_type::shift_type>,
-          std::vector<typename GraphType::shifter_type::shift_type>>
-Traverse<GraphType>::dBG::filter_nodes(GraphType *                               graph,
-                                       const std::pair<std::vector<shift_type>,
-                                                       std::vector<shift_type>>& nodes,
-                                       std::set<hash_type>&                      extras) {
-    return std::make_pair(filter_nodes(graph, nodes.first, extras),
-                          filter_nodes(graph, nodes.second, extras));
-}
-
-
-template <class GraphType>
-typename Traverse<GraphType>::EndState
-Traverse<GraphType>::dBG::walk_left(GraphType *        graph,
-                                        const std::string& seed,
-                                        Path&              path,
-                                        std::set<hash_type>&  mask) {
+auto dBGWalker<GraphType>
+::walk_left(GraphType *          graph,
+            const std::string&   seed,
+            std::set<hash_type>& mask)
+-> Walk<hashing::DIR_LEFT> {
 
     this->set_cursor(seed);
     auto seed_hash = this->get();
     if (!graph->query(seed_hash)) {
-        return {State::BAD_SEED, seed_hash};
+        Walk<hashing::DIR_LEFT> walk{kmer_type{seed_hash, this->get_cursor()},
+                                     {},
+                                     State::BAD_SEED};
+        return walk;
     } 
-    this->get_cursor(path);
-    return walk_left(graph, path, mask);
+    return walk_left(graph, mask);
 }
 
 
 template <class GraphType>
-typename Traverse<GraphType>::EndState
-Traverse<GraphType>::dBG::walk_left(GraphType * graph,
-                                        Path&       path,
-                                        std::set<hash_type>& mask) {
+auto dBGWalker<GraphType>
+::walk_left(GraphType *          graph,
+            std::set<hash_type>& mask)
+-> Walk<hashing::DIR_LEFT> {
 
-    hash_type prev_hash = this->get();
+    Walk<hashing::DIR_LEFT> walk;
+
+    hash_type start_hash = this->get();
     this->seen.clear();
-    this->seen.insert(prev_hash);
+    this->seen.insert(start_hash);
+    walk.start.hash = start_hash;
+    walk.start.kmer = this->get_cursor();
 
     // take the first step without check for reverse d-nodes
     auto step = step_left(graph, mask);
 
     if (step.first != State::STEP) {
-        return {step.first, this->get()};
+        walk.end_state = step.first;
+        return walk;
     } else {
-        path.push_front(step.second.front().symbol);
+        walk.path.push_back(step.second.front());
     }
 
     while (1) {
         if (out_degree(graph) > 1) {
             pdebug("Stop: reverse d-node");
-            path.pop_front();
+            walk.path.pop_back();
+            walk.end_state = State::DECISION_RC;
             this->seen.erase(this->get());
-            return {State::DECISION_RC, prev_hash};
+            return std::move(walk);
         }
 
-        prev_hash = this->get();
         step = step_left(graph, mask);
 
         if (step.first != State::STEP) {
-            return {step.first, this->get()};
+            walk.end_state = step.first;
+            
+            return std::move(walk);
         } else {
-            path.push_front(step.second.front().symbol);
+            walk.path.push_back(step.second.front());
         }
     }
 }
 
 
 template <class GraphType>
-typename Traverse<GraphType>::EndState
-Traverse<GraphType>::dBG::walk_right(GraphType *        graph,
-                                         const std::string& seed,
-                                         Path&              path,
-                                         std::set<hash_type>&  mask) {
+auto dBGWalker<GraphType>
+::walk_right(GraphType *            graph,
+             const std::string&     seed,
+             std::set<hash_type>&  mask)
+-> Walk<hashing::DIR_RIGHT> {
 
     this->set_cursor(seed);
-    if (!graph->query(this->get())) {
-        return {State::BAD_SEED, this->get()};
+    auto seed_hash = this->get();
+    if (!graph->query(seed_hash)) {
+        Walk<hashing::DIR_RIGHT> walk{kmer_type{seed_hash, this->get_cursor()},
+                                       {},
+                                       State::BAD_SEED};
+        return walk;
     }
-    this->get_cursor(path);
-    return walk_right(graph, path, mask);
+    return walk_right(graph, mask);
 }
 
 
 template <class GraphType>
-typename Traverse<GraphType>::EndState
-Traverse<GraphType>::dBG::walk_right(GraphType *       graph,
-                                         Path&             path,
-                                         std::set<hash_type>& mask) {
+auto dBGWalker<GraphType>
+::walk_right(GraphType *           graph,
+             std::set<hash_type>& mask)
+-> Walk<hashing::DIR_RIGHT> {
 
-    hash_type prev_hash = this->get();
+    Walk<hashing::DIR_RIGHT> walk;
+
+    hash_type start_hash = this->get();
     this->seen.clear();
-    this->seen.insert(prev_hash);
+    this->seen.insert(start_hash);
+    walk.start.hash = start_hash;
+    walk.start.kmer = this->get_cursor();
 
     auto step = step_right(graph, mask);
 
     if (step.first != State::STEP) {
-        return {step.first, this->get()};
+        walk.end_state = step.first;
+        return walk;
     } else {
-        path.push_back(step.second.front().symbol);
+        walk.path.push_back(step.second.front());
     }
     
     while (1) {
         if (in_degree(graph) > 1) {
-            path.pop_back();
+            walk.path.pop_back();
+            walk.end_state = State::DECISION_RC;
             this->seen.erase(this->get());
-            return {State::DECISION_RC, prev_hash};
+            return std::move(walk);
         }
 
-        // save the current cursor as prev_hash in case
-        // we need to move backwards because of a reverse decision
-        // k-mer
-        prev_hash = this->get();
         step = step_right(graph, mask);
 
         if (step.first != State::STEP) {
-            return {step.first, this->get()};
+            walk.end_state = step.first;
+            return std::move(walk);
         } else {
-            path.push_back(step.second.front().symbol);
+            walk.path.push_back(step.second.front());
         }
     }
 }
 
 
 template <class GraphType>
-std::pair<typename Traverse<GraphType>::EndState, typename Traverse<GraphType>::EndState>
-Traverse<GraphType>::dBG::walk(GraphType *        graph,
-                               const std::string& seed,
-                               Path&              path,
-                               std::set<hash_type>   mask) {
+auto  dBGWalker<GraphType>
+::walk(GraphType *          graph,
+       const std::string&   seed,
+       std::set<hash_type> mask) 
+-> walk_pair_type {
 
     this->set_cursor(seed);
-    if (!graph->query(this->hash(seed))) {
-        return {{State::BAD_SEED, this->get()},
-                {State::BAD_SEED, this->get()}};
+    auto seed_hash = this->get();
+    if (!graph->query(seed_hash)) {
+        kmer_type start{seed_hash, this->get_cursor()};
+        return {{start, {}, State::BAD_SEED},
+                {start, {}, State::BAD_SEED}};
     }
-    this->get_cursor(path);
-    auto state_left = walk_left(graph, path, mask);
+
+    auto left_walk = walk_left(graph, mask);
     this->set_cursor(seed);
-    auto state_right = walk_right(graph, path, mask);
-    return {state_left, state_right};
+    auto right_walk = walk_right(graph, mask);
+    return {left_walk, right_walk};
 }
 
+template class dBGWalker<dBG<storage::SparseppSetStorage, hashing::FwdRollingShifter>>;
+template class dBGWalker<dBG<storage::SparseppSetStorage, hashing::CanRollingShifter>>;
+template class dBGWalker<dBG<storage::SparseppSetStorage, hashing::FwdUnikmerShifter>>;
+template class dBGWalker<dBG<storage::SparseppSetStorage, hashing::CanUnikmerShifter>>;
+
+
+template class dBGWalker<dBG<storage::BitStorage, hashing::FwdRollingShifter>>;
+template class dBGWalker<dBG<storage::BitStorage, hashing::CanRollingShifter>>;
+template class dBGWalker<dBG<storage::BitStorage, hashing::FwdUnikmerShifter>>;
+template class dBGWalker<dBG<storage::BitStorage, hashing::CanUnikmerShifter>>;
+
+template class dBGWalker<dBG<storage::ByteStorage, hashing::FwdRollingShifter>>;
+template class dBGWalker<dBG<storage::ByteStorage, hashing::CanRollingShifter>>;
+template class dBGWalker<dBG<storage::ByteStorage, hashing::FwdUnikmerShifter>>;
+template class dBGWalker<dBG<storage::ByteStorage, hashing::CanUnikmerShifter>>;
+
+template class dBGWalker<dBG<storage::NibbleStorage, hashing::FwdRollingShifter>>;
+template class dBGWalker<dBG<storage::NibbleStorage, hashing::CanRollingShifter>>;
+template class dBGWalker<dBG<storage::NibbleStorage, hashing::FwdUnikmerShifter>>;
+template class dBGWalker<dBG<storage::NibbleStorage, hashing::CanUnikmerShifter>>;
+
+template class dBGWalker<dBG<storage::QFStorage, hashing::FwdRollingShifter>>;
+template class dBGWalker<dBG<storage::QFStorage, hashing::CanRollingShifter>>;
+template class dBGWalker<dBG<storage::QFStorage, hashing::FwdUnikmerShifter>>;
+template class dBGWalker<dBG<storage::QFStorage, hashing::CanUnikmerShifter>>;
+
 } // namespace boink
-
-
-template struct boink::Traverse<boink::dBG<boink::storage::BitStorage,
-                                           boink::hashing::RollingHashShifter>>;
-template struct boink::Traverse<boink::dBG<boink::storage::ByteStorage,
-                                           boink::hashing::RollingHashShifter>>;
-template struct boink::Traverse<boink::dBG<boink::storage::NibbleStorage,
-                                           boink::hashing::RollingHashShifter>>;
-template struct boink::Traverse<boink::dBG<boink::storage::QFStorage,
-                                           boink::hashing::RollingHashShifter>>;
-template struct boink::Traverse<boink::dBG<boink::storage::SparseppSetStorage,
-                                           boink::hashing::RollingHashShifter>>;
-
-template struct boink::Traverse<boink::dBG<boink::storage::SparseppSetStorage,
-                                           boink::hashing::UKHS::LazyShifter>>;
-template struct boink::Traverse<boink::dBG<boink::storage::BitStorage,
-                                           boink::hashing::UKHS::LazyShifter>>;
-template struct boink::Traverse<boink::dBG<boink::storage::ByteStorage,
-                                           boink::hashing::UKHS::LazyShifter>>;
-template struct boink::Traverse<boink::dBG<boink::storage::NibbleStorage,
-                                           boink::hashing::UKHS::LazyShifter>>;
-template struct boink::Traverse<boink::dBG<boink::storage::QFStorage,
-                                           boink::hashing::UKHS::LazyShifter>>;
 
 
 #undef pdebug

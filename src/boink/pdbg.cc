@@ -19,67 +19,81 @@
 namespace boink {
 
 
-template <class BaseStorageType>
+template <class BaseStorageType,
+          class BaseShifterType>
 const bool 
-PdBG<BaseStorageType>::insert(const std::string& kmer) {
+PdBG<BaseStorageType, BaseShifterType>
+::insert(const std::string& kmer) {
 
     partitioner.set_cursor(kmer);
     auto bh = partitioner.get();
 
-    return S->insert(bh.hash, bh.unikmer.partition);
+    return S->insert(bh.value(), bh.minimizer.partition);
 }
 
 
-template <class BaseStorageType>
+template <class BaseStorageType,
+          class BaseShifterType>
 const bool 
-PdBG<BaseStorageType>::insert(const hash_type& h) {
-    return S->insert(h.hash, h.unikmer.partition);
+PdBG<BaseStorageType, BaseShifterType>
+::insert(const hash_type& h) {
+    return S->insert(h.value(), h.minimizer.partition);
 }
 
 
-template <class BaseStorageType>
+template <class BaseStorageType,
+          class BaseShifterType>
 const storage::count_t 
-PdBG<BaseStorageType>::insert_and_query(const std::string& kmer) {
+PdBG<BaseStorageType, BaseShifterType>
+::insert_and_query(const std::string& kmer) {
 
     partitioner.set_cursor(kmer);
     auto h = partitioner.get();
 
-    return S->insert_and_query(h.hash, h.unikmer.partition);
+    return S->insert_and_query(h.value(), h.minimizer.partition);
 }
 
 
-template <class BaseStorageType>
+template <class BaseStorageType,
+          class BaseShifterType>
 const storage::count_t 
-PdBG<BaseStorageType>::insert_and_query(const hash_type& h) {
-    return S->insert_and_query(h.hash, h.unikmer.partition);
+PdBG<BaseStorageType, BaseShifterType>
+::insert_and_query(const hash_type& h) {
+    return S->insert_and_query(h.value(), h.minimizer.partition);
 }
 
 
-template <class BaseStorageType>
+template <class BaseStorageType,
+          class BaseShifterType>
 const storage::count_t 
-PdBG<BaseStorageType>::query(const std::string& kmer) {
+PdBG<BaseStorageType, BaseShifterType>
+::query(const std::string& kmer) {
 
     partitioner.set_cursor(kmer);
     auto h = partitioner.get();
 
-    return S->query(h.hash, h.unikmer.partition);
+    return S->query(h.value(), h.minimizer.partition);
 }
 
 
-template <class BaseStorageType>
+template <class BaseStorageType,
+          class BaseShifterType>
 const storage::count_t 
-PdBG<BaseStorageType>::query(const hash_type& h) {
-    return S->query(h.hash, h.unikmer.partition);
+PdBG<BaseStorageType, BaseShifterType>
+::query(const hash_type& h) {
+    return S->query(h.value(), h.minimizer.partition);
 }
 
 
-template <class BaseStorageType>
+template <class BaseStorageType,
+          class BaseShifterType>
 uint64_t 
-PdBG<BaseStorageType>::insert_sequence(const std::string&             sequence,
-                                       std::vector<hash_type>&        kmer_hashes,
-                                       std::vector<storage::count_t>& counts) {
+PdBG<BaseStorageType, BaseShifterType>
+::insert_sequence(const std::string&             sequence,
+                  std::vector<hash_type>&        kmer_hashes,
+                  std::vector<storage::count_t>& counts) {
 
-    kmer_iter_type iter(sequence, partitioner);
+    hashing::KmerIterator<extender_type> iter(sequence, &partitioner);
 
     uint64_t         n_consumed = 0;
     size_t           pos = 0;
@@ -99,12 +113,14 @@ PdBG<BaseStorageType>::insert_sequence(const std::string&             sequence,
 }
 
 
-template <class BaseStorageType>
+template <class BaseStorageType,
+          class BaseShifterType>
 uint64_t 
-PdBG<BaseStorageType>::insert_sequence(const std::string&   sequence,
-                                       std::set<hash_type>& new_kmers) {
+PdBG<BaseStorageType, BaseShifterType>
+::insert_sequence(const std::string&   sequence,
+                  std::set<hash_type>& new_kmers) {
 
-    kmer_iter_type iter(sequence, partitioner);
+    hashing::KmerIterator<extender_type> iter(sequence, &partitioner);
 
     uint64_t n_consumed = 0;
     size_t pos = 0;
@@ -122,10 +138,12 @@ PdBG<BaseStorageType>::insert_sequence(const std::string&   sequence,
 }
 
 
-template <class BaseStorageType>
+template <class BaseStorageType,
+          class BaseShifterType>
 uint64_t 
-PdBG<BaseStorageType>::insert_sequence(const std::string& sequence) {
-    kmer_iter_type iter(sequence, partitioner);
+PdBG<BaseStorageType, BaseShifterType>
+::insert_sequence(const std::string& sequence) {
+    hashing::KmerIterator<extender_type> iter(sequence, &partitioner);
 
     uint64_t n_consumed = 0;
     while(!iter.done()) {
@@ -137,35 +155,39 @@ PdBG<BaseStorageType>::insert_sequence(const std::string& sequence) {
 }
 
 
-template <class BaseStorageType>
+template <class BaseStorageType,
+          class BaseShifterType>
 uint64_t 
-PdBG<BaseStorageType>::insert_sequence_rolling(const std::string& sequence) {
-    kmer_iter_type iter(sequence, partitioner);
+PdBG<BaseStorageType, BaseShifterType>
+::insert_sequence_rolling(const std::string& sequence) {
+    hashing::KmerIterator<extender_type> iter(sequence, &partitioner);
 
     uint64_t          n_consumed    = 0;
     auto              h             = iter.next();
-    uint64_t          cur_pid       = h.unikmer.partition;
+    uint64_t          cur_pid       = h.minimizer.partition;
     BaseStorageType * cur_partition = S->query_partition(cur_pid);
-    cur_partition->insert(h.hash);
+    cur_partition->insert(h.value());
 
     while(!iter.done()) {
         h = iter.next();
-        if (h.unikmer.partition != cur_pid) {
-            cur_pid = h.unikmer.partition;
+        if (h.minimizer.partition != cur_pid) {
+            cur_pid = h.minimizer.partition;
             cur_partition = S->query_partition(cur_pid);
         }
-        n_consumed += cur_partition->insert(h.hash);
+        n_consumed += cur_partition->insert(h.value());
     }
 
     return n_consumed;
 }
 
 
-template <class BaseStorageType>
+template <class BaseStorageType,
+          class BaseShifterType>
 std::vector<storage::count_t> 
-PdBG<BaseStorageType>::insert_and_query_sequence(const std::string& sequence) {
+PdBG<BaseStorageType, BaseShifterType>
+::insert_and_query_sequence(const std::string& sequence) {
 
-    kmer_iter_type iter(sequence, partitioner);
+    hashing::KmerIterator<extender_type> iter(sequence, &partitioner);
     std::vector<storage::count_t> counts(sequence.length() - _K + 1);
 
     size_t pos = 0;
@@ -179,11 +201,13 @@ PdBG<BaseStorageType>::insert_and_query_sequence(const std::string& sequence) {
 }
 
 
-template <class BaseStorageType>
+template <class BaseStorageType,
+          class BaseShifterType>
 std::vector<storage::count_t> 
-PdBG<BaseStorageType>::query_sequence(const std::string& sequence) {
+PdBG<BaseStorageType, BaseShifterType>
+::query_sequence(const std::string& sequence) {
 
-    kmer_iter_type iter(sequence, partitioner);
+    hashing::KmerIterator<extender_type> iter(sequence, &partitioner);
     std::vector<storage::count_t> counts(sequence.length() - _K + 1);
 
     size_t pos = 0;
@@ -197,26 +221,28 @@ PdBG<BaseStorageType>::query_sequence(const std::string& sequence) {
 }
 
 
-template <class BaseStorageType>
+template <class BaseStorageType,
+          class BaseShifterType>
 std::vector<storage::count_t> 
-PdBG<BaseStorageType>::query_sequence_rolling(const std::string& sequence) {
+PdBG<BaseStorageType, BaseShifterType>
+::query_sequence_rolling(const std::string& sequence) {
 
-    kmer_iter_type iter(sequence, partitioner);
+    hashing::KmerIterator<extender_type> iter(sequence, &partitioner);
     std::vector<storage::count_t> counts(sequence.length() - _K + 1);
     
     hash_type         h             = iter.next();
-    uint64_t          cur_pid       = h.unikmer.partition;
+    uint64_t          cur_pid       = h.minimizer.partition;
     BaseStorageType * cur_partition = S->query_partition(cur_pid);
-    counts[0]                       = cur_partition->query(h.hash);
+    counts[0]                       = cur_partition->query(h.value());
 
     size_t pos = 1;
     while(!iter.done()) {
         h = iter.next();
-        if (h.unikmer.partition != cur_pid) {
-            cur_pid = h.unikmer.partition;
+        if (h.minimizer.partition != cur_pid) {
+            cur_pid = h.minimizer.partition;
             cur_partition = S->query_partition(cur_pid);
         }
-        counts[pos] = cur_partition->query(h.hash);
+        counts[pos] = cur_partition->query(h.value());
         ++pos;
     }
 
@@ -224,13 +250,15 @@ PdBG<BaseStorageType>::query_sequence_rolling(const std::string& sequence) {
 }
 
 
-template <class BaseStorageType>
+template <class BaseStorageType,
+          class BaseShifterType>
 void 
-PdBG<BaseStorageType>::query_sequence(const std::string&             sequence,
-                                      std::vector<storage::count_t>& counts,
-                                      std::vector<hash_type>&        hashes) {
+PdBG<BaseStorageType, BaseShifterType>
+::query_sequence(const std::string&             sequence,
+                 std::vector<storage::count_t>& counts,
+                 std::vector<hash_type>&        hashes) {
 
-    kmer_iter_type iter(sequence, partitioner);
+    hashing::KmerIterator<extender_type> iter(sequence, &partitioner);
 
     while(!iter.done()) {
         auto h = iter.next();
@@ -241,14 +269,16 @@ PdBG<BaseStorageType>::query_sequence(const std::string&             sequence,
 }
 
 
-template <class BaseStorageType>
+template <class BaseStorageType,
+          class BaseShifterType>
 void 
-PdBG<BaseStorageType>::query_sequence(const std::string&             sequence,
-                                      std::vector<storage::count_t>& counts,
-                                      std::vector<hash_type>&        hashes,
-                                      std::set<hash_type>&           new_hashes) {
+PdBG<BaseStorageType, BaseShifterType>
+::query_sequence(const std::string&             sequence,
+                 std::vector<storage::count_t>& counts,
+                 std::vector<hash_type>&        hashes,
+                 std::set<hash_type>&           new_hashes) {
 
-    kmer_iter_type iter(sequence, partitioner);
+    hashing::KmerIterator<extender_type> iter(sequence, &partitioner);
 
     while(!iter.done()) {
         auto h = iter.next();
@@ -261,11 +291,17 @@ PdBG<BaseStorageType>::query_sequence(const std::string&             sequence,
     }
 }
 
+template class PdBG<storage::BitStorage, hashing::FwdRollingShifter>;
+template class PdBG<storage::BitStorage, hashing::CanRollingShifter>;
+template class PdBG<storage::SparseppSetStorage, hashing::FwdRollingShifter>;
+template class PdBG<storage::SparseppSetStorage, hashing::CanRollingShifter>;
+template class PdBG<storage::ByteStorage, hashing::FwdRollingShifter>;
+template class PdBG<storage::ByteStorage, hashing::CanRollingShifter>;
+template class PdBG<storage::NibbleStorage, hashing::FwdRollingShifter>;
+template class PdBG<storage::NibbleStorage, hashing::CanRollingShifter>;
+template class PdBG<storage::QFStorage, hashing::FwdRollingShifter>;
+template class PdBG<storage::QFStorage, hashing::CanRollingShifter>;
+
 }
 
-template class boink::PdBG<boink::storage::BitStorage>;
-template class boink::PdBG<boink::storage::ByteStorage>;
-template class boink::PdBG<boink::storage::NibbleStorage>;
-template class boink::PdBG<boink::storage::QFStorage>;
-template class boink::PdBG<boink::storage::SparseppSetStorage>;
 

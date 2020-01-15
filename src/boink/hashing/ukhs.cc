@@ -14,64 +14,49 @@
  * of the MIT license.  See the LICENSE file for details.
  */
 
+#include <limits>
+
 #include "boink/hashing/ukhs.hh"
 
-#pragma GCC diagnostic push 
-#pragma GCC diagnostic ignored "-Wall"
-#pragma GCC diagnostic ignored "-Wunknown-pragmas"
-#include "bbhash/BooPHF.h"
-#pragma GCC diagnostic pop
 
+namespace boink::hashing {
 
-namespace boink {
-namespace hashing {
-
-UKHS::Map::Map(uint16_t W,
-               uint16_t K,
-               std::vector<std::string>& ukhs)
+template <class ShifterType>
+UKHS<ShifterType>::UKHS(uint16_t W,
+                        uint16_t K,
+                        std::vector<std::string>& ukhs)
     : KmerClient  (K),
-      ukhs_revmap (ukhs.size()),
       _W          (W)
 {
     if (ukhs.front().size() != K) {
         throw BoinkException("K does not match k-mer size from provided UKHS");
     }
 
-    //std::cerr << "Building MPHF with "
-    //          << ukhs.size() << " k-mers."
-    //          << std::endl;
-
+    ShifterType hasher(K);
+    uint64_t pid = 0;
     for (auto unikmer : ukhs) {
-        ukhs_hashes.push_back(hash_cyclic(unikmer, K));
+        hash_type h = hasher.hash(unikmer);
+
+        if (!pmap.count(h.value())) {
+            hashes.push_back(h);
+            pmap[h.value()] = pid;
+            ++pid;
+        }
     }
-    bphf = std::make_unique<boophf_t>(ukhs_hashes.size(),
-                                      ukhs_hashes,
-                                      1,
-                                      2.0,
-                                      false,
-                                      false);
-    for (auto unikmer_hash : ukhs_hashes) {
-        ukhs_revmap[bphf->lookup(unikmer_hash)] = unikmer_hash;
-    }
-    //std::cerr << "Finished building MPHF." << std::endl;
 }
 
-UKHS::Map::~Map() = default;
 
-bool UKHS::Map::query(Unikmer& unikmer) {
-    unikmer.partition = ULLONG_MAX;
-    unikmer.partition = bphf->lookup(unikmer.hash);
-    if (!unikmer.is_valid()) {
-        return false;
+template <class ShifterType>
+std::optional<Partitioned<typename ShifterType::hash_type>>
+UKHS<ShifterType>::query(hash_type unikmer_hash) {
+
+    auto search = pmap.find(unikmer_hash.value());
+    if (search != pmap.end()) {
+        return {unikmer_hash, search->second};
+    } else {
+        return {};
     }
-    if (ukhs_revmap[unikmer.partition] == unikmer.hash) {
-        return true;
-    }
-    return false;
 }
 
 }
 
-template<> const std::string Tagged<hashing::UKHS::LazyShifter>::NAME = "Boink::CyclicHash<uint64_t>::NonRandom";
-
-}

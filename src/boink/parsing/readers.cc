@@ -7,6 +7,7 @@
  */
 
 #include "boink/parsing/readers.hh"
+#include "boink/sequences/alphabets.hh"
 
 #include <fstream>
 #include <string>
@@ -26,61 +27,62 @@ namespace parsing
 {
 
 
-template<typename SeqIO>
-SequenceReader<SeqIO>::SequenceReader(std::unique_ptr<SeqIO> pf)
+template<typename ParserType>
+SequenceReader<ParserType>::SequenceReader(std::unique_ptr<ParserType> pf)
 {
     _parser = std::move(pf);
 }
 
 
-template<typename SeqIO>
-SequenceReader<SeqIO>::SequenceReader(SequenceReader<SeqIO>& other)
+template<typename ParserType>
+SequenceReader<ParserType>::SequenceReader(SequenceReader<ParserType>& other)
 {
     _parser = std::move(other._parser);
 }
 
 
-template<typename SeqIO>
-SequenceReader<SeqIO>&
-SequenceReader<SeqIO>::operator=(SequenceReader<SeqIO>& other) {
+template<typename ParserType>
+SequenceReader<ParserType>&
+SequenceReader<ParserType>::operator=(SequenceReader<ParserType>& other) {
     _parser = std::move(other._parser);
     return *this;
 }
 
 
-template<typename SeqIO>
-SequenceReader<SeqIO>::SequenceReader(SequenceReader<SeqIO>&&) noexcept {}
+template<typename ParserType>
+SequenceReader<ParserType>::SequenceReader(SequenceReader<ParserType>&&) noexcept {}
 
 
-template<typename SeqIO>
-std::shared_ptr<SequenceReader<SeqIO>>
-SequenceReader<SeqIO>::build(const std::string& filename) {
-    return std::make_shared<SequenceReader<SeqIO>>(
-               std::move(std::make_unique<SeqIO>(filename))
+template<typename ParserType>
+std::shared_ptr<SequenceReader<ParserType>>
+SequenceReader<ParserType>::build(const std::string& filename) {
+    return std::make_shared<SequenceReader<ParserType>>(
+               std::move(std::make_unique<ParserType>(filename))
            );
 }
 
 
-template<typename SeqIO>
-Record SequenceReader<SeqIO>::next()
+template<typename ParserType>
+Record SequenceReader<ParserType>::next()
 {
     return _parser->next();
 }
 
 
-template<typename SeqIO>
-size_t SequenceReader<SeqIO>::num_parsed() const
+template<typename ParserType>
+size_t SequenceReader<ParserType>::num_parsed() const
 {
     return _parser->num_parsed();
 }
 
-template<typename SeqIO>
-bool SequenceReader<SeqIO>::is_complete() const {
+template<typename ParserType>
+bool SequenceReader<ParserType>::is_complete() const {
     return _parser->is_complete();
 }
 
 
-FastxParser::FastxParser(const std::string& infile)
+template<class Alphabet>
+FastxParser<Alphabet>::FastxParser(const std::string& infile)
     : _filename(infile),
       _spin_lock(0),
       _num_parsed(0),
@@ -93,19 +95,23 @@ FastxParser::FastxParser(const std::string& infile)
     __asm__ __volatile__ ("" ::: "memory");
 }
 
-FastxParser::FastxParser()
+
+template<class Alphabet>
+FastxParser<Alphabet>::FastxParser()
     : FastxParser("-")
 {
 }
 
 
-FastxParser::FastxParser(FastxParser& other) 
+template<class Alphabet>
+FastxParser<Alphabet>::FastxParser(FastxParser& other) 
     : FastxParser(other._filename)
 {   
 }
 
 
-FastxParser::FastxParser(FastxParser&& other) noexcept 
+template<class Alphabet>
+FastxParser<Alphabet>::FastxParser(FastxParser&& other) noexcept 
     : _filename(std::move(other._filename)),
       _spin_lock(other._spin_lock),
       _num_parsed(other._num_parsed),
@@ -118,24 +124,29 @@ FastxParser::FastxParser(FastxParser&& other) noexcept
 }
 
 
-FastxParser::~FastxParser()
+template<class Alphabet>
+FastxParser<Alphabet>::~FastxParser()
 {
     kseq_destroy(_kseq);
     gzclose(_fp);
 }
 
 
-size_t FastxParser::num_parsed() const
+template<class Alphabet>
+size_t FastxParser<Alphabet>::num_parsed() const
 {
     return _num_parsed;
 }
 
-bool FastxParser::is_complete() const {
+
+template<class Alphabet>
+bool FastxParser<Alphabet>::is_complete() const {
     return _is_complete;
 }
 
 
-Record FastxParser::next()
+template<class Alphabet>
+Record FastxParser<Alphabet>::next()
 {
     Record record;
     
@@ -143,6 +154,7 @@ Record FastxParser::next()
 
     int stat = kseq_read(_kseq);
     if (stat >= 0) {
+        Alphabet::validate(_kseq->seq.s, _kseq->seq.l);
         record.sequence.assign(_kseq->seq.s, _kseq->seq.l);
         record.name.assign(_kseq->name.s, _kseq->name.l);
         if (_kseq->qual.l) {
@@ -181,8 +193,9 @@ Record FastxParser::next()
 
 }
 
-template class boink::parsing::SequenceReader<boink::parsing::FastxParser>;
-template class boink::parsing::SplitPairedReader<boink::parsing::FastxParser>;
+template class boink::parsing::FastxParser<boink::DNA_SIMPLE>;
+template class boink::parsing::SequenceReader<boink::parsing::FastxParser<boink::DNA_SIMPLE>>;
+template class boink::parsing::SplitPairedReader<boink::parsing::FastxParser<boink::DNA_SIMPLE>>;
 
 // vim: set ft=cpp sts=4 sw=4 tw=80:
 

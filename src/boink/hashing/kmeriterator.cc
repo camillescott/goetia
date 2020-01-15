@@ -11,14 +11,13 @@
 
 #include "boink/hashing/kmeriterator.hh"
 #include "boink/hashing/rollinghashshifter.hh"
-#include "boink/hashing/ukhs.hh"
+#include "boink/hashing/ukhshashshifter.hh"
 #include "boink/storage/storage_types.hh"
-#include "boink/dbg.hh"
 #include "boink/traversal.hh"
 
-namespace boink {
-namespace hashing {
+namespace boink::hashing {
 
+    /*
 template<>
 template<>
 KmerIterator<UKHS::LazyShifter>::KmerIterator(const std::string& seq, uint16_t K)
@@ -26,7 +25,7 @@ KmerIterator<UKHS::LazyShifter>::KmerIterator(const std::string& seq, uint16_t K
     // this is dumb and should be compile time but i don't feel like figuring it out
     throw BoinkException("Invalid constructor for LazyShifter (need W and K");
 }
-
+*/
 
 template<class ShifterType>
 KmerIterator<ShifterType>::KmerIterator(const std::string& seq, ShifterType * shifter)
@@ -71,7 +70,7 @@ KmerIterator<ShifterType>::next() {
         throw InvalidCharacterException("past end of iterator");
     }
 
-    auto ret = shifter->shift_right(_seq[index + _K - 1]);
+    auto ret = shifter->shift_right(_seq[index - 1], _seq[index + _K - 1]);
     index += 1;
 
     return ret;
@@ -84,7 +83,7 @@ KmerIterator<ShifterType>::first() {
     _initialized = true;
 
     index += 1;
-    return shifter->set_cursor(_seq);
+    return shifter->hash_base(_seq);
 }
 
 
@@ -94,14 +93,16 @@ KmerIterator<ShifterType>::done() const {
     return (index + _K > _seq.length());
 }
 
-
+template class KmerIterator<FwdRollingShifter>;
+template class KmerIterator<CanRollingShifter>;
+template class KmerIterator<FwdUnikmerShifter>;
+template class KmerIterator<CanUnikmerShifter>;
 
 }
-}
 
-template class boink::hashing::KmerIterator<boink::hashing::RollingHashShifter>;
+
+/*
 template class boink::hashing::KmerIterator<boink::hashing::UKHS::LazyShifter>;
-template class boink::hashing::KmerIterator<boink::hashing::BiDirectionalShifter<boink::hashing::RollingHashShifter>>;
 
 template class boink::hashing::KmerIterator<boink::Traverse<boink::dBG<boink::storage::SparseppSetStorage,
                                                                        boink::hashing::RollingHashShifter>>::dBG>;
@@ -125,3 +126,5 @@ template class boink::hashing::KmerIterator<boink::Traverse<boink::dBG<boink::st
                                                                        boink::hashing::UKHS::LazyShifter>>::dBG>;
 template class boink::hashing::KmerIterator<boink::Traverse<boink::dBG<boink::storage::QFStorage,
                                                                        boink::hashing::UKHS::LazyShifter>>::dBG>;
+
+*/

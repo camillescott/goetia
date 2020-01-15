@@ -59,6 +59,7 @@
 
 #include "boink/boink.hh"
 #include "boink/parsing/parsing.hh"
+#include "boink/sequences/alphabets.hh"
 
 extern "C" {
 #include "kseq.h"
@@ -91,16 +92,16 @@ struct InvalidReadPair : public  BoinkException {
 };
 
 
-template<typename SeqIO>
+template<typename ParserType>
 class SequenceReader {
 
 protected:
 
-    std::unique_ptr<SeqIO> _parser;
+    std::unique_ptr<ParserType> _parser;
 
 public:
 
-    SequenceReader(std::unique_ptr<SeqIO> pf);
+    SequenceReader(std::unique_ptr<ParserType> pf);
 
     SequenceReader(SequenceReader& other);
     SequenceReader& operator=(SequenceReader& other);
@@ -108,7 +109,7 @@ public:
     SequenceReader(SequenceReader&&) noexcept;
     SequenceReader& operator=(SequenceReader&&) noexcept;
 
-    static std::shared_ptr<SequenceReader<SeqIO>> build(const std::string& filename);
+    static std::shared_ptr<SequenceReader<ParserType>> build(const std::string& filename);
 
     virtual ~SequenceReader() {}
 
@@ -119,6 +120,7 @@ public:
 }; // class SequenceReader
 
 
+template<class Alphabet = DNA_SIMPLE>
 class FastxParser
 {
 private:
@@ -184,7 +186,7 @@ class BrokenPairedReader {
 */
 
 
-template <class ParserType = FastxParser>
+template <class ParserType = FastxParser<>>
 class SplitPairedReader {
 
     typedef SequenceReader<ParserType> reader_type;
@@ -230,8 +232,6 @@ public:
             return result;
         }
 
-        result.left.set_clean_seq();
-        result.right.set_clean_seq();
         result.has_left = true;
         result.has_right = true;
 

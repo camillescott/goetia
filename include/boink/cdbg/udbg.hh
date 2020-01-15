@@ -18,6 +18,7 @@
 #pragma GCC diagnostic pop
 
 #include "boink/boink.hh"
+#include "boink/meta.hh"
 
 #include "boink/events.hh"
 #include "boink/dbg.hh"
@@ -46,30 +47,23 @@ namespace cdbg {
 template <class StorageType>
 struct uDBG {
 
-    typedef dBG<StorageType,
-                hashing::UKHS::LazyShifter>     dbg_type;
-    typedef typename dbg_type::shifter_type     shifter_type;
-    typedef Traverse<dbg_type>                  traversal_type;
-    typedef typename traversal_type::dBG        traverser_type;
+    typedef dBG<StorageType, hashing::CanUnikmerShifter> graph_type;
 
-    typedef hashing::KmerIterator<shifter_type> kmer_iter_type;
-    typedef typename shifter_type::hash_type    hash_type;
-    typedef typename hashing::UKHS::value_type  value_type;
-    typedef typename shifter_type::kmer_type    kmer_type;
-    typedef typename shifter_type::shift_type   shift_type;
-    typedef TraversalState::State               state_type;
+    // inject dependent typename boilerplate: see boink/meta.hh
+    _boink_model_typedefs_from_graphtype(graph_type);
+    _boink_walker_typedefs_from_graphtype(graph_type);
 
 
     struct UnitigTip {
         std::string             kmer;
         std::vector<value_type> neighbors;
-        direction_t             position;
+        Direction_t             position;
         value_type              partner;
 
         UnitigTip() {}
 
         UnitigTip(std::string kmer,
-                  direction_t position)
+                  Direction_t position)
             : kmer(kmer),
               position(position) {
 
@@ -93,7 +87,7 @@ struct uDBG {
 
     protected:
 
-        std::shared_ptr<dbg_type> dbg;
+        std::shared_ptr<graph_type> dbg;
 
         tip_map_t  left_tips;
         tip_map_t  right_tips;
@@ -105,39 +99,39 @@ struct uDBG {
 
     public:
 
-        Graph(std::shared_ptr<dbg_type> dbg)
+        Graph(std::shared_ptr<graph_type> dbg)
             : KmerClient(dbg->K()),
               dbg(dbg) {
         }
 
-        UnitigTip * query_left_tips(value_type tip_hash) {
-            auto search = left_tips.find(tip_hash);
+        UnitigTip * query_left_tips(const hash_type& tip_hash) {
+            auto search = left_tips.find(tip_hash.value());
             if (search != left_tips.end()) {
                 return search->second;
             }
             return nullptr;
         }
 
-        UnitigTip * query_right_tips(value_type tip_hash) {
-            auto search = right_tips.find(tip_hash);
+        UnitigTip * query_right_tips(const hash_type& tip_hash) {
+            auto search = right_tips.find(tip_hash.value());
             if (search != right_tips.end()) {
                 return search->second;
             }
             return nullptr;
         }
 
-        state_type left_traverse_to_tip(value_type   start,
-                                        UnitigTip * result) {
+        state_type left_traverse_to_tip(const hash_type& start,
+                                        UnitigTip *      result) {
 
             result = nullptr;
-            auto search = tags.find(start);
+            auto search = tags.find(start.value());
             if (search == tags.end()) {
                 return state_type::BAD_SEED;
             }
             auto cur = search->second;
 
-            std::set<hash_type> seen;
-            seen.insert(start);
+            std::set<value_type> seen;
+            seen.insert(start.value());
             while(true) {
                 search = tags.find(cur.left);
                 if (search == tags.end()) {

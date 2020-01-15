@@ -19,26 +19,6 @@ using namespace utils;
 namespace boink {
 namespace parsing {
 
-
-unsigned char _to_valid_dna(const unsigned char c)
-{
-    switch(c) {
-    case 'A':
-    case 'C':
-    case 'G':
-    case 'T':
-        return c;
-    case 'a':
-    case 'c':
-    case 'g':
-    case 't':
-        return toupper(c);
-    default:
-        return 'A';
-    }
-}
-
-
 bool check_char(const char c, const std::string against) {
     for (auto ag : against) {
         if (c == ag) {

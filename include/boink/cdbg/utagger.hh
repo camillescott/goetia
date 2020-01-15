@@ -27,20 +27,14 @@ namespace cdbg {
 template <class StorageType>
 struct UTagger {
 
-    typedef dBG<StorageType,
-                hashing::UKHS::LazyShifter>     dbg_type;
-    typedef typename dbg_type::shifter_type     shifter_type;
-    typedef Traverse<dbg_type>                  traversal_type;
-    typedef typename traversal_type::dBG        traverser_type;
+    typedef dBG<StorageType, hashing::CanUnikmerShifter> graph_type;
 
-    typedef hashing::KmerIterator<shifter_type> kmer_iter_type;
-    typedef typename shifter_type::hash_type    hash_type;
-    typedef typename hashing::UKHS::value_type  value_type;
-    typedef typename shifter_type::kmer_type    kmer_type;
-    typedef typename shifter_type::shift_type   shift_type;
-    typedef TraversalState::State               state_type;
+    // inject dependent typename boilerplate: see boink/meta.hh
+    _boink_model_typedefs_from_graphtype(graph_type);
+    _boink_walker_typedefs_from_graphtype(graph_type);
 
-    typedef std::tuple<value_type, value_type>  link_type;
+    typedef typename shifter_type::ukhs_type   ukhs_type;
+    typedef std::tuple<value_type, value_type> link_type;
 
     struct Tag {
         value_type left_partition;
@@ -48,19 +42,19 @@ struct UTagger {
         link_type  link;
     };
 
-    class StreamingTagger : public traverser_type,
+    class StreamingTagger : public walker_type,
                             public events::EventNotifier {
 
     public:
 
-        using traverser_type::filter_nodes;
-        using traverser_type::find_left_kmers;
-        using traverser_type::find_right_kmers;
-        using traverser_type::gather_left;
-        using traverser_type::gather_right;
-        using traverser_type::walk_left;
-        using traverser_type::walk_right;
-        using traverser_type::get_decision_neighbors;
+        using walker_type::filter_nodes;
+        using walker_type::find_left_kmers;
+        using walker_type::find_right_kmers;
+        using walker_type::left_extensions;
+        using walker_type::right_extensions;
+        using walker_type::walk_left;
+        using walker_type::walk_right;
+        using walker_type::get_decision_neighbors;
 
         typedef spp::sparse_hash_map<link_type,
                                      Tag,
@@ -73,13 +67,13 @@ struct UTagger {
 
         tag_map_t                                                 tag_map;
 
-        std::shared_ptr<dbg_type>            dbg;
-        std::shared_ptr<hashing::UKHS::Map>  ukhs;
-        const uint16_t                       unikmer_k;
+        std::shared_ptr<graph_type> dbg;
+        std::shared_ptr<ukhs_type>  ukhs;
+        const uint16_t              unikmer_k;
 
-        StreamingTagger(std::shared_ptr<dbg_type> dbg,
-                        std::shared_ptr<hashing::UKHS::Map> ukhs)
-            : traverser_type(dbg->K(), ukhs->K(), ukhs),
+        StreamingTagger(std::shared_ptr<graph_type>& dbg,
+                        std::shared_ptr<ukhs_type>&  ukhs)
+            : walker_type(dbg->K(), ukhs->K(), ukhs),
               EventNotifier(),
               dbg(dbg),
               ukhs(ukhs),
@@ -87,8 +81,8 @@ struct UTagger {
         {
         }
 
-        static std::shared_ptr<StreamingTagger> build(std::shared_ptr<dbg_type> dbg,
-                                                      std::shared_ptr<hashing::UKHS::Map> ukhs) {
+        static std::shared_ptr<StreamingTagger> build(std::shared_ptr<graph_type> dbg,
+                                                      std::shared_ptr<ukhs_type>  ukhs) {
             return std::make_shared<StreamingTagger>(dbg, ukhs);
         }
 
@@ -122,23 +116,22 @@ struct UTagger {
         tag_map_t find_new_tags(const std::string& sequence) {
 
 
-            kmer_iter_type kmer_iter(sequence, this);
+            hashing::KmerIterator<walker_type> kmer_iter(sequence, this);
 
             std::vector<hash_type> hashes;
-            std::deque<std::pair<std::vector<shift_type>,
-                                 std::vector<shift_type>>> neighbors;
+            std::deque<shift_pair_type> neighbors;
             while(!kmer_iter.done()) {
                 auto hash = kmer_iter.next();
                 if (dbg->insert(hash)) {
                     hashes.push_back(hash);
-                    // Note that gather_left() and gather_right() only collect
+                    // Note that left_extensions() and right_extensions() only collect
                     // up the *potential* neighbors for the cursor. We do this here
                     // for all new k-mers in order to minimize the amount of hashing
                     // we have to do; actually querying them against the graph and filtering
                     // them out has to wait until all the new k-mers from the sequence
                     // have been inserted.
-                    neighbors.push_back(std::make_pair(this->gather_left(),
-                                                       this->gather_right()));
+                    neighbors.push_back(std::make_pair(this->left_extensions(),
+                                                       this->right_extensions()));
                 } 
             }
 
@@ -168,19 +161,18 @@ struct UTagger {
          * @Param neighbors The (filtered) neighbors of root.
          * @Param tags      Map to store tags in.
          */
-        void create_neighborhood_tags(const hash_type&                          root,
-                                      const std::pair<std::vector<shift_type>,
-                                                      std::vector<shift_type>>& neighbors,
-                                      tag_map_t&                                tags) {
+        void create_neighborhood_tags(const hash_type&       root,
+                                      const shift_pair_type& neighbors,
+                                      tag_map_t&             tags) {
             // check in-neighbors
-            for (auto& in_neighbor : neighbors.first) {
+            for (const shift_type<DIR_LEFT>& in_neighbor : neighbors.first) {
                 auto tag = create_tag(in_neighbor.value(), root);
                 if (tag) {
                     tags[tag.value().link] = std::move(tag.value());
                 }
             }
             // and out neighbors
-            for (auto& out_neighbor : neighbors.second) {
+            for (const shift_type<DIR_RIGHT>& out_neighbor : neighbors.second) {
                 auto tag = create_tag(root, out_neighbor.value());
                 if (tag) {
                     tags[tag.value().link] = std::move(tag.value());
@@ -203,10 +195,10 @@ struct UTagger {
                 //std::cerr << "\tunikmers don't match" << std::endl;
                 //std::cerr << "\tfirst: " << first << ", second:" << second << std::endl;
                 Tag tag;
-                tag.left_partition = first.unikmer.partition;
-                tag.right_partition = second.unikmer.partition;
-                tag.link = std::make_pair(first.hash,
-                                          second.hash);
+                tag.left_partition = first.minimizer.partition;
+                tag.right_partition = second.minimizer.partition;
+                tag.link = std::make_pair(first.hash.value(),
+                                          second.hash.value());
                 return tag;
             } else {
                 return {};
@@ -222,7 +214,7 @@ struct UTagger {
          * @Returns   True if possibly a tag.
          */
         bool is_tag(const hash_type& u, const hash_type& v) {
-            return u.unikmer.partition != v.unikmer.partition;
+            return u.minimizer.partition != v.minimizer.partition;
         }
 
         /**
@@ -238,7 +230,7 @@ struct UTagger {
                 return {};
             }
 
-            auto search = tag_map.find(std::make_pair(u, v));
+            auto search = tag_map.find(std::make_pair(u.value(), v.value()));
             if (search != tag_map.end()) {
                 return search->second;
             }
@@ -255,7 +247,7 @@ struct UTagger {
          */
         std::vector<Tag> query_sequence_tags(const std::string& sequence) {
             std::vector<Tag> tags;
-            kmer_iter_type kmer_iter(sequence, this);
+            hashing::KmerIterator<walker_type> kmer_iter(sequence, this);
 
             hash_type u = kmer_iter.next();
             if (kmer_iter.done()) {
@@ -281,21 +273,21 @@ struct UTagger {
          * @Returns   Set of links corresponding to neighboring tags.
          */
         link_set_t query_neighborhood_tags(const std::string& sequence) {
-            kmer_iter_type kmer_iter(sequence, this);
+            hashing::KmerIterator<walker_type> kmer_iter(sequence, this);
             link_set_t found;
 
             while(!kmer_iter.done()) {
                 hash_type root = kmer_iter.next();
                 auto neighborhood = this->filter_nodes(dbg.get(),
-                                                       std::make_pair(this->gather_left(),
-                                                                      this->gather_right()));
-                for (auto& in_neighbor : neighborhood.first) {
+                                                       std::make_pair(this->left_extensions(),
+                                                                      this->right_extensions()));
+                for (const shift_type<DIR_LEFT>& in_neighbor : neighborhood.first) {
                     if (auto tag = query_tag(in_neighbor.value(), root)) {
                         found.insert(tag.value().link);
                     }
                 }
                 // and out neighbors
-                for (auto& out_neighbor : neighborhood.second) {
+                for (const shift_type<DIR_RIGHT>& out_neighbor : neighborhood.second) {
                     if (auto tag = query_tag(root, out_neighbor.value())) {
                         found.insert(tag.value().link);
                     }

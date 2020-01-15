@@ -1,11 +1,11 @@
-/* boink.hh
- *
- * Copyright (C) 2018 Camille Scott
- * All rights reserved.
- *
- * This software may be modified and distributed under the terms
- * of the MIT license.  See the LICENSE file for details.
+/**
+ * (c) Camille Scott, 2019
+ * File   : boink.hh
+ * License: MIT
+ * Author : Camille Scott <camille.scott.w@gmail.com>
+ * Date   : 13.01.2020
  */
+
 
 #ifndef BOINK_MISC_HH
 #define BOINK_MISC_HH
@@ -33,12 +33,6 @@ namespace boink {
                       stream << x << std::endl; \
                       std::cout << stream.str(); \
                     } while(0)
-
-enum direction_t {
-    DIR_LEFT,
-    DIR_RIGHT
-};
-
 
 template <typename T>
 std::string repr(const T& item) {

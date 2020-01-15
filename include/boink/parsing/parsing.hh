@@ -22,20 +22,17 @@
 namespace boink {
 namespace parsing {
 
-unsigned char _to_valid_dna(const unsigned char c);
 
 struct Record {
     std::string name;
     std::string sequence;
     std::string quality;
-    std::string cleaned_seq;
 
     inline void reset()
     {
         name.clear();
         sequence.clear();
         quality.clear();
-        cleaned_seq.clear();
     }
 
     inline void write_fastx(std::ostream& output)
@@ -51,18 +48,9 @@ struct Record {
         }
     }
 
-    // Compute cleaned_seq from sequence. Call this after changing sequence.
-    inline void set_clean_seq()
-    {
-        cleaned_seq = std::string(sequence.size(), 0);
-        std::transform(sequence.begin(), sequence.end(), cleaned_seq.begin(),
-                       ::toupper);
-    }
-
     friend inline std::ostream& operator<<(std::ostream& o, const Record& record) {
         o << "<Sequence name=" << record.name
           << " seq=" << record.sequence
-          << " cleaned=" << record.cleaned_seq
           << ">";
         return o;
     }

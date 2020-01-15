@@ -16,7 +16,7 @@ namespace cdbg {
 }
 
 template class boink::cdbg::UTagger<boink::storage::BitStorage>;
-template class boink::cdbg::UTagger<boink::storage::ByteStorage>;
-template class boink::cdbg::UTagger<boink::storage::NibbleStorage>;
-template class boink::cdbg::UTagger<boink::storage::QFStorage>;
-template class boink::cdbg::UTagger<boink::storage::SparseppSetStorage>;
+//template class boink::cdbg::UTagger<boink::storage::ByteStorage>;
+//template class boink::cdbg::UTagger<boink::storage::NibbleStorage>;
+//template class boink::cdbg::UTagger<boink::storage::QFStorage>;
+//template class boink::cdbg::UTagger<boink::storage::SparseppSetStorage>;

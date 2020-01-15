@@ -9,5 +9,11 @@
 
 #include "boink/minimizers.hh"
 #include "boink/hashing/rollinghashshifter.hh"
+#include "boink/hashing/ukhshashshifter.hh"
 
-template class boink::WKMinimizer<boink::hashing::RollingHashShifter>;
+namespace boink {
+
+template class WKMinimizer<hashing::FwdRollingShifter>;
+template class WKMinimizer<hashing::CanRollingShifter>;
+
+}

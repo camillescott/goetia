@@ -27,12 +27,12 @@
 
 #include "boink/hashing/kmeriterator.hh"
 #include "boink/hashing/hashshifter.hh"
-#include "boink/hashing/exceptions.hh"
-#include "boink/hashing/alphabets.hh"
 #include "boink/hashing/ukhs.hh"
 #include "boink/hashing/rollinghashshifter.hh"
 
 #include "boink/kmers/kmerclient.hh"
+#include "boink/sequences/alphabets.hh"
+#include "boink/sequences/exceptions.hh"
 
 #include "boink/parsing/parsing.hh"
 #include "boink/parsing/readers.hh"
@@ -78,11 +78,12 @@ template bool operator==(const std::STLTYPE< TTYPE >::iterator&,                
 template bool operator!=(const std::STLTYPE< TTYPE >::iterator&,                  \
                          const std::STLTYPE< TTYPE >::iterator&);                 \
 }
-
 extern
-template class boink::parsing::SequenceReader<boink::parsing::FastxParser>;
+template class boink::parsing::FastxParser<boink::DNA_SIMPLE>;
 extern
-template class boink::parsing::SplitPairedReader<boink::parsing::FastxParser>;
+template class boink::parsing::SequenceReader<boink::parsing::FastxParser<boink::DNA_SIMPLE>>;
+extern
+template class boink::parsing::SplitPairedReader<boink::parsing::FastxParser<boink::DNA_SIMPLE>>;
 
 extern
 template class boink::hashing::BiDirectionalShifter<boink::hashing::RollingHashShifter>;

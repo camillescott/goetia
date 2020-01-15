@@ -22,16 +22,15 @@
 #include "boink/boink.hh"
 
 namespace boink {
-namespace cdbg {
 
+template class cdbg::uDBG<storage::BitStorage>;
+//template class cdbg::uDBG<storage::ByteStorage>;
+//template class cdbg::uDBG<storage::NibbleStorage>;
+//template class cdbg::uDBG<storage::QFStorage>;
+//template class cdbg::uDBG<storage::SparseppSetStorage>;
 
 }
-}
 
-template class boink::cdbg::uDBG<boink::storage::BitStorage>;
-template class boink::cdbg::uDBG<boink::storage::ByteStorage>;
-template class boink::cdbg::uDBG<boink::storage::NibbleStorage>;
-template class boink::cdbg::uDBG<boink::storage::QFStorage>;
-template class boink::cdbg::uDBG<boink::storage::SparseppSetStorage>;
+
 
 

@@ -21,7 +21,9 @@
 
 #include "boink/boink.hh"
 #include "boink/hashing/hashshifter.hh"
-#include "boink/hashing/exceptions.hh"
+
+#include "boink/sequences/exceptions.hh"
+
 #include "boink/kmers/kmerclient.hh"
 
 
@@ -38,7 +40,7 @@ class KmerIterator : public kmers::KmerClient {
 
 public:
 
-    typedef ShifterType shifter_type;
+    typedef ShifterType                     shifter_type;
     typedef typename ShifterType::hash_type hash_type;
 
     ShifterType * shifter;

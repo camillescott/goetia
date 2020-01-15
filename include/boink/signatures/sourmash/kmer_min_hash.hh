@@ -10,7 +10,7 @@
 #include <string>
 
 #include "boink/hashing/smhasher/MurmurHash3.h"
-#include "boink/hashing/exceptions.hh"
+#include "boink/sequences/exceptions.hh"
 
 
 #define tbl \
@@ -157,7 +157,7 @@ public:
                     } else {
                         std::string msg = "invalid DNA character in input k-mer: ";
                         msg += fw_kmer;
-                        throw boink::hashing::InvalidCharacterException(msg);
+                        throw boink::InvalidCharacterException(msg);
                     }
                 }
 

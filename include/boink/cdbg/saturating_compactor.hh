@@ -11,6 +11,7 @@
 
 #include "boink/processors.hh"
 #include "boink/parsing/readers.hh"
+#include "boink/sequences/exceptions.hh"
 
 namespace boink {
 namespace cdbg {
@@ -24,15 +25,14 @@ struct SaturatingCompactor {
 
     typedef typename compactor_type::hash_type  hash_type;
     typedef typename compactor_type::kmer_type  kmer_type;
-    typedef typename compactor_type::shift_type shift_type;
 
 
     class Processor : public FileProcessor<Processor,
-                                           parsing::FastxParser> {
+                                           parsing::FastxParser<>> {
 
     protected:
 
-        typedef FileProcessor<Processor, parsing::FastxParser> BaseType;
+        typedef FileProcessor<Processor, parsing::FastxParser<>> BaseType;
 
     public:
         
@@ -55,18 +55,18 @@ struct SaturatingCompactor {
 
         void process_sequence(const parsing::Record& read) {
             try {
-                compactor->insert_sequence(read.cleaned_seq);
-                signature->insert_sequence(read.cleaned_seq);
-            } catch (hashing::InvalidCharacterException &e) {
+                compactor->insert_sequence(read.sequence);
+                signature->insert_sequence(read.sequence);
+            } catch (InvalidCharacterException &e) {
                 std::cerr << "WARNING: Bad sequence encountered at "
                           << this->_n_reads << ": "
-                          << read.cleaned_seq << ", exception was "
+                          << read.sequence << ", exception was "
                           << e.what() << std::endl;
                                               return;
-            } catch (hashing::SequenceLengthException &e) {
+            } catch (SequenceLengthException &e) {
                 std::cerr << "NOTE: Skipped sequence that was too short: read "
                           << this->_n_reads << " with sequence "
-                          << read.cleaned_seq 
+                          << read.sequence 
                           << std::endl;
                 return;
             } catch (std::exception &e) {

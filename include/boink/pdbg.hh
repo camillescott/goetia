@@ -18,9 +18,11 @@
 #define BOINK_PDBG_HH
 
 #include "boink/boink.hh"
+#include "boink/meta.hh"
 #include "boink/traversal.hh"
 #include "boink/hashing/kmeriterator.hh"
-#include "boink/hashing/hashshifter.hh"
+#include "boink/hashing/hashextender.hh"
+#include "boink/hashing/canonical.hh"
 #include "boink/kmers/kmerclient.hh"
 #include "boink/hashing/ukhs.hh"
 #include "boink/storage/storage.hh"
@@ -36,44 +38,46 @@ namespace boink {
 
 using storage::PartitionedStorage;
 
-template <class BaseStorageType>
+template <class BaseStorageType, class BaseShifterType>
 class PdBG : public kmers::KmerClient {
-protected:
-
-    std::shared_ptr<PartitionedStorage<BaseStorageType>>       S;
-    std::shared_ptr<hashing::UKHS::Map>                        ukhs;
-    hashing::UKHS::LazyShifter                                 partitioner;
 
 public:
+    
+    typedef PdBG<BaseStorageType, BaseShifterType>             graph_type;
+    typedef typename hashing::UnikmerShifter<BaseShifterType>  shifter_type;
+    typedef typename shifter_type::ukhs_type                   ukhs_type;
+    _boink_model_typedefs_from_shiftertype(shifter_type)
+    _boink_walker_typedefs_from_graphtype(graph_type)
 
-    typedef typename hashing::UKHS::LazyShifter                          shifter_type;
-    typedef typename shifter_type::hash_type                             hash_type;
-    typedef typename shifter_type::shift_type                            shift_type;
-    typedef typename shifter_type::kmer_type                             kmer_type;
+    typedef BaseStorageType                                    base_storage_type;
 
-	typedef Traverse<PdBG<BaseStorageType>>                              traversal_type;
-    typedef hashing::KmerIterator<typename hashing::UKHS::LazyShifter>   kmer_iter_type;
-    typedef BaseStorageType                                              base_storage_type;
+protected:
+
+    std::shared_ptr<PartitionedStorage<BaseStorageType>> S;
+    std::shared_ptr<ukhs_type>                           ukhs;
+    extender_type                                        partitioner;
+
+public:
 
     const uint16_t partition_K;
  
     template <typename... Args>
     explicit PdBG(uint16_t  K,
                   uint16_t  partition_K,
-                  std::shared_ptr<hashing::UKHS::Map> ukhs,
+                  std::shared_ptr<ukhs_type>& ukhs,
                   Args&&... args)
         : KmerClient  (K),
           ukhs        (ukhs),
           partitioner (K, partition_K, ukhs),
           partition_K (partition_K)
     {
-        S = std::make_shared<PartitionedStorage<BaseStorageType>>(partitioner.n_ukhs_hashes(),
+        S = std::make_shared<PartitionedStorage<BaseStorageType>>(ukhs->n_hashes(),
                                                                   std::forward<Args>(args)...);
     }
 
     explicit PdBG(uint16_t K,
                   uint16_t partition_K,
-                  std::shared_ptr<hashing::UKHS::Map> ukhs,
+                  std::shared_ptr<ukhs_type>& ukhs,
                   std::shared_ptr<storage::PartitionedStorage<BaseStorageType>> S)
         : KmerClient  (K),
           ukhs        (ukhs),
@@ -84,17 +88,17 @@ public:
 
     }
 
-    hash_type hash(const std::string& kmer) const {
-        return partitioner.hash(kmer);
+    hash_type hash(const std::string& kmer) {
+        return partitioner.set_cursor(kmer);
     }
 
-    hash_type hash(const char * kmer) const {
-        return partitioner.hash(kmer);
+    hash_type hash(const char * kmer) {
+        return partitioner.set_cursor(kmer);
     }
 
     std::vector<hash_type> get_hashes(const std::string& sequence) {
 
-        kmer_iter_type iter(sequence, partitioner);
+        hashing::KmerIterator<extender_type> iter(sequence, &partitioner);
         std::vector<hash_type> kmer_hashes;
 
         while(!iter.done()) {
@@ -105,13 +109,11 @@ public:
         return kmer_hashes;
     }
 
-    std::shared_ptr<PdBG<BaseStorageType>> clone() {
-        return std::make_shared<PdBG<BaseStorageType>>(
-                   this->_K,
-                   partition_K,
-                   ukhs,
-                   S
-               );
+    std::shared_ptr<graph_type> clone() {
+        return std::make_shared<graph_type>(this->_K,
+                                            partition_K,
+                                            ukhs,
+                                            S);
     }
 
     const bool insert(const std::string& kmer);
@@ -172,7 +174,7 @@ public:
         return kmer.substr(0, this->_K - 1);
     }
 
-    std::vector<kmer_type> build_left_kmers(const std::vector<shift_type>& nodes,
+    std::vector<kmer_type> build_left_kmers(const std::vector<shift_type<hashing::DIR_LEFT>>& nodes,
                                             const std::string& root) {
         std::vector<kmer_type> kmers;
         auto _prefix = prefix(root);
@@ -183,7 +185,7 @@ public:
         return kmers;
     }
 
-    std::vector<kmer_type> build_right_kmers(const std::vector<shift_type>& nodes,
+    std::vector<kmer_type> build_right_kmers(const std::vector<shift_type<hashing::DIR_RIGHT>>& nodes,
                                              const std::string& root) {
         std::vector<kmer_type> kmers;
         auto _suffix = suffix(root);
@@ -248,16 +250,10 @@ public:
         S->reset();
     }
 
-    std::shared_ptr<hashing::KmerIterator<hashing::UKHS::LazyShifter>> get_hash_iter(const std::string& sequence) {
-        return std::make_shared<hashing::KmerIterator<hashing::UKHS::LazyShifter>>(sequence, &partitioner);
-    }
-
     std::vector<size_t> get_partition_counts() {
         return S->get_partition_counts();
     }
 };
-
-typedef PdBG<storage::SparseppSetStorage> DefaultPdBG;
 
 }
 #endif

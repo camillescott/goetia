@@ -25,6 +25,9 @@
 
 namespace boink {
 
+using hashing::DIR_LEFT;
+using hashing::DIR_RIGHT;
+
 
 template <class StorageType,
           class ShifterType>
@@ -32,18 +35,31 @@ class dBG : public kmers::KmerClient {
 
 public:
 
-    typedef ShifterType                             shifter_type;
-    typedef typename ShifterType::hash_type         hash_type;
-    typedef typename ShifterType::kmer_type         kmer_type;
-    typedef typename ShifterType::shift_type        shift_type;
-    typedef StorageType                             storage_type;
-    typedef Traverse<dBG<StorageType, ShifterType>> traversal_type;
-    typedef hashing::KmerIterator<ShifterType>      kmer_iter_type;
+    typedef ShifterType                              shifter_type;
+    typedef hashing::HashExtender<ShifterType>       extender_type;
+    typedef StorageType                              storage_type;
+    typedef dBGWalker<dBG<StorageType, ShifterType>> walker_type;
+    typedef hashing::KmerIterator<ShifterType>       kmer_iter_type;
+    typedef typename ShifterType::alphabet           alphabet;
+
+    typedef typename ShifterType::hash_type          hash_type;
+    typedef typename ShifterType::kmer_type          kmer_type;
+
+    template<Direction_t D>
+        using shift_type = hashing::ShiftModel<hash_type, D>;
+
+    typedef std::pair<std::vector<shift_type<DIR_LEFT>>,
+                      std::vector<shift_type<DIR_RIGHT>>> shift_pair_type;
+
+    typedef std::pair<std::vector<kmer_type>,
+                      std::vector<kmer_type>>             neighbor_pair_type;
+
+
 
 protected:
 
     std::shared_ptr<StorageType> S;
-    ShifterType hasher;
+    extender_type hasher;
 
 public:
 
@@ -107,11 +123,11 @@ public:
      * @Returns   True if the k-mer was new; false otherwise.
      */
     inline const bool insert(const std::string& kmer) {
-        return S->insert(hash(kmer));
+        return S->insert(hash(kmer).value());
     }
 
-    inline const bool insert(hash_type kmer) {
-        return S->insert(kmer);
+    inline const bool insert(const hash_type& kmer) {
+        return S->insert(kmer.value());
     }
 
     /**
@@ -122,12 +138,12 @@ public:
      *
      * @Returns    Post-insertion count of the element.
      */
-    inline const storage::count_t insert_and_query(hash_type kmer) {
-        return S->insert_and_query(kmer);
+    inline const storage::count_t insert_and_query(hash_type& kmer) {
+        return S->insert_and_query(kmer.value());
     }
 
     inline const storage::count_t insert_and_query(const std::string& kmer) {
-        return S->insert_and_query(hash(kmer));
+        return S->insert_and_query(hash(kmer).value());
     }
 
     /**
@@ -139,7 +155,7 @@ public:
      */
     const storage::count_t query(const std::string& kmer);
 
-    const storage::count_t query(hash_type hashed_kmer) const;
+    const storage::count_t query(const hash_type& hashed_kmer) const;
 
     /**
      * @Synopsis  Number of unique k-mers in the storage.
@@ -190,13 +206,13 @@ public:
      *
      * @Returns   kmer_t objects with the left k-mers.
      */
-    std::vector<kmer_type> build_left_kmers(const std::vector<shift_type>& nodes,
-                                            const std::string& root) {
+    std::vector<kmer_type> build_left_kmers(const std::vector<shift_type<DIR_LEFT>>& nodes,
+                                            const std::string&                       root) {
         std::vector<kmer_type> kmers;
         auto _prefix = prefix(root);
         for (auto neighbor : nodes) {
             kmers.push_back(kmer_type(neighbor.value(),
-                                   neighbor.symbol + _prefix));
+                                      neighbor.symbol + _prefix));
         }
         return kmers;
     }
@@ -210,7 +226,7 @@ public:
      *
      * @Returns   kmer_t objects with the right k-mers.
      */
-    std::vector<kmer_type> build_right_kmers(const std::vector<shift_type>& nodes,
+    std::vector<kmer_type> build_right_kmers(const std::vector<shift_type<DIR_RIGHT>>& nodes,
                                              const std::string& root) {
         std::vector<kmer_type> kmers;
         auto _suffix = suffix(root);
@@ -229,7 +245,7 @@ public:
      *
      * @Returns   shift_t objects with the prefix bases and hashes.
      */
-    std::vector<shift_type> left_neighbors(const std::string& root);
+    std::vector<shift_type<DIR_LEFT>> left_neighbors(const std::string& root);
 
     /**
      * @Synopsis  Find the left-neighbors (in-neighbors) of root in the graph.
@@ -250,7 +266,7 @@ public:
      *
      * @Returns   shift_t objects with the suffix bases and hashes.
      */
-    std::vector<shift_type> right_neighbors(const std::string& root);
+    std::vector<shift_type<DIR_RIGHT>> right_neighbors(const std::string& root);
 
     /**
      * @Synopsis  Finds the right-neighbors (out-neighbors) of root in the graph.
@@ -271,8 +287,7 @@ public:
      *
      * @Returns   A pair of shift_t vectors; first contains the left and second the right neighbors.
      */
-    std::pair<std::vector<shift_type>,
-              std::vector<shift_type>> neighbors(const std::string& root);
+    shift_pair_type neighbors(const std::string& root);
 
     /**
      * @Synopsis  Finds all neighbors of root in the graph.
@@ -281,8 +296,7 @@ public:
      *
      * @Returns   A pair of kmer_t vectors; first contains the left and second the right neighbors.
      */
-    std::pair<std::vector<kmer_type>,
-              std::vector<kmer_type>> neighbor_kmers(const std::string& root) {
+    neighbor_pair_type neighbor_kmers(const std::string& root) {
         auto filtered = neighbors(root);
         return std::make_pair(build_left_kmers(filtered.first, root),
                               build_right_kmers(filtered.second, root));

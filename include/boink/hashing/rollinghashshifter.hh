@@ -19,122 +19,175 @@
 
 #include "boink/boink.hh"
 #include "boink/meta.hh"
-#include "boink/hashing/alphabets.hh"
+#include "boink/sequences/alphabets.hh"
+#include "boink/hashing/canonical.hh"
 #include "boink/hashing/hashshifter.hh"
 
 #include "boink/hashing/rollinghash/cyclichash.h"
 
-namespace boink {
-namespace hashing {
+namespace boink::hashing {
 
 
-class RollingHashShifter : public HashShifter<RollingHashShifter,
-                                              uint64_t>,
-                           public Tagged<RollingHashShifter> {
+template<class HashType>
+struct RollingHashShifterBase {
 protected:
-    typedef HashShifter<RollingHashShifter, uint64_t> BaseShifter;
+    typedef typename HashType::value_type value_type;
 
-    CyclicHash<uint64_t> hasher;
-    using BaseShifter::_K;
+    CyclicHash<value_type> hasher;
+
+    RollingHashShifterBase(uint16_t K)
+        : hasher(K) {}
+};
+
+template<>
+struct RollingHashShifterBase<CanonicalModel<uint64_t>> {
+protected:
+    typedef typename CanonicalModel<uint64_t>::value_type value_type;
+
+    CyclicHash<value_type> hasher;
+    CyclicHash<value_type> rc_hasher;
+
+    RollingHashShifterBase(uint16_t K)
+        : hasher(K),
+          rc_hasher(K) {}
+};
+
+
+template<class HashType = HashModel<uint64_t>>
+class RollingHashShifter : public HashShifter<RollingHashShifter<HashType>,
+                                              HashType,
+                                              DNA_SIMPLE>,
+                           public RollingHashShifterBase<HashType>,
+                           public Tagged<RollingHashShifter<HashType>> {
+
+    typedef HashShifter<RollingHashShifter<HashType>,
+                        HashType,
+                        DNA_SIMPLE> BaseShifter;
 
 public:
 
+    friend BaseShifter;
 
-    using BaseShifter::symbols;
-    using BaseShifter::hash_type;
-    using BaseShifter::shift_type;
-    using BaseShifter::kmer_type;
-
-    using BaseShifter::set_cursor;
-    using BaseShifter::get_cursor;
+    typedef typename BaseShifter::value_type value_type;
+    typedef typename BaseShifter::hash_type  hash_type;
+    typedef typename BaseShifter::kmer_type  kmer_type;
 
     RollingHashShifter(const std::string& start,
                        uint16_t K)
-        : BaseShifter(start, K), hasher(K)
+        : BaseShifter(start, K),
+          RollingHashShifterBase<HashType>(K)
     {    
-        init();
     }
 
     RollingHashShifter(uint16_t K)
         : BaseShifter(K),
-          hasher(K)
+          RollingHashShifterBase<HashType>(K)
     {
     }
 
-    RollingHashShifter(const RollingHashShifter& other)
-        : BaseShifter(other.K()),
-          hasher(other.K())
+    RollingHashShifter(RollingHashShifter const& other)
+        : RollingHashShifter(other.K())
     {
-        if(other.is_initialized()) {
-            this->load(other.get_cursor());
-            init();
-        }
     }
 
-    void init() {
-        if (this->initialized) {
-            return;
-        }
-        for (auto c : this->kmer_window) {
-            this->_validate(c);
-            hasher.eat(c);
-        }
-        this->initialized = true;
-    }
-
-    hash_type get() {
-        return hasher.hashvalue;
-    }
-
-    hash_type _hash(const std::string& sequence) const {
-        return hash_cyclic(sequence, this->_K);
-    }
-
-    hash_type _hash(const char * sequence) const {
-        CyclicHash<hash_type> tmp_hasher(this->_K);
+    hash_type _hash_base(const char * sequence) {
+        this->hasher.reset();
         for (uint16_t i = 0; i < this->_K; ++i) {
+            if (sequence[i] == '\0') {
+                throw SequenceLengthException("Encountered null terminator in k-mer!");
+            }
+            this->hasher.eat(sequence[i]);
+        }
+        return _get();
+    }
+
+    template<class It>
+    hash_type _hash_base(It begin, It end) {
+        this->hasher.reset();
+        while (begin != end) {
+            this->hasher.eat(*begin);
+            begin = std::next(begin);
+        }
+
+        return _get();
+    }
+
+    hash_type _get() {
+        return {this->hasher.hashvalue};
+    }
+
+    static hash_type _hash(const char * sequence, const uint16_t K) {
+        CyclicHash<value_type> tmp_hasher(K);
+        for (uint16_t i = 0; i < K; ++i) {
             tmp_hasher.eat(sequence[i]);
         }
-        return tmp_hasher.hashvalue;
+        return {tmp_hasher.hashvalue};
     }
 
-    hash_type update_left(const char c) {
-        hasher.reverse_update(c, this->kmer_window.back());
-        return get();
+    hash_type _shift_left(const char& in, const char& out) {
+        this->hasher.reverse_update(in, out);
+        return _get();
     }
 
-    hash_type update_right(const char c) {
-        hasher.update(this->kmer_window.front(), c);
-        return get();
+
+    hash_type _shift_right(const char& out, const char& in) {
+        this->hasher.update(out, in);
+        return _get();
     }
 
-    std::vector<shift_type> gather_left() {
-        std::vector<shift_type> hashes;
-        const char back = this->kmer_window.back();
-        for (auto symbol : symbols) {
-            hasher.reverse_update(symbol, back);
-            shift_type result(hasher.hashvalue, symbol);
-            hashes.push_back(result);
-            hasher.update(symbol, back);
-        }
-
-        return hashes;
-    }
-
-    std::vector<shift_type> gather_right() {
-        std::vector<shift_type> hashes;
-        const char front = this->kmer_window.front();
-        for (auto symbol : symbols) {
-            hasher.update(front, symbol);
-            hashes.push_back(shift_type(hasher.hashvalue, symbol));
-            hasher.reverse_update(front, symbol);
-        }
-        return hashes;
-    }
 };
 
 
-} // hashing
-} // boink
+//
+// Canonical specialization decls (sigh)
+//
+
+template<>
+RollingHashShifter<CanonicalModel<uint64_t>>
+::RollingHashShifter(const std::string& start,
+                     uint16_t K);
+
+template<>
+RollingHashShifter<CanonicalModel<uint64_t>>
+::RollingHashShifter(uint16_t K);
+
+template<>
+CanonicalModel<uint64_t>
+RollingHashShifter<CanonicalModel<uint64_t>>
+::_get();
+
+// static
+template<>
+CanonicalModel<uint64_t>
+RollingHashShifter<CanonicalModel<uint64_t>>
+::_hash(const char * sequence, const uint16_t K);
+
+template<>
+CanonicalModel<uint64_t>
+RollingHashShifter<CanonicalModel<uint64_t>>
+::_hash_base(const char * sequence);
+
+template<>
+template<class It>
+CanonicalModel<uint64_t>
+RollingHashShifter<CanonicalModel<uint64_t>>
+::_hash_base(It begin, It end);
+
+template<>
+CanonicalModel<uint64_t>
+RollingHashShifter<CanonicalModel<uint64_t>>
+::_shift_right(const char& in, const char& out);
+
+template<>
+CanonicalModel<uint64_t>
+RollingHashShifter<CanonicalModel<uint64_t>>
+::_shift_left(const char& in, const char& out);
+
+
+typedef RollingHashShifter<HashModel<uint64_t>> FwdRollingShifter;
+typedef RollingHashShifter<CanonicalModel<uint64_t>> CanRollingShifter;
+
+
+} 
 
 #endif

@@ -50,6 +50,7 @@ namespace TipType {
 
 template <class StorageType>
 struct UStreamingCompactor {
+/*
 
     using dbg_type          = dBG<StorageType,
                                   hashing::UKHS::LazyShifter>;
@@ -168,7 +169,6 @@ struct UStreamingCompactor {
             }
         }
         
-        /*
         std::deque<Segment> build_segments(const std::string&                     sequence,
                                            std::deque<traverser_type>&             seeds,
                                            std::deque<std::pair<size_t, size_t>>& positions,
@@ -208,11 +208,11 @@ struct UStreamingCompactor {
 
             }
         }
-        */
 
         
                          
     };
+*/
 
 
 };

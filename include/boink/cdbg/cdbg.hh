@@ -37,8 +37,8 @@
 
 #include "boink/traversal.hh"
 #include "boink/hashing/kmeriterator.hh"
+#include "boink/hashing/hashextender.hh"
 #include "boink/kmers/kmerclient.hh"
-#include "boink/minimizers.hh"
 #include "boink/storage/storage.hh"
 
 #include "boink/cdbg/cdbg_types.hh"
@@ -64,24 +64,18 @@ namespace cdbg {
 template <class GraphType>
 struct cDBG {
 
+public:
 
-    protected:
+    typedef GraphType                           graph_type;
 
-        using ShifterType   = typename GraphType::shifter_type;
-        using TraversalType = Traverse<GraphType>;
-        using MinimizerType = typename WKMinimizer<ShifterType>::Minimizer;
+    typedef typename graph_type::shifter_type   shifter_type;
+    typedef hashing::HashExtender<shifter_type> extender_type;
+    typedef typename shifter_type::alphabet     alphabet;
+    typedef typename shifter_type::hash_type    hash_type;
+	typedef typename hash_type::value_type      value_type;
+    typedef typename shifter_type::kmer_type    kmer_type;
 
-    public:
-
-    typedef GraphType                         graph_type;
-
-    typedef ShifterType                       shifter_type;
-    typedef typename shifter_type::hash_type  hash_type;
-    typedef typename shifter_type::kmer_type  kmer_type;
-    typedef typename shifter_type::shift_type shift_type;
-
-    typedef TraversalType                     traverser_type;
-    typedef MinimizerType                     minimizer_type;
+    typedef dBGWalker<graph_type>               walker_type;
 
 
     class CompactNode {
@@ -107,7 +101,7 @@ struct cDBG {
         }
 
         std::string revcomp() const {
-            return hashing::revcomp(sequence);
+            return alphabet::reverse_complement(sequence);
         }
 
         size_t length() const {
@@ -308,7 +302,7 @@ struct cDBG {
         /* Map of k-mer hash --> DecisionNode. DecisionNodes take
          * their k-mer hash value as their Node ID.
          */
-        typedef spp::sparse_hash_map<hash_type,
+        typedef spp::sparse_hash_map<value_type,
                                      std::unique_ptr<DecisionNode>> dnode_map_t;
         typedef typename dnode_map_t::const_iterator dnode_iter_t;
 
@@ -328,9 +322,9 @@ struct cDBG {
         // The actual ID --> UNode map
         unode_map_t unitig_nodes;
         // The map from Unitig end k-mer hashes to UnitigNodes
-        spp::sparse_hash_map<hash_type, UnitigNode*> unitig_end_map;
+        spp::sparse_hash_map<value_type, UnitigNode*> unitig_end_map;
         // The map from dBG k-mer tags to UnitigNodes
-        spp::sparse_hash_map<hash_type, UnitigNode*> unitig_tag_map;
+        spp::sparse_hash_map<value_type, UnitigNode*> unitig_tag_map;
 
         //std::mutex dnode_mutex;
         //std::mutex unode_mutex;
@@ -454,11 +448,11 @@ struct cDBG {
                                  hash_type left_end,
                                  hash_type right_end);
 
-        void clip_unode(direction_t clip_from,
+        void clip_unode(Direction_t clip_from,
                         hash_type old_unode_end,
                         hash_type new_unode_end);
 
-        void extend_unode(direction_t ext_dir,
+        void extend_unode(Direction_t ext_dir,
                           const std::string& new_sequence,
                           hash_type old_unode_end,
                           hash_type new_unode_end,

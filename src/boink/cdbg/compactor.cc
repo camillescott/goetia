@@ -13,14 +13,22 @@
 #include "boink/hashing/rollinghashshifter.hh"
 #include "boink/storage/storage_types.hh"
 
+namespace boink {
 
-template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::BitStorage,
-                                               boink::hashing::RollingHashShifter>>;
-template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::ByteStorage,
-                                               boink::hashing::RollingHashShifter>>;
-template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::NibbleStorage,
-                                               boink::hashing::RollingHashShifter>>;
-template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::QFStorage,
-                                               boink::hashing::RollingHashShifter>>;
-template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::SparseppSetStorage,
-                                               boink::hashing::RollingHashShifter>>;
+template class cdbg::StreamingCompactor<dBG<storage::SparseppSetStorage, hashing::FwdRollingShifter>>;
+//template class cdbg::StreamingCompactor<dBG<storage::SparseppSetStorage, hashing::CanRollingShifter>>;
+
+/*
+template class cdbg::StreamingCompactor<dBG<storage::BitStorage, hashing::FwdRollingShifter>>;
+template class cdbg::StreamingCompactor<dBG<storage::BitStorage, hashing::CanRollingShifter>>;
+
+template class cdbg::StreamingCompactor<dBG<storage::ByteStorage, hashing::FwdRollingShifter>>;
+template class cdbg::StreamingCompactor<dBG<storage::ByteStorage, hashing::CanRollingShifter>>;
+
+template class cdbg::StreamingCompactor<dBG<storage::NibbleStorage, hashing::FwdRollingShifter>>;
+template class cdbg::StreamingCompactor<dBG<storage::NibbleStorage, hashing::CanRollingShifter>>;
+
+template class cdbg::StreamingCompactor<dBG<storage::QFStorage, hashing::FwdRollingShifter>>;
+template class cdbg::StreamingCompactor<dBG<storage::QFStorage, hashing::CanRollingShifter>>;
+*/
+}

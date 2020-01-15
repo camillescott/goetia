@@ -20,10 +20,10 @@
 namespace boink {
 namespace signatures {
 
-template <class StorageType>
-UnikmerSignature<StorageType>::
-Reporter::Reporter(std::shared_ptr<UnikmerSignature<StorageType>::Signature> signature,
-                   const std::string&         filename)
+template <class StorageType, class BaseShifterType>
+UnikmerSignature<StorageType, BaseShifterType>::
+Reporter::Reporter(std::shared_ptr<UnikmerSignature<StorageType, BaseShifterType>::Signature> signature,
+                   const std::string&    filename)
     : SingleFileReporter(filename, "UnikmerSignature::Reporter"),
       signature(signature)
 {
@@ -32,9 +32,9 @@ Reporter::Reporter(std::shared_ptr<UnikmerSignature<StorageType>::Signature> sig
 }
 
 
-template <class StorageType>
+template <class StorageType, class BaseShifterType>
 void
-UnikmerSignature<StorageType>::
+UnikmerSignature<StorageType, BaseShifterType>::
 Reporter::handle_msg(std::shared_ptr<events::Event> event) {
      if (event->msg_type == events::MSG_TIME_INTERVAL) {
         auto _event = static_cast<events::TimeIntervalEvent*>(event.get());
@@ -52,11 +52,17 @@ Reporter::handle_msg(std::shared_ptr<events::Event> event) {
 }
 
 }
+
+template class signatures::UnikmerSignature<storage::BitStorage, hashing::FwdRollingShifter>;
+template class signatures::UnikmerSignature<storage::BitStorage, hashing::CanRollingShifter>;
+template class signatures::UnikmerSignature<storage::SparseppSetStorage, hashing::FwdRollingShifter>;
+template class signatures::UnikmerSignature<storage::SparseppSetStorage, hashing::CanRollingShifter>;
+template class signatures::UnikmerSignature<storage::ByteStorage, hashing::FwdRollingShifter>;
+template class signatures::UnikmerSignature<storage::ByteStorage, hashing::CanRollingShifter>;
+template class signatures::UnikmerSignature<storage::NibbleStorage, hashing::FwdRollingShifter>;
+template class signatures::UnikmerSignature<storage::NibbleStorage, hashing::CanRollingShifter>;
+template class signatures::UnikmerSignature<storage::QFStorage, hashing::FwdRollingShifter>;
+template class signatures::UnikmerSignature<storage::QFStorage, hashing::CanRollingShifter>;
+
 }
 
-
-template class boink::signatures::UnikmerSignature<boink::storage::BitStorage>;
-template class boink::signatures::UnikmerSignature<boink::storage::ByteStorage>;
-template class boink::signatures::UnikmerSignature<boink::storage::NibbleStorage>;
-template class boink::signatures::UnikmerSignature<boink::storage::QFStorage>;
-template class boink::signatures::UnikmerSignature<boink::storage::SparseppSetStorage>;

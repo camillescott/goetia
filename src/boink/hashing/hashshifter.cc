@@ -8,17 +8,13 @@
  */
 
 #include "boink/hashing/hashshifter.hh"
-#include "boink/hashing/alphabets.hh"
-#include "boink/hashing/rollinghashshifter.hh"
-#include "boink/hashing/ukhs.hh"
 
-namespace boink {
-namespace hashing {
-
+    /*
 template<class Derived,
-         class HashType>
+         class HashType,
+         class Alphabet>
 HashType
-HashShifter<Derived, HashType>::set_cursor(const std::string& sequence) {
+HashShifter<Derived, HashType, Alphabet>::set_cursor(const std::string& sequence) {
     if (sequence.length() < _K) {
         throw SequenceLengthException("Sequence must at least length K");
     }
@@ -34,9 +30,10 @@ HashShifter<Derived, HashType>::set_cursor(const std::string& sequence) {
 }
 
 template<class Derived,
-         class HashType>
+         class HashType,
+         class Alphabet>
 HashType
-HashShifter<Derived, HashType>::set_cursor(const char * sequence) {
+HashShifter<Derived, HashType, Alphabet>::set_cursor(const char * sequence) {
     // less safe! does not check length
     if(!initialized) {
         load(sequence);
@@ -51,10 +48,11 @@ HashShifter<Derived, HashType>::set_cursor(const char * sequence) {
 
 
 template <class Derived,
-          class HashType>
+          class HashType,
+          class Alphabet>
 template <typename Iterator>
 HashType
-HashShifter<Derived, HashType>::set_cursor(const Iterator begin, const Iterator end) {
+HashShifter<Derived, HashType, Alphabet>::set_cursor(const Iterator begin, const Iterator end) {
     Iterator _begin = begin, _end = end;
     if(!initialized) {
         load(begin, end);
@@ -72,31 +70,5 @@ HashShifter<Derived, HashType>::set_cursor(const Iterator begin, const Iterator 
     }
     return get();
 }
+*/
 
-
-template <class ShifterType>
-typename ShifterType::hash_type
-BiDirectionalShifter<ShifterType>::shift_left(const char c) {
-    hash_type fw = fw_shifter.shift_left(c);
-    hash_type rc = rc_shifter.shift_right(complement(c));
-    return fw < rc ? fw : rc;
-}
-
-
-template <class ShifterType>
-typename ShifterType::hash_type
-BiDirectionalShifter<ShifterType>::shift_right(const char c) {
-    hash_type fw = fw_shifter.shift_right(c);
-    hash_type rc = rc_shifter.shift_left(complement(c));
-    return fw < rc ? fw : rc;
-}
-
-
-}
-}
-
-template class boink::hashing::HashShifter<boink::hashing::RollingHashShifter>;
-template class boink::hashing::HashShifter<boink::hashing::UKHS::LazyShifter,
-                                           boink::hashing::UKHS::BinnedKmer>;
-
-template class boink::hashing::BiDirectionalShifter<boink::hashing::RollingHashShifter>;

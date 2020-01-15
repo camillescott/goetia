@@ -9,7 +9,8 @@
 #include "boink/dbg.hh"
 
 #include "boink/hashing/rollinghashshifter.hh"
-#include "boink/hashing/ukhs.hh"
+#include "boink/hashing/ukhshashshifter.hh"
+#include "boink/sequences/exceptions.hh"
 #include "boink/storage/nibblestorage.hh"
 #include "boink/storage/bitstorage.hh"
 #include "boink/storage/storage.hh"
@@ -96,8 +97,11 @@ typename ShifterType::hash_type
 dBG<StorageType, ShifterType>
 
 ::hash(const std::string& kmer) {
-    hasher.set_cursor(kmer);
-    return hasher.get();
+    if (kmer.length() < _K) {
+        throw SequenceLengthException("Sequence must at least length K");
+    }
+    alphabet::validate(kmer.c_str(), _K);
+    return hasher.set_cursor(kmer.c_str());
 }
 
 
@@ -107,8 +111,8 @@ typename ShifterType::hash_type
 dBG<StorageType, ShifterType>
 
 ::hash(const char * kmer) {
-    hasher.set_cursor(kmer);
-    return hasher.get();
+    alphabet::validate(kmer, _K);
+    return hasher.set_cursor(kmer);
 }
 
 
@@ -121,8 +125,8 @@ template<class StorageType,
 const storage::count_t
 dBG<StorageType, ShifterType>
 
-::query(hash_type hashed_kmer) const {
-    return S->query(hashed_kmer);
+::query(const hash_type& hashed_kmer) const {
+    return S->query(hashed_kmer.value());
 }
 
 
@@ -132,7 +136,7 @@ const storage::count_t
 dBG<StorageType, ShifterType>
 
 ::query(const std::string& kmer) {
-    return S->query(hash(kmer));
+    return S->query(hash(kmer).value());
 }
 
 //
@@ -141,40 +145,34 @@ dBG<StorageType, ShifterType>
 
 template <class StorageType,
           class ShifterType>
-std::vector<typename ShifterType::shift_type> 
-dBG<StorageType, ShifterType>
-
-::left_neighbors(const std::string& root) {
-    typename traversal_type::dBG traverser(hasher);
-    traverser.set_cursor(root);
-    return traverser.filter_nodes(this, traverser.gather_left());
+auto dBG<StorageType, ShifterType>
+::left_neighbors(const std::string& root)
+-> std::vector<shift_type<DIR_LEFT>>{
+    walker_type walker(hasher);
+    walker.set_cursor(root);
+    return walker.in_neighbors(this);
 }
 
 
 template <class StorageType,
           class ShifterType>
-std::vector<typename ShifterType::shift_type>
-dBG<StorageType, ShifterType>
-
-::right_neighbors(const std::string& root) {
-    typename traversal_type::dBG traverser(hasher);
-    traverser.set_cursor(root);
-    return traverser.filter_nodes(this, traverser.gather_right());
+auto dBG<StorageType, ShifterType>
+::right_neighbors(const std::string& root)
+-> std::vector<shift_type<DIR_RIGHT>> {
+    walker_type walker(hasher);
+    walker.set_cursor(root);
+    return walker.out_neighbors(this);
 }
 
 
 template <class StorageType,
           class ShifterType>
-std::pair<std::vector<typename ShifterType::shift_type>,
-          std::vector<typename ShifterType::shift_type>>
-dBG<StorageType, ShifterType>
-
-::neighbors(const std::string& root) {
-    typename traversal_type::dBG traverser(hasher);
-    traverser.set_cursor(root);
-    auto lfiltered = traverser.filter_nodes(this, traverser.gather_left());
-    auto rfiltered = traverser.filter_nodes(this, traverser.gather_right());
-    return std::make_pair(lfiltered, rfiltered);
+auto dBG<StorageType, ShifterType>
+::neighbors(const std::string& root)
+-> shift_pair_type {
+    walker_type walker(hasher);
+    walker.set_cursor(root);
+    return walker.neighbors(this);
 }
 
 //
@@ -260,7 +258,7 @@ dBG<StorageType, ShifterType>::insert_and_query_sequence(const std::string& sequ
     size_t pos = 0;
     while(!iter.done()) {
         hash_type h = iter.next();
-        counts[pos] = S->insert_and_query(h);
+        counts[pos] = S->insert_and_query(h.value());
         ++pos;
     }
 
@@ -343,30 +341,30 @@ dBG<StorageType, ShifterType>::get_hasher() {
     return ShifterType(hasher);
 }
 
+
+template class dBG<storage::BitStorage, hashing::FwdRollingShifter>;
+template class dBG<storage::BitStorage, hashing::CanRollingShifter>;
+template class dBG<storage::BitStorage, hashing::FwdUnikmerShifter>;
+template class dBG<storage::BitStorage, hashing::CanUnikmerShifter>;
+template class dBG<storage::SparseppSetStorage, hashing::FwdRollingShifter>;
+template class dBG<storage::SparseppSetStorage, hashing::CanRollingShifter>;
+template class dBG<storage::SparseppSetStorage, hashing::FwdUnikmerShifter>;
+template class dBG<storage::SparseppSetStorage, hashing::CanUnikmerShifter>;
+template class dBG<storage::ByteStorage, hashing::FwdRollingShifter>;
+template class dBG<storage::ByteStorage, hashing::CanRollingShifter>;
+template class dBG<storage::ByteStorage, hashing::FwdUnikmerShifter>;
+template class dBG<storage::ByteStorage, hashing::CanUnikmerShifter>;
+template class dBG<storage::NibbleStorage, hashing::FwdRollingShifter>;
+template class dBG<storage::NibbleStorage, hashing::CanRollingShifter>;
+template class dBG<storage::NibbleStorage, hashing::FwdUnikmerShifter>;
+template class dBG<storage::NibbleStorage, hashing::CanUnikmerShifter>;
+template class dBG<storage::QFStorage, hashing::FwdRollingShifter>;
+template class dBG<storage::QFStorage, hashing::CanRollingShifter>;
+template class dBG<storage::QFStorage, hashing::FwdUnikmerShifter>;
+template class dBG<storage::QFStorage, hashing::CanUnikmerShifter>;
 }
 
-template class boink::dBG<boink::storage::BitStorage,
-                          boink::hashing::RollingHashShifter>;
-template class boink::dBG<boink::storage::ByteStorage,
-                          boink::hashing::RollingHashShifter>;
-template class boink::dBG<boink::storage::NibbleStorage,
-                          boink::hashing::RollingHashShifter>;
-template class boink::dBG<boink::storage::QFStorage,
-                          boink::hashing::RollingHashShifter>;
-template class boink::dBG<boink::storage::SparseppSetStorage,
-                          boink::hashing::RollingHashShifter>;
 
-
-template class boink::dBG<boink::storage::BitStorage,
-                          boink::hashing::UKHS::LazyShifter>;
-template class boink::dBG<boink::storage::ByteStorage,
-                          boink::hashing::UKHS::LazyShifter>;
-template class boink::dBG<boink::storage::NibbleStorage,
-                          boink::hashing::UKHS::LazyShifter>;
-template class boink::dBG<boink::storage::QFStorage,
-                          boink::hashing::UKHS::LazyShifter>;
-template class boink::dBG<boink::storage::SparseppSetStorage,
-                          boink::hashing::UKHS::LazyShifter>;
 
 
 void boink::test_dbg() {

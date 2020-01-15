@@ -138,7 +138,7 @@ template <class GraphType>
 std::vector<typename cDBG<GraphType>::DecisionNode*>
 cDBG<GraphType>::Graph::query_dnodes(const std::string& sequence) {
 
-    hashing::KmerIterator<ShifterType> kmers(sequence, this->_K);
+    hashing::KmerIterator<shifter_type> kmers(sequence, this->_K);
     std::vector<DecisionNode*> result;
     while(!kmers.done()) {
         hash_type h = kmers.next();
@@ -156,7 +156,7 @@ template <class GraphType>
 typename cDBG<GraphType>::CompactNode *
 cDBG<GraphType>::Graph::find_rc_cnode(CompactNode * root) {
 
-    std::string  rc_seq  = hashing::revcomp(root->sequence.substr(0, this->_K));
+    std::string  rc_seq  = alphabet::reverse_complement(root->sequence.substr(0, this->_K));
     hash_type        rc_hash = dbg->hash(rc_seq);
     CompactNode * rc_node = query_cnode(rc_hash);
 
@@ -197,13 +197,13 @@ std::pair<typename cDBG<GraphType>::DecisionNode*,
 cDBG<GraphType>::Graph::find_unode_neighbors(UnitigNode * unode) {
 
     DecisionNode * left = nullptr, * right = nullptr;
-    typename TraversalType::dBG traverser(dbg->K());
+    walker_type traverser(dbg->K());
 
     traverser.set_cursor(unode->sequence.c_str());
-    auto left_shifts = traverser.gather_left();
+    auto left_shifts = traverser.left_extensions();
 
     traverser.set_cursor(unode->sequence.c_str() + unode->sequence.size() - this->_K);
-    auto right_shifts = traverser.gather_right();
+    auto right_shifts = traverser.right_extensions();
 
     uint8_t n_left = 0;
     for (auto shift : left_shifts) {
@@ -430,7 +430,7 @@ cDBG<GraphType>::Graph::build_unode(const std::string& sequence,
 
 template <class GraphType>
 void
-cDBG<GraphType>::Graph::clip_unode(direction_t clip_from,
+cDBG<GraphType>::Graph::clip_unode(Direction_t clip_from,
                                    hash_type old_unode_end,
                                    hash_type new_unode_end) {
     
@@ -478,7 +478,7 @@ cDBG<GraphType>::Graph::clip_unode(direction_t clip_from,
 
 template <class GraphType>
 void
-cDBG<GraphType>::Graph::extend_unode(direction_t ext_dir,
+cDBG<GraphType>::Graph::extend_unode(Direction_t ext_dir,
                                      const std::string& new_sequence,
                                      hash_type old_unode_end,
                                      hash_type new_unode_end,
@@ -1077,19 +1077,20 @@ cDBG<GraphType>::UnitigReporter::handle_msg(std::shared_ptr<events::Event> event
     }       
 }
 
+template class cDBG<dBG<storage::BitStorage, hashing::FwdRollingShifter>>;
+template class cDBG<dBG<storage::BitStorage, hashing::CanRollingShifter>>;
+template class cDBG<dBG<storage::SparseppSetStorage, hashing::FwdRollingShifter>>;
+template class cDBG<dBG<storage::SparseppSetStorage, hashing::CanRollingShifter>>;
+template class cDBG<dBG<storage::ByteStorage, hashing::FwdRollingShifter>>;
+template class cDBG<dBG<storage::ByteStorage, hashing::CanRollingShifter>>;
+template class cDBG<dBG<storage::NibbleStorage, hashing::FwdRollingShifter>>;
+template class cDBG<dBG<storage::NibbleStorage, hashing::CanRollingShifter>>;
+template class cDBG<dBG<storage::QFStorage, hashing::FwdRollingShifter>>;
+template class cDBG<dBG<storage::QFStorage, hashing::CanRollingShifter>>;
+
 }
 } // namespace boink
 
 
-template class boink::cdbg::cDBG<boink::dBG<boink::storage::BitStorage,
-                                            boink::hashing::RollingHashShifter>>;
-template class boink::cdbg::cDBG<boink::dBG<boink::storage::ByteStorage,
-                                            boink::hashing::RollingHashShifter>>;
-template class boink::cdbg::cDBG<boink::dBG<boink::storage::NibbleStorage,
-                                            boink::hashing::RollingHashShifter>>;
-template class boink::cdbg::cDBG<boink::dBG<boink::storage::QFStorage,
-                                            boink::hashing::RollingHashShifter>>;
-template class boink::cdbg::cDBG<boink::dBG<boink::storage::SparseppSetStorage,
-                                            boink::hashing::RollingHashShifter>>;
 
 #undef pdebug

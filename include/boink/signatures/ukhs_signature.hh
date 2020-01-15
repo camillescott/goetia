@@ -18,13 +18,15 @@
 #include <vector>
 
 #include "boink/boink.hh"
-#include "boink/hashing/alphabets.hh"
 #include "boink/hashing/kmeriterator.hh"
+#include "boink/hashing/hashextender.hh"
 #include "boink/event_types.hh"
 #include "boink/reporting/reporters.hh"
 #include "boink/processors.hh"
 #include "boink/kmers/kmerclient.hh"
 #include "boink/hashing/ukhs.hh"
+#include "boink/hashing/ukhshashshifter.hh"
+#include "boink/hashing/canonical.hh"
 
 #include "boink/pdbg.hh"
 
@@ -39,22 +41,23 @@ public:
 };
 
 
-template <class StorageType>
+template <class StorageType, class BaseShifterType>
 struct UnikmerSignature {
 
-    typedef StorageType                       storage_type;
-    typedef hashing::UKHS::LazyShifter        shifter_type;
-    typedef typename shifter_type::hash_type  hash_type;
-    typedef typename shifter_type::kmer_type  kmer_type;
-    typedef typename shifter_type::shift_type shift_type;
+    typedef StorageType                              storage_type;
+    typedef hashing::UnikmerShifter<BaseShifterType> shifter_type;
+    typedef typename shifter_type::ukhs_type         ukhs_type;
+    typedef PdBG<StorageType, BaseShifterType>       pdbg_type;
+
+    _boink_model_typedefs_from_shiftertype(shifter_type)
 
     class Signature : public kmers::KmerClient {
 
     protected:
 
-        std::shared_ptr<hashing::UKHS::Map> ukhs_map;
+        std::shared_ptr<ukhs_type> ukhs_map;
 
-        std::shared_ptr<PdBG<StorageType>> signature;
+        std::shared_ptr<pdbg_type> signature;
 
     public:
 
@@ -63,22 +66,22 @@ struct UnikmerSignature {
         template <typename... Args>
         explicit Signature(uint16_t K,
                            uint16_t bucket_K,
-                           std::shared_ptr<hashing::UKHS::Map> ukhs_map,
+                           std::shared_ptr<ukhs_type> ukhs_map,
                            Args&&... args)
             : KmerClient  (K),
               ukhs_map    (ukhs_map),
               bucket_K    (bucket_K)
         {
-            signature = std::make_shared<PdBG<StorageType>>(K,
-                                                            bucket_K,
-                                                            ukhs_map,
-                                                            std::forward<Args>(args)...);
+            signature = std::make_shared<pdbg_type>(K,
+                                                    bucket_K,
+                                                    ukhs_map,
+                                                    std::forward<Args>(args)...);
         }
 
         template<typename...Args>
         static std::shared_ptr<Signature> build(uint16_t K,
                                                 uint16_t bucket_K,
-                                                std::shared_ptr<hashing::UKHS::Map> ukhs_map,
+                                                std::shared_ptr<ukhs_type> ukhs_map,
                                                 Args&&... args) {
             return std::make_shared<Signature>(K, bucket_K, ukhs_map, std::forward<Args>(args)...);
         }
@@ -86,7 +89,7 @@ struct UnikmerSignature {
         template<typename U = StorageType>
         static std::shared_ptr<Signature> build(uint16_t K,
                                                 uint16_t bucket_K,
-                                                std::shared_ptr<hashing::UKHS::Map> ukhs_map,
+                                                std::shared_ptr<ukhs_type> ukhs_map,
                                                 typename std::enable_if_t<std::is_same<U, boink::storage::SparseppSetStorage>::value, U*> = 0) {
             return std::make_shared<Signature>(K, bucket_K, ukhs_map);
         }
@@ -109,7 +112,7 @@ struct UnikmerSignature {
 
         uint64_t get_n_kmers() const {
             size_t n_kmers = 0;
-            for (auto& c : signature->get_partition_counts()) {
+            for (const auto& c : signature->get_partition_counts()) {
                 n_kmers += c;
             }
             return n_kmers;
@@ -125,7 +128,7 @@ struct UnikmerSignature {
         }
     };
 
-    
+    typedef UnikmerSignature<StorageType, BaseShifterType>::Signature signature_type;
 
     using Processor = InserterProcessor<Signature>; 
 

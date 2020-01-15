@@ -14,8 +14,9 @@
 #include <utility>
 #include <vector>
 
-#include "boink/hashing/rollinghashshifter.hh"
+#include "boink/hashing/hashextender.hh"
 #include "boink/hashing/kmeriterator.hh"
+#include "boink/hashing/canonical.hh"
 #include "boink/kmers/kmerclient.hh"
 
 #include "boink/parsing/parsing.hh"
@@ -93,6 +94,7 @@ public:
 
     using typename RollingMin<T>::value_type;
     using RollingMin<T>::RollingMin;
+    typedef std::vector<typename RollingMin<T>::value_type> vector_type;
 
     std::pair<T, int64_t> update(T new_value) {
         auto current = RollingMin<T>::update(new_value);
@@ -149,50 +151,50 @@ template <class ShifterType>
 struct WKMinimizer {
 
     typedef ShifterType                       shifter_type;
-    typedef typename shifter_type::hash_type  hash_type;
-    typedef typename shifter_type::kmer_type  kmer_type;
-    typedef typename shifter_type::shift_type shift_type;
+    _boink_model_typedefs_from_shiftertype(shifter_type)
 
-    class Minimizer : public InteriorMinimizer<hash_type>,
+    typedef InteriorMinimizer<value_type> minimizer_type;
+
+    class Minimizer : public minimizer_type,
                       public kmers::KmerClient {
 
     public:
 
-        using InteriorMinimizer<hash_type>::InteriorMinimizer;
-        using typename InteriorMinimizer<hash_type>::value_type;
+        using minimizer_type::InteriorMinimizer;
 
         Minimizer(int64_t window_size,
                   uint16_t K)
-            : InteriorMinimizer<hash_type>(window_size),
+            : InteriorMinimizer<value_type>(window_size),
               kmers::KmerClient(K) {
         }
 
-        std::vector<value_type> get_minimizers(const std::string& sequence) {
+        auto get_minimizers(const std::string& sequence)
+        -> typename minimizer_type::vector_type {
             hashing::KmerIterator<ShifterType> iter(sequence, this->_K);
             this->reset();
             
             while(!iter.done()) {
                 hash_type h = iter.next();
-                InteriorMinimizer<hash_type>::update(h);
+                minimizer_type::update(h.value());
             }
 
-            return InteriorMinimizer<hash_type>::get_minimizers();
+            return minimizer_type::get_minimizers();
         }
 
-        std::vector<hash_type> get_minimizer_values(const std::string& sequence) {
+        std::vector<value_type> get_minimizer_values(const std::string& sequence) {
             hashing::KmerIterator<ShifterType> iter(sequence, this->_K);
             this->reset();
 
             while(!iter.done()) {
                 hash_type h = iter.next();
-                InteriorMinimizer<hash_type>::update(h);
+                minimizer_type::update(h.value());
             }
 
-            return InteriorMinimizer<hash_type>::get_minimizer_values();
+            return minimizer_type::get_minimizer_values();
         }
 
         std::vector<std::pair<std::string, int64_t>> get_minimizer_kmers(const std::string& sequence) {
-            std::vector<value_type> minimizers = get_minimizers(sequence);
+            typename minimizer_type::vector_type minimizers = get_minimizers(sequence);
             std::vector<std::pair<std::string, int64_t>> kmers;
             for (auto min : minimizers) {
                 kmers.push_back(std::make_pair(sequence.substr(min.second, this->_K),
@@ -204,7 +206,7 @@ struct WKMinimizer {
 
 
     class Processor : public FileProcessor<Processor,
-                                           parsing::FastxParser> {
+                                           parsing::FastxParser<>> {
 
     protected:
 
@@ -212,7 +214,7 @@ struct WKMinimizer {
         std::string   _output_filename;
         std::ofstream _output_stream;
 
-        typedef FileProcessor<Processor, parsing::FastxParser> Base;
+        typedef FileProcessor<Processor, parsing::FastxParser<>> Base;
     public:
 
         using Base::process_sequence;
@@ -235,14 +237,13 @@ struct WKMinimizer {
         }
 
         void process_sequence(const parsing::Record& read) {
-            std::vector<typename Minimizer::value_type> minimizers;
-            minimizers = M.get_minimizers(read.cleaned_seq);
+            auto minimizers = M.get_minimizers(read.sequence);
 
-            for (auto min : minimizers) {
+            for (const auto& min : minimizers) {
                 _output_stream << this->n_reads() << ","
                                << min.second << ","
                                << min.first << ","
-                               << read.cleaned_seq.substr(min.second, M.K())
+                               << read.sequence.substr(min.second, M.K())
                                << std::endl;
             }
         }

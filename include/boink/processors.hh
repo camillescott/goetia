@@ -26,7 +26,8 @@
 #include "boink/parsing/readers.hh"
 #include "boink/events.hh"
 #include "boink/event_types.hh"
-#include "boink/hashing/exceptions.hh"
+
+#include "boink/sequences/exceptions.hh"
 
 
 namespace boink {
@@ -114,7 +115,7 @@ struct interval_state {
  * @tparam ParserType Sequencing parsing type.
  */
 template <class Derived,
-          class ParserType = parsing::FastxParser>
+          class ParserType = parsing::FastxParser<>>
 class FileProcessor : public events::EventNotifier {
 
 protected:
@@ -312,7 +313,6 @@ public:
                 break;
             }
 
-            read.set_clean_seq();
             derived().process_sequence(read);
  
 
@@ -362,7 +362,7 @@ private:
  * @tparam ParserType   Sequence parser type.
  */
 template <class InserterType,
-          class ParserType = parsing::FastxParser>
+          class ParserType = parsing::FastxParser<>>
 class InserterProcessor : public FileProcessor<InserterProcessor<InserterType, ParserType>,
                                                ParserType> {
 
@@ -399,21 +399,21 @@ public:
     void process_sequence(const parsing::Record& read) {
         size_t this_n_inserted;
         try {
-            this_n_inserted = inserter->insert_sequence(read.cleaned_seq);
-        } catch (hashing::InvalidCharacterException &e) {
+            this_n_inserted = inserter->insert_sequence(read.sequence);
+        } catch (InvalidCharacterException &e) {
             if (_verbose) {
                 std::cerr << "WARNING: Bad sequence encountered at "
                           << this->_n_reads << ": "
-                          << read.cleaned_seq << ", exception was "
+                          << read.sequence << ", exception was "
                           << e.what() << std::endl;
             }
             _n_invalid++;
             return;
-        } catch (hashing::SequenceLengthException &e) {
+        } catch (SequenceLengthException &e) {
             if (_verbose) {
                 std::cerr << "WARNING: Skipped sequence that was too short: read "
                           << this->_n_reads << " with sequence "
-                          << read.cleaned_seq 
+                          << read.sequence 
                           << std::endl;
             }
             _n_too_short++;

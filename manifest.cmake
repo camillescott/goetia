@@ -12,11 +12,13 @@ set(_headers
     include/boink/dbg.hh
     include/boink/events.hh
     include/boink/event_types.hh
-    include/boink/hashing/alphabets.hh
-    include/boink/hashing/exceptions.hh
+    include/boink/sequences/alphabets.hh
     include/boink/hashing/hash_combine.hh
+    include/boink/hashing/canonical.hh
     include/boink/hashing/hashshifter.hh
+    include/boink/hashing/hashextender.hh
     include/boink/hashing/kmeriterator.hh
+    include/boink/hashing/kmer_span.hh
     include/boink/hashing/rollinghash/characterhash.h
     include/boink/hashing/rollinghash/cyclichash.h
     include/boink/hashing/rollinghashshifter.hh
@@ -24,6 +26,7 @@ set(_headers
     include/boink/hashing/ukhshashshifter.hh
     include/boink/hashing/ukhs.hh
     include/boink/interface.hh
+    include/boink/is_detected.hh
     include/boink/kmers/kmerclient.hh
     include/boink/meta.hh
     include/boink/metrics.hh
@@ -67,12 +70,16 @@ set(_sources
     src/boink/dbg.cc
     src/boink/events.cc
     src/boink/event_types.cc
-    src/boink/hashing/alphabets.cc
+    src/boink/sequences/alphabets.cc
+    src/boink/hashing/canonical.cc
     src/boink/hashing/hashshifter.cc
+    src/boink/hashing/hashextender.cc
     src/boink/hashing/kmeriterator.cc
+    src/boink/hashing/kmer_span.cc
     src/boink/hashing/rollinghashshifter.cc
     src/boink/hashing/smhasher/MurmurHash3.cc
     src/boink/hashing/ukhs.cc
+    src/boink/hashing/ukhshashshifter.cc
     src/boink/meta.cc
     src/boink/metrics.cc
     src/boink/minimizers.cc
