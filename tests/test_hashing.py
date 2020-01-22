@@ -27,62 +27,71 @@ def get_min_unikmer(wmer, uk_map, shifter_type):
     return wmer_hash, min(unikmers, key=lambda elem: elem.hash)
 
 
-def test_fwd_rolling_hash():
-    K = 27
+@using(ksize=27)
+def test_rolling_hash(hasher, ksize):
     seq = 'TCACCTGTGTTGTGCTACTTGCGGCGC'
 
-    hasher = FwdRollingShifter(K)
-    assert hasher.hash(seq).value == 13194817695400542713
+    h = hasher.hash(seq)
+    e = 13194817695400542713
+    if h.value != e:
+        assert e in (h.fw_hash, h.rc_hash)
+    else:
+        assert h.value == e
 
 
 @using(ksize=27)
-def test_fwd_hash_base_eq(hasher):
+def test_rolling_nonvolatile_hash(hasher, ksize):
+    seq = 'TCACCTGTGTTGTGCTACTTGCGGCGC'
+
+    original = hasher.hash_base(seq)
+    hasher.hash('A' * ksize)
+    assert hasher.get() == original
+
+
+@using(ksize=27)
+def test_hash_base_eq(hasher):
     seq = 'TCACCTGTGTTGTGCTACTTGCGGCGC'
     h1 = hasher.hash(seq)
     h2 = hasher.hash_base(seq)
 
-    print(h1, h2)
     assert h1 == h2
 
 
 @using(ksize=27)
-def test_fwd_hash_base_get(hasher):
+def test_hash_base_get(hasher):
     seq = 'TCACCTGTGTTGTGCTACTTGCGGCGC'
 
     h1 = hasher.hash_base(seq)
     h2 = hasher.get()
 
-    print(h1, h2)
-
     assert h1 == h2
 
 
-def test_hash_base_seq_too_small(hasher):
+@pytest.mark.parametrize('hash_method', ['hash_base', 'hash'])
+def test_hash_seq_too_small(hasher, hash_method):
     with pytest.raises(Exception):
-        hasher.hash_base('AAAAA')
+        getattr(hasher, hash_method)('AAAAA')
 
 
-def test_static_hash_seq_too_small():
-    hasher = libboink.hashing.RollingHashShifter(20)
+def test_static_hash_seq_too_small(hasher_type):
     with pytest.raises(Exception):
-        hasher.hash('AAAAA')
+        hasher_type.hash('AAAAA', 7)
 
 
-def test_fw_rolling_hash_seq_too_large():
-    K = 27
+@pytest.mark.parametrize('hash_method', ['hash_base', 'hash'])
+@using(ksize=27)
+def test_seq_too_large(hasher, ksize, hash_method):
+    '''A sequence of length > K should have return the
+    hash value for sequence[:K]'''
+
     seq = 'TCACCTGTGTTGTGCTACTTGCGGCGCAA'
-    hasher = FwdRollingShifter(K)
 
-    assert hasher.hash(seq).value == 13194817695400542713
-
-
-def test_rolling_setcursor_seq_too_large():
-    K = 27
-    seq = 'TCACCTGTGTTGTGCTACTTGCGGCGCAA'
-    hasher = libboink.hashing.RollingHashShifter(K)
-
-    hasher.set_cursor(seq)
-    assert hasher.get().value == 13194817695400542713
+    h = getattr(hasher, hash_method)(seq)
+    e = 13194817695400542713
+    if h.value != e:
+        assert e in (h.fw_hash, h.rc_hash)
+    else:
+        assert h.value == e
 
 
 def test_canonical_rolling_hash(ksize, length, random_sequence):
@@ -96,9 +105,10 @@ def test_canonical_rolling_hash(ksize, length, random_sequence):
         fw, rc = fwd_hasher.hash(kmer), fwd_hasher.hash(rc_kmer)
         can = fw if fw < rc else rc
 
-        assert can_hasher.hash(kmer) == can
+        assert can_hasher.hash(kmer).value == can.value
 
 
+'''
 def test_unikmer_shifter_shift_left(ksize, length, random_sequence, unikmer_shifter):
     shifter, uk_ksize, uk_map = unikmer_shifter
     seq = random_sequence()
@@ -114,29 +124,52 @@ def test_unikmer_shifter_shift_left(ksize, length, random_sequence, unikmer_shif
 
         assert h.hash == exp_hash
         assert h.unikmer == exp_uk
+'''
 
 
-def test_update_left_right(hasher, ksize, length, random_sequence):
+@using(length=30, ksize=27)
+def test_shift_right(hasher, ksize, length, random_sequence):
     s = random_sequence()
-    fwd_hashes = [hasher.set_cursor(s[:ksize])]
-    for base in s[ksize:]:
-        fwd_hashes.append(hasher.shift_right(base))
+    
+    exp = [hasher.hash(kmer).value for kmer in kmers(s, ksize)]
+    fwd_hashes = [hasher.hash_base(s[:ksize]).value]
 
-    bkw_hashes = [hasher.set_cursor(s[-ksize:])]
-    for base in s[:-ksize][::-1]:
-        bkw_hashes.append(hasher.shift_left(base))
+    for out_base, in_base in zip(s[0:-ksize], s[ksize:]):
+        fwd_hashes.append(hasher.shift_right(out_base, in_base).value)
+
+    assert exp == fwd_hashes
+
+
+@using(length=30, ksize=27)
+def test_shift_right_left_right(hasher, ksize, length, random_sequence):
+    s = random_sequence()
+    print(s)
+
+    fwd_hashes = [hasher.hash_base(s[:ksize]).value]
+
+    for out_base, in_base in zip(s[0:-ksize], s[ksize:]):
+        print(out_base, in_base)
+        fwd_hashes.append(hasher.shift_right(out_base, in_base).value)
+
+
+    bkw_hashes = [hasher.hash_base(s[-ksize:]).value]
+
+    for in_base, out_base in zip(s[:-ksize][::-1], s[ksize:][::-1]):
+        print(in_base, out_base)
+        bkw_hashes.append(hasher.shift_left(in_base, out_base).value)
 
     assert fwd_hashes == bkw_hashes[::-1]
 
     # cursor is now the front k-mer, switch directions and hash fwd again
     # to be sure left->right direction change works
-    hashes = [hasher.get()]
-    for base in s[ksize:]:
-        hashes.append(hasher.shift_right(base))
+    hashes = [hasher.get().value]
+    for out_base, in_base in zip(s[0:-ksize], s[ksize:]):
+        hashes.append(hasher.shift_right(out_base, in_base).value)
 
     assert hashes == fwd_hashes
 
 
+'''
 def test_unikmer_shifter_kmeriterator(ksize, length, random_sequence, unikmer_shifter):
     shifter, uk_ksize, uk_map = unikmer_shifter
     seq = random_sequence()
@@ -152,4 +185,4 @@ def test_unikmer_shifter_kmeriterator(ksize, length, random_sequence, unikmer_sh
         assert act_h.unikmer.hash == exp_ukmer.hash
         assert act_h.unikmer.partition == exp_ukmer.partition
         i += 1
-
+'''

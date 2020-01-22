@@ -231,20 +231,11 @@ RollingHashShifter<CanonicalModel<uint64_t>>
     }
 }
 
-template<>
-inline CanonicalModel<uint64_t>
-RollingHashShifter<CanonicalModel<uint64_t>>
-::_shift_right(const char& in, const char& out);
 
 template<>
 inline CanonicalModel<uint64_t>
 RollingHashShifter<CanonicalModel<uint64_t>>
-::_shift_left(const char& in, const char& out);
-
-template<>
-inline CanonicalModel<uint64_t>
-RollingHashShifter<CanonicalModel<uint64_t>>
-::_shift_right(const char& in, const char& out) {
+::_shift_right(const char& out, const char& in) {
     hasher.update(out, in);
     rc_hasher.reverse_update(alphabet::complement(in),
                              alphabet::complement(out));
