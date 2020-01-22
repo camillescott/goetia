@@ -130,13 +130,26 @@ public:
      *
      * @Returns   
      */
-    hash_type shift_left(const char& c) {
+    template<typename Dummy = hash_type>
+    auto shift_left(const char& c)
+    -> std::enable_if_t<KmerSpanMixin<ShifterType>::enabled, Dummy> {
         if (!this->is_loaded()) {
             throw UninitializedShifterException();
         }
 
         hash_type h = shift_left(c, this->back());
         this->kmer_window.push_front(c);
+        return h;
+    }
+
+    template<typename Dummy = hash_type>
+    auto shift_left(const char& c)
+    -> std::enable_if_t<!KmerSpanMixin<ShifterType>::enabled, Dummy> {
+        if (!this->is_loaded()) {
+            throw UninitializedShifterException();
+        }
+
+        hash_type h = shift_left(c, this->back());
         return h;
     }
 
@@ -208,13 +221,27 @@ public:
      *
      * @Returns   
      */
-    hash_type shift_right(const char& c) {
+    template<typename Dummy = hash_type>
+    auto shift_right(const char& c)
+    -> std::enable_if_t<KmerSpanMixin<ShifterType>::enabled, Dummy> {
         if (!this->is_loaded()) {
             throw UninitializedShifterException();
         }
 
         hash_type h = shift_right(this->front(), c);
         this->kmer_window.push_back(c);
+        return h;
+    }
+
+
+    template<typename Dummy = hash_type>
+    auto shift_right(const char& c)
+    -> std::enable_if_t<!KmerSpanMixin<ShifterType>::enabled, Dummy> {
+        if (!this->is_loaded()) {
+            throw UninitializedShifterException();
+        }
+
+        hash_type h = shift_right(this->front(), c);
         return h;
     }
 
@@ -283,12 +310,24 @@ public:
      *
      * @Returns   
      */
-    hash_type set_cursor(const std::string& sequence) {
+    template<typename Dummy = hash_type>
+    auto set_cursor(const std::string& sequence)
+     -> std::enable_if_t<KmerSpanMixin<ShifterType>::enabled, Dummy> {
         if (sequence.length() < _K) {
             throw SequenceLengthException("Sequence must at least length K");
         }
         this->hash_base(sequence.c_str());
         this->load(sequence);
+        return get();
+    }
+
+    template<typename Dummy = hash_type>
+    auto set_cursor(const std::string& sequence)
+     -> std::enable_if_t<!KmerSpanMixin<ShifterType>::enabled, Dummy> {
+        if (sequence.length() < _K) {
+            throw SequenceLengthException("Sequence must at least length K");
+        }
+        this->hash_base(sequence.c_str());
         return get();
     }
 
@@ -299,10 +338,20 @@ public:
      *
      * @Returns   
      */
-    hash_type set_cursor(const char * sequence) {
+    template<typename Dummy = hash_type>
+    auto set_cursor(const char * sequence)
+    -> std::enable_if_t<KmerSpanMixin<ShifterType>::enabled, Dummy> {
         // less safe! does not check length
         this->hash_base(sequence);
         this->load(sequence);
+        return get();
+    }
+
+    template<typename Dummy = hash_type>
+    auto set_cursor(const char * sequence)
+    -> std::enable_if_t<!KmerSpanMixin<ShifterType>::enabled, Dummy> {
+        // less safe! does not check length
+        this->hash_base(sequence);
         return get();
     }
 

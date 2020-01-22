@@ -219,16 +219,23 @@ RollingHashShifter<CanonicalModel<uint64_t>>
 
     hasher.reset();
     rc_hasher.reset();
+    --end; // the end() iter points to last position + 1
 
-    It _begin = begin, _end = end;
+    size_t i = 0;
+    while (i < this->K()) {
+        hasher.eat(*(begin));
+        rc_hasher.eat(alphabet::complement(*(end)));
 
-    while (_begin != end) {
-        hasher.eat(*_begin);
-        rc_hasher.eat(alphabet::complement(*_end));
+        //std::cout << "eat: " << *begin << " fwd, " << *end << " rc ("
+        //          << alphabet::complement(*(end)) << ")" << std::endl;
 
-        ++_begin;
-        --_end;
+        ++begin;
+        --end;
+
+        ++i;
     }
+
+    return _get();
 }
 
 

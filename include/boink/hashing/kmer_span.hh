@@ -12,6 +12,7 @@
 #include <iostream>
 #include <type_traits>
 #include <deque>
+#include <string>
 
 #include "boink/ring_span.hpp"
 
@@ -27,6 +28,8 @@ private:
     uint16_t _K;
 
 public:
+
+    static const bool enabled = true;
 
     const bool is_loaded() const {
         return loaded;
@@ -58,6 +61,7 @@ protected:
         return kmer_window.back();
     }
 
+    __attribute__((visibility("default")))
     void load(const std::string& sequence) {
         for (uint16_t i = 0; i < _K; ++i)  {
             kmer_window.push_back(sequence[i]);
@@ -65,6 +69,7 @@ protected:
         loaded = true;
     }
 
+    __attribute__((visibility("default")))
     void load(const char * sequence) {
         for (uint16_t i = 0; i < _K; ++i)  {
             kmer_window.push_back(sequence[i]);
@@ -73,15 +78,20 @@ protected:
     }
 
     template <typename Iterator>
+    __attribute__((visibility("default")))
     void load(Iterator begin, Iterator end) {
-        std::copy(begin, end, kmer_window);
+        while (begin != end) {
+            kmer_window.push_back(*begin);
+            ++begin;
+        }
     }
 
     template <typename Iterator>
+    __attribute__((visibility("default")))
     void load(Iterator begin) {
         for (uint16_t i = 0; i < _K; ++i)  {
             kmer_window.push_back(*begin);
-            begin++;
+            ++begin;
         }
         loaded = true;
     }
@@ -100,8 +110,12 @@ protected:
 };
 
 
+
 template<>
 class KmerSpanMixinImpl<false>{
+public:
+
+    static const bool enabled = false;
 
 protected:
 
@@ -117,7 +131,7 @@ struct KmerSpanMixin {
     typedef typename std::conditional<std::is_base_of<KmerSpanMixinImpl<true>, ShifterType>::value,
                                       KmerSpanMixinImpl<false>,
                                       KmerSpanMixinImpl<true>>::type type;
-
+    static const bool enabled = type::enabled;
 };
 
 

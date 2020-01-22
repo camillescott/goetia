@@ -68,6 +68,15 @@ def test_hash_base_get(hasher):
     assert h1 == h2
 
 
+@using(ksize=27)
+def test_hash_base_iter_overload(hasher):
+    seq = std.string('TCACCTGTGTTGTGCTACTTGCGGCGC')
+
+    h1 = hasher.hash_base(seq.begin(), seq.end())
+    h2 = hasher.hash(seq)
+
+    assert h1 == h2
+
 @pytest.mark.parametrize('hash_method', ['hash_base', 'hash'])
 def test_hash_seq_too_small(hasher, hash_method):
     with pytest.raises(Exception):
@@ -90,7 +99,11 @@ def test_seq_too_large(hasher, ksize, hash_method):
     h = getattr(hasher, hash_method)(seq)
     e = 13194817695400542713
     if h.value != e:
-        assert e in (h.fw_hash, h.rc_hash)
+        if not hasattr(h, 'fw_hash'):
+            _h = h.hash
+        else:
+            _h = h
+        assert e in (_h.fw_hash, _h.rc_hash)
     else:
         assert h.value == e
 
@@ -109,8 +122,8 @@ def test_canonical_rolling_hash(ksize, length, random_sequence):
         assert can_hasher.hash(kmer).value == can.value
 
 
-@pytest.mark.parametrize('hasher_type', [FwdUnikmerShifter], indirect=True)
-def test_fwd_unikmer_hash_base(ksize, length, random_sequence, hasher):
+@pytest.mark.parametrize('hasher_type', [FwdUnikmerShifter, CanUnikmerShifter], indirect=True)
+def test_unikmer_hash_base(ksize, length, random_sequence, hasher):
     seq = random_sequence()
     hasher = hasher.build(ksize, 7)
 
@@ -121,18 +134,35 @@ def test_fwd_unikmer_hash_base(ksize, length, random_sequence, hasher):
         assert h.minimizer == exp_ukmer, (i, h)
 
 
-def test_unikmer_shifter_shift_left(ksize, length, random_sequence):
+@pytest.mark.parametrize('hasher_type', [FwdUnikmerShifter, CanUnikmerShifter], indirect=True)
+def test_unikmer_shift_right(ksize, length, random_sequence, hasher):
     seq = random_sequence()
-    shifter = FwdUnikmerShifter.build(ksize, 7)
 
-    hashes = [shifter.hash_base(seq[-ksize:])]
-    exp_kmer_hash, exp_ukmer = get_min_unikmer(seq[-ksize:], shifter.ukhs_map, FwdRollingShifter)
-    assert hashes[0].value == exp_kmer_hash.value
-    assert hashes[0].minimizer == exp_ukmer
+    h = hasher.hash_base(seq[:ksize])
+    exp_kmer_hash, exp_ukmer = get_min_unikmer(seq[:ksize], hasher.ukhs_map, type(hasher).ukhs_shifter_type)
+    assert h.value == exp_kmer_hash.value
+    assert h.minimizer == exp_ukmer
+
+    for i in range(1, len(seq) - ksize):
+        h = hasher.shift_right(seq[i-1], seq[i + ksize - 1])
+        exp_hash, exp_uk = get_min_unikmer(seq[i:i+ksize], hasher.ukhs_map, type(hasher).ukhs_shifter_type)
+
+        assert h.value == exp_hash.value
+        assert h.minimizer == exp_uk
+
+
+@pytest.mark.parametrize('hasher_type', [FwdUnikmerShifter, CanUnikmerShifter], indirect=True)
+def test_unikmer_shift_left(ksize, length, random_sequence, hasher):
+    seq = random_sequence()
+
+    h = hasher.hash_base(seq[-ksize:])
+    exp_kmer_hash, exp_ukmer = get_min_unikmer(seq[-ksize:], hasher.ukhs_map, type(hasher).ukhs_shifter_type)
+    assert h.value == exp_kmer_hash.value
+    assert h.minimizer == exp_ukmer
 
     for i in range(len(seq) - ksize - 1, -1, -1):
-        h = shifter.shift_left(seq[i], seq[i+ksize])
-        exp_hash, exp_uk = get_min_unikmer(seq[i:i+ksize], shifter.ukhs_map, FwdRollingShifter)
+        h = hasher.shift_left(seq[i], seq[i+ksize])
+        exp_hash, exp_uk = get_min_unikmer(seq[i:i+ksize], hasher.ukhs_map, type(hasher).ukhs_shifter_type)
 
         assert h.value == exp_hash.value
         assert h.minimizer == exp_uk
