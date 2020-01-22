@@ -424,6 +424,7 @@ public:
         // update main window left
         this->window_hasher.shift_left(in, out);
         update_unikmer_left(in);
+        this->kmer_window.push_front(in);
         return this->get();
     }
 
@@ -431,6 +432,7 @@ public:
         // update main window right
         this->window_hasher.shift_right(out, in);
         update_unikmer_right(in);
+        this->kmer_window.push_back(in);
         return this->get();
     }
 
