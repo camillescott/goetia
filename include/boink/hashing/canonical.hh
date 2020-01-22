@@ -52,25 +52,30 @@ struct HashModel {
         return value();
     }
 
-    friend inline std::ostream&
-    operator<<(std::ostream& os, const HashModel& _this) {
-        os << "<HashModel " << _this.value()
-           << ">";
-        return os;
-    }
-
+    __attribute__((visibility("default")))
     friend bool operator>(const HashModel& lhs, const HashModel& rhs) {
         return lhs.value() > rhs.value();
     }
 
+    __attribute__((visibility("default")))
     friend bool operator<(const HashModel& lhs, const HashModel& rhs) {
         return lhs.value() < rhs.value();
     }
 
+    __attribute__((visibility("default")))
     friend bool operator==(const HashModel& lhs, const HashModel& rhs) {
         return lhs.value() == rhs.value();
     }
 };
+
+template<class ValueType>
+__attribute__((visibility("default")))
+inline std::ostream&
+operator<<(std::ostream& os, const HashModel<ValueType>& _this) {
+    os << "<HashModel h=" << _this.value()
+       << ">";
+    return os;
+}
 
 
 /**
@@ -112,30 +117,33 @@ struct CanonicalModel {
         return value();
     }
 
-    friend inline std::ostream&
-    operator<<(std::ostream& os, const CanonicalModel& _this) {
-        os << "<CanonicalModel "
-           << " fw=" << _this.fw_hash
-           << " rc=" << _this.rc_hash
-           << " sign=" << _this.sign()
-           << ">";
-        return os;
-    }
-
-
+    __attribute__((visibility("default")))
     friend bool operator>(const CanonicalModel& lhs, const CanonicalModel& rhs) {
         return lhs.value() > rhs.value();
     }
 
+    __attribute__((visibility("default")))
     friend bool operator<(const CanonicalModel& lhs, const CanonicalModel& rhs) {
         return lhs.value() < rhs.value();
     }
 
+    __attribute__((visibility("default")))
     friend bool operator==(const CanonicalModel& lhs, const CanonicalModel& rhs) {
         return lhs.value() == rhs.value();
     }
 
 };
+
+template<class ValueType> __attribute__((visibility("default")))
+inline std::ostream&
+operator<<(std::ostream& os, const CanonicalModel<ValueType>& _this) {
+    os << "<CanonicalModel "
+       << " fw=" << _this.fw_hash
+       << " rc=" << _this.rc_hash
+       << " sign=" << _this.sign()
+       << ">";
+    return os;
+}
 
 
 /**
@@ -181,27 +189,35 @@ struct WmerModel<HashType<ValueType>, MinimizerType> {
         return hash;
     }
 
+    __attribute__((visibility("default")))
     friend bool operator>(const WmerModel& lhs, const WmerModel& rhs) {
         return lhs.hash > rhs.hash;
     }
 
+    __attribute__((visibility("default")))
     friend bool operator<(const WmerModel& lhs, const WmerModel& rhs) {
         return lhs.hash < rhs.hash;
     }
 
+    __attribute__((visibility("default")))
     friend bool operator==(const WmerModel& lhs, const WmerModel& rhs) {
         return lhs.hash == rhs.hash;
     }
-
-    friend inline std::ostream&
-    operator<<(std::ostream& os, const WmerModel& wmer) {
-        os << "<WmerModel "
-           << " hash=" << wmer.hash
-           << " minimizer=" << wmer.minimizer
-           << ">";
-        return os;
-    }
 };
+
+
+template<template<class> class HashType, class ValueType,
+         class MinimizerType>
+__attribute__((visibility("default")))
+inline std::ostream&
+operator<<(std::ostream& os,
+           const WmerModel<HashType<ValueType>, MinimizerType>& wmer) {
+    os << "<WmerModel "
+       << " hash=" << wmer.hash
+       << " minimizer=" << wmer.minimizer
+       << ">";
+    return os;
+}
 
 
 template<typename T>
@@ -244,18 +260,22 @@ struct KmerModel<HashType<ValueType, Extras...>> {
         return hash;
     }
 
+    __attribute__((visibility("default")))
     friend bool operator>(const KmerModel& lhs, const KmerModel& rhs) {
         return lhs.hash > rhs.hash;
     }
 
+    __attribute__((visibility("default")))
     friend bool operator<(const KmerModel& lhs, const KmerModel& rhs) {
         return lhs.hash < rhs.hash;
     }
 
+    __attribute__((visibility("default")))
     friend bool operator==(const KmerModel& lhs, const KmerModel& rhs) {
         return lhs.hash == rhs.hash;
     }
 
+    __attribute__((visibility("default")))
     friend inline std::ostream&
     operator<<(std::ostream& os, const KmerModel& kmer) {
         os << "<KmerModel "
@@ -265,6 +285,19 @@ struct KmerModel<HashType<ValueType, Extras...>> {
         return os;
     }
 };
+
+
+template<template<class, class...> class HashType, class ValueType,
+         class...Extras>
+__attribute__((visibility("default")))
+inline std::ostream&
+operator<<(std::ostream& os, const KmerModel<HashType<ValueType, Extras...>>& kmer) {
+    os << "<KmerModel "
+       << " hash=" << kmer.hash
+       << " kmer=" << kmer.kmer
+       << ">";
+    return os;
+}
 
 
 
@@ -314,28 +347,35 @@ struct ShiftModel<HashType<ValueType, Extras...>, Direction> {
         return hash;
     }
 
+    __attribute__((visibility("default")))
     friend bool operator>(const ShiftModel& lhs, const ShiftModel& rhs) {
         return lhs.hash > rhs.hash;
     }
 
+    __attribute__((visibility("default")))
     friend bool operator<(const ShiftModel& lhs, const ShiftModel& rhs) {
         return lhs.hash < rhs.hash;
     }
 
+    __attribute__((visibility("default")))
     friend bool operator==(const ShiftModel& lhs, const ShiftModel& rhs) {
         return lhs.hash == rhs.hash;
     }
-
-    friend inline std::ostream&
-    operator<<(std::ostream& os, const ShiftModel& shift) {
-        os << "<ShiftModel "
-           << " hash=" << shift.hash
-           << " symbol=" << shift.symbol
-           << " direction=" << shift.direction
-           << ">";
-        return os;
-    }
 };
+
+template <template<class, class...> class HashType, class ValueType, class... Extras,
+          bool Direction>
+__attribute__((visibility("default")))
+inline std::ostream&
+operator<<(std::ostream& os,
+           const ShiftModel<HashType<ValueType, Extras...>, Direction>& shift) {
+    os << "<ShiftModel "
+       << " hash=" << shift.hash
+       << " symbol=" << shift.symbol
+       << " direction=" << shift.direction
+       << ">";
+    return os;
+}
 
 
 /**
@@ -348,12 +388,12 @@ struct Partitioned {
 
     typedef ValueType value_type;
 
-    value_type value;
+    value_type v;
     uint64_t   partition;
 
-    Partitioned(value_type& value,
+    Partitioned(value_type& v,
                 uint64_t   partition)
-        : value(value),
+        : v(v),
           partition(partition)
     {
     }
@@ -363,28 +403,37 @@ struct Partitioned {
     {
     }
 
+    const value_type value() const {
+        return v;
+    }
+
+    __attribute__((visibility("default")))
     friend bool operator>(const Partitioned& lhs, const Partitioned& rhs) {
-        return lhs.value > rhs.value;
+        return lhs.v > rhs.v;
     }
 
+    __attribute__((visibility("default")))
     friend bool operator<(const Partitioned& lhs, const Partitioned& rhs) {
-        return lhs.value < rhs.value;
+        return lhs.v < rhs.v;
     }
 
+    __attribute__((visibility("default")))
     friend bool operator==(const Partitioned& lhs, const Partitioned& rhs) {
-        return lhs.value == rhs.value;
+        return lhs.v == rhs.v;
     }
-
-    friend inline std::ostream&
-    operator<<(std::ostream& os, const Partitioned& p) {
-        os << "<Partitioned"
-           << " value=" << p.value
-           << " partition=" << p.partition
-           << ">";
-        return os;
-    }
-
 };
+
+
+template <class ValueType>
+__attribute__((visibility("default")))
+inline std::ostream&
+operator<<(std::ostream& os, const Partitioned<ValueType>& p) {
+    os << "<Partitioned"
+       << " value=" << p.v
+       << " partition=" << p.partition
+       << ">";
+    return os;
+}
 
 
 

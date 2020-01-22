@@ -57,20 +57,25 @@ template<class HashType = HashModel<uint64_t>>
 class RollingHashShifter : public HashShifter<RollingHashShifter<HashType>,
                                               HashType,
                                               DNA_SIMPLE>,
-                           public RollingHashShifterBase<HashType>,
-                           public Tagged<RollingHashShifter<HashType>> {
+                           public RollingHashShifterBase<HashType> {
 
     typedef HashShifter<RollingHashShifter<HashType>,
                         HashType,
                         DNA_SIMPLE> BaseShifter;
+    typedef Tagged<RollingHashShifter<HashType>> tagged_type;
 
 public:
 
     friend BaseShifter;
 
+    using BaseShifter::NAME;
+    using BaseShifter::OBJECT_ABI_VERSION;
+
     typedef typename BaseShifter::value_type value_type;
     typedef typename BaseShifter::hash_type  hash_type;
     typedef typename BaseShifter::kmer_type  kmer_type;
+    typedef typename BaseShifter::alphabet   alphabet;
+
 
     RollingHashShifter(const std::string& start,
                        uint16_t K)
@@ -90,7 +95,8 @@ public:
     {
     }
 
-    hash_type _hash_base(const char * sequence) {
+    __attribute__((visibility("default")))
+    inline hash_type _hash_base(const char * sequence) {
         this->hasher.reset();
         for (uint16_t i = 0; i < this->_K; ++i) {
             if (sequence[i] == '\0') {
@@ -101,8 +107,8 @@ public:
         return _get();
     }
 
-    template<class It>
-    hash_type _hash_base(It begin, It end) {
+    template<class It> __attribute__((visibility("default")))
+    inline hash_type _hash_base(It begin, It end) {
         this->hasher.reset();
         while (begin != end) {
             this->hasher.eat(*begin);
@@ -143,33 +149,71 @@ public:
 //
 
 template<>
-RollingHashShifter<CanonicalModel<uint64_t>>
+inline RollingHashShifter<CanonicalModel<uint64_t>>
 ::RollingHashShifter(const std::string& start,
-                     uint16_t K);
+                     uint16_t K)
+    : BaseShifter(start, K),
+      RollingHashShifterBase(K)
+{
+}
+
 
 template<>
-RollingHashShifter<CanonicalModel<uint64_t>>
-::RollingHashShifter(uint16_t K);
+inline RollingHashShifter<CanonicalModel<uint64_t>>
+::RollingHashShifter(uint16_t K)
+    : BaseShifter(K),
+      RollingHashShifterBase(K)
+{
+}
+
 
 template<>
-CanonicalModel<uint64_t>
+inline CanonicalModel<uint64_t>
 RollingHashShifter<CanonicalModel<uint64_t>>
-::_get();
+::_get() {
+    return {hasher.hashvalue, rc_hasher.hashvalue};
+}
+
 
 // static
 template<>
-CanonicalModel<uint64_t>
+inline CanonicalModel<uint64_t>
 RollingHashShifter<CanonicalModel<uint64_t>>
-::_hash(const char * sequence, const uint16_t K);
+::_hash(const char * sequence, const uint16_t K)  {
+    CyclicHash<value_type> fw_hasher(K);
+    CyclicHash<value_type> rc_hasher(K);
+
+    for (uint16_t i = 0; i < K; ++i) {
+        fw_hasher.eat(sequence[i]);
+        rc_hasher.eat(alphabet::complement(sequence[K - i - 1]));
+    }
+
+    return {fw_hasher.hashvalue, rc_hasher.hashvalue};
+}
+
 
 template<>
-CanonicalModel<uint64_t>
+inline CanonicalModel<uint64_t>
 RollingHashShifter<CanonicalModel<uint64_t>>
-::_hash_base(const char * sequence);
+::_hash_base(const char * sequence) {
+    hasher.reset();
+    rc_hasher.reset();
+
+    for (uint16_t i = 0; i < this->_K; ++i) {
+        if (sequence[i] == '\0') {
+            throw SequenceLengthException("Encountered null terminator in k-mer!");
+        }
+        hasher.eat(sequence[i]);
+        rc_hasher.eat(alphabet::complement(sequence[this->_K - i - 1]));
+    }
+
+    return _get();
+}
+
 
 template<>
 template<class It>
-CanonicalModel<uint64_t>
+inline CanonicalModel<uint64_t>
 RollingHashShifter<CanonicalModel<uint64_t>>
 ::_hash_base(It begin, It end) {
 
@@ -188,19 +232,41 @@ RollingHashShifter<CanonicalModel<uint64_t>>
 }
 
 template<>
-CanonicalModel<uint64_t>
+inline CanonicalModel<uint64_t>
 RollingHashShifter<CanonicalModel<uint64_t>>
 ::_shift_right(const char& in, const char& out);
 
 template<>
-CanonicalModel<uint64_t>
+inline CanonicalModel<uint64_t>
 RollingHashShifter<CanonicalModel<uint64_t>>
 ::_shift_left(const char& in, const char& out);
 
+template<>
+inline CanonicalModel<uint64_t>
+RollingHashShifter<CanonicalModel<uint64_t>>
+::_shift_right(const char& in, const char& out) {
+    hasher.update(out, in);
+    rc_hasher.reverse_update(alphabet::complement(in),
+                             alphabet::complement(out));
+    return _get();
+}
+
+
+template<>
+inline CanonicalModel<uint64_t>
+RollingHashShifter<CanonicalModel<uint64_t>>
+::_shift_left(const char& in, const char& out) {
+    hasher.reverse_update(in, out);
+    rc_hasher.update(alphabet::complement(out),
+                     alphabet::complement(in));
+    return _get();
+}
 
 typedef RollingHashShifter<HashModel<uint64_t>> FwdRollingShifter;
 typedef RollingHashShifter<CanonicalModel<uint64_t>> CanRollingShifter;
 
+extern template class RollingHashShifter<HashModel<uint64_t>>;
+extern template class RollingHashShifter<CanonicalModel<uint64_t>>;
 
 } 
 

@@ -11,7 +11,7 @@ from boink.utils import copy_attrs
 from cppyy.gbl import std
 from cppyy import gbl
 
-Traverse = libboink.Traverse
+dBGWalker = libboink.dBGWalker
 STATES = libboink.TraversalState
 
 
@@ -20,46 +20,41 @@ class Assembler:
     def __init__(self, graph):
         self.graph = graph
         self.graphptr = self.graph.__smartptr__().get()
-        self.traverser = libboink.Traverse[type(graph)].dBG(graph.get_hasher())
-        copy_attrs(libboink.Traverse[type(graph)],
+        self.walker = libboink.dBGWalker[type(graph)].dBG(graph.get_hasher())
+        copy_attrs(libboink.dBGWalker[type(graph)],
                    self,
                    ['hash_type', 'shift_type', 'kmer_type'])
     
     def __getattr__(self, arg):
-        attr = getattr(self.traverser, arg)
+        attr = getattr(self.walker, arg)
         if callable(attr) and not attr.__name__.startswith('__'):
             def wrapper(*args, **kwargs):
                 return attr(self.graphptr, *args, **kwargs)
             return wrapper
     
     def set_cursor(self, kmer):
-        self.traverser.set_cursor(kmer)
+        self.walker.set_cursor(kmer)
 
     @property
     def cursor(self):
-        return self.traverser.get_cursor()
+        return self.walker.get_cursor()
 
     @cursor.setter
     def cursor(self, seed):
-        self.traverser.set_cursor(seed)
+        self.walker.set_cursor(seed)
             
     def clear_seen(self):
-        self.traverser.clear_seen()
+        self.walker.clear_seen()
     
     def assemble_right(self, seed):
-        path = libboink.Path()
         mask = std.set[self.hash_type]()
-        end_state = self.traverser.walk_right(self.graphptr, seed, path, mask)
-        return self.traverser.to_string(path), end_state
+        return self.walker.walk_right(self.graphptr, seed, mask)
 
     def assemble_left(self, seed):
-        path = libboink.Path()
         mask = std.set[self.hash_type]()
-        end_state = self.traverser.walk_left(self.graphptr, seed, path, mask)
-        return self.traverser.to_string(path), end_state
+        return self.walker.walk_left(self.graphptr, seed, mask)
     
     def assemble(self, seed):
-        path = libboink.Path()
         mask = std.set[self.hash_type]()
-        left_end_state, right_end_state = self.traverser.walk(self.graphptr, seed, path, mask)
-        return self.traverser.to_string(path), left_end_state, right_end_state
+        left_walk, right_walk = self.walker.walk(self.graphptr, seed, mask)
+        return left_walk, right_walk

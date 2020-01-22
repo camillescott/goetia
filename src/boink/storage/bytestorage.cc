@@ -667,4 +667,3 @@ void ByteStorage::load(std::string infilename, uint16_t& ksize)
     ByteStorageFile::load(infilename, ksize, *this);
 }
 
-template <> const std::string Tagged<ByteStorage>::NAME = "Boink::ByteStorage";

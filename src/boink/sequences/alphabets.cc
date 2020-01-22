@@ -8,11 +8,4 @@
 
 #include "boink/sequences/alphabets.hh"
 
-template <> const std::string boink::Alphabet<boink::DNA_SIMPLE>::SYMBOLS = "ACGT";
-template <> const std::string boink::Alphabet<boink::DNA_SIMPLE>::COMPLEMENTS = "TGCA";
 
-template <> const std::string boink::Alphabet<boink::DNAN_SIMPLE>::SYMBOLS = "ACGTN";
-template <> const std::string boink::Alphabet<boink::DNAN_SIMPLE>::COMPLEMENTS = "TGCAN";
-
-template <> const std::string boink::Alphabet<boink::IUPAC_NUCL>::SYMBOLS = "ATUGCYRSWKMBDHVN";
-template <> const std::string boink::Alphabet<boink::IUPAC_NUCL>::COMPLEMENTS = "TAACGRYSWMKVHDBN";

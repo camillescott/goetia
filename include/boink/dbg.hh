@@ -14,7 +14,10 @@
 #include "boink/kmers/kmerclient.hh"
 #include "boink/processors.hh"
 #include "boink/storage/storage.hh"
-#include "boink/storage/sparseppstorage.hh"
+#include "boink/storage/storage_types.hh"
+#include "boink/hashing/rollinghashshifter.hh"
+#include "boink/hashing/ukhs.hh"
+#include "boink/sequences/exceptions.hh"
 #include "boink/traversal.hh"
 
 #include <algorithm>
@@ -23,23 +26,26 @@
 #include <utility>
 #include <vector>
 
+
 namespace boink {
 
 template <class StorageType,
           class ShifterType>
-class dBG : public kmers::KmerClient {
+class dBG : public dBGWalker<dBG<StorageType, ShifterType>> {
 
 public:
 
     typedef ShifterType                              shifter_type;
-    typedef hashing::HashExtender<ShifterType>       extender_type;
     typedef StorageType                              storage_type;
-    typedef dBGWalker<dBG<StorageType, ShifterType>> walker_type;
-    typedef hashing::KmerIterator<ShifterType>       kmer_iter_type;
-    typedef typename ShifterType::alphabet           alphabet;
 
-    typedef typename ShifterType::hash_type          hash_type;
-    typedef typename ShifterType::kmer_type          kmer_type;
+    typedef dBGWalker<dBG<StorageType, ShifterType>> walker_type;
+    typedef typename walker_type::extender_type      extender_type;
+
+    typedef hashing::KmerIterator<ShifterType>       kmer_iter_type;
+    typedef typename walker_type::alphabet           alphabet;
+
+    typedef typename walker_type::hash_type          hash_type;
+    typedef typename walker_type::kmer_type          kmer_type;
 
     template<bool Dir>
         using shift_type = hashing::ShiftModel<hash_type, Dir>;
@@ -55,15 +61,28 @@ public:
 protected:
 
     std::shared_ptr<StorageType> S;
-    extender_type hasher;
+
+    using walker_type::_K;
 
 public:
 
+    friend walker_type;
+
+    using walker_type::K;
+
     //dBG(ShifterType& hasher, std::shared_ptr<StorageType> S);
-    dBG(std::shared_ptr<StorageType> S, ShifterType& hasher);
+    dBG(std::shared_ptr<StorageType> S, ShifterType& shifter)
+        : walker_type(shifter),
+          S(S)
+    {
+    }
 
     template<typename... Args>
-    dBG(std::shared_ptr<StorageType> S, uint16_t K, Args&&... args);
+    dBG(std::shared_ptr<StorageType> S, uint16_t K, Args&&... args)
+        : walker_type(K, std::forward<Args>(args)...),
+          S(S)
+    {
+    }
 
     /**
      * @Synopsis Build a dBG instance owned by a shared_ptr. 
@@ -77,39 +96,27 @@ public:
     //__attribute__((used)) build(ShifterType& hasher, std::shared_ptr<StorageType> S);
     static std::shared_ptr<dBG<StorageType, ShifterType>>
     __attribute__((used)) build(std::shared_ptr<StorageType> S,
-                                ShifterType& hasher);
+                                ShifterType& hasher)  {
+        return std::make_shared<dBG<StorageType, ShifterType>>(S, hasher);
+    }
 
     template<typename... Args>
     static std::shared_ptr<dBG<StorageType, ShifterType>>
     __attribute__((used)) build(std::shared_ptr<StorageType> S,
                                 uint16_t K,
-                                Args&&... args);
+                                Args&&... args) {
+        return std::make_shared<dBG<StorageType, ShifterType>>(S, K, std::forward<Args>(args)...);
+    }
 
     /**
      * @Synopsis  Makes a shallow clone of the dBG.
      *
      * @Returns   shared_ptr owning the clone.
      */
-    std::shared_ptr<dBG<StorageType, ShifterType>> clone();
-
-    /**
-     * @Synopsis  Hash a k-mer using the templated ShifterType.
-     *
-     * @Param kmer String of length K.
-     *
-     * @Returns   The hash value.
-     */
-    hash_type hash(const std::string& kmer);
-
-    /**
-     * @Synopsis  Hash a k-mer using the templated ShifterType.
-     *
-     * @Param kmer c-string with the k-mer; if longer than K, will only use
-     *             first K characters.
-     *
-     * @Returns   The hash value.
-     */
-    hash_type hash(const char * kmer);
+    std::shared_ptr<dBG<StorageType, ShifterType>> clone() {
+        return std::make_shared<dBG<StorageType, ShifterType>>(S->clone(),
+                                                               *this);
+    }
 
     /**
      * @Synopsis  Hash the k-mer and add it to the dBG storage.
@@ -119,7 +126,7 @@ public:
      * @Returns   True if the k-mer was new; false otherwise.
      */
     inline const bool insert(const std::string& kmer) {
-        return S->insert(hash(kmer).value());
+        return S->insert(this->hash(kmer).value());
     }
 
     inline const bool insert(const hash_type& kmer) {
@@ -139,7 +146,7 @@ public:
     }
 
     inline const storage::count_t insert_and_query(const std::string& kmer) {
-        return S->insert_and_query(hash(kmer).value());
+        return S->insert_and_query(this->hash(kmer).value());
     }
 
     /**
@@ -149,9 +156,13 @@ public:
      *
      * @Returns   The count of the k-mer.
      */
-    const storage::count_t query(const std::string& kmer);
+    const storage::count_t query(const std::string& kmer) {
+        return S->query(this->hash(kmer).value());
+    }
 
-    const storage::count_t query(const hash_type& hashed_kmer) const;
+    const storage::count_t query(const hash_type& hashed_kmer) const  {
+        return S->query(hashed_kmer.value());
+    }
 
     /**
      * @Synopsis  Number of unique k-mers in the storage.
@@ -194,111 +205,6 @@ public:
     }
 
     /**
-     * @Synopsis  Given a root k-mers and the shift bases to its left,
-     *            build the k-mer strings that could be its left neighbors.
-     *
-     * @Param nodes The shift_t objects containing the prefix bases and neighbor hashes.
-     * @Param root The root k-mer.
-     *
-     * @Returns   kmer_t objects with the left k-mers.
-     */
-    std::vector<kmer_type> build_left_kmers(const std::vector<shift_type<hashing::DIR_LEFT>>& nodes,
-                                            const std::string&                       root) {
-        std::vector<kmer_type> kmers;
-        auto _prefix = prefix(root);
-        for (auto neighbor : nodes) {
-            kmers.push_back(kmer_type(neighbor.value(),
-                                      neighbor.symbol + _prefix));
-        }
-        return kmers;
-    }
-
-    /**
-     * @Synopsis  Given a root k-mers and the shift bases to its right,
-     *            build the k-mer strings that could be its right neighbors.
-     *
-     * @Param nodes The shift_t obvjects containing the suffix bases and neighbor hashes.
-     * @Param root The root k-mer.
-     *
-     * @Returns   kmer_t objects with the right k-mers.
-     */
-    std::vector<kmer_type> build_right_kmers(const std::vector<shift_type<hashing::DIR_RIGHT>>& nodes,
-                                             const std::string& root) {
-        std::vector<kmer_type> kmers;
-        auto _suffix = suffix(root);
-        for (auto neighbor : nodes) {
-            kmers.push_back(kmer_type(neighbor.value(),
-                                     _suffix + neighbor.symbol));
-        }
-
-        return kmers;
-    }
-
-    /**
-     * @Synopsis  Finds the left-neighbors (in-neighbors) of root in the graph.
-     *
-     * @Param root The root k-mer.
-     *
-     * @Returns   shift_t objects with the prefix bases and hashes.
-     */
-    std::vector<shift_type<hashing::DIR_LEFT>> left_neighbors(const std::string& root);
-
-    /**
-     * @Synopsis  Find the left-neighbors (in-neighbors) of root in the graph.
-     *
-     * @Param root The root k-mer.
-     *
-     * @Returns   kmer_t objects with the complete k-mers and hashes.
-     */
-    std::vector<kmer_type> left_neighbor_kmers(const std::string& root) {
-        auto filtered = left_neighbors(root);
-        return build_left_kmers(filtered, root);
-    }
-
-    /**
-     * @Synopsis  Finds the right-neighbors (out-neighbors) of root in the graph.
-     *
-     * @Param root The root k-mer.
-     *
-     * @Returns   shift_t objects with the suffix bases and hashes.
-     */
-    std::vector<shift_type<hashing::DIR_RIGHT>> right_neighbors(const std::string& root);
-
-    /**
-     * @Synopsis  Finds the right-neighbors (out-neighbors) of root in the graph.
-     *
-     * @Param root The root k-mer.
-     *
-     * @Returns   kmer_t objects with the complete k-mers and hashes.
-     */
-    std::vector<kmer_type> right_neighbor_kmers(const std::string& root) {
-        auto filtered = right_neighbors(root);
-        return build_right_kmers(filtered, root);
-    }
-
-    /**
-     * @Synopsis  Finds all neighbors of root in the graph.
-     *
-     * @Param root The root k-mer.
-     *
-     * @Returns   A pair of shift_t vectors; first contains the left and second the right neighbors.
-     */
-    shift_pair_type neighbors(const std::string& root);
-
-    /**
-     * @Synopsis  Finds all neighbors of root in the graph.
-     *
-     * @Param root The root k-mer.
-     *
-     * @Returns   A pair of kmer_t vectors; first contains the left and second the right neighbors.
-     */
-    neighbor_pair_type neighbor_kmers(const std::string& root) {
-        auto filtered = neighbors(root);
-        return std::make_pair(build_left_kmers(filtered.first, root),
-                              build_right_kmers(filtered.second, root));
-    }
-
-    /**
      * @Synopsis  The address of the raw underling table, if available.
      *
      * @Returns   
@@ -330,12 +236,59 @@ public:
      */
     uint64_t insert_sequence(const std::string&          sequence,
                              std::vector<hash_type>&  kmer_hashes,
-                             std::vector<storage::count_t>& counts);
+                             std::vector<storage::count_t>& counts) {
+    
+        hashing::KmerIterator<ShifterType> iter(sequence, static_cast<ShifterType*>(this));
+
+        uint64_t         n_consumed = 0;
+        size_t           pos = 0;
+        storage::count_t count;
+        while(!iter.done()) {
+            auto h = iter.next();
+            count  = insert_and_query(h);
+
+            kmer_hashes.push_back(h);
+            counts.push_back(count);
+
+            n_consumed += (count == 1);
+            ++pos;
+        }
+
+        return n_consumed;
+    }
 
     uint64_t insert_sequence(const std::string&      sequence,
-                             std::set<hash_type>& new_kmers);
+                             std::set<hash_type>& new_kmers) {
 
-    uint64_t insert_sequence(const std::string& sequence);
+        hashing::KmerIterator<ShifterType> iter(sequence, this);
+
+        uint64_t n_consumed = 0;
+        size_t pos = 0;
+        bool is_new;
+        while(!iter.done()) {
+            hash_type h = iter.next();
+            if(insert(h)) {
+                new_kmers.insert(h);
+                n_consumed += is_new;
+            }
+            ++pos;
+        }
+
+        return n_consumed;
+    }
+
+    uint64_t insert_sequence(const std::string& sequence) {
+    
+        hashing::KmerIterator<ShifterType> iter(sequence, this);
+
+        uint64_t n_consumed = 0;
+        while(!iter.done()) {
+            hash_type h = iter.next();
+            n_consumed += insert(h);
+        }
+
+        return n_consumed;
+    }
 
     /**
      * @Synopsis  Insert the sequence and return the post-insertion k-mer counts.
@@ -344,7 +297,20 @@ public:
      *
      * @Returns  The counts. 
      */
-    std::vector<storage::count_t> insert_and_query_sequence(const std::string& sequence);
+    std::vector<storage::count_t> insert_and_query_sequence(const std::string& sequence)  {
+
+        hashing::KmerIterator<ShifterType> iter(sequence, this);
+        std::vector<storage::count_t> counts(sequence.length() - _K + 1);
+
+        size_t pos = 0;
+        while(!iter.done()) {
+            hash_type h = iter.next();
+            counts[pos] = S->insert_and_query(h.value());
+            ++pos;
+        }
+
+        return counts;
+    }
 
     /**
      * @Synopsis  Queries the k-mer counts for all k-mers in the sequence.
@@ -353,16 +319,52 @@ public:
      *
      * @Returns   The counts.
      */
-    std::vector<storage::count_t> query_sequence(const std::string& sequence);
+    std::vector<storage::count_t> query_sequence(const std::string& sequence)  {
+
+        hashing::KmerIterator<ShifterType> iter(sequence, this);
+        std::vector<storage::count_t> counts(sequence.length() - _K + 1);
+
+        size_t pos = 0;
+        while(!iter.done()) {
+            hash_type h = iter.next();
+            counts[pos] = query(h);
+            ++pos;
+        }
+
+        return counts;
+    }
 
     void query_sequence(const std::string&             sequence,
                         std::vector<storage::count_t>& counts,
-                        std::vector<hash_type>&  hashes);
+                        std::vector<hash_type>&  hashes) {
+
+        hashing::KmerIterator<ShifterType> iter(sequence, this);
+
+        while(!iter.done()) {
+            hash_type h = iter.next();
+            storage::count_t result = query(h);
+            counts.push_back(result);
+            hashes.push_back(h);
+        }
+    }
 
     void query_sequence(const std::string& sequence,
                         std::vector<storage::count_t>& counts,
                         std::vector<hash_type>& hashes,
-                        std::set<hash_type>& new_hashes);
+                        std::set<hash_type>& new_hashes) {
+
+        hashing::KmerIterator<ShifterType> iter(sequence, this);
+
+        while(!iter.done()) {
+            hash_type h = iter.next();
+            auto result = query(h);
+            if (result == 0) {
+                new_hashes.insert(h);
+            }
+            counts.push_back(result);
+            hashes.push_back(h);
+        }
+    }
 
     void save(std::string filename) {
         S->save(filename, _K);
@@ -375,8 +377,10 @@ public:
 
     void serialize(std::string& filename) {
         std::ofstream out(filename.c_str(), std::ios::binary);
-        out.write(Tagged<ShifterType>::NAME.c_str(),
+        out.write(Tagged<ShifterType>::name_string().c_str(),
                   Tagged<ShifterType>::NAME.size());
+        out.write(Tagged<ShifterType>::version_binary(),
+                  sizeof(Tagged<ShifterType>::OBJECT_ABI_VERSION));
 
     }
 
@@ -387,14 +391,72 @@ public:
         S->reset();
     }
 
-    std::shared_ptr<hashing::KmerIterator<ShifterType>> get_hash_iter(const std::string& sequence);
-    ShifterType                                         get_hasher();
+    auto get_hash_iter(const std::string& sequence)
+    -> std::shared_ptr<hashing::KmerIterator<ShifterType>> {
+
+        return std::make_shared<hashing::KmerIterator<ShifterType>>(sequence, this);
+    }
+
+    ShifterType get_hasher() {
+        return ShifterType(*this);
+    }
 
     using Processor = InserterProcessor<dBG>;
 
 };
 
-void test_dbg();
+
+extern template class dBG<storage::BitStorage, hashing::FwdRollingShifter>;
+extern template class dBG<storage::BitStorage, hashing::CanRollingShifter>;
+extern template class dBG<storage::BitStorage, hashing::FwdUnikmerShifter>;
+extern template class dBG<storage::BitStorage, hashing::CanUnikmerShifter>;
+
+extern template class dBG<storage::SparseppSetStorage, hashing::FwdRollingShifter>;
+extern template class dBG<storage::SparseppSetStorage, hashing::CanRollingShifter>;
+extern template class dBG<storage::SparseppSetStorage, hashing::FwdUnikmerShifter>;
+extern template class dBG<storage::SparseppSetStorage, hashing::CanUnikmerShifter>;
+
+extern template class dBG<storage::ByteStorage, hashing::FwdRollingShifter>;
+extern template class dBG<storage::ByteStorage, hashing::CanRollingShifter>;
+extern template class dBG<storage::ByteStorage, hashing::FwdUnikmerShifter>;
+extern template class dBG<storage::ByteStorage, hashing::CanUnikmerShifter>;
+
+extern template class dBG<storage::NibbleStorage, hashing::FwdRollingShifter>;
+extern template class dBG<storage::NibbleStorage, hashing::CanRollingShifter>;
+extern template class dBG<storage::NibbleStorage, hashing::FwdUnikmerShifter>;
+extern template class dBG<storage::NibbleStorage, hashing::CanUnikmerShifter>;
+
+extern template class dBG<storage::QFStorage, hashing::FwdRollingShifter>;
+extern template class dBG<storage::QFStorage, hashing::CanRollingShifter>;
+extern template class dBG<storage::QFStorage, hashing::FwdUnikmerShifter>;
+extern template class dBG<storage::QFStorage, hashing::CanUnikmerShifter>;
+
+
+extern template class hashing::KmerIterator<dBG<storage::BitStorage, hashing::FwdRollingShifter>>;
+extern template class hashing::KmerIterator<dBG<storage::BitStorage, hashing::CanRollingShifter>>;
+extern template class hashing::KmerIterator<dBG<storage::BitStorage, hashing::FwdUnikmerShifter>>;
+extern template class hashing::KmerIterator<dBG<storage::BitStorage, hashing::CanUnikmerShifter>>;
+
+extern template class hashing::KmerIterator<dBG<storage::SparseppSetStorage, hashing::FwdRollingShifter>>;
+extern template class hashing::KmerIterator<dBG<storage::SparseppSetStorage, hashing::CanRollingShifter>>;
+extern template class hashing::KmerIterator<dBG<storage::SparseppSetStorage, hashing::FwdUnikmerShifter>>;
+extern template class hashing::KmerIterator<dBG<storage::SparseppSetStorage, hashing::CanUnikmerShifter>>;
+
+extern template class hashing::KmerIterator<dBG<storage::ByteStorage, hashing::FwdRollingShifter>>;
+extern template class hashing::KmerIterator<dBG<storage::ByteStorage, hashing::CanRollingShifter>>;
+extern template class hashing::KmerIterator<dBG<storage::ByteStorage, hashing::FwdUnikmerShifter>>;
+extern template class hashing::KmerIterator<dBG<storage::ByteStorage, hashing::CanUnikmerShifter>>;
+
+extern template class hashing::KmerIterator<dBG<storage::NibbleStorage, hashing::FwdRollingShifter>>;
+extern template class hashing::KmerIterator<dBG<storage::NibbleStorage, hashing::CanRollingShifter>>;
+extern template class hashing::KmerIterator<dBG<storage::NibbleStorage, hashing::FwdUnikmerShifter>>;
+extern template class hashing::KmerIterator<dBG<storage::NibbleStorage, hashing::CanUnikmerShifter>>;
+
+extern template class hashing::KmerIterator<dBG<storage::QFStorage, hashing::FwdRollingShifter>>;
+extern template class hashing::KmerIterator<dBG<storage::QFStorage, hashing::CanRollingShifter>>;
+extern template class hashing::KmerIterator<dBG<storage::QFStorage, hashing::FwdUnikmerShifter>>;
+extern template class hashing::KmerIterator<dBG<storage::QFStorage, hashing::CanUnikmerShifter>>;
+
 
 }
 

@@ -25,12 +25,12 @@ def pythonize_boink(klass, name):
                 yield h
 
         def left_degree(self, kmer):
-            lneighbors = self.left_neighbors(kmer)
-            return len(lneighbors)
+            self.set_cursor(kmer)
+            return self.in_degree()
 
         def right_degree(self, kmer):
-            rneighbors = self.right_neighbors(kmer)
-            return len(rneighbors)
+            self.set_cursor(kmer)
+            return self.out_degree()
 
         klass.add = add
         klass.get = get
@@ -38,3 +38,5 @@ def pythonize_boink(klass, name):
         klass.right_degree = right_degree
         klass.shallow_clone = shallow_clone
         klass.hashes = hashes
+
+

@@ -278,4 +278,3 @@ NibbleStorage::load(std::string infilename, uint16_t& ksize)
     }
 }
 
-template <> const std::string Tagged<NibbleStorage>::NAME = "Boink::NibbleStorage";

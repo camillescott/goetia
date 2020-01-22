@@ -1,18 +1,17 @@
-/* boink.hh
- *
- * Copyright (C) 2018 Camille Scott
- * All rights reserved.
- *
- * This software may be modified and distributed under the terms
- * of the MIT license.  See the LICENSE file for details.
+/**
+ * (c) Camille Scott, 2019
+ * File   : minimizers.cc
+ * License: MIT
+ * Author : Camille Scott <camille.scott.w@gmail.com>
+ * Date   : 15.01.2020
  */
 
 #include "boink/minimizers.hh"
 #include "boink/hashing/rollinghashshifter.hh"
-#include "boink/hashing/ukhshashshifter.hh"
 
 namespace boink {
 
+template class InteriorMinimizer<uint64_t>;
 template class WKMinimizer<hashing::FwdRollingShifter>;
 template class WKMinimizer<hashing::CanRollingShifter>;
 

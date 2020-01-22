@@ -1,15 +1,15 @@
 from boink import libboink
 
 
-_types = [libboink.hashing.RollingHashShifter,
-          libboink.hashing.UKHS.LazyShifter]
-types = {hashing_t.__name__ : hashing_t for hashing_t in _types}
+typenames = [(libboink.hashing.FwdRollingShifter, 'FwdRollingShifter'),
+             (libboink.hashing.CanRollingShifter, 'CanRollingShifter'),
+             (libboink.hashing.FwdUnikmerShifter, 'FwdUnikmerShifter'),
+             (libboink.hashing.CanUnikmerShifter, 'CanUnikmerShifter')]
+types = [_type for _type, _name in typenames]
 
 
-RollingHashShifter = libboink.hashing.RollingHashShifter
+UKHS = libboink.hashing.UKHS
 
-UKHS               = libboink.hashing.UKHS
-Unikmer            = UKHS.Unikmer
-BinnedKmer         = UKHS.BinnedKmer
-UnikmerMap         = UKHS.Map
-UnikmerShifter     = UKHS.LazyShifter
+for hasher_t, name in typenames:
+    globals()[name] = hasher_t
+

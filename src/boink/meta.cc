@@ -8,6 +8,3 @@
 
 #include "boink/meta.hh"
 
-const unsigned int boink::Versioned::VERSION = 0;
-template <typename T> const std::string boink::Tagged<T>::NAME = "BoinkClass";
-

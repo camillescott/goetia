@@ -16,6 +16,7 @@
 
 #include "boink/hashing/hashextender.hh"
 #include "boink/hashing/kmeriterator.hh"
+#include "boink/hashing/rollinghashshifter.hh"
 #include "boink/hashing/canonical.hh"
 #include "boink/kmers/kmerclient.hh"
 
@@ -250,6 +251,10 @@ struct WKMinimizer {
     };
 
 };
+
+extern template class InteriorMinimizer<uint64_t>;
+extern template class WKMinimizer<hashing::FwdRollingShifter>;
+extern template class WKMinimizer<hashing::CanRollingShifter>;
 
 }
 

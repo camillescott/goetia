@@ -25,8 +25,9 @@
 #include "boink/processors.hh"
 #include "boink/kmers/kmerclient.hh"
 #include "boink/hashing/ukhs.hh"
-#include "boink/hashing/ukhshashshifter.hh"
+#include "boink/hashing/rollinghashshifter.hh"
 #include "boink/hashing/canonical.hh"
+#include "boink/storage/storage_types.hh"
 
 #include "boink/pdbg.hh"
 
@@ -118,6 +119,7 @@ struct UnikmerSignature {
             return n_kmers;
         }
 
+        /*
         std::set<hash_type> intersection(Signature * other) {
             if (other->get_size() != this->get_size() or
                 other->bucket_K   != this->bucket_K or
@@ -126,6 +128,7 @@ struct UnikmerSignature {
                 throw IncompatibleSignature("Error: Signatures not compatible");
             }
         }
+        */
     };
 
     typedef UnikmerSignature<StorageType, BaseShifterType>::Signature signature_type;
@@ -142,7 +145,13 @@ struct UnikmerSignature {
     public:
 
         Reporter(std::shared_ptr<Signature> signature,
-                 const std::string&         filename);
+                 const std::string&         filename)
+            : SingleFileReporter(filename, "UnikmerSignature::Reporter"),
+              signature(signature)
+        {
+            _cerr(this->THREAD_NAME << " reporting at MEDIUM interval.");
+            this->msg_type_whitelist.insert(events::MSG_TIME_INTERVAL);
+        }
 
         
         static std::shared_ptr<Reporter> build(std::shared_ptr<Signature> signature,
@@ -151,11 +160,42 @@ struct UnikmerSignature {
         }
         
         
-        virtual void handle_msg(std::shared_ptr<events::Event> event);
+        virtual void handle_msg(std::shared_ptr<events::Event> event) {
+             if (event->msg_type == events::MSG_TIME_INTERVAL) {
+                auto _event = static_cast<events::TimeIntervalEvent*>(event.get());
+                if (_event->level == events::TimeIntervalEvent::MEDIUM ||
+                    _event->level == events::TimeIntervalEvent::END) {
+                    
+                    _output_stream << _event->t;
+                    auto counts = signature->get_signature();
+                    for (auto& count : counts) {
+                        _output_stream << ", " << count;
+                    }
+                    _output_stream << std::endl;
+                }
+            }       
+        }
     
     };
 
 };
+
+extern template class signatures::UnikmerSignature<storage::BitStorage, hashing::FwdRollingShifter>;
+extern template class signatures::UnikmerSignature<storage::BitStorage, hashing::CanRollingShifter>;
+
+extern template class signatures::UnikmerSignature<storage::SparseppSetStorage, hashing::FwdRollingShifter>;
+extern template class signatures::UnikmerSignature<storage::SparseppSetStorage, hashing::CanRollingShifter>;
+
+extern template class signatures::UnikmerSignature<storage::ByteStorage, hashing::FwdRollingShifter>;
+extern template class signatures::UnikmerSignature<storage::ByteStorage, hashing::CanRollingShifter>;
+
+extern template class signatures::UnikmerSignature<storage::NibbleStorage, hashing::FwdRollingShifter>;
+extern template class signatures::UnikmerSignature<storage::NibbleStorage, hashing::CanRollingShifter>;
+
+extern template class signatures::UnikmerSignature<storage::QFStorage, hashing::FwdRollingShifter>;
+extern template class signatures::UnikmerSignature<storage::QFStorage, hashing::CanRollingShifter>;
+
+
 
 }
 }

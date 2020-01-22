@@ -36,6 +36,7 @@
         <namespace pattern="Catch::*" />
         <class name="std::condition_variable" />
         <class pattern="boink::hashing::HashShifter*"/>
+        <class pattern="std::vector<boink::dBGWalker<*>>"/>
         <class name="std::vector<std::basic_ofstream<char>>"/>
         <namespace pattern="boink::events::*" />
     </exclusion>

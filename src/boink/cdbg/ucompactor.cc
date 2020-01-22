@@ -9,14 +9,3 @@
 
 #include "boink/cdbg/ucompactor.hh"
 
-#include "boink/dbg.hh"
-#include "boink/hashing/rollinghashshifter.hh"
-#include "boink/storage/storage_types.hh"
-
-/*
-template class boink::cdbg::UStreamingCompactor<boink::storage::BitStorage>;
-template class boink::cdbg::UStreamingCompactor<boink::storage::ByteStorage>;
-template class boink::cdbg::UStreamingCompactor<boink::storage::NibbleStorage>;
-template class boink::cdbg::UStreamingCompactor<boink::storage::QFStorage>;
-template class boink::cdbg::UStreamingCompactor<boink::storage::SparseppSetStorage>;
-*/

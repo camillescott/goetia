@@ -6,19 +6,3 @@
  * Date   : 08.01.2020
  */
 
-#include "boink/hashing/ukhshashshifter.hh"
-
-namespace boink {
-
-namespace hashing {
-
-template class UnikmerShifter<FwdRollingShifter>;
-template class UnikmerShifter<CanRollingShifter>;
-
-}
-
-template<> const std::string Tagged<hashing::FwdUnikmerShifter>::NAME = "Boink::UnikmerShifter::CyclicHash<uint64_t>::NonRandom_Fwd";
-template<> const std::string Tagged<hashing::CanUnikmerShifter>::NAME = "Boink::UnikmerShifter::CyclicHash<uint64_t>::NonRandom_Can";
-
-
-}

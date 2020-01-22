@@ -12,6 +12,19 @@ from boink.storage import get_storage_args, process_storage_args
 
 
 dBG = libboink.dBG
+STATES = libboink.TraversalState
+
+def Graph(storage_type, shifter_type):
+
+    def build(K, storage_args, shifter_args):
+        storage = storage_type.build(*storage_args)
+        hasher = hasher_type.build(K, *shifter_args)
+        graph_type = dBG[storage_type, shifter_type]
+
+        return graph_type.build(storage, hasher)
+
+    return build
+
 
 def get_graph_args(parser):
     group = parser.add_argument_group('dBG')

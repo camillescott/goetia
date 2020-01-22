@@ -18,7 +18,6 @@
 #include <vector>
 
 #include "boink/boink.hh"
-#include "boink/hashing/alphabets.hh"
 #include "boink/event_types.hh"
 
 #define NULL_ID             ULLONG_MAX

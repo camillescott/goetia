@@ -56,49 +56,43 @@ set(_headers
 )
 
 set(_sources
+    src/boink/pdbg.cc
+    src/boink/storage/qfstorage.cc
+    src/boink/storage/bytestorage.cc
+    src/boink/storage/bitstorage.cc
+    src/boink/storage/sparseppstorage.cc
+    src/boink/storage/nibblestorage.cc
+    src/boink/signatures/ukhs_signature.cc
+    src/boink/signatures/sourmash_signature.cc
     src/boink/benchmarks/bench_storage.cc
-    src/boink/benchmarks/do_bench_storage.cc
-    src/boink/boink.cc
-    src/boink/cdbg/cdbg.cc
-    src/boink/cdbg/cdbg_types.cc
-    src/boink/cdbg/compactor.cc
-    src/boink/cdbg/metrics.cc
-    src/boink/cdbg/saturating_compactor.cc
-    src/boink/cdbg/ucompactor.cc
-    src/boink/cdbg/udbg.cc
-    src/boink/cdbg/utagger.cc
-    src/boink/dbg.cc
     src/boink/events.cc
-    src/boink/event_types.cc
-    src/boink/sequences/alphabets.cc
-    src/boink/hashing/canonical.cc
+    src/boink/reporting/reporters.cc
     src/boink/hashing/hashshifter.cc
+    src/boink/hashing/ukhshashshifter.cc
     src/boink/hashing/hashextender.cc
+    src/boink/hashing/alphabets.cc
     src/boink/hashing/kmeriterator.cc
     src/boink/hashing/kmer_span.cc
     src/boink/hashing/rollinghashshifter.cc
     src/boink/hashing/smhasher/MurmurHash3.cc
     src/boink/hashing/ukhs.cc
-    src/boink/hashing/ukhshashshifter.cc
-    src/boink/meta.cc
-    src/boink/metrics.cc
-    src/boink/minimizers.cc
-    src/boink/parsing/parsing.cc
-    src/boink/parsing/readers.cc
-    src/boink/pdbg.cc
-    src/boink/processors.cc
-    src/boink/reporting/reporters.cc
-    src/boink/signatures/sourmash_signature.cc
-    src/boink/signatures/ukhs_signature.cc
-    src/boink/storage/bitstorage.cc
-    src/boink/storage/bytestorage.cc
-    src/boink/storage/cqf/gqf.c
-    src/boink/storage/nibblestorage.cc
-    src/boink/storage/partitioned_storage.cc
-    src/boink/storage/qfstorage.cc
-    src/boink/storage/sparseppstorage.cc
-    src/boink/storage/storage.cc
+    src/boink/hashing/canonical.cc
+    src/boink/sequences/alphabets.cc
+    src/boink/dbg.cc
     src/boink/traversal.cc
+    src/boink/boink.cc
+    src/boink/meta.cc
+    src/boink/cdbg/metrics.cc
+    src/boink/cdbg/cdbg.cc
+    src/boink/cdbg/compactor.cc
+    src/boink/cdbg/ucompactor.cc
+    src/boink/cdbg/utagger.cc
+    src/boink/cdbg/udbg.cc
+    src/boink/cdbg/saturating_compactor.cc
+    src/boink/parsing/readers.cc
+    src/boink/parsing/parsing.cc
+    src/boink/minimizers.cc
+    src/boink/storage/cqf/gqf.c
 )
 
 set(_data

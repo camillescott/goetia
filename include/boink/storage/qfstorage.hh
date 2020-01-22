@@ -121,7 +121,9 @@ public:
       return fp;
   }
 
-  static std::shared_ptr<QFStorage> deserialize(std::ifstream& in) {}
+  static std::shared_ptr<QFStorage> deserialize(std::ifstream& in) {
+    return {};
+  }
 
   void serialize(std::ofstream& out) {}
 

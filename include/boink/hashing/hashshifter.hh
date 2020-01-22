@@ -24,6 +24,7 @@
 #include "boink/sequences/exceptions.hh"
 
 #include "boink/ring_span.hpp"
+#include "boink/meta.hh"
 
 namespace boink::hashing {
 
@@ -56,19 +57,27 @@ struct has_minimizer {
 template <class Derived,
           class HashType = HashModel<uint64_t>,
           class Alphabet = DNA_SIMPLE>
-class HashShifter : public kmers::KmerClient {
+class HashShifter : public kmers::KmerClient,
+                    public Tagged<HashShifter<Derived,
+                                              HashType,
+                                              Alphabet>> {
 
 protected:
 
     bool initialized;
+    typedef Tagged<HashShifter<Derived, HashType, Alphabet>> tagged_type;
 
 public:
 
-    typedef typename HashType::value_type    value_type;
-    typedef HashType                         hash_type;
-    typedef KmerModel<hash_type>             kmer_type;
+    typedef HashShifter<Derived, HashType, Alphabet> type;
+    typedef typename HashType::value_type            value_type;
+    typedef HashType                                 hash_type;
+    typedef KmerModel<hash_type>                     kmer_type;
 
     typedef Alphabet alphabet;
+
+    using tagged_type::NAME;
+    using tagged_type::OBJECT_ABI_VERSION;
 
     hash_type get() {
         return derived()._get();
@@ -113,11 +122,19 @@ public:
         return h;
     }
 
+    const hash_type hash(const std::string& sequence) const {
+        Derived hasher(derived());
+        return hasher.hash_base(sequence);
+    }
+
     template<typename... ExtraArgs>
     static hash_type hash(const std::string& sequence,
+                          const uint16_t K,
                           ExtraArgs&&... args) {
-
-        return hash(sequence.c_str(), sequence.length(), std::forward<ExtraArgs>(args)...);
+        if (sequence.length() < K) {
+            throw SequenceLengthException("Sequence must at least length K");
+        }
+        return hash(sequence.c_str(), K, std::forward<ExtraArgs>(args)...);
     }
 
     template<typename... ExtraArgs>

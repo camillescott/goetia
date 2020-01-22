@@ -16,11 +16,11 @@ from debruijnal_enhance_o_tron.sequence import *
 from cppyy.gbl import std
 import boink
 from boink import boink as libboink
-from boink.data import load_unikmer_map
-from boink.hashing import _types as hashing_types
+from boink.hashing import types as hashing_types
 from boink.utils import check_trait
 from boink.storage import _types as storage_types
 
+from boink.hashing import FwdRollingShifter, CanRollingShifter
 
 def storage_t_name(t):
     return t[0].__name__
@@ -32,21 +32,23 @@ def storage_type(request):
     return _storage_type, params
 
 
-@pytest.fixture(params=hashing_types +
-                       [libboink.hashing.BiDirectionalShifter[libboink.hashing.RollingHashShifter]],
+@pytest.fixture(params=[FwdRollingShifter, CanRollingShifter],
                 ids=lambda t: t.__name__)
 def hasher_type(request, ksize):
     _hasher_type = request.param
-    if _hasher_type is libboink.hashing.UKHS.LazyShifter:
-        return _hasher_type, (ksize, 7, load_unikmer_map(ksize, 7))
+    if _hasher_type.__name__.startswith('UnikmerShifter'):
+        return _hasher_type, (ksize, 7)
     else:
         return _hasher_type, (ksize,)
 
 @pytest.fixture
 def hasher(request, hasher_type, ksize):
     _hasher_type, params = hasher_type
-    hasher = _hasher_type(*params)
-    hasher.set_cursor('A' * ksize)
+    if hasattr(_hasher_type, 'build'):
+        hasher = _hasher_type.build(*params)
+    else:
+        hasher = _hasher_type(*params)
+    #hasher.set_cursor('A' * ksize)
     return hasher
 
 

@@ -206,7 +206,9 @@ public:
     }
 
     // not implemented
-    static std::shared_ptr<NibbleStorage> deserialize(std::ifstream& in) {}
+    static std::shared_ptr<NibbleStorage> deserialize(std::ifstream& in) {
+        return {};
+    }
 
     void serialize(std::ofstream& out) {}
 };

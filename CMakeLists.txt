@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.9)
+cmake_policy(SET CMP0063 NEW)
 
 #
 # libboink
@@ -49,6 +50,10 @@ find_package (Threads REQUIRED)
 list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_SOURCE_DIR}/cmake)
 find_package(Cppyy)
 
+# Find zlib. This is a standard way of bringing it in.
+#
+find_package(ZLIB REQUIRED)
+
 #
 # Make the default build use c++17 and "RELEASE" (-O3)
 #
@@ -56,6 +61,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_CXX_VISIBILITY_PRESET default)
+set(CMAKE_VISIBILITY_INLINES_HIDDEN 0)
 set(CMAKE_LINK_WHAT_YOU_USE TRUE)
 if(NOT CMAKE_BUILD_TYPE) 
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING
@@ -63,7 +70,8 @@ if(NOT CMAKE_BUILD_TYPE)
         FORCE
     )
 endif(NOT CMAKE_BUILD_TYPE)
-set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+set(CMAKE_CXX_FLAGS_RELEASE "-O2")
+set(CMAKE_CXX_FLAGS_DEBUG "-O0")
 
 #
 # The boink shared library needs all the source files, the direct object
@@ -73,31 +81,25 @@ add_library(boink SHARED
             ${LIB_SOURCES}
 )
 set_target_properties(boink PROPERTIES LINKER_LANGUAGE CXX)
+set_target_properties(boink PROPERTIES CXX_VISIBILITY_PRESET default)
 set_property(TARGET boink PROPERTY LINK_WHAT_YOU_USE TRUE)
-set_property(TARGET boink PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+set_property(TARGET boink PROPERTY VISIBILITY_INLINES_HIDDEN 0)
 set_target_properties(boink PROPERTIES
                       VERSION ${PROJECT_VERSION}
                       SOVERSION 1
 )
+
 #set_target_properties(boink PROPERTIES PUBLIC_HEADER ${LIB_HEADERS})
 target_include_directories(boink
                            PUBLIC
                            ${CMAKE_SOURCE_DIR}/include
 )
-
-# Find zlib. This is a standard way of bringing it in.
-#
-find_package(ZLIB REQUIRED)
 target_include_directories(boink PRIVATE ${ZLIB_INCLUDE_DIRS})
-
-#
-# Link the prometheus shared libs, zlib, and the generated gfakluge static
-# lib to the boink shared lib.
-#
 target_link_libraries(boink
                       Threads::Threads
                       ${ZLIB_LIBRARIES} 
 )
+
 
 #
 # Add all the include directories. Includes that are only used in boink's

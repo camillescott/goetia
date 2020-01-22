@@ -14,11 +14,15 @@
 #include "boink/hashing/hashshifter.hh"
 #include "boink/hashing/canonical.hh"
 #include "boink/hashing/kmer_span.hh"
+#include "boink/hashing/kmeriterator.hh"
+#include "boink/hashing/rollinghashshifter.hh"
+#include "boink/hashing/ukhs.hh"
+
 #include "boink/sequences/alphabets.hh"
+
 #include "boink/is_detected.hh"
 
-#include "boink/hashing/rollinghashshifter.hh"
-#include "boink/hashing/ukhshashshifter.hh"
+
 
 namespace boink::hashing {
 
@@ -151,7 +155,7 @@ public:
      * @Returns   A list of left extensions.
      */
     template<typename Dummy = std::vector<shift_left_type>>
-    auto left_extensions(const std::string& symbols = alphabet::SYMBOLS)
+    auto left_extensions(const std::string_view& symbols = alphabet::SYMBOLS)
     -> std::enable_if_t<!supports_left_extension<ShifterType>::value, Dummy> {
 
         if (!this->is_loaded()) {
@@ -186,7 +190,7 @@ public:
      * @Returns   A list of left extensions.
      */
     template<typename Dummy = std::vector<shift_left_type>>
-    auto left_extensions(const std::string& symbols = alphabet::SYMBOLS)
+    auto left_extensions(const std::string_view& symbols = alphabet::SYMBOLS)
     -> std::enable_if_t<supports_left_extension<ShifterType>::value, Dummy> {
 
         if (!this->is_loaded()) {
@@ -229,7 +233,7 @@ public:
      * @Returns   A vector of right extensions.
      */
     template<typename Dummy = std::vector<shift_right_type>>
-    auto right_extensions(const std::string& symbols = alphabet::SYMBOLS)
+    auto right_extensions(const std::string_view& symbols = alphabet::SYMBOLS)
     -> std::enable_if_t<!supports_right_extension<ShifterType>::value, Dummy> {
 
         if (!this->is_loaded()) {
@@ -262,7 +266,7 @@ public:
      * @Returns   A vector of right extensions.
      */
     template<typename Dummy = std::vector<shift_right_type>>
-    auto right_extensions(const std::string& symbols = alphabet::SYMBOLS)
+    auto right_extensions(const std::string_view& symbols = alphabet::SYMBOLS)
     -> std::enable_if_t<supports_right_extension<ShifterType>::value, Dummy> {
 
         if (!this->is_loaded()) {
@@ -330,6 +334,20 @@ public:
         result.kmer = get_cursor();
     }
 };
+
+
+extern template class HashExtender<FwdRollingShifter>;
+extern template class HashExtender<CanRollingShifter>;
+
+extern template class HashExtender<FwdUnikmerShifter>;
+extern template class HashExtender<CanUnikmerShifter>;
+
+extern template class KmerIterator<HashExtender<FwdRollingShifter>>;
+extern template class KmerIterator<HashExtender<CanRollingShifter>>;
+
+extern template class KmerIterator<HashExtender<FwdUnikmerShifter>>;
+extern template class KmerIterator<HashExtender<CanUnikmerShifter>>;
+
 
 
 }

@@ -1,12 +1,18 @@
 from boink.pythonizors.utils import is_template_inst
+from boink.utils import set_typedef_attrs
 from boink.metadata import DATA_DIR
+from cppyy.gbl import std
 
+UKHS_CACHE = dict()
 
 def pythonize_boink_hashing(klass, name):
-    if name == 'UKHS':
 
-        def get_kmers(W, K):
+    ukhs_inst, template = is_template_inst(name, 'UKHS')
+    if ukhs_inst:
+        
+        def parse_unikmers(W, K):
             import gzip
+            import os
 
             valid_W = list(range(20, 210, 10))
             valid_K = list(range(7, 11))
@@ -19,28 +25,56 @@ def pythonize_boink_hashing(klass, name):
 
             filename = os.path.join(DATA_DIR,
                                     'res_{0}_{1}_4_0.txt.gz'.format(K, W))
-            kmers = []
-            with gzip.open(filename) as fp:
+            unikmers = std.vector[std.string]()
+            with gzip.open(filename, 'rt') as fp:
                 for line in fp:
-                    kmers.append(_bstring(line.strip()))
+                    unikmers.push_back(line.strip())
 
-            return kmers 
+            return unikmers
 
-        klass.get_kmers = staticmethod(get_kmers)
-    
+        klass.parse_unikmers = staticmethod(parse_unikmers)
+
+        def load(W, K):
+            unikmers = parse_unikmers(W, K)
+            return klass.build(W, K, unikmers)
+
+        klass.load = staticmethod(load)
+
+    shifter_inst, template = is_template_inst(name, 'UnikmerShifter')
+    if shifter_inst:
         
-        def __uk_repr__(self):
-            return '<Unikmer h={0} p={1}>'.format(self.hash, self.partition)
+        def build(W, K):
+            ukhs_type = klass.ukhs_type
+            ukhs = UKHS_CACHE.get((W,K, ukhs_type.__name__), ukhs_type.load(W, K))
+            if (W, K) not in UKHS_CACHE:
+                UKHS_CACHE[(W, K, ukhs_type.__name__)] = ukhs
 
-        def __uk_str__(self):
-            return repr(self)
+            shifter = klass(W, K, ukhs)
+            return shifter
 
-        klass.Unikmer.__repr__ = __uk_repr__
-        klass.Unikmer.__str__  = __uk_str__
+        klass.build = staticmethod(build)
+
+    shifter_inst, template = is_template_inst(name, 'HashShifter')
+    if shifter_inst:
+        def __getattr__(self, arg):
+            attr = getattr(type(self), arg)
+            if not attr.__name__.startswith('__'):
+                return attr
+
+        klass.__getattr__ = __getattr__
+
+        #set_typedef_attrs(klass, ['alphabet', 'hash_type', 'value_type', 'kmer_type'])
+
+    for check_name in ['HashModel', 'CanonicalModel', 'WmerModel',
+                       'KmerModel', 'ShiftModel']:
+
+        is_inst, _ = is_template_inst(name, check_name)
+        if is_inst:
+            klass.value = property(klass.value)
+            klass.__lt__ = lambda self, other: self.value < other.value
+            klass.__le__ = lambda self, other: self.value <= other.value
+            klass.__gt__ = lambda self, other: self.value > other.value
+            klass.__ge__ = lambda self, other: self.value >= other.value
+            klass.__ne__ = lambda self, other: self.value != other.value
 
 
-        def __binned_repr__(self):
-            return '<BinnedKmer h={0} bin={1}>'.format(self.hash, self.unikmer)
-
-        klass.BinnedKmer.__repr__ = __binned_repr__
-        klass.BinnedKmer.__str__  = __binned_repr__

@@ -66,17 +66,21 @@ namespace TraversalState {
     };
 }
 
+template <class T>
+struct dBGWalker;
 
-template <class GraphType>
-class dBGWalker : public hashing::HashExtender<typename GraphType::shifter_type> {
+
+template <template <class, class> class GraphType, class StorageType, class ShifterType>
+class dBGWalker<GraphType<StorageType, ShifterType>> : public hashing::HashExtender<ShifterType> {
+
+    typedef GraphType<StorageType, ShifterType>     Derived;
 
 public:
 
-    typedef GraphType                               graph_type;
-    typedef typename graph_type::shifter_type       shifter_type;
+    typedef Derived                                 graph_type;
+    typedef ShifterType                             shifter_type;
     typedef hashing::HashExtender<shifter_type>     extender_type;
 
-    typedef typename extender_type::alphabet        alphabet;
     typedef typename extender_type::hash_type       hash_type;
     typedef typename hash_type::value_type          value_type;
 
@@ -89,6 +93,7 @@ public:
 
     typedef std::pair<std::vector<kmer_type>,
                       std::vector<kmer_type>>        neighbor_pair_type;
+
     typedef std::pair<std::vector<shift_type<hashing::DIR_LEFT>>,
                       std::vector<shift_type<hashing::DIR_RIGHT>>> shift_pair_type;
 
@@ -96,11 +101,16 @@ public:
 
 protected:
 
+    // dummy template for overload specialization
+    // for templated member functions
+    template<typename T> struct type { };
+
+
     template<bool Dir>
     struct WalkBase {
-        kmer_type                  start;
+        kmer_type                    start;
         std::vector<shift_type<Dir>> path;
-        State                      end_state;
+        State                        end_state;
 
         const hash_type head() const {
             return this->start.value();
@@ -147,7 +157,7 @@ protected:
     };
 
 
-    std::set<hash_type> seen;
+
 
     using extender_type::_K;
 
@@ -167,69 +177,40 @@ public:
     using extender_type::shift_right;
     using extender_type::K;
 
-    template<typename... ExtraArgs>
-    explicit dBGWalker(uint16_t K, ExtraArgs&&... args)
-        : extender_type(K, std::forward<ExtraArgs>(args)...)
-    {
-    }
-
-    template<typename... ExtraArgs>
-    explicit dBGWalker(const std::string& start,
-                       uint16_t K,
-                       ExtraArgs&&... args)
-        : extender_type(start, K, std::forward<ExtraArgs>(args)...)
-    {
-    }
-
-    explicit dBGWalker(const extender_type& extender)
-        : extender_type(extender)
-    {
-    }
-
-    template<typename... Args>
-    static std::shared_ptr<dBGWalker> build(Args&&... args) {
-        return std::make_shared<dBGWalker>(std::forward<Args>(args)...);
-    }
-
-    static std::shared_ptr<dBGWalker> build(const extender_type& extender) {
-        return std::make_shared<dBGWalker>(extender);
-    }
+    std::set<hash_type> seen;
 
     void clear_seen() {
         seen.clear();
     }
 
-    size_t in_degree(GraphType * graph) {
+    size_t in_degree() {
         auto extensions = this->left_extensions();
-        return count_nodes(graph, extensions);
+        return count_nodes(extensions);
     }
 
-    size_t out_degree(GraphType * graph) {
+    size_t out_degree() {
         auto extensions = this->right_extensions();
-        return count_nodes(graph, extensions);
+        return count_nodes(extensions);
     }
 
-    size_t degree(GraphType * graph) {
-        return in_degree(graph) + out_degree(graph);
+    size_t degree() {
+        return in_degree() + out_degree();
     }
 
-    size_t in_degree(GraphType *          graph,
-                     std::set<hash_type>& extras) {
+    size_t in_degree(std::set<hash_type>& extras) {
 
         auto extensions = this->left_extensions();
-        return count_nodes(graph, extensions, extras);
+        return count_nodes(extensions, extras);
     }
 
-    size_t out_degree(GraphType *          graph,
-                      std::set<hash_type>& extras) {
+    size_t out_degree(std::set<hash_type>& extras) {
 
         auto extensions = this->right_extensions();
-        return count_nodes(graph, extensions, extras);
+        return count_nodes(extensions, extras);
     }
 
-    size_t degree(GraphType *          graph,
-                  std::set<hash_type>& extras) {
-        return in_degree(graph, extras) + out_degree(graph, extras);
+    size_t degree(std::set<hash_type>& extras) {
+        return in_degree(extras) + out_degree(extras);
     }
 
     /**
@@ -242,8 +223,16 @@ public:
      * @Returns   Number of nodes that exist in graph.
      */
     template<bool Dir>
-    size_t count_nodes(GraphType *                         graph,
-                       const std::vector<shift_type<Dir>>& extensions);
+    size_t count_nodes(const std::vector<shift_type<Dir>>& extensions) {
+
+        uint8_t n_found = 0;
+        for (const auto& ext : extensions) {
+            if(derived().query(ext.value())) {
+                ++n_found;
+            }
+        }
+        return n_found;
+    }
 
 
     /**
@@ -258,9 +247,18 @@ public:
      * @Returns   Number of nodes.
      */
     template<bool Dir>
-    size_t count_nodes(GraphType *                         graph,
-                       const std::vector<shift_type<Dir>>& extensions,
-                       std::set<hash_type>&                extras);
+    size_t count_nodes(const std::vector<shift_type<Dir>>& extensions,
+                       std::set<hash_type>&                extras) {
+
+        uint8_t n_found = 0;
+        for (const auto& ext : extensions) {
+            if(derived().query(ext.value()) ||
+               extras.count(ext.value())) {
+                ++n_found;
+            }
+        }
+        return n_found;
+    }
 
     /**
      * @Synopsis  Count nodes that short-circuits when more
@@ -271,15 +269,44 @@ public:
      * @Param result The shift if n_bound is one.
      *
      * @Returns   
-     */
+     *
     template<bool Dir>
     shift_type<Dir> reduce_nodes(GraphType *                         graph,
-                               const std::vector<shift_type<Dir>>& extensions);
+                                 const std::vector<shift_type<Dir>>& extensions) {
+
+        uint8_t n_found = 0;
+        shift_type<Dir> result;
+        for (const auto& ext : extensions) {
+            if(graph->query(ext.value())) {
+                ++n_found;
+                if (n_found > 1) {
+                    return n_found;
+                }
+                result = ext;
+            }
+        }
+        return result;
+    }
 
     template<bool Dir>
     shift_type<Dir> reduce_nodes(GraphType *                         graph,
-                               const std::vector<shift_type<Dir>>& extensions,
-                               std::set<hash_type>&                extra);
+                                 const std::vector<shift_type<Dir>>& extensions,
+                                 std::set<hash_type>&                extra) {
+        uint8_t n_found = 0;
+        shift_type<Dir> result;
+        for (const auto& ext : extensions ) {
+            if(graph->query(ext.value()) ||
+               extra.count(ext.value())) {
+                ++n_found;
+                if (n_found > 1) {
+                    return n_found;
+                }
+                result = ext;
+            }
+        }
+        return result;
+    }
+    */
 
 
     /**
@@ -291,12 +318,12 @@ public:
      * @Returns   The valid shifts.
      */
     template<bool Dir>
-    auto filter_nodes(GraphType *                         graph,
-                      const std::vector<shift_type<Dir>>& extensions)
+    auto filter_nodes(const std::vector<shift_type<Dir>>& extensions)
     -> std::vector<shift_type<Dir>> {
+
         std::vector<shift_type<Dir>> result;
         for (const auto& ext : extensions) {
-            if (graph->query(ext.value())) {
+            if (derived().query(ext.value())) {
                 result.push_back(ext);
             }
         }
@@ -315,14 +342,13 @@ public:
      * @Returns   
      */
     template<bool Dir>
-    auto filter_nodes(GraphType *                          graph,
-                       const std::vector<shift_type<Dir>>& extensions,
-                       std::set<hash_type>&                extra)
+    auto filter_nodes(const std::vector<shift_type<Dir>>& extensions,
+                      std::set<hash_type>&                extra)
     -> std::vector<shift_type<Dir>> {
         
         std::vector<shift_type<Dir>> result;
         for (const auto& ext : extensions) {
-            if (graph->query(ext.value()) ||
+            if (derived().query(ext.value()) ||
                 extra.count(ext.value())) {
                 result.push_back(ext);
             }
@@ -339,12 +365,16 @@ public:
      *
      * @Returns   
      */
-    shift_pair_type filter_nodes(GraphType *            graph,
-                                 const shift_pair_type& nodes);
+    shift_pair_type filter_nodes(const shift_pair_type& extensions) {
+        return std::make_pair(filter_nodes(extensions.first),
+                              filter_nodes(extensions.second));
+    }
 
-    shift_pair_type filter_nodes(GraphType *            graph,
-                                 const shift_pair_type& nodes,
-                                 std::set<hash_type>&   extras);
+    shift_pair_type filter_nodes(const shift_pair_type& extensions,
+                                 std::set<hash_type>&   extras) {
+        return std::make_pair(filter_nodes(extensions.first, extras),
+                              filter_nodes(extensions.second, extras));
+    }
 
     /**
      * @Synopsis  In-neighbors for the node given by the current cursor.
@@ -353,10 +383,35 @@ public:
      *
      * @Returns   Vector of valid shifts in the graph.
      */
-    auto in_neighbors(GraphType * graph)
-    -> std::vector<shift_type<hashing::DIR_LEFT>> {
-        return filter_nodes(graph, this->left_extensions());
+    template<class Ret = shift_type<hashing::DIR_LEFT>>
+    inline auto in_neighbors()
+    -> std::vector<Ret> {
+        
+        return in_neighbors(type<Ret>());
     }
+
+    template<class Ret = shift_type<hashing::DIR_LEFT>>
+    inline auto in_neighbors(const std::string& seed)
+    -> std::vector<Ret> {
+        this->set_cursor(seed);
+        return in_neighbors(type<Ret>());
+    }
+
+private:
+
+    template<class Ret = shift_type<hashing::DIR_LEFT>>
+    inline auto in_neighbors(type<Ret>)
+    -> std::vector<Ret> {
+        return filter_nodes(this->left_extensions());
+    }
+
+    inline auto in_neighbors(type<kmer_type>)
+    -> std::vector<kmer_type> {
+        auto nodes = in_neighbors<>();
+        return build_left_kmers(nodes, this->get_cursor());
+    }
+
+public:
 
     /**
      * @Synopsis  Out-neighbors for the node given by the current cursor.
@@ -365,10 +420,35 @@ public:
      *
      * @Returns   Vector of valid shifts in the graph.
      */
-    auto out_neighbors(GraphType * graph)
-    -> std::vector<shift_type<hashing::DIR_RIGHT>> {
-        return filter_nodes(graph, this->right_extensions());
+    template<class Ret = shift_type<hashing::DIR_RIGHT>>
+    inline auto out_neighbors()
+    -> std::vector<Ret> {
+        
+        return out_neighbors(type<Ret>());
     }
+
+    template<class Ret = shift_type<hashing::DIR_RIGHT>>
+    inline auto out_neighbors(const std::string& seed)
+    -> std::vector<Ret> {
+        this->set_cursor(seed);
+        return out_neighbors(type<Ret>());
+    }
+
+private:
+
+    template<class Ret = shift_type<hashing::DIR_RIGHT>>
+    inline auto out_neighbors(type<Ret>)
+    -> std::vector<Ret> {
+        return filter_nodes(this->right_extensions());
+    }
+
+    inline auto out_neighbors(type<kmer_type>)
+    -> std::vector<kmer_type> {
+        auto nodes = out_neighbors<>();
+        return build_right_kmers(nodes, this->get_cursor());
+    }
+
+public:
 
 
     /**
@@ -379,36 +459,74 @@ public:
      *
      * @Returns   pair of vectors of valid shifts in the graph.
      */
-    shift_pair_type neighbors(GraphType * graph) {
-        auto _in = in_neighbors(graph);
-        auto _out = out_neighbors(graph);
+    template<class Ret = shift_pair_type>
+    inline Ret neighbors() {
+        auto _in = in_neighbors<>();
+        auto _out = out_neighbors<>();
         return std::make_pair(_in, _out);
     }
 
-    std::vector<kmer_type> find_left_kmers(GraphType * graph) {
-        auto root = this->get_cursor();
-        auto filtered = filter_nodes(graph, this->left_extensions());
-        return graph->build_left_kmers(filtered, root);
+    template<class Ret = shift_pair_type>
+    inline Ret neighbors(const std::string& seed) {
+        this->set_cursor(seed);
+        auto _in = in_neighbors<>();
+        auto _out = out_neighbors<>();
+        return std::make_pair(_in, _out);
     }
 
-    std::vector<kmer_type> find_right_kmers(GraphType * graph) {
+private:
+
+    inline auto neighbors(type<kmer_type>)
+    -> neighbor_pair_type {
+        auto filtered = neighbors<>();
         auto root = this->get_cursor();
-        auto filtered = filter_nodes(graph, this->right_extensions());
-        return graph->build_right_kmers(filtered, root);
+        return std::make_pair(build_left_kmers(filtered.first, root),
+                              build_right_kmers(filtered.second, root));
     }
 
-    std::vector<kmer_type> find_left_kmers(GraphType *       graph,
-                                           std::set<hash_type>& extras) {
-        auto root = this->get_cursor();
-        auto filtered = filter_nodes(graph, this->left_extensions(), extras);
-        return graph->build_left_kmers(filtered, root);
+
+
+public:
+
+    /**
+     * @Synopsis  Given a root k-mers and the shift bases to its left,
+     *            build the k-mer strings that could be its left neighbors.
+     *
+     * @Param nodes The shift_t objects containing the prefix bases and neighbor hashes.
+     * @Param root The root k-mer.
+     *
+     * @Returns   kmer_t objects with the left k-mers.
+     */
+    std::vector<kmer_type> build_left_kmers(const std::vector<shift_type<hashing::DIR_LEFT>>& nodes,
+                                            const std::string&                       root) {
+        std::vector<kmer_type> kmers;
+        auto _prefix = derived().prefix(root);
+        for (auto neighbor : nodes) {
+            kmers.push_back(kmer_type(neighbor.value(),
+                                      neighbor.symbol + _prefix));
+        }
+        return kmers;
     }
 
-    std::vector<kmer_type> find_right_kmers(GraphType *       graph,
-                                            std::set<hash_type>& extras) {
-        auto root = this->get_cursor();
-        auto filtered = filter_nodes(graph, this->right_extensions(), extras);
-        return graph->build_right_kmers(filtered, root);
+    /**
+     * @Synopsis  Given a root k-mers and the shift bases to its right,
+     *            build the k-mer strings that could be its right neighbors.
+     *
+     * @Param nodes The shift_t obvjects containing the suffix bases and neighbor hashes.
+     * @Param root The root k-mer.
+     *
+     * @Returns   kmer_t objects with the right k-mers.
+     */
+    std::vector<kmer_type> build_right_kmers(const std::vector<shift_type<hashing::DIR_RIGHT>>& nodes,
+                                             const std::string& root) {
+        std::vector<kmer_type> kmers;
+        auto _suffix = derived().suffix(root);
+        for (auto neighbor : nodes) {
+            kmers.push_back(kmer_type(neighbor.value(),
+                                     _suffix + neighbor.symbol));
+        }
+
+        return kmers;
     }
 
     /**
@@ -446,9 +564,10 @@ public:
      *
      * @Returns   Pair of the traversal state and any found neighbors.
      */
-    auto step_left(GraphType * graph)
+    auto step_left()
     -> std::pair<State, std::vector<shift_type<hashing::DIR_LEFT>>> {
-        auto neighbors = this->filter_nodes(graph, this->left_extensions());
+
+        auto neighbors = this->filter_nodes(this->left_extensions());
         auto state = look_state(neighbors);
         if (state == State::STEP) {
             this->shift_left(neighbors.front().symbol);
@@ -465,11 +584,10 @@ public:
      *
      * @Returns   
      */
-    auto step_left(GraphType * graph,
-                   std::set<hash_type>& mask)
+    auto step_left(std::set<hash_type>& mask)
     -> std::pair<State, std::vector<shift_type<hashing::DIR_LEFT>>> {
 
-        auto neighbors = this->filter_nodes(graph, this->left_extensions());
+        auto neighbors = this->filter_nodes(this->left_extensions());
         auto state = look_state(neighbors);
         if (state == State::STEP) {
             if (mask.count(neighbors.front().value())) {
@@ -482,10 +600,10 @@ public:
         return {state, std::move(neighbors)};
     }
 
-    auto step_right(GraphType * graph)
+    auto step_right()
     -> std::pair<State, std::vector<shift_type<hashing::DIR_RIGHT>>> {
 
-        auto neighbors = this->filter_nodes(graph, this->right_extensions());
+        auto neighbors = this->filter_nodes(this->right_extensions());
         auto state = look_state(neighbors);
         if (state == State::STEP) {
             this->shift_right(neighbors.front().symbol);
@@ -494,11 +612,10 @@ public:
         return {state, std::move(neighbors)};
     }
 
-    auto step_right(GraphType *          graph,
-                    std::set<hash_type>& mask)
+    auto step_right(std::set<hash_type>& mask)
     -> std::pair<State, std::vector<shift_type<hashing::DIR_RIGHT>>> {
 
-        auto neighbors = this->filter_nodes(graph, this->right_extensions());
+        auto neighbors = this->filter_nodes(this->right_extensions());
         auto state = look_state(neighbors);
         if (state == State::STEP) {
             if (mask.count(neighbors.front().value())) {
@@ -524,9 +641,19 @@ public:
      *
      * @Returns   
      */
-    Walk<hashing::DIR_LEFT> walk_left(GraphType *          graph,
-                                      const std::string&   seed,
-                                      std::set<hash_type>& mask);
+    Walk<hashing::DIR_LEFT> walk_left(const std::string&   seed,
+                                      std::set<hash_type>& mask) {
+
+        this->set_cursor(seed);
+        auto seed_hash = this->get();
+        if (!derived().query(seed_hash)) {
+            Walk<hashing::DIR_LEFT> walk{kmer_type{seed_hash, this->get_cursor()},
+                                         {},
+                                         State::BAD_SEED};
+            return walk;
+        } 
+        return walk_left(mask);
+    }
 
 
     /**
@@ -538,47 +665,139 @@ public:
      *
      * @Returns   
      */
-    Walk<hashing::DIR_LEFT> walk_left(GraphType *          graph,
-                                      std::set<hash_type>& mask);
+    Walk<hashing::DIR_LEFT> walk_left(std::set<hash_type>& mask) {
 
-    Walk<hashing::DIR_RIGHT> walk_right(GraphType *          graph,
-                                        const std::string&   seed,
-                                        std::set<hash_type>& mask);
+        Walk<hashing::DIR_LEFT> walk;
 
-    Walk<hashing::DIR_RIGHT> walk_right(GraphType *          graph,
-                                        std::set<hash_type>& mask);
+        hash_type start_hash = this->get();
+        this->seen.clear();
+        this->seen.insert(start_hash);
+        walk.start.hash = start_hash;
+        walk.start.kmer = this->get_cursor();
 
-    walk_pair_type walk(GraphType *         graph,
-                        const std::string&  seed,
-                        std::set<hash_type> mask);
+        // take the first step without check for reverse d-nodes
+        auto step = step_left(mask);
+
+        if (step.first != State::STEP) {
+            walk.end_state = step.first;
+            return walk;
+        } else {
+            walk.path.push_back(step.second.front());
+        }
+
+        while (1) {
+            if (out_degree() > 1) {
+                pdebug("Stop: reverse d-node");
+                walk.path.pop_back();
+                walk.end_state = State::DECISION_RC;
+                this->seen.erase(this->get());
+                return std::move(walk);
+            }
+
+            step = step_left(mask);
+
+            if (step.first != State::STEP) {
+                walk.end_state = step.first;
+                
+                return std::move(walk);
+            } else {
+                walk.path.push_back(step.second.front());
+            }
+        }
+    }
+
+    Walk<hashing::DIR_RIGHT> walk_right(const std::string&   seed,
+                                        std::set<hash_type>& mask) {
+
+        this->set_cursor(seed);
+        auto seed_hash = this->get();
+        if (!derived().query(seed_hash)) {
+            Walk<hashing::DIR_RIGHT> walk{kmer_type{seed_hash, this->get_cursor()},
+                                           {},
+                                           State::BAD_SEED};
+            return walk;
+        }
+        return walk_right(mask);
+    }
+
+    Walk<hashing::DIR_RIGHT> walk_right(std::set<hash_type>& mask) {
+
+        Walk<hashing::DIR_RIGHT> walk;
+
+        hash_type start_hash = this->get();
+        this->seen.clear();
+        this->seen.insert(start_hash);
+        walk.start.hash = start_hash;
+        walk.start.kmer = this->get_cursor();
+
+        auto step = step_right(mask);
+
+        if (step.first != State::STEP) {
+            walk.end_state = step.first;
+            return walk;
+        } else {
+            walk.path.push_back(step.second.front());
+        }
+        
+        while (1) {
+            if (in_degree() > 1) {
+                walk.path.pop_back();
+                walk.end_state = State::DECISION_RC;
+                this->seen.erase(this->get());
+                return std::move(walk);
+            }
+
+            step = step_right(mask);
+
+            if (step.first != State::STEP) {
+                walk.end_state = step.first;
+                return std::move(walk);
+            } else {
+                walk.path.push_back(step.second.front());
+            }
+        }
+    }
+
+    walk_pair_type walk(const std::string&  seed,
+                        std::set<hash_type> mask) {
+
+        this->set_cursor(seed);
+        auto seed_hash = this->get();
+        if (!derived().query(seed_hash)) {
+            kmer_type start{seed_hash, this->get_cursor()};
+            return {{start, {}, State::BAD_SEED},
+                    {start, {}, State::BAD_SEED}};
+        }
+
+        auto left_walk = walk_left(mask);
+        this->set_cursor(seed);
+        auto right_walk = walk_right(mask);
+        return {left_walk, right_walk};
+    }
                   
-    bool is_decision_kmer(GraphType *        graph,
-                          const std::string& node,
+    bool is_decision_kmer(const std::string& node,
                           uint8_t&           degree) {
 
         this->set_cursor(node);
-        return is_decision_kmer(graph, degree);
+        return is_decision_kmer(degree);
     }
 
-    bool is_decision_kmer(GraphType *        graph,
-                          const std::string& node) {
+    bool is_decision_kmer(const std::string& node) {
 
         this->set_cursor(node);
-        return this->in_degree(graph) > 1 || this->out_degree(graph) > 1;
+        return this->in_degree() > 1 || this->out_degree() > 1;
     }
 
-    bool is_decision_kmer(GraphType * graph,
-                          uint8_t&    degree) {
+    bool is_decision_kmer(uint8_t&    degree) {
 
         uint8_t ldegree, rdegree;
-        ldegree = this->in_degree(graph);
-        rdegree = this->out_degree(graph);
+        ldegree = this->in_degree();
+        rdegree = this->out_degree();
         degree = ldegree + rdegree;
         return ldegree > 1 || rdegree > 1;
     }
 
-    void find_decision_kmers(GraphType *                  graph,
-                             const std::string&           sequence,
+    void find_decision_kmers(const std::string&           sequence,
                              std::vector<uint32_t>&       decision_positions,
                              std::vector<hash_type>&      decision_hashes,
                              std::vector<neighbor_pair_type>& decision_neighbors) {
@@ -588,8 +807,7 @@ public:
         while(!iter.done()) {
             hash_type h = iter.next();
             neighbor_pair_type neighbors;
-            if (get_decision_neighbors(graph,
-                                       iter.shifter,
+            if (get_decision_neighbors(iter.shifter,
                                        neighbors)) {
 
                 decision_neighbors.push_back(neighbors);
@@ -601,36 +819,35 @@ public:
        }
     }
 
-    bool get_decision_neighbors(GraphType *          graph,
-                                const std::string&   root,
+    bool get_decision_neighbors(const std::string&   root,
                                 neighbor_pair_type&      result,
                                 std::set<hash_type>& union_nodes) {
 
-        return get_decision_neighbors(graph, this, root, result, union_nodes);
+        return get_decision_neighbors(this, root, result, union_nodes);
     }
 
-    bool get_decision_neighbors(GraphType *          graph,
-                                neighbor_pair_type&      result,
+    bool get_decision_neighbors(neighbor_pair_type&      result,
                                 std::set<hash_type>& union_nodes) {
-        return get_decision_neighbors(graph, this, result, union_nodes);
+        return get_decision_neighbors(this, result, union_nodes);
     }
 
-    bool get_decision_neighbors(GraphType *          graph,
-                                dBGWalker *                extender,
+    bool get_decision_neighbors(extender_type *      extender,
                                 const std::string&   root,
-                                neighbor_pair_type&      result,
+                                neighbor_pair_type&  result,
                                 std::set<hash_type>& union_nodes) {
         extender->set_cursor(root);
-        return get_decision_neighbors(graph, extender, result, union_nodes);
+        return get_decision_neighbors(extender, result, union_nodes);
     }
 
-    bool get_decision_neighbors(GraphType *          graph,
-                                dBGWalker *                extender,
-                                neighbor_pair_type&      result,
+    bool get_decision_neighbors(extender_type *      extender,
+                                neighbor_pair_type&  result,
                                 std::set<hash_type>& union_nodes) {
-
-        auto left_kmers = extender->find_left_kmers(graph, union_nodes);
-        auto right_kmers = extender->find_right_kmers(graph, union_nodes);
+        auto root = extender->get_cursor();
+        auto _lfiltered = filter_nodes(extender->left_extensions(), union_nodes);
+        auto left_kmers = this->build_left_kmers(_lfiltered, root);
+         
+        auto _rfiltered = filter_nodes(extender->right_extensions(), union_nodes);
+        auto right_kmers = this->build_right_kmers(_rfiltered, root);
         
         if (left_kmers.size() > 1 || right_kmers.size() > 1) {
             result = std::make_pair(left_kmers, right_kmers);
@@ -640,38 +857,74 @@ public:
         }
     }
 
-    bool get_decision_neighbors(GraphType *        graph,
-                                const std::string& root,
+    bool get_decision_neighbors(const std::string& root,
                                 neighbor_pair_type&    result) {
-        return get_decision_neighbors(graph, this, root, result);
+        return get_decision_neighbors(this, root, result);
     }
 
-    bool get_decision_neighbors(GraphType *     graph,
+    bool get_decision_neighbors(neighbor_pair_type& result) {
+        return get_decision_neighbors(this, result);
+    }
+
+    bool get_decision_neighbors(extender_type *     extender,
+                                const std::string&  root,
                                 neighbor_pair_type& result) {
-        return get_decision_neighbors(graph, this, result);
-    }
-
-    bool get_decision_neighbors(GraphType *        graph,
-                                dBGWalker *              extender,
-                                const std::string& root,
-                                neighbor_pair_type&    result) {
         extender->set_cursor(root);
-        return get_decision_neighbors(graph, extender, result);
+        return get_decision_neighbors(extender, result);
     }
 
-    bool get_decision_neighbors(GraphType *     graph,
-                                dBGWalker *           extender,
+    bool get_decision_neighbors(extender_type *     extender,
                                 neighbor_pair_type& result) {
 
-        auto left_kmers = extender->find_left_kmers(graph);
-        auto right_kmers = extender->find_right_kmers(graph);
-        
+        auto root = extender->get_cursor();
+        auto _lfiltered = filter_nodes(extender->left_extensions());
+        auto left_kmers = this->build_left_kmers(_lfiltered, root);
+         
+        auto _rfiltered = filter_nodes(extender->right_extensions());
+        auto right_kmers = this->build_right_kmers(_rfiltered, root);
+
         if (left_kmers.size() > 1 || right_kmers.size() > 1) {
             result = std::make_pair(left_kmers, right_kmers);
             return true;
         } else {
             return false;
         }
+    }
+
+protected:
+
+    template<typename... ExtraArgs>
+    explicit dBGWalker(uint16_t K, ExtraArgs&&... args)
+        : extender_type(K, std::forward<ExtraArgs>(args)...)
+    {
+    }
+
+    template<typename... ExtraArgs>
+    explicit dBGWalker(const std::string& start,
+                       uint16_t K,
+                       ExtraArgs&&... args)
+        : extender_type(start, K, std::forward<ExtraArgs>(args)...)
+    {
+    }
+
+    explicit dBGWalker(const extender_type& extender)
+        : extender_type(extender)
+    {
+    }
+
+    explicit dBGWalker(const shifter_type& shifter)
+        : extender_type(shifter)
+    {
+    }
+
+    friend Derived;
+
+    Derived& derived() {
+        return *static_cast<Derived*>(this);
+    }
+
+    const Derived& derived() const {
+        return *static_cast<const Derived*>(this);
     }
 
 };

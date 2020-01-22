@@ -8,29 +8,14 @@
  */
 
 #include "boink/cdbg/udbg.hh"
-
-#include "boink/dbg.hh"
-#include "boink/storage/nibblestorage.hh"
-#include "boink/storage/bitstorage.hh"
-#include "boink/storage/storage.hh"
-#include "boink/storage/qfstorage.hh"
-#include "boink/storage/bytestorage.hh"
-#include "boink/storage/sparseppstorage.hh"
-
-#include "boink/hashing/rollinghashshifter.hh"
-
-#include "boink/boink.hh"
+#include "boink/storage/storage_types.hh"
 
 namespace boink {
 
-template class cdbg::uDBG<storage::BitStorage>;
-template class cdbg::uDBG<storage::ByteStorage>;
-template class cdbg::uDBG<storage::NibbleStorage>;
-template class cdbg::uDBG<storage::QFStorage>;
-template class cdbg::uDBG<storage::SparseppSetStorage>;
+    template class cdbg::uDBG<storage::BitStorage>;
+    template class cdbg::uDBG<storage::ByteStorage>;
+    template class cdbg::uDBG<storage::NibbleStorage>;
+    template class cdbg::uDBG<storage::QFStorage>;
+    template class cdbg::uDBG<storage::SparseppSetStorage>;
 
 }
-
-
-
-

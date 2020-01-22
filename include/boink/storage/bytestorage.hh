@@ -217,7 +217,9 @@ public:
         return _counts;
     }
     // not implemented
-    static std::shared_ptr<ByteStorage> deserialize(std::ifstream& in) {}
+    static std::shared_ptr<ByteStorage> deserialize(std::ifstream& in) {
+        return {};
+    }
 
     void serialize(std::ofstream& out) {}
 };

@@ -12,6 +12,7 @@
 
 #include <sstream>
 #include <string>
+#include <string_view>
 
 #include "boink/sequences/exceptions.hh"
 
@@ -26,8 +27,8 @@ namespace boink {
 template <class Derived>
 struct Alphabet {
 
-    static const std::string SYMBOLS;
-    static const std::string COMPLEMENTS;
+    static constexpr auto SYMBOLS = std::string_view("NNNN");
+    static constexpr auto COMPLEMENTS = std::string_view("NNNN");
 
     static const size_t size() {
         return SYMBOLS.size();
@@ -39,7 +40,7 @@ struct Alphabet {
 
     static void validate(char * sequence, const size_t length) {
         for (size_t i = 0; i < length; ++i) {
-            const char validated = sequence[i];
+            const char validated = validate(sequence[i]);
             if (validated == '\0') {
                 std::ostringstream os;
                 os << "Alphabet: Invalid symbol '"
@@ -56,7 +57,7 @@ struct Alphabet {
 
     static void validate(const char * sequence, const size_t length) {
         for (size_t i = 0; i < length; ++i) {
-            const char validated = sequence[i];
+            const char validated = validate(sequence[i]);
             if (validated == '\0') {
                 std::ostringstream os;
                 os << "Alphabet: Invalid symbol '"
@@ -85,6 +86,9 @@ private:
 
 
 struct DNA_SIMPLE : public Alphabet<DNA_SIMPLE> {
+
+    static constexpr auto SYMBOLS = std::string_view("ACGT");
+    static constexpr auto COMPLEMENTS = std::string_view("TGCA");
 
     static const char _validate(const char c) {
         switch(c) {
@@ -138,6 +142,9 @@ struct DNA_SIMPLE : public Alphabet<DNA_SIMPLE> {
 };
 
 struct DNAN_SIMPLE : public Alphabet<DNAN_SIMPLE> {
+
+    static constexpr auto SYMBOLS = std::string_view("ACGTN");
+    static constexpr auto COMPLEMENTS = std::string_view("TGCAN");
 
     static const char _validate(const char c) {
         switch(c) {
@@ -199,6 +206,8 @@ struct DNAN_SIMPLE : public Alphabet<DNAN_SIMPLE> {
 struct IUPAC_NUCL : public Alphabet<IUPAC_NUCL> {
 
     // ref: http://arep.med.harvard.edu/labgc/adnan/projects/Utilities/revcomp.html#iupacdegeneracies
+    static constexpr auto SYMBOLS = "ATUGCYRSWKMBDHVN";
+    static constexpr auto COMPLEMENTS = "TAACGRYSWMKVHDBN";
     
     static const char _validate(const char c) {
         switch(c) {

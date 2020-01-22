@@ -36,3 +36,8 @@ def check_trait(trait, type):
 def copy_attrs(src, dst, attrs):
     for attr in attrs:
         setattr(dst, attr, getattr(src, attr))
+
+
+def set_typedef_attrs(dst_klass, attrs):
+    for attr in attrs:
+        setattr(dst_klass, attr, property(lambda self: getattr(type(self), attr)))

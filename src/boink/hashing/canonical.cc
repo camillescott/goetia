@@ -8,6 +8,7 @@
 
 #include "boink/hashing/canonical.hh"
 
+/*
 namespace boink::hashing {
 
 template class HashModel<uint64_t>;
@@ -28,3 +29,4 @@ template class ShiftModel<Canonical, DIR_LEFT>;
 template class ShiftModel<Canonical, DIR_RIGHT>;
 
 }
+*/

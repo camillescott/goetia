@@ -11,12 +11,10 @@
 
 namespace boink {
 
-template class cdbg::UTagger<storage::BitStorage>;
-template class cdbg::UTagger<storage::ByteStorage>;
-template class cdbg::UTagger<storage::NibbleStorage>;
-template class cdbg::UTagger<storage::QFStorage>;
-template class cdbg::UTagger<storage::SparseppSetStorage>;
+    template class cdbg::UTagger<storage::BitStorage>;
+    template class cdbg::UTagger<storage::ByteStorage>;
+    template class cdbg::UTagger<storage::NibbleStorage>;
+    template class cdbg::UTagger<storage::QFStorage>;
+    template class cdbg::UTagger<storage::SparseppSetStorage>;
 
 }
-
-

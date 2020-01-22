@@ -12,11 +12,10 @@
 #include "boink/storage/sparsepp/serialize.hh"
 
 #include <cstdint>
+#include <cstring>
 #include <sstream> // IWYU pragma: keep
 
 namespace boink {
-
-template <> const std::string Tagged<storage::SparseppSetStorage>::NAME = "Boink::SparseppSetStorage";
 
 namespace storage {
 
@@ -63,15 +62,17 @@ void SparseppSetStorage::load(std::string filename, uint16_t &K) {
 }
 
 void SparseppSetStorage::serialize(std::ofstream& out) {
-    out.write(this->NAME.c_str(), this->NAME.size());
-    out.write(reinterpret_cast<const char*>(&(this->VERSION)), sizeof(this->VERSION));
+    out.write(std::string(this->NAME).c_str(), this->NAME.size());
+    out.write(this->version_binary(), sizeof(this->OBJECT_ABI_VERSION));
     _store->serialize(BaseSppSerializer(), &out);
 }
 
-std::shared_ptr<SparseppSetStorage> SparseppSetStorage::deserialize(std::ifstream& in) {
+std::shared_ptr<SparseppSetStorage>
+SparseppSetStorage::deserialize(std::ifstream& in) {
+
     std::string name;
     name.resize(Tagged<SparseppSetStorage>::NAME.size());
-    unsigned int version;
+    size_t version;
 
     in.read(name.data(), name.size());
     in.read(reinterpret_cast<char *>(&version), sizeof(version));
@@ -83,17 +84,16 @@ std::shared_ptr<SparseppSetStorage> SparseppSetStorage::deserialize(std::ifstrea
             << ", should be "
             << Tagged<SparseppSetStorage>::NAME;
         throw BoinkFileException(err.str());
-    } else if (version != Tagged<SparseppSetStorage>::VERSION) {
+    } else if (version != Tagged<SparseppSetStorage>::OBJECT_ABI_VERSION) {
         std::ostringstream err;
         err << "File has wrong binary version: found "
             << std::to_string(version)
             << ", expected "
-            << std::to_string(Tagged<SparseppSetStorage>::VERSION);
+            << std::to_string(Tagged<SparseppSetStorage>::OBJECT_ABI_VERSION);
         throw BoinkFileException(err.str());
 
     }
 
-    //Tagged<SparseppSetStorage>::VERSION;
     auto storage = SparseppSetStorage::build();
     storage->_store->unserialize(BaseSppSerializer(), &in);
     return storage;

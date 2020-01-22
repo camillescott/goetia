@@ -328,5 +328,3 @@ BitStorage::load(std::string infilename, uint16_t &ksize)
         throw BoinkFileException(err);
     }
 }
-
-template <> const std::string Tagged<BitStorage>::NAME = "Boink::BitStorage";

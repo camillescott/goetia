@@ -27,7 +27,7 @@
 #include "boink/hashing/rollinghashshifter.hh"
 #include "boink/hashing/ukhs.hh"
 #include "boink/kmers/kmerclient.hh"
-#include "boink/storage/storage.hh"
+#include "boink/storage/storage_types.hh"
 
 # ifdef DEBUG_CDBG
 #   define pdebug(x) do { std::ostringstream stream; \
@@ -154,6 +154,14 @@ struct uDBG {
     };
 
 };
+
+extern template class cdbg::uDBG<storage::BitStorage>;
+extern template class cdbg::uDBG<storage::ByteStorage>;
+extern template class cdbg::uDBG<storage::NibbleStorage>;
+extern template class cdbg::uDBG<storage::QFStorage>;
+extern template class cdbg::uDBG<storage::SparseppSetStorage>;
+
+
 
 }
 }

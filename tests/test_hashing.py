@@ -8,64 +8,72 @@
 import pytest
 from .utils import *
 from boink import libboink
+from boink.hashing import FwdRollingShifter, CanRollingShifter
 #from boink.hashing import RollingHashShifter, UKHShifter, unikmer_valid
 
 
-def get_min_unikmer(wmer, uk_map):
-    wmer_hash = libboink.hashing.hash_cyclic(wmer, len(wmer))
-    kmer_hashes = [libboink.hashing.hash_cyclic(kmer, uk_map.K) for kmer in kmers(wmer, uk_map.K)]
+def get_min_unikmer(wmer, uk_map, shifter_type):
+    wmer_hash = shifter_type.hash(wmer, len(wmer))
+    kmer_hashes = [shifter_type.hash(kmer, uk_map.K) for kmer in kmers(wmer, uk_map.K)]
     unikmers = []
     positions = []
     for i, h in enumerate(kmer_hashes):
-        unikmer = libboink.hashing.UKHS.Unikmer(h)
-        if uk_map.query(unikmer):
-            unikmers.append(unikmer)
+        unikmer = uk_map.query(h)
+        if unikmer:
+            unikmers.append(unikmer.value())
             positions.append(i)
     print([f'{i}: {u}' for i, u in zip(positions, unikmers)])
     #print([str(u) for u in unikmers])
     return wmer_hash, min(unikmers, key=lambda elem: elem.hash)
 
 
-@pytest.fixture
-def unikmer_shifter(request, ksize):
-    m = load_unikmer_map(ksize, 7)
-    return libboink.hashing.UKHS.LazyShifter(ksize, 7, m), 7, m
-
-
-def test_rolling_hash():
+def test_fwd_rolling_hash():
     K = 27
     seq = 'TCACCTGTGTTGTGCTACTTGCGGCGC'
 
-    hasher = libboink.hashing.RollingHashShifter(K)
-    assert hasher.hash(seq) == 13194817695400542713
+    hasher = FwdRollingShifter(K)
+    assert hasher.hash(seq).value == 13194817695400542713
 
 
-def test_rolling_hash_seqcursor_eq():
-    K = 27
+@using(ksize=27)
+def test_fwd_hash_base_eq(hasher):
+    seq = 'TCACCTGTGTTGTGCTACTTGCGGCGC'
+    h1 = hasher.hash(seq)
+    h2 = hasher.hash_base(seq)
+
+    print(h1, h2)
+    assert h1 == h2
+
+
+@using(ksize=27)
+def test_fwd_hash_base_get(hasher):
     seq = 'TCACCTGTGTTGTGCTACTTGCGGCGC'
 
-    hasher = libboink.hashing.RollingHashShifter(K)
-    hasher.set_cursor(seq)
+    h1 = hasher.hash_base(seq)
+    h2 = hasher.get()
 
-    assert hasher.hash(seq) == hasher.get()
+    print(h1, h2)
 
-def test_rolling_setcursor_seq_too_small():
-    hasher = libboink.hashing.RollingHashShifter(20)
+    assert h1 == h2
+
+
+def test_hash_base_seq_too_small(hasher):
     with pytest.raises(Exception):
-        hasher.set_cursor('AAAAA')
+        hasher.hash_base('AAAAA')
 
-def test_rolling_hash_seq_too_small():
+
+def test_static_hash_seq_too_small():
     hasher = libboink.hashing.RollingHashShifter(20)
     with pytest.raises(Exception):
         hasher.hash('AAAAA')
 
 
-def test_rolling_hash_seq_too_large():
+def test_fw_rolling_hash_seq_too_large():
     K = 27
     seq = 'TCACCTGTGTTGTGCTACTTGCGGCGCAA'
-    hasher = libboink.hashing.RollingHashShifter(K)
+    hasher = FwdRollingShifter(K)
 
-    assert hasher.hash(seq) == 13194817695400542713
+    assert hasher.hash(seq).value == 13194817695400542713
 
 
 def test_rolling_setcursor_seq_too_large():
@@ -74,21 +82,21 @@ def test_rolling_setcursor_seq_too_large():
     hasher = libboink.hashing.RollingHashShifter(K)
 
     hasher.set_cursor(seq)
-    assert hasher.get() == 13194817695400542713
+    assert hasher.get().value == 13194817695400542713
 
 
-def test_bidirectional_rolling_hash(ksize, length, random_sequence):
+def test_canonical_rolling_hash(ksize, length, random_sequence):
     seq = random_sequence()
 
-    bdhasher = libboink.hashing.BiDirectionalShifter[libboink.hashing.RollingHashShifter](ksize)
-    fwhasher = libboink.hashing.RollingHashShifter(ksize)
+    can_hasher = libboink.hashing.CanRollingShifter(ksize)
+    fwd_hasher = libboink.hashing.FwdRollingShifter(ksize)
 
     for kmer in kmers(seq, ksize):
-        rc_kmer = libboink.hashing.revcomp(kmer)
-        fw, rc = fwhasher.hash(kmer), fwhasher.hash(rc_kmer)
+        rc_kmer = fwd_hasher.alphabet.reverse_complement(kmer)
+        fw, rc = fwd_hasher.hash(kmer), fwd_hasher.hash(rc_kmer)
         can = fw if fw < rc else rc
 
-        assert bdhasher.hash(kmer) == can
+        assert can_hasher.hash(kmer) == can
 
 
 def test_unikmer_shifter_shift_left(ksize, length, random_sequence, unikmer_shifter):

@@ -55,6 +55,8 @@
 #include <utility>
 #include <vector>
 
+#include "boink/boink.hh"
+
 
 #   define MAX_BIGCOUNT 65535
 #   define SAVED_SIGNATURE "OXLI"
@@ -123,8 +125,18 @@ public:
     virtual byte_t ** get_raw_tables() = 0;
     virtual void reset() = 0;
 
-    void set_use_bigcount(bool b);
-    bool get_use_bigcount();
+    void set_use_bigcount(bool b)
+    {
+        if (!_supports_bigcount) {
+            throw BoinkException("bigcount is not supported for this storage.");
+        }
+        _use_bigcount = b;
+    }
+
+    bool get_use_bigcount()
+    {
+        return _use_bigcount;
+    }
 
     virtual void serialize(std::ofstream& out) {}
 };

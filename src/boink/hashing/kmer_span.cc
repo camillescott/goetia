@@ -9,8 +9,3 @@
 
 #include "boink/hashing/kmer_span.hh"
 
-namespace boink::hashing {
-
-template class KmerSpanMixinImpl<false>;
-template class KmerSpanMixinImpl<true>;
-}
