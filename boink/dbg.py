@@ -18,7 +18,7 @@ def Graph(storage_type, shifter_type):
 
     def build(K, storage_args, shifter_args):
         storage = storage_type.build(*storage_args)
-        hasher = hasher_type.build(K, *shifter_args)
+        shifter = shifter_type.build(K, *shifter_args)
         graph_type = dBG[storage_type, shifter_type]
 
         return graph_type.build(storage, hasher)

@@ -8,9 +8,8 @@
 import pytest
 from cppyy.gbl import std
 
-from boink.data import load_unikmer_map
-
 from .utils import *
+import pytest
 
 
 @using(ksize=[21, 51, 101])
@@ -113,6 +112,7 @@ def test_hash_type(graph, ksize, hasher_type):
     assert issubclass(type(graph).hash_type, type(x))
 
 
+@pytest.mark.xfail
 def test_hash_bad_dna(graph, ksize):
     # hashing of bad dna -> succeeds w/o complaint
     # TODO: figure out cppyy exception conversion
@@ -169,6 +169,7 @@ def test_get_dna_kmer(graph):
 
 
 @using(ksize=21)
+@pytest.mark.xfail
 def test_get_bad_dna_kmer(graph, ksize):
     # test get(dna) with bad dna; should fail
     #TODO: figure out cppyy exception foo
@@ -177,10 +178,10 @@ def test_get_bad_dna_kmer(graph, ksize):
 
 
 @using(ksize=21, length=23)
-def test_right_neighbors(graph, ksize, linear_path):
+def test_out_neighbors(graph, ksize, linear_path):
     s = linear_path()
     graph.insert_sequence(s)
-    n = graph.right_neighbors(s[1:22])
+    n = graph.out_neighbors(s[1:22])
     assert len(n) == 1
 
 
@@ -188,7 +189,7 @@ def test_right_neighbors(graph, ksize, linear_path):
 def test_neighbors(graph, ksize, linear_path):
     s = linear_path()
     graph.insert_sequence(s)
-    l, r = graph.neighbor_kmers(s[1:22])
+    l, r = graph.neighbors(s[1:22])
     assert len(l) == 1
     assert len(r) == 1
 
@@ -207,6 +208,7 @@ def test_insert_sequence_overload(graph, ksize, length, linear_path):
 
 
 @using(ksize=21, length=30)
+@pytest.mark.xfail
 def test_insert_sequence_bad_dna(graph, linear_path):
     # while we don't specifically handle bad DNA, we should at least be
     # consistent...

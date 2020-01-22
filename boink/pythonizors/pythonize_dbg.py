@@ -2,7 +2,9 @@ from boink.pythonizors.utils import is_template_inst
 
 
 def pythonize_boink(klass, name):
-    if is_template_inst(name, 'dBG'):
+    is_dbg, _ = is_template_inst(name, 'dBG')
+    if is_dbg:
+        print(name)
 
         def add(self, item):
             if not isinstance(item, int) and len(item) < self.K:
@@ -37,6 +39,7 @@ def pythonize_boink(klass, name):
         klass.left_degree = left_degree
         klass.right_degree = right_degree
         klass.shallow_clone = shallow_clone
-        klass.hashes = hashes
+        klass.hashes = hashes 
+        klass.K = property(klass.K)
 
 

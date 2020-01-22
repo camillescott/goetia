@@ -15,8 +15,8 @@
 
 namespace boink::hashing {
 
-constexpr bool DIR_LEFT = false;
-constexpr bool DIR_RIGHT = true;
+inline constexpr bool DIR_LEFT = false;
+inline constexpr bool DIR_RIGHT = true;
 
 
 /**
@@ -435,26 +435,23 @@ operator<<(std::ostream& os, const Partitioned<ValueType>& p) {
     return os;
 }
 
+typedef boink::hashing::HashModel<uint64_t> Hash;
+typedef boink::hashing::CanonicalModel<uint64_t> Canonical;
 
+typedef boink::hashing::KmerModel<boink::hashing::HashModel<uint64_t>> Kmer;
+typedef boink::hashing::KmerModel<boink::hashing::CanonicalModel<uint64_t>> CanonicalKmer;
 
-typedef HashModel<uint64_t> Hash;
-typedef CanonicalModel<uint64_t> Canonical;
+typedef boink::hashing::Partitioned<Hash> Unikmer;
+typedef boink::hashing::Partitioned<Canonical> CanonicalUnikmer;
 
-typedef KmerModel<HashModel<uint64_t>> Kmer;
-typedef KmerModel<CanonicalModel<uint64_t>> CanonicalKmer;
+typedef boink::hashing::WmerModel<Hash, Unikmer> UnikmerWmer;
+typedef boink::hashing::WmerModel<Canonical, CanonicalUnikmer> CanonicalUnikmerWmer;
 
-typedef Partitioned<Hash> Unikmer;
-typedef Partitioned<Canonical> CanonicalUnikmer;
-
-typedef WmerModel<Hash, Unikmer> UnikmerWmer;
-typedef WmerModel<Canonical, CanonicalUnikmer> CanonicalUnikmerWmer;
-
-typedef ShiftModel<Hash, DIR_LEFT> LeftShift;
-typedef ShiftModel<Hash, DIR_RIGHT> RightShift;
-typedef ShiftModel<Canonical, DIR_LEFT> LeftCanonicalShift;
-typedef ShiftModel<Canonical, DIR_RIGHT> RightCanonicalShift;
+typedef boink::hashing::ShiftModel<Hash, boink::hashing::DIR_LEFT> LeftShift;
+typedef boink::hashing::ShiftModel<Hash, boink::hashing::DIR_RIGHT> RightShift;
+typedef boink::hashing::ShiftModel<Canonical, boink::hashing::DIR_LEFT> LeftCanonicalShift;
+typedef boink::hashing::ShiftModel<Canonical, boink::hashing::DIR_RIGHT> RightCanonicalShift;
 
 }
-
 
 #endif

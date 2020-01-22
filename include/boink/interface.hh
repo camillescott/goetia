@@ -31,6 +31,7 @@
 #include "boink/hashing/ukhs.hh"
 #include "boink/hashing/rollinghashshifter.hh"
 #include "boink/hashing/ukhshashshifter.hh"
+#include "boink/hashing/canonical.hh"
 
 #include "boink/kmers/kmerclient.hh"
 #include "boink/sequences/alphabets.hh"
@@ -98,10 +99,10 @@ namespace boink::hashing {
     template class KmerModel<UnikmerWmer>;
     template class KmerModel<CanonicalUnikmerWmer>;
 
-    template class ShiftModel<Hash, DIR_LEFT>;
-    template class ShiftModel<Hash, DIR_RIGHT>;
-    template class ShiftModel<Canonical, DIR_LEFT>;
-    template class ShiftModel<Canonical, DIR_RIGHT>;
+    template class ShiftModel<Hash, boink::hashing::DIR_LEFT>;
+    template class ShiftModel<Hash, boink::hashing::DIR_RIGHT>;
+    template class ShiftModel<Canonical, boink::hashing::DIR_LEFT>;
+    template class ShiftModel<Canonical, boink::hashing::DIR_RIGHT>;
 
 }
 
