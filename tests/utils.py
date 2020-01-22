@@ -20,7 +20,7 @@ from boink.hashing import types as hashing_types
 from boink.utils import check_trait
 from boink.storage import _types as storage_types
 
-from boink.hashing import FwdRollingShifter, CanRollingShifter
+from boink.hashing import FwdRollingShifter, CanRollingShifter, FwdUnikmerShifter
 
 def storage_t_name(t):
     return t[0].__name__
@@ -32,8 +32,8 @@ def storage_type(request):
     return _storage_type, params
 
 
-@pytest.fixture(params=[FwdRollingShifter, CanRollingShifter],
-                ids=lambda t: t.__name__)
+@pytest.fixture(params=[FwdRollingShifter, CanRollingShifter, FwdUnikmerShifter],
+                ids=lambda t: t.__name__.replace(' ', ''))
 def hasher_type(request, ksize):
     _hasher_type = request.param
     if _hasher_type.__name__.startswith('UnikmerShifter'):

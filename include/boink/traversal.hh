@@ -177,7 +177,7 @@ public:
     using extender_type::shift_right;
     using extender_type::K;
 
-    std::set<hash_type> seen;
+    std::set<value_type> seen;
 
     void clear_seen() {
         seen.clear();
@@ -227,7 +227,7 @@ public:
 
         uint8_t n_found = 0;
         for (const auto& ext : extensions) {
-            if(derived().query(ext.value())) {
+            if(derived().query(ext)) {
                 ++n_found;
             }
         }
@@ -252,8 +252,8 @@ public:
 
         uint8_t n_found = 0;
         for (const auto& ext : extensions) {
-            if(derived().query(ext.value()) ||
-               extras.count(ext.value())) {
+            if(derived().query(ext) ||
+               extras.count(ext)) {
                 ++n_found;
             }
         }
@@ -277,7 +277,7 @@ public:
         uint8_t n_found = 0;
         shift_type<Dir> result;
         for (const auto& ext : extensions) {
-            if(graph->query(ext.value())) {
+            if(graph->query(ext)) {
                 ++n_found;
                 if (n_found > 1) {
                     return n_found;
@@ -295,8 +295,8 @@ public:
         uint8_t n_found = 0;
         shift_type<Dir> result;
         for (const auto& ext : extensions ) {
-            if(graph->query(ext.value()) ||
-               extra.count(ext.value())) {
+            if(graph->query(ext) ||
+               extra.count(ext)) {
                 ++n_found;
                 if (n_found > 1) {
                     return n_found;
@@ -323,7 +323,7 @@ public:
 
         std::vector<shift_type<Dir>> result;
         for (const auto& ext : extensions) {
-            if (derived().query(ext.value())) {
+            if (derived().query(ext)) {
                 result.push_back(ext);
             }
         }
@@ -348,8 +348,8 @@ public:
         
         std::vector<shift_type<Dir>> result;
         for (const auto& ext : extensions) {
-            if (derived().query(ext.value()) ||
-                extra.count(ext.value())) {
+            if (derived().query(ext) ||
+                extra.count(ext)) {
                 result.push_back(ext);
             }
         }
@@ -501,8 +501,8 @@ public:
                                             const std::string&                       root) {
         std::vector<kmer_type> kmers;
         auto _prefix = derived().prefix(root);
-        for (auto neighbor : nodes) {
-            kmers.push_back(kmer_type(neighbor.value(),
+        for (const auto& neighbor : nodes) {
+            kmers.push_back(kmer_type(neighbor,
                                       neighbor.symbol + _prefix));
         }
         return kmers;
@@ -521,8 +521,8 @@ public:
                                              const std::string& root) {
         std::vector<kmer_type> kmers;
         auto _suffix = derived().suffix(root);
-        for (auto neighbor : nodes) {
-            kmers.push_back(kmer_type(neighbor.value(),
+        for (const auto& neighbor : nodes) {
+            kmers.push_back(kmer_type(neighbor,
                                      _suffix + neighbor.symbol));
         }
 
@@ -590,7 +590,7 @@ public:
         auto neighbors = this->filter_nodes(this->left_extensions());
         auto state = look_state(neighbors);
         if (state == State::STEP) {
-            if (mask.count(neighbors.front().value())) {
+            if (mask.count(neighbors.front())) {
                 state = State::STOP_MASKED;
             } else {
                 this->shift_left(neighbors.front().symbol);
@@ -618,7 +618,7 @@ public:
         auto neighbors = this->filter_nodes(this->right_extensions());
         auto state = look_state(neighbors);
         if (state == State::STEP) {
-            if (mask.count(neighbors.front().value())) {
+            if (mask.count(neighbors.front())) {
                 state = State::STOP_MASKED;
             } else {
                 this->shift_right(neighbors.front().symbol);
@@ -671,7 +671,7 @@ public:
 
         hash_type start_hash = this->get();
         this->seen.clear();
-        this->seen.insert(start_hash);
+        this->seen.insert(start_hash.value());
         walk.start.hash = start_hash;
         walk.start.kmer = this->get_cursor();
 
@@ -690,7 +690,7 @@ public:
                 pdebug("Stop: reverse d-node");
                 walk.path.pop_back();
                 walk.end_state = State::DECISION_RC;
-                this->seen.erase(this->get());
+                this->seen.erase(this->get().value());
                 return std::move(walk);
             }
 
@@ -726,7 +726,7 @@ public:
 
         hash_type start_hash = this->get();
         this->seen.clear();
-        this->seen.insert(start_hash);
+        this->seen.insert(start_hash.value());
         walk.start.hash = start_hash;
         walk.start.kmer = this->get_cursor();
 
@@ -743,7 +743,7 @@ public:
             if (in_degree() > 1) {
                 walk.path.pop_back();
                 walk.end_state = State::DECISION_RC;
-                this->seen.erase(this->get());
+                this->seen.erase(this->get().value());
                 return std::move(walk);
             }
 

@@ -82,28 +82,22 @@ template bool operator!=(const std::STLTYPE< TTYPE >::iterator&,                
                          const std::STLTYPE< TTYPE >::iterator&);                 \
 }
 
-namespace boink::hashing {
 
-    //
-    // Kmer Models
-    //
+template class boink::hashing::HashModel<uint64_t>;
+template class boink::hashing::CanonicalModel<boink::hashing::HashModel<uint64_t>>;
 
-    template class HashModel<uint64_t>;
-    template class CanonicalModel<HashModel<uint64_t>>;
+template class boink::hashing::Partitioned<boink::hashing::HashModel<uint64_t>>;
+template class boink::hashing::Partitioned<boink::hashing::CanonicalModel<uint64_t>>;
 
-    template class Partitioned<HashModel<uint64_t>>;
-    template class Partitioned<CanonicalModel<uint64_t>>;
+template class boink::hashing::KmerModel<boink::hashing::HashModel<uint64_t>>;
+template class boink::hashing::KmerModel<boink::hashing::CanonicalModel<boink::hashing::HashModel<uint64_t>>>;
+template class boink::hashing::KmerModel<boink::hashing::UnikmerWmer>;
+template class boink::hashing::KmerModel<boink::hashing::CanonicalUnikmerWmer>;
 
-    template class KmerModel<HashModel<uint64_t>>;
-    template class KmerModel<CanonicalModel<HashModel<uint64_t>>>;
-    template class KmerModel<UnikmerWmer>;
-    template class KmerModel<CanonicalUnikmerWmer>;
+template class boink::hashing::ShiftModel<boink::hashing::Hash, boink::hashing::DIR_LEFT>;
+template class boink::hashing::ShiftModel<boink::hashing::Hash, boink::hashing::DIR_RIGHT>;
+template class boink::hashing::ShiftModel<boink::hashing::Canonical, boink::hashing::DIR_LEFT>;
+template class boink::hashing::ShiftModel<boink::hashing::Canonical, boink::hashing::DIR_RIGHT>;
 
-    template class ShiftModel<Hash, boink::hashing::DIR_LEFT>;
-    template class ShiftModel<Hash, boink::hashing::DIR_RIGHT>;
-    template class ShiftModel<Canonical, boink::hashing::DIR_LEFT>;
-    template class ShiftModel<Canonical, boink::hashing::DIR_RIGHT>;
-
-}
 
 #endif

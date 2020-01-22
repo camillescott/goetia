@@ -9,7 +9,7 @@ _types = [(libboink.storage.SparseppSetStorage, tuple()),
           (libboink.storage.ByteStorage, (100000, 4)),
           (libboink.storage.NibbleStorage, (100000, 4))]
 
-types = {storage_t.__name__ : defaults for storage_t, defaults in _types}
+types = {storage_t.__name__.replace(' ', '') : defaults for storage_t, defaults in _types}
 
 
 SparseppSetStorage = libboink.storage.SparseppSetStorage

@@ -157,14 +157,14 @@ struct UTagger {
                                       tag_map_t&             tags) {
             // check in-neighbors
             for (const shift_type<hashing::DIR_LEFT>& in_neighbor : neighbors.first) {
-                auto tag = create_tag(in_neighbor.value(), root);
+                auto tag = create_tag(in_neighbor, root);
                 if (tag) {
                     tags[tag.value().link] = std::move(tag.value());
                 }
             }
             // and out neighbors
             for (const shift_type<hashing::DIR_RIGHT>& out_neighbor : neighbors.second) {
-                auto tag = create_tag(root, out_neighbor.value());
+                auto tag = create_tag(root, out_neighbor);
                 if (tag) {
                     tags[tag.value().link] = std::move(tag.value());
                 }
@@ -274,13 +274,13 @@ struct UTagger {
                 auto neighborhood = dbg->filter_nodes(std::make_pair(dbg->left_extensions(),
                                                                      dbg->right_extensions()));
                 for (const shift_type<hashing::DIR_LEFT>& in_neighbor : neighborhood.first) {
-                    if (auto tag = query_tag(in_neighbor.value(), root)) {
+                    if (auto tag = query_tag(in_neighbor, root)) {
                         found.insert(tag.value().link);
                     }
                 }
                 // and out neighbors
                 for (const shift_type<hashing::DIR_RIGHT>& out_neighbor : neighborhood.second) {
-                    if (auto tag = query_tag(root, out_neighbor.value())) {
+                    if (auto tag = query_tag(root, out_neighbor)) {
                         found.insert(tag.value().link);
                     }
                 }

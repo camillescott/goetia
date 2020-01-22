@@ -137,7 +137,7 @@ struct CanonicalModel {
 template<class ValueType> __attribute__((visibility("default")))
 inline std::ostream&
 operator<<(std::ostream& os, const CanonicalModel<ValueType>& _this) {
-    os << "<CanonicalModel "
+    os << "<CanonicalModel"
        << " fw=" << _this.fw_hash
        << " rc=" << _this.rc_hash
        << " sign=" << _this.sign()
@@ -185,7 +185,15 @@ struct WmerModel<HashType<ValueType>, MinimizerType> {
 
     WmerModel() {}
 
-    const hash_type value() const {
+    const value_type value() const {
+        return hash.value();
+    }
+
+    operator value_type() const {
+        return hash.value();
+    }
+
+    operator hash_type() const {
         return hash;
     }
 
@@ -212,7 +220,7 @@ __attribute__((visibility("default")))
 inline std::ostream&
 operator<<(std::ostream& os,
            const WmerModel<HashType<ValueType>, MinimizerType>& wmer) {
-    os << "<WmerModel "
+    os << "<WmerModel"
        << " hash=" << wmer.hash
        << " minimizer=" << wmer.minimizer
        << ">";
@@ -238,7 +246,7 @@ template<template<class, class...> class HashType, class ValueType, class...Extr
 struct KmerModel<HashType<ValueType, Extras...>> {
 
     typedef HashType<ValueType, Extras...> hash_type;
-    typedef ValueType                      value_type;
+    typedef typename hash_type::value_type value_type;
 
     hash_type hash;
     std::string kmer;
@@ -256,7 +264,15 @@ struct KmerModel<HashType<ValueType, Extras...>> {
     {
     }
 
-    const hash_type value() const {
+    const value_type value() const {
+        return hash.value();
+    }
+
+    operator value_type() const {
+        return hash.value();
+    }
+
+    operator hash_type() const {
         return hash;
     }
 
@@ -274,16 +290,6 @@ struct KmerModel<HashType<ValueType, Extras...>> {
     friend bool operator==(const KmerModel& lhs, const KmerModel& rhs) {
         return lhs.hash == rhs.hash;
     }
-
-    __attribute__((visibility("default")))
-    friend inline std::ostream&
-    operator<<(std::ostream& os, const KmerModel& kmer) {
-        os << "<KmerModel "
-           << " hash=" << kmer.hash
-           << " kmer=" << kmer.kmer
-           << ">";
-        return os;
-    }
 };
 
 
@@ -292,7 +298,7 @@ template<template<class, class...> class HashType, class ValueType,
 __attribute__((visibility("default")))
 inline std::ostream&
 operator<<(std::ostream& os, const KmerModel<HashType<ValueType, Extras...>>& kmer) {
-    os << "<KmerModel "
+    os << "<KmerModel"
        << " hash=" << kmer.hash
        << " kmer=" << kmer.kmer
        << ">";
@@ -325,7 +331,7 @@ template <template<class, class...> class HashType, class ValueType, class... Ex
 struct ShiftModel<HashType<ValueType, Extras...>, Direction> {
     
     typedef HashType<ValueType, Extras...> hash_type;
-    typedef ValueType                      value_type;
+    typedef typename hash_type::value_type value_type;
     static const bool direction = Direction;
 
     hash_type hash;
@@ -343,7 +349,15 @@ struct ShiftModel<HashType<ValueType, Extras...>, Direction> {
     {
     }
 
-    const hash_type value() const {
+    const value_type value() const {
+        return hash.value();
+    }
+
+    operator value_type() const {
+        return hash.value();
+    }
+
+    operator hash_type() const {
         return hash;
     }
 
@@ -369,7 +383,7 @@ __attribute__((visibility("default")))
 inline std::ostream&
 operator<<(std::ostream& os,
            const ShiftModel<HashType<ValueType, Extras...>, Direction>& shift) {
-    os << "<ShiftModel "
+    os << "<ShiftModel"
        << " hash=" << shift.hash
        << " symbol=" << shift.symbol
        << " direction=" << shift.direction
@@ -435,22 +449,23 @@ operator<<(std::ostream& os, const Partitioned<ValueType>& p) {
     return os;
 }
 
+
 typedef boink::hashing::HashModel<uint64_t> Hash;
 typedef boink::hashing::CanonicalModel<uint64_t> Canonical;
 
 typedef boink::hashing::KmerModel<boink::hashing::HashModel<uint64_t>> Kmer;
 typedef boink::hashing::KmerModel<boink::hashing::CanonicalModel<uint64_t>> CanonicalKmer;
 
-typedef boink::hashing::Partitioned<Hash> Unikmer;
-typedef boink::hashing::Partitioned<Canonical> CanonicalUnikmer;
+typedef boink::hashing::Partitioned<boink::hashing::Hash> Unikmer;
+typedef boink::hashing::Partitioned<boink::hashing::Canonical> CanonicalUnikmer;
 
-typedef boink::hashing::WmerModel<Hash, Unikmer> UnikmerWmer;
-typedef boink::hashing::WmerModel<Canonical, CanonicalUnikmer> CanonicalUnikmerWmer;
+typedef boink::hashing::WmerModel<boink::hashing::Hash, boink::hashing::Unikmer> UnikmerWmer;
+typedef boink::hashing::WmerModel<boink::hashing::Canonical, boink::hashing::CanonicalUnikmer> CanonicalUnikmerWmer;
 
-typedef boink::hashing::ShiftModel<Hash, boink::hashing::DIR_LEFT> LeftShift;
-typedef boink::hashing::ShiftModel<Hash, boink::hashing::DIR_RIGHT> RightShift;
-typedef boink::hashing::ShiftModel<Canonical, boink::hashing::DIR_LEFT> LeftCanonicalShift;
-typedef boink::hashing::ShiftModel<Canonical, boink::hashing::DIR_RIGHT> RightCanonicalShift;
+typedef boink::hashing::ShiftModel<boink::hashing::Hash, boink::hashing::DIR_LEFT> LeftShift;
+typedef boink::hashing::ShiftModel<boink::hashing::Hash, boink::hashing::DIR_RIGHT> RightShift;
+typedef boink::hashing::ShiftModel<boink::hashing::Canonical, boink::hashing::DIR_LEFT> LeftCanonicalShift;
+typedef boink::hashing::ShiftModel<boink::hashing::Canonical, boink::hashing::DIR_RIGHT> RightCanonicalShift;
 
 }
 

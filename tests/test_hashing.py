@@ -8,8 +8,8 @@
 import pytest
 from .utils import *
 from boink import libboink
-from boink.hashing import FwdRollingShifter, CanRollingShifter
-#from boink.hashing import RollingHashShifter, UKHShifter, unikmer_valid
+from boink.hashing import FwdRollingShifter, CanRollingShifter, FwdUnikmerShifter, CanUnikmerShifter
+
 
 
 def get_min_unikmer(wmer, uk_map, shifter_type):
@@ -24,10 +24,11 @@ def get_min_unikmer(wmer, uk_map, shifter_type):
             positions.append(i)
     print([f'{i}: {u}' for i, u in zip(positions, unikmers)])
     #print([str(u) for u in unikmers])
-    return wmer_hash, min(unikmers, key=lambda elem: elem.hash)
+    return wmer_hash, min(unikmers, key=lambda elem: elem.value)
 
 
 @using(ksize=27)
+@pytest.mark.parametrize('hasher_type', [FwdRollingShifter, CanRollingShifter], indirect=True)
 def test_rolling_hash(hasher, ksize):
     seq = 'TCACCTGTGTTGTGCTACTTGCGGCGC'
 
@@ -108,23 +109,33 @@ def test_canonical_rolling_hash(ksize, length, random_sequence):
         assert can_hasher.hash(kmer).value == can.value
 
 
-'''
-def test_unikmer_shifter_shift_left(ksize, length, random_sequence, unikmer_shifter):
-    shifter, uk_ksize, uk_map = unikmer_shifter
+@pytest.mark.parametrize('hasher_type', [FwdUnikmerShifter], indirect=True)
+def test_fwd_unikmer_hash_base(ksize, length, random_sequence, hasher):
     seq = random_sequence()
+    hasher = hasher.build(ksize, 7)
 
-    hashes = [shifter.set_cursor(seq[-ksize:])]
-    exp_kmer_hash, exp_ukmer = get_min_unikmer(seq[-ksize:], uk_map)
-    assert hashes[0].hash == exp_kmer_hash
-    assert hashes[0].unikmer == exp_ukmer
+    for i, kmer in enumerate(kmers(seq, ksize)):
+        h = hasher.hash_base(kmer)
+        exp_kmer_hash, exp_ukmer = get_min_unikmer(kmer, hasher.ukhs_map, type(hasher).ukhs_shifter_type)
+        assert h.value == exp_kmer_hash.value, (i, h)
+        assert h.minimizer == exp_ukmer, (i, h)
+
+
+def test_unikmer_shifter_shift_left(ksize, length, random_sequence):
+    seq = random_sequence()
+    shifter = FwdUnikmerShifter.build(ksize, 7)
+
+    hashes = [shifter.hash_base(seq[-ksize:])]
+    exp_kmer_hash, exp_ukmer = get_min_unikmer(seq[-ksize:], shifter.ukhs_map, FwdRollingShifter)
+    assert hashes[0].value == exp_kmer_hash.value
+    assert hashes[0].minimizer == exp_ukmer
 
     for i in range(len(seq) - ksize - 1, -1, -1):
-        h = shifter.shift_left(seq[i])
-        exp_hash, exp_uk = get_min_unikmer(seq[i:i+ksize], uk_map)
+        h = shifter.shift_left(seq[i], seq[i+ksize])
+        exp_hash, exp_uk = get_min_unikmer(seq[i:i+ksize], shifter.ukhs_map, FwdRollingShifter)
 
-        assert h.hash == exp_hash
-        assert h.unikmer == exp_uk
-'''
+        assert h.value == exp_hash.value
+        assert h.minimizer == exp_uk
 
 
 @using(length=30, ksize=27)

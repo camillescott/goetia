@@ -64,7 +64,7 @@ public:
         }
 
         uint64_t pid = 0;
-        for (auto unikmer : ukhs) {
+        for (const auto& unikmer : ukhs) {
             hash_type h = ShifterType::hash(unikmer, K);
 
             if (!pmap.count(h.value())) {
@@ -391,6 +391,9 @@ public:
 
         window_hasher.hash_base(sequence);
         unikmer_hasher.hash_base(sequence);
+        
+        unikmer_indices.clear();
+        window_unikmers.clear();
 
         auto unikmer = ukhs_map->query(unikmer_hasher.get());
         if (unikmer) {

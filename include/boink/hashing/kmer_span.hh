@@ -40,7 +40,6 @@ protected:
           kmer_window(kmer_buffer, kmer_buffer + K, kmer_buffer, K),
           loaded(false)
     {
-        std::cout << "KmerSpan enabled: " << this << std::endl;
     }
 
     ~KmerSpanMixinImpl() {
@@ -107,7 +106,6 @@ class KmerSpanMixinImpl<false>{
 protected:
 
     KmerSpanMixinImpl(uint16_t K) {
-        std::cout << "KmerSpan disabled: " << this << std::endl;
     }
 };
 

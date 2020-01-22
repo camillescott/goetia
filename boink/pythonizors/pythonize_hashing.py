@@ -35,8 +35,13 @@ def pythonize_boink_hashing(klass, name):
         klass.parse_unikmers = staticmethod(parse_unikmers)
 
         def load(W, K):
-            unikmers = parse_unikmers(W, K)
-            return klass.build(W, K, unikmers)
+            if (W, K, klass.__name__) in UKHS_CACHE:
+                return UKHS_CACHE[(W, K, klass.__name__)]
+            else:
+                unikmers = parse_unikmers(W, K)
+                ukhs = klass.build(W, K, unikmers)
+                UKHS_CACHE[(W, K, klass.__name__)] = ukhs
+                return ukhs
 
         klass.load = staticmethod(load)
 
@@ -45,10 +50,7 @@ def pythonize_boink_hashing(klass, name):
         
         def build(W, K):
             ukhs_type = klass.ukhs_type
-            ukhs = UKHS_CACHE.get((W,K, ukhs_type.__name__), ukhs_type.load(W, K))
-            if (W, K) not in UKHS_CACHE:
-                UKHS_CACHE[(W, K, ukhs_type.__name__)] = ukhs
-
+            ukhs =  ukhs_type.load(W, K)
             shifter = klass(W, K, ukhs)
             return shifter
 
@@ -66,15 +68,17 @@ def pythonize_boink_hashing(klass, name):
         #set_typedef_attrs(klass, ['alphabet', 'hash_type', 'value_type', 'kmer_type'])
 
     for check_name in ['HashModel', 'CanonicalModel', 'WmerModel',
-                       'KmerModel', 'ShiftModel']:
+                       'KmerModel', 'ShiftModel', 'Partitioned']:
 
         is_inst, _ = is_template_inst(name, check_name)
         if is_inst:
+            
             klass.value = property(klass.value)
             klass.__lt__ = lambda self, other: self.value < other.value
             klass.__le__ = lambda self, other: self.value <= other.value
             klass.__gt__ = lambda self, other: self.value > other.value
             klass.__ge__ = lambda self, other: self.value >= other.value
             klass.__ne__ = lambda self, other: self.value != other.value
+            klass.__repr__ = klass.__str__
 
 

@@ -670,7 +670,7 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
 
                 hash_type new_end;
                 bool clip_from;
-                if (root.value() == unode_to_split->left_end()) {
+                if (root.value() == unode_to_split->left_end().value()) {
                     new_end = dbg->hash(unode_to_split->sequence.c_str() + 1);
                     clip_from = hashing::DIR_LEFT;
                 } else {
@@ -740,7 +740,7 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
                                                                 split_point + 1,
                                                                 this->_K);
                     if (rfiltered.size()) {
-                        assert(right_unode_new_left == rfiltered.back().value());
+                        assert(right_unode_new_left.value() == rfiltered.back().value());
                     }
 
                     cdbg->split_unode(unode_to_split->node_id,
@@ -798,7 +798,7 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
                                                      this->_K);
                     hash_type new_left = start.value();
                     if (lfiltered.size()) {
-                        assert(lfiltered.back().value() == new_right);
+                        assert(lfiltered.back().value() == new_right.value());
                     }
 
                     cdbg->split_unode(unode_to_split->node_id,

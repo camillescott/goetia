@@ -4,7 +4,6 @@ from boink.pythonizors.utils import is_template_inst
 def pythonize_boink(klass, name):
     is_dbg, _ = is_template_inst(name, 'dBG')
     if is_dbg:
-        print(name)
 
         def add(self, item):
             if not isinstance(item, int) and len(item) < self.K:

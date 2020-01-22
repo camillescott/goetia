@@ -9,6 +9,7 @@ import pytest
 from cppyy.gbl import std
 
 from .utils import *
+from boink.hashing import FwdRollingShifter, UKHS
 import pytest
 
 
@@ -309,8 +310,8 @@ def test_pdbg_n_unique(random_sequence, ksize, length, benchmark, storage_type):
     from boink.utils import check_trait
 
     storage_t, params = storage_type
-    ukhs = load_unikmer_map(ksize, 7)
-    graph = std.make_shared[libboink.PdBG[storage_t]](ksize, 7, ukhs.__smartptr__(), *params)
+    ukhs = UKHS[FwdRollingShifter].load(ksize, 7)
+    graph = std.make_shared[libboink.PdBG[storage_t, FwdRollingShifter]](ksize, 7, ukhs, *params)
     sequence = random_sequence()
     kmer_set = set(kmers(sequence, ksize))
     benchmark(graph.insert_sequence, sequence)
@@ -330,8 +331,8 @@ def test_pdbg_n_unique(random_sequence, ksize, length, benchmark, storage_type):
 def test_pdbg_get_counts(random_sequence, ksize, benchmark, storage_type):
     sequence = random_sequence()
     storage_t, params = storage_type
-    ukhs = load_unikmer_map(ksize, 7)
-    graph = std.make_shared[libboink.PdBG[storage_t]](ksize, 7, ukhs.__smartptr__(), *params)
+    ukhs = UKHS[FwdRollingShifter].load(ksize, 7)
+    graph = std.make_shared[libboink.PdBG[storage_t, FwdRollingShifter]](ksize, 7, ukhs, *params)
     graph.insert_sequence(sequence)
 
     counts = benchmark(graph.query_sequence, sequence)

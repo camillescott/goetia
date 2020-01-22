@@ -90,15 +90,15 @@ public:
 
     }
 
-    hash_type hash(const std::string& kmer) const {
+    inline hash_type hash(const std::string& kmer) const {
         return shifter_type::hash(kmer, this->_K, partition_K, ukhs);
     }
 
-    hash_type hash(const char * kmer) const {
+    inline hash_type hash(const char * kmer) const {
         return shifter_type::hash(kmer, this->_K, partition_K, ukhs);
     }
 
-    std::vector<hash_type> get_hashes(const std::string& sequence) {
+    inline std::vector<hash_type> get_hashes(const std::string& sequence) {
 
         hashing::KmerIterator<extender_type> iter(sequence, &partitioner);
         std::vector<hash_type> kmer_hashes;
@@ -111,14 +111,14 @@ public:
         return kmer_hashes;
     }
 
-    std::shared_ptr<graph_type> clone() {
+    inline std::shared_ptr<graph_type> clone() {
         return std::make_shared<graph_type>(this->_K,
                                             partition_K,
                                             ukhs,
                                             S);
     }
 
-    const bool insert(const std::string& kmer) {
+    inline const bool insert(const std::string& kmer) {
 
         partitioner.set_cursor(kmer);
         auto bh = partitioner.get();
@@ -126,11 +126,11 @@ public:
         return S->insert(bh.value(), bh.minimizer.partition);
     }
 
-    const bool insert(const hash_type& h) {
+    inline const bool insert(const hash_type& h) {
         return S->insert(h.value(), h.minimizer.partition);
     }
 
-    const storage::count_t insert_and_query(const std::string& kmer) {
+    inline const storage::count_t insert_and_query(const std::string& kmer) {
 
         partitioner.set_cursor(kmer);
         auto h = partitioner.get();
@@ -138,20 +138,20 @@ public:
         return S->insert_and_query(h.value(), h.minimizer.partition);
     }
 
-    const storage::count_t insert_and_query(const hash_type& h) {
+    inline const storage::count_t insert_and_query(const hash_type& h) {
         return S->insert_and_query(h.value(), h.minimizer.partition);
     }
 
-    const storage::count_t query(const std::string& kmer) {
+    inline const storage::count_t query(const std::string& kmer) {
         auto h = hash(kmer);
         return S->query(h.value(), h.minimizer.partition);
     }
 
-    const storage::count_t query(const hash_type& h) {
+    inline const storage::count_t query(const hash_type& h) {
         return S->query(h.value(), h.minimizer.partition);
     }
 
-    const uint64_t insert_sequence(const std::string&             sequence,
+    inline const uint64_t insert_sequence(const std::string&             sequence,
                                    std::vector<hash_type>&        kmer_hashes,
                                    std::vector<storage::count_t>& counts) {
 
@@ -174,7 +174,7 @@ public:
         return n_consumed;
     }
 
-    const uint64_t insert_sequence(const std::string&   sequence,
+    inline const uint64_t insert_sequence(const std::string&   sequence,
                                    std::set<hash_type>& new_kmers) {
 
         hashing::KmerIterator<extender_type> iter(sequence, &partitioner);
@@ -194,7 +194,7 @@ public:
         return n_consumed;
     }
 
-    const uint64_t insert_sequence(const std::string& sequence) {
+    inline const uint64_t insert_sequence(const std::string& sequence) {
         hashing::KmerIterator<extender_type> iter(sequence, &partitioner);
 
         uint64_t n_consumed = 0;
@@ -206,7 +206,7 @@ public:
         return n_consumed;
     }
 
-    const uint64_t insert_sequence_rolling(const std::string& sequence) {
+    inline const uint64_t insert_sequence_rolling(const std::string& sequence) {
         hashing::KmerIterator<extender_type> iter(sequence, &partitioner);
 
         uint64_t          n_consumed    = 0;
@@ -228,7 +228,7 @@ public:
     }
 
 
-    std::vector<storage::count_t> insert_and_query_sequence(const std::string& sequence) {
+    inline std::vector<storage::count_t> insert_and_query_sequence(const std::string& sequence) {
 
         hashing::KmerIterator<extender_type> iter(sequence, &partitioner);
         std::vector<storage::count_t> counts(sequence.length() - _K + 1);
@@ -244,7 +244,7 @@ public:
     }
 
 
-    std::vector<storage::count_t> query_sequence(const std::string& sequence) {
+    inline std::vector<storage::count_t> query_sequence(const std::string& sequence) {
 
         hashing::KmerIterator<extender_type> iter(sequence, &partitioner);
         std::vector<storage::count_t> counts(sequence.length() - _K + 1);
@@ -260,7 +260,7 @@ public:
     }
 
 
-    std::vector<storage::count_t> query_sequence_rolling(const std::string& sequence) {
+    inline std::vector<storage::count_t> query_sequence_rolling(const std::string& sequence) {
 
         hashing::KmerIterator<extender_type> iter(sequence, &partitioner);
         std::vector<storage::count_t> counts(sequence.length() - _K + 1);
@@ -285,7 +285,7 @@ public:
     }
 
 
-    void query_sequence(const std::string&             sequence,
+    inline void query_sequence(const std::string&             sequence,
                         std::vector<storage::count_t>& counts,
                         std::vector<hash_type>&        hashes) {
 
@@ -300,7 +300,7 @@ public:
     }
 
 
-    void query_sequence(const std::string&             sequence,
+    inline void query_sequence(const std::string&             sequence,
                         std::vector<storage::count_t>& counts,
                         std::vector<hash_type>&        hashes,
                         std::set<hash_type>&           new_hashes) {
@@ -344,7 +344,7 @@ public:
         std::vector<kmer_type> kmers;
         auto _prefix = prefix(root);
         for (auto neighbor : nodes) {
-            kmers.push_back(kmer_type(neighbor.value(),
+            kmers.push_back(kmer_type(neighbor,
                                       neighbor.symbol + _prefix));
         }
         return kmers;
@@ -355,7 +355,7 @@ public:
         std::vector<kmer_type> kmers;
         auto _suffix = suffix(root);
         for (auto neighbor : nodes) {
-            kmers.push_back(kmer_type(neighbor.value(),
+            kmers.push_back(kmer_type(neighbor,
                                       _suffix + neighbor.symbol));
         }
 
