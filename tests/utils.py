@@ -21,7 +21,8 @@ from boink.utils import check_trait
 from boink.storage import _types as storage_types
 
 from boink.hashing import (FwdRollingShifter, CanRollingShifter,
-                           FwdUnikmerShifter, CanUnikmerShifter)
+                           FwdUnikmerShifter, CanUnikmerShifter,
+                           UKHS)
 
 def storage_t_name(t):
     return t[0].__name__
@@ -59,6 +60,17 @@ def store(storage_type):
     _storage_type, params = storage_type
     storage = _storage_type.build(*params)
     return storage
+
+
+@pytest.fixture
+def partitioned_graph(store, ksize):
+    ukhs = UKHS[FwdRollingShifter].load(ksize, 7)
+    pstore = std.make_shared[libboink.storage.PartitionedStorage[type(store)]](ukhs.n_hashes(),
+                                                                               store)
+    graph = std.make_shared[libboink.PdBG[type(store), FwdRollingShifter]](ksize, 7,
+                                                                           ukhs,
+                                                                           pstore)
+    return graph
 
 
 @pytest.fixture()

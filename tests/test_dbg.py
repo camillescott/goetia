@@ -306,12 +306,10 @@ def test_clone(graph, ksize, random_sequence):
 
 @using(ksize=[21, 31, 41], length=[50000, 500000])
 @pytest.mark.benchmark(group='dbg-sequence')
-def test_pdbg_n_unique(random_sequence, ksize, length, benchmark, storage_type):
+def test_pdbg_n_unique(random_sequence, ksize, length, benchmark, partitioned_graph, store):
     from boink.utils import check_trait
+    graph = partitioned_graph
 
-    storage_t, params = storage_type
-    ukhs = UKHS[FwdRollingShifter].load(ksize, 7)
-    graph = std.make_shared[libboink.PdBG[storage_t, FwdRollingShifter]](ksize, 7, ukhs, *params)
     sequence = random_sequence()
     kmer_set = set(kmers(sequence, ksize))
     benchmark(graph.insert_sequence, sequence)
@@ -319,7 +317,7 @@ def test_pdbg_n_unique(random_sequence, ksize, length, benchmark, storage_type):
     for kmer in kmer_set:
         assert graph.query(kmer)
 
-    if check_trait(libboink.storage.is_probabilistic, storage_t):
+    if check_trait(libboink.storage.is_probabilistic, type(store)):
         assert abs(len(kmer_set) - graph.n_unique()) < length * .001
     else:
         assert len(kmer_set) == graph.n_unique()
@@ -328,11 +326,9 @@ def test_pdbg_n_unique(random_sequence, ksize, length, benchmark, storage_type):
 
 @using(ksize=[21, 31, 41], length=[50000, 500000])
 @pytest.mark.benchmark(group='dbg-sequence')
-def test_pdbg_get_counts(random_sequence, ksize, benchmark, storage_type):
+def test_pdbg_get_counts(random_sequence, ksize, benchmark, partitioned_graph):
     sequence = random_sequence()
-    storage_t, params = storage_type
-    ukhs = UKHS[FwdRollingShifter].load(ksize, 7)
-    graph = std.make_shared[libboink.PdBG[storage_t, FwdRollingShifter]](ksize, 7, ukhs, *params)
+    graph = partitioned_graph
     graph.insert_sequence(sequence)
 
     counts = benchmark(graph.query_sequence, sequence)
