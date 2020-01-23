@@ -7,16 +7,13 @@
  */
 
 #include "boink/cdbg/compactor.hh"
-
 #include "boink/storage/storage_types.hh"
 #include "boink/hashing/rollinghashshifter.hh"
 
-namespace boink {
 
-    template class cdbg::StreamingCompactor<dBG<storage::SparseppSetStorage, hashing::FwdRollingShifter>>;
-    template class cdbg::StreamingCompactor<dBG<storage::BitStorage, hashing::FwdRollingShifter>>;
-    template class cdbg::StreamingCompactor<dBG<storage::ByteStorage, hashing::FwdRollingShifter>>;
-    template class cdbg::StreamingCompactor<dBG<storage::NibbleStorage, hashing::FwdRollingShifter>>;
-    template class cdbg::StreamingCompactor<dBG<storage::QFStorage, hashing::FwdRollingShifter>>;
+template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::SparseppSetStorage, boink::hashing::FwdRollingShifter>>;
+template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::BitStorage, boink::hashing::FwdRollingShifter>>;
+template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::ByteStorage, boink::hashing::FwdRollingShifter>>;
+template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::NibbleStorage, boink::hashing::FwdRollingShifter>>;
+template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::QFStorage, boink::hashing::FwdRollingShifter>>;
 
-}

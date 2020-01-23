@@ -12,6 +12,7 @@
         <class name="boink::reporting::*"/>
         <class name="boink::hashing::Direction_t"/>
         <class pattern="boink::signatures::UnikmerSignature<*>::Signature"/>
+        <class pattern="boink::cdbg::StreamingCompactor<*>::compact_segment"/>
 
         <class pattern="boink::dBGWalker<*>"/>
 

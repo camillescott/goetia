@@ -13,6 +13,7 @@ import random
 
 from debruijnal_enhance_o_tron.sequence import *
 
+import cppyy.gbl
 from cppyy.gbl import std
 import boink
 from boink import boink as libboink
@@ -87,7 +88,7 @@ def counting_backends(*args):
                                        [(type, args) for type, args in storage_types \
                                         if check_trait(libboink.storage.is_counting, type)],
                                        indirect=['storage_type'],
-                                       ids=storage_t_name)(fixture_func)
+                                       ids=lambda t: pretty_repr(t[0]))(fixture_func)
     return wrapped
 
 
@@ -100,7 +101,7 @@ def presence_backends(*args):
                                        [(type, args) for type, args in storage_types \
                                         if not check_trait(libboink.storage.is_counting, type)],
                                        indirect=['storage_type'],
-                                       ids=storage_t_name)(fixture_func)
+                                       ids=lambda t: pretty_repr(t[0]))(fixture_func)
     return wrapped
 
 
@@ -113,7 +114,7 @@ def exact_backends(*args):
                                        [(type, args) for type, args in storage_types \
                                         if not check_trait(libboink.storage.is_probabilistic, type)],
                                        indirect=['storage_type'],
-                                       ids=storage_t_name)(fixture_func)
+                                       ids=lambda t: pretty_repr(t[0]))(fixture_func)
     return wrapped
 
 

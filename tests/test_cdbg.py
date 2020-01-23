@@ -13,6 +13,11 @@ import pytest
 from tests.utils import *
 
 from boink import libboink, nullptr
+from boink.hashing import FwdRollingShifter
+
+import cppyy.ll
+cppyy.ll.set_signals_as_exception(True)
+
 
 
 @pytest.fixture
@@ -26,7 +31,8 @@ def compactor(ksize, graph, compactor_type):
     return compactor
 
 
-@using(ksize=15, length=100, hasher_type=libboink.hashing.RollingHashShifter)
+@using(ksize=15, length=100, hasher_type=FwdRollingShifter)
+@exact_backends()
 class TestFindNewSegments:
 
     @pytest.mark.benchmark(group='cdbg-segments')
@@ -79,6 +85,7 @@ class TestFindNewSegments:
                 for kmer in kmers(segment.sequence(branch), ksize):
                     assert graph.left_degree(kmer) < 2
                     assert graph.right_degree(kmer) < 2
+        print('===== FINISHED =====')
 
     @pytest.mark.benchmark(group='cdbg-segments')
     def test_right_decision_split(self, ksize, graph, compactor, right_fork,
@@ -283,7 +290,8 @@ class TestFindNewSegments:
         assert segments[5].length == len(mut) - (pivotR + 1)
 
 
-@using(ksize=15, length=100, hasher_type=libboink.hashing.RollingHashShifter)
+@using(ksize=15, length=100, hasher_type=libboink.hashing.FwdRollingShifter)
+@exact_backends()
 class TestDecisionNodes(object):
 
     def test_new_decision_from_fork(self, ksize, length, graph, compactor,

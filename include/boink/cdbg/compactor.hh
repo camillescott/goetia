@@ -28,8 +28,8 @@
 
 namespace boink {
 namespace cdbg {
-#define DEBUG_CPTR
 
+# define DEBUG_CPTR
 # ifdef DEBUG_CPTR
 #   define pdebug(x) do { std::cerr << std::endl << "@ " << __FILE__ <<\
                           ":" << __FUNCTION__ << ":" <<\
@@ -235,7 +235,7 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
         size_t insert_sequence(const std::string& sequence,
                                std::shared_ptr<std::vector<hash_type>> hashes = nullptr) {
             std::set<hash_type> new_kmers;
-            std::deque<compact_segment> segments;
+            std::vector<compact_segment> segments;
             std::set<hash_type> new_decision_kmers;
             std::deque<neighbor_pair_type> decision_neighbors;
             //std::vector<hash_type> hashes;
@@ -256,7 +256,7 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
                                  new_decision_kmers,
                                  decision_neighbors);
 
-            for (auto& h : *hashes) {
+            for (const auto& h : *hashes) {
                 dbg->insert(h);
             }
 
@@ -282,7 +282,7 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
                             size_t end,
                             hash_type right_anchor,
                             hash_type right_flank,
-                            std::deque<compact_segment>& segments) {
+                            std::vector<compact_segment>& segments) {
             
             segment.length = end - segment.start_pos + this->_K;
             segment.right_anchor = right_anchor;
@@ -292,7 +292,7 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
         }
 
         void finish_decision_segment(compact_segment& segment,
-                                     std::deque<compact_segment>& segments) {
+                                     std::vector<compact_segment>& segments) {
             segment.length = this->_K;
             segment.right_anchor = segment.left_anchor;
             segment.right_flank = segment.left_flank;
@@ -302,15 +302,16 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
             pdebug("Finished decision segment: " << segment);       
         }
 
-        std::deque<compact_segment> find_new_segments(const std::string& sequence) {
+        std::vector<compact_segment> find_new_segments(const std::string& sequence) {
         
-            std::deque<compact_segment> result;
+            std::vector<compact_segment> result;
             find_new_segments(sequence, result);
             return result;
+
         }
 
         void find_new_segments(const std::string& sequence,
-                               std::deque<compact_segment>& result) {
+                               std::vector<compact_segment>& result) {
             // convenience function for cython land
             std::vector<hash_type> hashes;
             std::set<hash_type> new_kmers;
@@ -329,7 +330,7 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
         void find_new_segments(const std::string& sequence,
                                std::vector<hash_type>& hashes,
                                std::set<hash_type>& new_kmers,
-                               std::deque<compact_segment>& segments,
+                               std::vector<compact_segment>& segments,
                                std::set<hash_type>& new_decision_kmers,
                                std::deque<neighbor_pair_type>& decision_neighbors) {
 
@@ -340,7 +341,7 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
             size_t pos = 0;
             bool cur_new = false, prev_new = false, cur_seen = false, prev_seen = false;
 
-            std::deque<compact_segment> preprocess;
+            std::vector<compact_segment> preprocess;
             compact_segment current_segment; // start null
             std::vector<extender_type> segment_shifters;
             while(!kmers.done()) {
@@ -359,6 +360,8 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
                                                        prev_hash,
                                                        pos);
                         segment_shifters.emplace_back(extender_type(*(kmers.shifter)));
+                        segment_shifters.back().set_cursor(sequence.c_str() + pos);
+                        pdebug("set_cursor on shifter: " << segment_shifters.back().get_cursor());
                     }
                     new_kmers.insert(cur_hash);
                 } else if (!current_segment.is_null() &&
@@ -402,6 +405,7 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
 
             // handle edge case for left_flank of first segment if it starts at pos 0
             if (preprocess[1].start_pos == 0) {
+                pdebug("handle first segment pos 0 edge case");
                 std::vector<shift_type<hashing::DIR_LEFT>>
                     lneighbors = dbg->filter_nodes(segment_shifters[0].left_extensions(),
                                                    new_kmers);
@@ -410,11 +414,13 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
                 } else {
                     preprocess[1].left_flank = preprocess[1].left_anchor;
                 }
+                pdebug("finish left flank edge-case");
             }
 
             // run back through segments and check for new decision kmers
             // This is all super verbose but the goal is to avoid unecessary hashing
             // and a bunch of convoluted logic up in the main segment loop
+            pdebug("start decision segment splitting.");
             auto shifter_iter = segment_shifters.begin();
             for (auto segment : preprocess) {
                 if (segment.is_null()) {
@@ -422,7 +428,7 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
                     continue;
                 }
 
-                std::deque<compact_segment> decision_segments;
+                std::vector<compact_segment> decision_segments;
                 size_t pos = segment.start_pos;
                 size_t suffix_pos = pos + this->_K - 1;
                 while (1) {
@@ -430,6 +436,7 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
                     if (dbg->get_decision_neighbors(&(*shifter_iter),
                                                     neighbors,
                                                     new_kmers)) {
+                        pdebug("found decision k-mer in segment");
                         decision_neighbors.push_back(neighbors);
                         new_decision_kmers.insert(shifter_iter->get());
 
@@ -515,7 +522,7 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
 
        void update_from_segments(const std::string& sequence,
                                   std::set<hash_type>& new_kmers,
-                                  std::deque<compact_segment>& segments,
+                                  std::vector<compact_segment>& segments,
                                   std::set<hash_type> & new_decision_kmers,
                                   std::deque<neighbor_pair_type>& decision_neighbors
                                   ) {
@@ -588,7 +595,7 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
 
             // Now, with the cDBG in a correct state, update its unitigs
             // from our new segments
-            for (auto segment : segments) {
+            for (auto& segment : segments) {
                 if (!segment.is_decision_kmer && !segment.is_null()) {
                     _update_unode(segment, sequence);
                 }
@@ -648,7 +655,7 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
 
             UnitigNode * unode_to_split;
             
-            if ((unode_to_split = cdbg->query_unode_end(root.value())) != nullptr) {
+            if ((unode_to_split = cdbg->query_unode_end(root)) != nullptr) {
                 // special case: induced an end k-mer, just have to trim the u-node,
                 // no need to create a new one
 
@@ -680,7 +687,7 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
                     clip_from = hashing::DIR_RIGHT;
                 }
                 cdbg->clip_unode(clip_from,
-                                 root.value(),
+                                 root,
                                  new_end);
                 return true;
             }
@@ -690,8 +697,8 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
                          neighbors.first.end(),
                          std::back_inserter(lfiltered),
                          [&] (kmer_type neighbor) { return
-                            !new_kmers.count(neighbor.value()) &&
-                            !processed.count(neighbor.value());
+                            !new_kmers.count(neighbor) &&
+                            !processed.count(neighbor);
                          });
 
             std::vector<kmer_type> rfiltered;
@@ -699,8 +706,8 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
                          neighbors.second.end(),
                          std::back_inserter(rfiltered),
                          [&] (kmer_type neighbor) { return
-                            !new_kmers.count(neighbor.value()) &&
-                            !processed.count(neighbor.value());
+                            !new_kmers.count(neighbor) &&
+                            !processed.count(neighbor);
                          });
             // EDGE CASE: split k-mer has no unitig to split because of previous processed
             // nodes or because neighbor is a properly oriented unitig end
@@ -722,18 +729,18 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
                         pdebug("stopped on DECISION_FWD " << step.first);
                         if (step.first == State::STEP) {
                             pdebug("pop off path");
-                            end_hash = step.second.front().value();
+                            end_hash = step.second.front();
                             walk.path.pop_back();
                         }
                     }
                     unode_to_split = cdbg->query_unode_end(end_hash);
 
-                    size_t split_point = walk.path.size() - this->_K  + 1;
-                    hash_type left_unode_new_right = start.value();
+                    size_t split_point = walk.path.size() + 1;
+                    hash_type left_unode_new_right = start;
 
                     pdebug("split point is " << split_point <<
                             " new_right is " << left_unode_new_right
-                           << " root was " << root.value());
+                           << " root was " << root);
                     assert(unode_to_split != nullptr);
 
                     hash_type right_unode_new_left = dbg->hash(unode_to_split->sequence.c_str() + 
@@ -761,8 +768,8 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
                         cdbg->split_unode(unode_to_split->node_id,
                                           0,
                                           root.kmer,
-                                          lfiltered.back().value(),
-                                          rfiltered.back().value());
+                                          lfiltered.back(),
+                                          rfiltered.back());
                         return true;
                     }
                 }
@@ -773,7 +780,6 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
                 pdebug("Found a valid right neighbor, search this way... ("
                        << rfiltered.size() << " in filtered set, should be 1.");
                 auto start = rfiltered.back();
-                std::cout << "rstart: " << start.kmer << std::endl;
                 auto walk = dbg->walk_right(start.kmer, processed);
                 hash_type end_hash = walk.tail();
 
@@ -784,7 +790,7 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
 
                         auto step = dbg->step_left();
                         if (step.first == State::STEP) {
-                            end_hash = step.second.front().value();
+                            end_hash = step.second.front();
                             walk.path.pop_back();
                         }
                     }
@@ -792,11 +798,12 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
                     unode_to_split = cdbg->query_unode_end(end_hash);
                     size_t split_point = unode_to_split->sequence.size()
                                                          - walk.path.size()
+                                                         - this->_K 
                                                          - 1;
                     hash_type new_right = dbg->hash(unode_to_split->sequence.c_str() + 
                                                      split_point - 1,
                                                      this->_K);
-                    hash_type new_left = start.value();
+                    hash_type new_left = start;
                     if (lfiltered.size()) {
                         assert(lfiltered.back().value() == new_right.value());
                     }
@@ -819,8 +826,8 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
                         cdbg->split_unode(unode_to_split->node_id,
                                           0,
                                           root.kmer,
-                                          lfiltered.back().value(),
-                                          rfiltered.back().value());
+                                          lfiltered.back(),
+                                          rfiltered.back());
                         return true;
                     }
                 }
@@ -944,7 +951,7 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
             uint8_t n_found = 0;
             for (auto lneighbor : neighbors.first) {
                 if (new_kmers.count(lneighbor.value()) ||
-                    cdbg->has_dnode(lneighbor.value())) {
+                    cdbg->has_dnode(lneighbor)) {
                     continue;
                 }
                 neighbor_pair_type inductee_neighbors;
@@ -996,7 +1003,7 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
             uint8_t n_found = 0;
             for (auto rneighbor : neighbors.second) {
                 if (new_kmers.count(rneighbor.value()) ||
-                    cdbg->has_dnode(rneighbor.value())) {
+                    cdbg->has_dnode(rneighbor)) {
                     continue;
                 }
 
@@ -1019,7 +1026,7 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
         }
 
         virtual void _build_dnode(kmer_type kmer) {
-            cdbg->build_dnode(kmer.value(), kmer.kmer);
+            cdbg->build_dnode(kmer, kmer.kmer);
         }
 
         uint8_t _add_neighbor_bundle(neighbor_pair_type& bundle) {
@@ -1347,15 +1354,18 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
 
 };
 
-extern template class cdbg::StreamingCompactor<dBG<storage::SparseppSetStorage, hashing::FwdRollingShifter>>;
-extern template class cdbg::StreamingCompactor<dBG<storage::BitStorage, hashing::FwdRollingShifter>>;
-extern template class cdbg::StreamingCompactor<dBG<storage::ByteStorage, hashing::FwdRollingShifter>>;
-extern template class cdbg::StreamingCompactor<dBG<storage::NibbleStorage, hashing::FwdRollingShifter>>;
-extern template class cdbg::StreamingCompactor<dBG<storage::QFStorage, hashing::FwdRollingShifter>>;
-
-
 
 }
 }
+
+extern template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::SparseppSetStorage, boink::hashing::FwdRollingShifter>>;
+extern template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::BitStorage, boink::hashing::FwdRollingShifter>>;
+extern template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::ByteStorage, boink::hashing::FwdRollingShifter>>;
+extern template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::NibbleStorage, boink::hashing::FwdRollingShifter>>;
+extern template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::QFStorage, boink::hashing::FwdRollingShifter>>;
+
+extern template class std::deque<boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::SparseppSetStorage, boink::hashing::FwdRollingShifter>>>;
+
+
 #undef pdebug
 #endif
