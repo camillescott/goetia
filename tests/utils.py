@@ -17,18 +17,15 @@ from cppyy.gbl import std
 import boink
 from boink import boink as libboink
 from boink.hashing import types as hashing_types
-from boink.utils import check_trait
+from boink.utils import check_trait, pretty_repr
 from boink.storage import _types as storage_types
 
 from boink.hashing import (FwdRollingShifter, CanRollingShifter,
                            FwdUnikmerShifter, CanUnikmerShifter,
                            UKHS)
 
-def storage_t_name(t):
-    return t[0].__name__
 
-
-@pytest.fixture(params=storage_types, ids=storage_t_name)
+@pytest.fixture(params=storage_types, ids=lambda t: pretty_repr(t[0]))
 def storage_type(request):
     _storage_type, params = request.param
     return _storage_type, params
@@ -36,7 +33,7 @@ def storage_type(request):
 
 @pytest.fixture(params=[FwdRollingShifter, CanRollingShifter,
                         FwdUnikmerShifter, CanUnikmerShifter],
-                ids=lambda t: t.__name__.replace(' ', ''))
+                ids=lambda t: pretty_repr(t))
 def hasher_type(request, ksize):
     _hasher_type = request.param
     if _hasher_type.__name__.startswith('UnikmerShifter'):

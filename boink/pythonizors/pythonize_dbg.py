@@ -13,8 +13,10 @@ def pythonize_boink(klass, name):
             else:
                 return self.insert_sequence(item)
 
-        def get(self, item):
-            return self.query(item)
+        def wrap_query(func):
+            def _get(self, item):
+                return func(self, item)
+            return _get
 
         def shallow_clone(self):
             return self.clone()
@@ -33,8 +35,14 @@ def pythonize_boink(klass, name):
             self.set_cursor(kmer)
             return self.out_degree()
 
+        def wrap_get(func):
+            def _get(self):
+                return func(self)
+            return _get
+
         klass.add = add
-        klass.get = get
+        klass.get_hash = wrap_get(klass.get)
+        klass.get = wrap_query(klass.query)
         klass.left_degree = left_degree
         klass.right_degree = right_degree
         klass.shallow_clone = shallow_clone

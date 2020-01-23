@@ -101,23 +101,31 @@ public:
 
 protected:
 
+    using extender_type::_K;
+
     // dummy template for overload specialization
     // for templated member functions
     template<typename T> struct type { };
 
 
+public:
+
     template<bool Dir>
     struct WalkBase {
-        kmer_type                    start;
-        std::vector<shift_type<Dir>> path;
-        State                        end_state;
+        kmer_type                                        start;
+        std::vector<hashing::ShiftModel<hash_type, Dir>> path;
+        TraversalState::State                            end_state;
 
         const hash_type head() const {
-            return this->start.value();
+            return this->start;
         }
 
         const hash_type tail() const {
-            return path.back().value();
+            if (path.size()) {
+                return path.back();
+            } else {
+                return start;
+            }
         }
 
     };
@@ -137,6 +145,10 @@ protected:
             }
             return std::move(str);
         }
+
+        const std::string glue(const WalkImpl<hashing::DIR_LEFT>& left) const {
+            return left.to_string() + this->to_string().substr(start.kmer.size());
+        }
     };
 
     template<typename Dummy>
@@ -153,19 +165,29 @@ protected:
                 str.push_back(it->symbol);
             }
             std::copy(start.kmer.begin(), start.kmer.end(), std::back_inserter(str));
+            return std::move(str);
+        }
+
+        const std::string glue(const WalkImpl<hashing::DIR_RIGHT>& right) const {
+            return this->to_string() + right.to_string().substr(start.kmer.size());
         }
     };
 
-
-
-
-    using extender_type::_K;
-
-public:
-
     template<bool Dir>
-        using Walk = WalkImpl<Dir>;
+    struct Walk : public WalkImpl<Dir> {
+        typedef WalkImpl<Dir> walk_type;
+
+        using walk_type::start;
+        using walk_type::path;
+        using walk_type::end_state;
+        using walk_type::to_string;
+        using walk_type::head;
+        using walk_type::tail;
+        using walk_type::glue;
+    };
+
     typedef std::pair<Walk<hashing::DIR_LEFT>, Walk<hashing::DIR_RIGHT>> walk_pair_type;
+
 
     using extender_type::set_cursor;
     using extender_type::get_cursor;

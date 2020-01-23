@@ -10,36 +10,57 @@
 import pytest
 
 from boink import libboink
-from boink.traversal import Assembler, STATES
+from boink.traversal import STATES
 
 from .utils import *
 
 
-@pytest.fixture
-def asm(request, ksize, graph):
-
-    return Assembler(graph)
-
-
-
-def test_assembler_cursor(asm, ksize):
+def test_cursor(graph, ksize):
     seed = 'A' * ksize
 
-    asm.cursor = seed
-    assert asm.cursor == seed
+    graph.cursor = seed
+    assert graph.cursor == seed
 
 
-@pytest.mark.parametrize('hasher_type', [libboink.hashing.RollingHashShifter], indirect=True)
-def test_assembler_cursor_wrong_size(asm, ksize):
+def test_cursor_wrong_size(graph, ksize):
     seed = 'A' * (ksize - 1)
     
     with pytest.raises(BaseException):
-        asm.cursor = seed
+        graph.cursor = seed
+
+
+class TestWalk:
+
+    def test_to_string(self, ksize, linear_path, graph, consume, check_fp):
+        contig = linear_path()
+        check_fp()
+        consume()
+
+        walk = graph.walk_right(contig[0:ksize])
+        assert walk.to_string() == contig
+        assert str(walk) == contig
+
+    def test_tail(self, ksize, linear_path, graph, consume, check_fp):
+        contig = linear_path()
+        check_fp()
+        consume()
+
+        walk = graph.walk_right(contig[0:ksize])
+        assert walk.tail() == graph.get_hash()
+
+    def test_glue(self, ksize, linear_path, graph, consume, check_fp):
+        contig = linear_path()
+        check_fp()
+        consume()
+
+        lwalk, rwalk = graph.walk(contig[1:ksize+1])
+        assert lwalk.glue(rwalk) == contig
+        assert rwalk.glue(lwalk) == contig
 
 
 class TestLinear:
 
-    def test_all_start_positions(self, ksize, linear_path, asm, consume, check_fp):
+    def test_all_start_positions(self, ksize, linear_path, graph, consume, check_fp):
         # assemble entire contig, starting from wherever
         contig = linear_path()
         check_fp()
@@ -48,13 +69,15 @@ class TestLinear:
         for start in range(0, len(contig), 150):
             if len(contig) - start < ksize:
                 continue
-            asm.clear_seen()
-            path, (lstate, lend), (rstate, rend) = asm.assemble(contig[start:start + ksize])
+            graph.clear_seen()
+            lwalk, rwalk = graph.walk(contig[start:start + ksize])
+            path = lwalk.glue(rwalk)
+
             assert path == contig, (len(path), len(contig), start)
-            assert lstate == rstate == STATES.STOP_FWD
+            assert lwalk.end_state == rwalk.end_state == STATES.STOP_FWD
 
     @using(ksize=21, length=81)
-    def test_all_left_to_beginning(self, ksize, length, linear_path, asm, consume, check_fp):
+    def test_all_left_to_beginning(self, ksize, length, linear_path, graph, consume, check_fp):
         # assemble directed left
         contig = linear_path()
         check_fp()
@@ -63,13 +86,13 @@ class TestLinear:
         for start in range(0, len(contig), length // 5):
             if len(contig) - start < ksize:
                 continue
-            asm.clear_seen()
-            path, (state, end) = asm.assemble_left(contig[start:start + ksize])
-            assert path == contig[:start + ksize], start
-            assert state == STATES.STOP_FWD
+            graph.clear_seen()
+            walk = graph.walk_left(contig[start:start + ksize])
+            assert walk.to_string() == contig[:start + ksize], start
+            assert walk.end_state == STATES.STOP_FWD
 
     @using(ksize=21, length=81)
-    def test_all_right_to_end(self, ksize, length, linear_path, asm, consume, check_fp):
+    def test_all_right_to_end(self, ksize, length, linear_path, graph, consume, check_fp):
         # assemble directed right
         contig = linear_path()
         check_fp()
@@ -78,86 +101,90 @@ class TestLinear:
         for start in range(0, len(contig), length // 5):
             if len(contig) - start < ksize:
                 continue
-            asm.clear_seen()
-            path, (state, end) = asm.assemble_right(contig[start:start + ksize])
-            assert path == contig[start:], start
-            assert state == STATES.STOP_FWD
+            graph.clear_seen()
+            walk = graph.walk_right(contig[start:start + ksize])
+            assert walk.to_string() == contig[start:], start
+            assert walk.end_state == STATES.STOP_FWD
 
-    def test_circular(self, ksize, circular, asm, consume, check_fp):
+    def test_circular(self, ksize, circular, graph, consume, check_fp):
         contig = circular()
         check_fp()
         consume()
 
-        path, (state, end) = asm.assemble_right(contig[:ksize])
+        walk = graph.walk_right(contig[:ksize])
+        path = walk.to_string()
         print(path, ',', contig)
         assert path == contig[:len(path)]
-        assert state == STATES.STOP_SEEN
+        assert walk.end_state == STATES.STOP_SEEN
 
 
 class TestDecisions:
 
-    def test_decision_fwd(self, ksize, right_fork, asm, graph, consume, check_fp):
+
+    def test_decision_fwd(self, ksize, right_fork, graph, consume, check_fp):
         (sequence, branch), S = right_fork()
         check_fp()
         consume()
 
-        path, (state, end) = asm.assemble_right(sequence[:ksize])
-        assert state == STATES.DECISION_FWD
+        walk = graph.walk_right(sequence[:ksize])
+        path = walk.to_string()
+        assert walk.end_state == STATES.DECISION_FWD
         assert path == sequence[:S+ksize]
-        assert end == graph.hash(sequence[S:S+ksize])
+        assert walk.tail() == graph.hash(sequence[S:S+ksize])
         assert graph.right_degree(path[-ksize:]) == 2
 
-        assembled_branch, (lstate, lend), (rstate, rend) = asm.assemble(branch[-ksize:])
-        assert branch == assembled_branch
+        lwalk, rwalk = graph.walk(branch[-ksize:])
+        assert branch == lwalk.glue(rwalk)
 
     
-    def test_decision_rc(self, ksize, right_fork, asm, graph, consume, check_fp):
+    def test_decision_rev(self, ksize, right_fork, graph, consume, check_fp):
         '''Test that we assemble through fork from the right when we haven't
         assembled the core path already.'''
         (sequence, branch), S = right_fork()
         check_fp()
         consume()
         
-        path, (lstate, lend), (rstate, rend) = asm.assemble(branch[-ksize:])
+        lwalk, rwalk = graph.walk(branch[-ksize:])
+        path = lwalk.glue(rwalk)
 
         assert branch == path
         assert graph.left_degree(path[:ksize]) == 1
         assert graph.right_degree(path[:ksize]) == 1
-        assert lstate == STATES.DECISION_RC
+        assert lwalk.end_state == STATES.DECISION_RC
         print('Hash:', graph.hash(sequence[S:S+ksize]))
-        assert lend == graph.hash(branch[:ksize])
-        assert rstate == STATES.STOP_FWD
-        assert rend == graph.hash(branch[-ksize:])
+        assert lwalk.tail() == graph.hash(branch[:ksize])
+        assert rwalk.end_state == STATES.STOP_FWD
+        assert rwalk.tail() == graph.hash(branch[-ksize:])
 
-    def test_start_from_reverse_decision_left(self, ksize, right_fork, asm, graph, consume, check_fp):
+    def test_start_from_reverse_decision_left(self, ksize, right_fork, graph, consume, check_fp):
         (sequence, branch), S = right_fork()
         check_fp()
         consume()
 
-        path, (lstate, lend) = asm.assemble_left(sequence[S:S+ksize])
-        assert path == sequence[:S+ksize]
-        assert lstate == STATES.STOP_FWD
+        walk = graph.walk_left(sequence[S:S+ksize])
+        assert walk.to_string() == sequence[:S+ksize]
+        assert walk.end_state == STATES.STOP_FWD
 
-    def test_start_from_reverse_decision_right(self, ksize, left_fork, asm, graph, consume, check_fp):
+    def test_start_from_reverse_decision_right(self, ksize, left_fork, graph, consume, check_fp):
         (sequence, branch), S = left_fork()
         check_fp()
         consume()
 
-        path, (rstate, rend) = asm.assemble_right(sequence[S:S+ksize])
-        assert path == sequence[S:]
-        assert rstate == STATES.STOP_FWD
+        walk = graph.walk_right(sequence[S:S+ksize])
+        assert walk.to_string() == sequence[S:]
+        assert walk.end_state == STATES.STOP_FWD
 
     def test_triple_decision_fwd(self, ksize, right_triple_fork,
-                                 asm, consume, check_fp):
+                                 graph, consume, check_fp):
         (core, top, bottom), S = right_triple_fork()
         check_fp()
         consume()
         
-        path, (state, end) = asm.assemble_right(core[:ksize])
-        assert path == core[:S+ksize]
+        rwalk = graph.walk_right(core[:ksize])
+        assert str(rwalk) == core[:S+ksize]
         
-        path, (lstate, lend), (rstate, rend) = asm.assemble(top[-ksize:])
-        assert top == path
+        lwalk, rwalk = graph.walk(top[-ksize:])
+        assert top == lwalk.glue(rwalk)
 
-        path, (lstate, lend), (rstate, rend) = asm.assemble(bottom[-ksize:])
-        assert bottom == path
+        lwalk, rwalk = graph.walk(bottom[-ksize:])
+        assert bottom == lwalk.glue(rwalk)

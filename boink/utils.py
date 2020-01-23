@@ -10,6 +10,12 @@ import itertools
 import os
 import re
 
+primitives = {
+    'unsigned long': 'uint64_t',
+    'long': 'uint64_t',
+    'unsigned short': 'uint64_t'
+}
+
 
 def grouper(n, iterable):
     iterable = iter(iterable)
@@ -41,3 +47,16 @@ def copy_attrs(src, dst, attrs):
 def set_typedef_attrs(dst_klass, attrs):
     for attr in attrs:
         setattr(dst_klass, attr, property(lambda self: getattr(type(self), attr)))
+
+
+
+
+def pretty_repr(tname):
+    namespaces = ['boink', 'hashing', 'sequences', 'kmers', 'storage', 'cdbg', 'parsing', 'reporting', 'events', 'metrics']
+    pretty = tname.__name__.replace(' >', '>').replace('  >', '>')
+    for namespace in namespaces:
+        pretty = pretty.replace(namespace + '::', '')
+    for old, new in primitives.items():
+        pretty = pretty.replace(old, new)
+    pretty = '(' + pretty + ')'
+    return pretty

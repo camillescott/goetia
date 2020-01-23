@@ -181,7 +181,11 @@ def initialize(pkg, lib_file, map_file, noisy=False):
     # having their pythonizors applied
     #
     pythonization_files = glob.glob(os.path.join(pkg_dir, '**/pythonize*.py'), recursive=True)
-    add_pythonizations(pythonization_files, noisy=noisy)
+    try:
+        add_pythonizations(pythonization_files, noisy=noisy)
+    except Exception as e:
+        print('Error loading pythonizations: ', e, file=sys.stderr)
+        sys.exit(1)
 
     #
     # Parse the map file.

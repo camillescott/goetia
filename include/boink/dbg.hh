@@ -68,9 +68,6 @@ public:
 
     friend walker_type;
 
-    using walker_type::K;
-
-    //dBG(ShifterType& hasher, std::shared_ptr<StorageType> S);
     dBG(std::shared_ptr<StorageType> S, ShifterType& shifter)
         : walker_type(shifter),
           S(S)
@@ -400,6 +397,11 @@ public:
     ShifterType get_hasher() {
         return ShifterType(*this);
     }
+    
+    using walker_type::get;
+    using walker_type::shift_left;
+    using walker_type::shift_right;
+    using walker_type::K;
 
     using Processor = InserterProcessor<dBG>;
 
