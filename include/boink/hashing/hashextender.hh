@@ -64,8 +64,8 @@ using supports_right_extension = is_detected<right_extension_t, ShifterType>;
  * @tparam ShifterType   HashShifter providing the shifting policy.
  */
 template <class ShifterType>
-class HashExtender : public ShifterType,
-                     public KmerSpanMixin<ShifterType>::type {
+class HashExtender : public KmerSpanMixin<ShifterType>::type,
+                     public ShifterType {
 
 public:
 
@@ -79,48 +79,67 @@ public:
         using shift_type = ShiftModel<hash_type, Dir>;
     typedef ShiftModel<hash_type, DIR_LEFT>  shift_left_type;
     typedef ShiftModel<hash_type, DIR_RIGHT> shift_right_type;
-
     typedef KmerModel<hash_type>             kmer_type;
-
-    using ShifterType::_K;
-
     typedef typename ShifterType::alphabet alphabet;
 
+    using shifter_type::get;
+    using shifter_type::K;
+    using shifter_type::hash;
+
+protected:
+
+    /*
+     * shift_left, shift_right, and hash_base from the underlying shifter
+     * will put the extender in an invalid state. we make them protected and override
+     * them below to prevent screwups.
+     */
+    using shifter_type::shift_right;
+    using shifter_type::shift_left;
+    using shifter_type::hash_base;
+    using ShifterType::_K;
+
+public:
+
     template<typename... ExtraArgs>
-    HashExtender(const std::string& start,
+    __attribute__((visibility("default")))
+    explicit HashExtender(const std::string& start,
                  uint16_t           K,
                  ExtraArgs&&...     args)
         : ShifterType(K, std::forward<ExtraArgs>(args)...),
           span_mixin_type(K)
     {
         set_cursor(start);
+        std::cout << "END HashExtender(start...) ctor" << std::endl;
     }
 
     template<typename... ExtraArgs>
-    HashExtender(uint16_t K,
+    __attribute__((visibility("default")))
+    explicit HashExtender(uint16_t K,
                  ExtraArgs&&... args)
         : ShifterType(K, std::forward<ExtraArgs>(args)...),
           span_mixin_type(K)
     {
+        std::cout << "END HashExtender(K...) ctor" << std::endl;
     }
 
-    HashExtender(const HashExtender& extender)
+    __attribute__((visibility("default")))
+    explicit HashExtender(const HashExtender& extender)
         : ShifterType(static_cast<ShifterType>(extender)),
           span_mixin_type(extender.K())
     {
+        std::cout << "END HashExtender(HashExtender&......) ctor" << std::endl;
     }
 
-    HashExtender(const shifter_type& shifter)
+    explicit HashExtender(const shifter_type& shifter)
         : ShifterType(shifter),
           span_mixin_type(shifter.K())
     {
+        std::cout << "END HashExtender(shifter_type&...) ctor" << std::endl;
     }
 
-    using shifter_type::get;
-    using shifter_type::shift_right;
-    using shifter_type::shift_left;
-    using shifter_type::K;
-
+    ~HashExtender() {
+        std::cout << "HashExtender dstor " << this << " / shifter " << dynamic_cast<shifter_type*>(this) << std::endl;
+    }
 
     /**
      * @Synopsis  Shift cursor left from current value using
@@ -137,7 +156,7 @@ public:
             throw UninitializedShifterException();
         }
 
-        hash_type h = shift_left(c, this->back());
+        hash_type h = ShifterType::shift_left(c, this->back());
         this->kmer_window.push_front(c);
         return h;
     }
@@ -149,9 +168,14 @@ public:
             throw UninitializedShifterException();
         }
 
-        hash_type h = shift_left(c, this->back());
+        hash_type h = ShifterType::shift_left(c, this->back());
         return h;
     }
+
+    hash_type shift_left(const char& in, const char& out) {
+        return shift_left(in);
+    }
+    
 
     /**
      * @Synopsis  Gather the left extensions from the current position using
@@ -168,7 +192,7 @@ public:
      * @Returns   A list of left extensions.
      */
     template<typename Dummy = std::vector<shift_left_type>>
-    auto left_extensions(const std::string_view& symbols = alphabet::SYMBOLS)
+    auto left_extensions()
     -> std::enable_if_t<!supports_left_extension<ShifterType>::value, Dummy> {
 
         if (!this->is_loaded()) {
@@ -177,11 +201,11 @@ public:
 
         std::vector<shift_left_type> hashes;
         auto back = this->back();
-        for (auto symbol : symbols) {
-            hash_type h = this->shift_left(symbol, back);
+        for (const auto& symbol : alphabet::SYMBOLS) {
+            hash_type h = ShifterType::shift_left(symbol, back);
             shift_left_type result(h, symbol);
             hashes.push_back(result);
-            this->shift_right(symbol, back);
+            ShifterType::shift_right(symbol, back);
         }
 
         return hashes;
@@ -203,14 +227,14 @@ public:
      * @Returns   A list of left extensions.
      */
     template<typename Dummy = std::vector<shift_left_type>>
-    auto left_extensions(const std::string_view& symbols = alphabet::SYMBOLS)
+    auto left_extensions()
     -> std::enable_if_t<supports_left_extension<ShifterType>::value, Dummy> {
 
         if (!this->is_loaded()) {
             throw UninitializedShifterException();
         }
 
-        return ShifterType::_left_extensions(symbols);
+        return ShifterType::_left_extensions();
     }
 
     /**
@@ -228,7 +252,7 @@ public:
             throw UninitializedShifterException();
         }
 
-        hash_type h = shift_right(this->front(), c);
+        hash_type h = ShifterType::shift_right(this->front(), c);
         this->kmer_window.push_back(c);
         return h;
     }
@@ -241,8 +265,12 @@ public:
             throw UninitializedShifterException();
         }
 
-        hash_type h = shift_right(this->front(), c);
+        hash_type h = ShifterType::shift_right(this->front(), c);
         return h;
+    }
+
+    hash_type shift_right(const char& out, const char& in) {
+        return shift_right(in);
     }
 
     /**
@@ -260,7 +288,7 @@ public:
      * @Returns   A vector of right extensions.
      */
     template<typename Dummy = std::vector<shift_right_type>>
-    auto right_extensions(const std::string_view& symbols = alphabet::SYMBOLS)
+    auto right_extensions()
     -> std::enable_if_t<!supports_right_extension<ShifterType>::value, Dummy> {
 
         if (!this->is_loaded()) {
@@ -269,10 +297,10 @@ public:
 
         std::vector<shift_right_type> hashes;
         auto front = this->front();
-        for (auto symbol : symbols) {
-            hash_type h = this->shift_right(front, symbol);
+        for (const auto& symbol : alphabet::SYMBOLS) {
+            hash_type h = ShifterType::shift_right(front, symbol);
             hashes.push_back(shift_right_type(h, symbol));
-            this->shift_left(front, symbol);
+            ShifterType::shift_left(front, symbol);
         }
         return hashes;
     }
@@ -293,14 +321,14 @@ public:
      * @Returns   A vector of right extensions.
      */
     template<typename Dummy = std::vector<shift_right_type>>
-    auto right_extensions(const std::string_view& symbols = alphabet::SYMBOLS)
+    auto right_extensions()
     -> std::enable_if_t<supports_right_extension<ShifterType>::value, Dummy> {
 
         if (!this->is_loaded()) {
             throw UninitializedShifterException();
         }
 
-        return ShifterType::_right_extensions(symbols);
+        return ShifterType::_right_extensions();
     }
 
     /**
@@ -316,7 +344,7 @@ public:
         if (sequence.length() < _K) {
             throw SequenceLengthException("Sequence must at least length K");
         }
-        this->hash_base(sequence.c_str());
+        ShifterType::hash_base(sequence.c_str());
         this->load(sequence);
         return get();
     }
@@ -327,7 +355,7 @@ public:
         if (sequence.length() < _K) {
             throw SequenceLengthException("Sequence must at least length K");
         }
-        this->hash_base(sequence.c_str());
+        ShifterType::hash_base(sequence.c_str());
         return get();
     }
 
@@ -342,7 +370,7 @@ public:
     auto set_cursor(const char * sequence)
     -> std::enable_if_t<KmerSpanMixin<ShifterType>::enabled, Dummy> {
         // less safe! does not check length
-        this->hash_base(sequence);
+        ShifterType::hash_base(sequence);
         this->load(sequence);
         return get();
     }
@@ -351,8 +379,20 @@ public:
     auto set_cursor(const char * sequence)
     -> std::enable_if_t<!KmerSpanMixin<ShifterType>::enabled, Dummy> {
         // less safe! does not check length
-        this->hash_base(sequence);
+        ShifterType::hash_base(sequence);
         return get();
+    }
+
+    hash_type hash_base(const std::string& sequence) {
+        if (sequence.length() < _K) {
+            throw SequenceLengthException("Sequence must at least length K");
+        }
+
+        return set_cursor(sequence);
+    }
+
+    hash_type hash_base(const char * sequence) {
+        return set_cursor(sequence);
     }
 
     /**
@@ -390,6 +430,7 @@ extern template class HashExtender<CanRollingShifter>;
 
 extern template class HashExtender<FwdUnikmerShifter>;
 extern template class HashExtender<CanUnikmerShifter>;
+
 
 extern template class KmerIterator<HashExtender<FwdRollingShifter>>;
 extern template class KmerIterator<HashExtender<CanRollingShifter>>;

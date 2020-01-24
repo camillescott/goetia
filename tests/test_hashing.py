@@ -8,8 +8,15 @@
 import pytest
 from .utils import *
 from boink import libboink
-from boink.hashing import FwdRollingShifter, CanRollingShifter, FwdUnikmerShifter, CanUnikmerShifter
+from boink.hashing import (FwdRollingShifter, CanRollingShifter, 
+                           FwdUnikmerShifter, CanUnikmerShifter,
+                           HashExtender)
 
+known_kmer = 'TCACCTGTGTTGTGCTACTTGCGGCGC'
+known_fwd = 13194817695400542713
+known_rc = 4324216031038051805
+known_can = known_rc
+known_hashes = (known_fwd, known_rc)
 
 
 def get_min_unikmer(wmer, uk_map, shifter_type):
@@ -25,6 +32,23 @@ def get_min_unikmer(wmer, uk_map, shifter_type):
     print([f'{i}: {u}' for i, u in zip(positions, unikmers)])
     #print([str(u) for u in unikmers])
     return wmer_hash, min(unikmers, key=lambda elem: elem.value)
+
+@using(ksize=27)
+def test_extender_hash_base_override(hasher, ksize):
+    extender = HashExtender[type(hasher)](hasher)
+
+    extender.hash_base(known_kmer)
+    assert extender.get_cursor() == known_kmer
+    assert extender.get().value in known_hashes
+
+
+@using(ksize=27)
+def test_extender_set_cursor(hasher, ksize):
+    extender = HashExtender[type(hasher)](hasher)
+
+    extender.set_cursor(known_kmer)
+    assert extender.get_cursor() == known_kmer
+    assert extender.get().value in known_hashes
 
 
 @using(ksize=27)
@@ -180,6 +204,75 @@ def test_shift_right(hasher, ksize, length, random_sequence):
 
     assert exp == fwd_hashes
 
+
+@pytest.mark.parametrize('hasher_type', [FwdRollingShifter, CanRollingShifter], indirect=True)
+@using(ksize=27)
+def test_kmeriterator_owner_init(hasher_type, ksize):
+    hasher_type, _ = hasher_type
+    it = libboink.hashing.KmerIterator[hasher_type](known_kmer, ksize)
+    assert it.first().value in known_hashes
+
+
+#@pytest.mark.parametrize('hasher_type', [FwdRollingShifter, CanRollingShifter], indirect=True)
+#@using(ksize=27)
+#def test_kmeriterator_nonowner_init(hasher, ksize, length, random_sequence):
+#    it = libboink.hashing.KmerIterator[type(hasher)](known_kmer, hasher.__smartptr__().get())
+#    assert it.first().value in known_hashes
+#    assert hasher.get().value in known_hashes
+
+
+@pytest.mark.parametrize('hasher_type', [FwdRollingShifter, CanRollingShifter], indirect=True)
+@using(ksize=27)
+def test_kmeriterator_proto_init(hasher, ksize):
+    it = libboink.hashing.KmerIterator[type(hasher)](known_kmer, hasher)
+    assert it.first().value in known_hashes
+
+
+@pytest.mark.parametrize('hasher_type', [FwdRollingShifter, CanRollingShifter], indirect=True)
+def test_kmeriterator(hasher, ksize, length, random_sequence):
+    s = random_sequence()
+
+    exp = [hasher.hash(kmer).value for kmer in kmers(s, ksize)]
+    
+    it = libboink.hashing.KmerIterator[type(hasher)](s, ksize)
+    act = []
+    while not it.done():
+        h = it.next()
+        act.append(h.value)
+    
+    assert act == exp
+
+
+@pytest.mark.parametrize('hasher_type', [FwdRollingShifter, CanRollingShifter], indirect=True)
+def test_kmeriterator_from_proto(hasher, ksize, length, random_sequence):
+    s = random_sequence()
+
+    exp = [hasher.hash(kmer).value for kmer in kmers(s, ksize)]
+    
+    it = libboink.hashing.KmerIterator[type(hasher)](s, hasher)
+    act = []
+    while not it.done():
+        h = it.next()
+        act.append(h.value)
+    
+    assert act == exp
+
+
+
+@pytest.mark.parametrize('hasher_type', [FwdRollingShifter, CanRollingShifter], indirect=True)
+def test_kmeriterator_hashextender(hasher, ksize, length, random_sequence):
+    s = random_sequence()
+    extender = HashExtender[type(hasher)](hasher)
+
+    exp = [extender.hash(kmer).value for kmer in kmers(s, ksize)]
+    
+    it = libboink.hashing.KmerIterator[type(extender)](s, ksize)
+    act = []
+    while not it.done():
+        h = it.next()
+        act.append(h.value)
+    
+    assert act == exp
 
 @using(length=30, ksize=27)
 def test_shift_right_left_right(hasher, ksize, length, random_sequence):

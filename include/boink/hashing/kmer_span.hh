@@ -43,9 +43,11 @@ protected:
           kmer_window(kmer_buffer, kmer_buffer + K, kmer_buffer, K),
           loaded(false)
     {
+        std::cout << "span enabled with K=" << K << std::endl;
     }
 
     ~KmerSpanMixinImpl() {
+        std::cout << "delete span buffer" << std::endl;
         delete [] kmer_buffer;
     }
 
@@ -120,6 +122,7 @@ public:
 protected:
 
     KmerSpanMixinImpl(uint16_t K) {
+        std::cout << "span disabled" << std::endl;
     }
 };
 

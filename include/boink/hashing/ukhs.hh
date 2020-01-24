@@ -436,7 +436,7 @@ public:
         return this->get();
     }
 
-    auto _left_extensions(const std::string_view& symbols)
+    auto _left_extensions()
     -> std::vector<shift_left_type> {
 
         std::vector<shift_left_type> hashes;
@@ -463,7 +463,7 @@ public:
         // to see if the neighbor w-mer has a different minimizer
         const char back = this->kmer_window.back();
         const char uback = *(this->kmer_window.begin() + _unikmer_K - 1);
-        for (const auto& symbol : symbols) {
+        for (const auto& symbol : alphabet::SYMBOLS) {
             window_hasher.shift_left(symbol, back);
             unikmer_hasher.shift_left(symbol, uback);
 
@@ -485,7 +485,7 @@ public:
         return hashes;
     }
 
-    auto _right_extensions(const std::string_view& symbols)
+    auto _right_extensions()
     -> std::vector<shift_right_type> {
         
         std::vector<shift_right_type> hashes;
@@ -509,7 +509,7 @@ public:
         const char front = this->kmer_window.front();
         const char ufront = *(kmer_window.begin() + this->_K - _unikmer_K);
 
-        for (const auto& symbol : symbols) {
+        for (const auto& symbol : alphabet::SYMBOLS) {
             window_hasher.shift_right(front, symbol);
             unikmer_hasher.shift_right(ufront, symbol);
 

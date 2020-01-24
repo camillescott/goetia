@@ -36,7 +36,8 @@ protected:
     CyclicHash<value_type> hasher;
 
     RollingHashShifterBase(uint16_t K)
-        : hasher(K) {}
+        : hasher(K) {
+        }
 };
 
 template<>
@@ -54,10 +55,11 @@ protected:
 
 
 template<class HashType = HashModel<uint64_t>>
-class RollingHashShifter : public HashShifter<RollingHashShifter<HashType>,
+class RollingHashShifter : public RollingHashShifterBase<HashType>,
+                           public HashShifter<RollingHashShifter<HashType>,
                                               HashType,
-                                              DNA_SIMPLE>,
-                           public RollingHashShifterBase<HashType> {
+                                              DNA_SIMPLE>
+                           {
 
     typedef HashShifter<RollingHashShifter<HashType>,
                         HashType,
@@ -70,6 +72,7 @@ public:
 
     using BaseShifter::NAME;
     using BaseShifter::OBJECT_ABI_VERSION;
+    using BaseShifter::get;
 
     typedef typename BaseShifter::value_type value_type;
     typedef typename BaseShifter::hash_type  hash_type;
@@ -77,22 +80,29 @@ public:
     typedef typename BaseShifter::alphabet   alphabet;
 
 
-    RollingHashShifter(const std::string& start,
+    explicit RollingHashShifter(const std::string& start,
                        uint16_t K)
-        : BaseShifter(start, K),
-          RollingHashShifterBase<HashType>(K)
-    {    
+        : RollingHashShifterBase<HashType>(K),
+          BaseShifter(start, K)
+    {   
+        std::cout << "RollingHashShifter(start, K) ctor" << std::endl; 
     }
 
-    RollingHashShifter(uint16_t K)
-        : BaseShifter(K),
-          RollingHashShifterBase<HashType>(K)
+    explicit RollingHashShifter(uint16_t K)
+        : RollingHashShifterBase<HashType>(K),
+          BaseShifter(K)
     {
+        std::cout << "RollingHashShifter(K) ctor" << std::endl;
     }
 
-    RollingHashShifter(RollingHashShifter const& other)
+    explicit RollingHashShifter(RollingHashShifter const& other)
         : RollingHashShifter(other.K())
     {
+        std::cout << "RollingHashShifter(other) ctor" << std::endl;
+    }
+
+    ~RollingHashShifter() {
+        std::cout << "RollingHashShifter dstor " << this << "/ base " << dynamic_cast<BaseShifter*>(this) << std::endl;
     }
 
     __attribute__((visibility("default")))
@@ -119,6 +129,7 @@ public:
     }
 
     hash_type _get() {
+        std::cout << "RollingHashShifter _get() of " << this << "/ base " << dynamic_cast<BaseShifter*>(this) << std::endl;
         return {this->hasher.hashvalue};
     }
 

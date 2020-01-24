@@ -4,7 +4,8 @@ from cppyy import gbl
 
 def pythonize_boink(klass, name):
 
-    if is_template_inst('FileProcessor', name):
+    is_inst, _ = is_template_inst(name, 'FileProcessor')
+    if is_inst:
         def chunked_process(self, filename, right_filename=None):
             from boink.parsing import FastxReader, SplitPairedReader
             if right_filename is None:

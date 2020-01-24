@@ -23,5 +23,4 @@ namespace boink::hashing {
 
     template class KmerIterator<HashExtender<FwdUnikmerShifter>>;
     template class KmerIterator<HashExtender<CanUnikmerShifter>>;
-
 }

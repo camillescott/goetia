@@ -80,6 +80,7 @@ public:
     using tagged_type::OBJECT_ABI_VERSION;
 
     hash_type get() {
+        std::cout << "HashShifter get() of " << this << std::endl;
         return derived()._get();
     }
 
@@ -117,6 +118,7 @@ public:
     }
 
     hash_type hash_base(const char * sequence) {
+        std::cout << "HashShifter::hash_base(const char *) " << sequence << std::endl;
         auto h = derived()._hash_base(sequence);
         initialized = true;
         return h;
@@ -134,6 +136,7 @@ public:
         if (sequence.length() < K) {
             throw SequenceLengthException("Sequence must at least length K");
         }
+        //std::cout << "static HashShifter::hash" << std::endl;
         return hash(sequence.c_str(), K, std::forward<ExtraArgs>(args)...);
     }
 
@@ -151,18 +154,25 @@ public:
 
 private:
 
-    HashShifter(const std::string& start,
-                uint16_t           K)
+    explicit HashShifter(const std::string& start,
+                         uint16_t           K)
         : KmerClient(K),
           initialized(false)
     {
         hash_base(start);
+        std::cout << "HashShifter ctor " << this << std::endl;
     }
 
-    HashShifter(uint16_t K)
+    explicit HashShifter(uint16_t K)
         : KmerClient(K),
           initialized(false)
     {
+        std::cout << "HashShifter ctor " << this << std::endl;
+    }
+
+    ~HashShifter()
+    {
+        std::cout << "HashShifter dstor" << this << std::endl;
     }
 
     friend Derived;
