@@ -8,5 +8,8 @@
 
 
 #include "boink/hashing/hashshifter.hh"
+#include "boink/hashing/rollinghashshifter.hh"
 
 
+template class boink::hashing::HashShifter<boink::hashing::FwdLemirePolicy>;
+template class boink::hashing::HashShifter<boink::hashing::CanLemirePolicy>;
