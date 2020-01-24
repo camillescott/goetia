@@ -7,8 +7,7 @@
  */
 
 #include "boink/hashing/hashextender.hh"
-#include "boink/hashing/rollinghashshifter.hh"
-#include "boink/hashing/ukhs.hh"
+#include "boink/hashing/shifter_types.hh"
 
 namespace boink::hashing {
 

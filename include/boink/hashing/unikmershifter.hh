@@ -12,4 +12,7 @@
 namespace boink::hashing {
     extern template class HashShifter<FwdUnikmerPolicy>;
     extern template class HashShifter<CanUnikmerPolicy>;
+
+    typedef HashShifter<FwdUnikmerPolicy> FwdUnikmerShifter;
+    typedef HashShifter<CanUnikmerPolicy> CanUnikmerShifter;
 }

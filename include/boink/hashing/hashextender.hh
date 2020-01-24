@@ -15,9 +15,7 @@
 #include "boink/hashing/canonical.hh"
 #include "boink/hashing/kmer_span.hh"
 #include "boink/hashing/kmeriterator.hh"
-#include "boink/hashing/rollinghashshifter.hh"
-#include "boink/hashing/ukhs.hh"
-
+#include "boink/hashing/shifter_types.hh"
 #include "boink/sequences/alphabets.hh"
 
 #include "boink/is_detected.hh"
@@ -30,7 +28,7 @@ namespace boink::hashing {
 // Detectors for delegating extension machinery    
 template<class ShifterType>
 using left_extension_t =
-    decltype(std::declval<ShifterType&>().left_extensions());
+    decltype(std::declval<ShifterType&>().left_extensions_impl());
 
 template<class ShifterType>
 using supports_left_extension = is_detected<left_extension_t, ShifterType>;
@@ -38,7 +36,7 @@ using supports_left_extension = is_detected<left_extension_t, ShifterType>;
 
 template<class ShifterType>
 using right_extension_t =
-    decltype(std::declval<ShifterType&>().right_extensions());
+    decltype(std::declval<ShifterType&>().right_extensions_impl());
 
 template<class ShifterType>
 using supports_right_extension = is_detected<right_extension_t, ShifterType>;
@@ -96,7 +94,6 @@ protected:
     using shifter_type::shift_right;
     using shifter_type::shift_left;
     using shifter_type::hash_base;
-    using ShifterType::_K;
 
 public:
 
@@ -125,14 +122,14 @@ public:
     __attribute__((visibility("default")))
     explicit HashExtender(const HashExtender& extender)
         : ShifterType(static_cast<ShifterType>(extender)),
-          span_mixin_type(extender.K())
+          span_mixin_type(extender.K)
     {
         std::cout << "END HashExtender(HashExtender&......) ctor" << std::endl;
     }
 
     explicit HashExtender(const shifter_type& shifter)
         : ShifterType(shifter),
-          span_mixin_type(shifter.K())
+          span_mixin_type(shifter.K)
     {
         std::cout << "END HashExtender(shifter_type&...) ctor" << std::endl;
     }
@@ -234,7 +231,7 @@ public:
             throw UninitializedShifterException();
         }
 
-        return ShifterType::_left_extensions();
+        return ShifterType::left_extensions_impl();
     }
 
     /**
@@ -328,7 +325,7 @@ public:
             throw UninitializedShifterException();
         }
 
-        return ShifterType::_right_extensions();
+        return ShifterType::right_extensions_impl();
     }
 
     /**
@@ -341,7 +338,7 @@ public:
     template<typename Dummy = hash_type>
     auto set_cursor(const std::string& sequence)
      -> std::enable_if_t<KmerSpanMixin<ShifterType>::enabled, Dummy> {
-        if (sequence.length() < _K) {
+        if (sequence.length() < K) {
             throw SequenceLengthException("Sequence must at least length K");
         }
         ShifterType::hash_base(sequence.c_str());
@@ -352,7 +349,7 @@ public:
     template<typename Dummy = hash_type>
     auto set_cursor(const std::string& sequence)
      -> std::enable_if_t<!KmerSpanMixin<ShifterType>::enabled, Dummy> {
-        if (sequence.length() < _K) {
+        if (sequence.length() < K) {
             throw SequenceLengthException("Sequence must at least length K");
         }
         ShifterType::hash_base(sequence.c_str());
@@ -384,7 +381,7 @@ public:
     }
 
     hash_type hash_base(const std::string& sequence) {
-        if (sequence.length() < _K) {
+        if (sequence.length() < K) {
             throw SequenceLengthException("Sequence must at least length K");
         }
 

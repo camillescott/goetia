@@ -108,7 +108,7 @@ public:
     }
 
     explicit HashShifter(const HashShifter& other)
-        : shift_policy(static_cast<shift_policy>(other)),
+        : shift_policy(*static_cast<const shift_policy*>(&other)),
           initialized(false)
     {
     }
