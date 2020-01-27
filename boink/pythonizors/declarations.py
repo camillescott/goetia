@@ -10,12 +10,11 @@ from cppyy.gbl import std
 # it's been loaded once already.
 for storage_t, args in storage_types:
     for hasher_t in hashing_types:
-        if hasher_t.__name__.startswith('UnikmerShifter'):
+        if 'UnikmerLemirePolicy' in hasher_t.__name__:
             hasher = hasher_t.build(21, 7)
         else:
             hasher = hasher_t(21)
         storage = storage_t.build(*args)
-        #hasher.set_cursor('A' * 21)
         dbg = libboink.dBG[storage_t, hasher_t].build(storage, hasher)
         _ = libboink.cdbg.cDBG[type(dbg)].CompactNode
         _ = libboink.cdbg.cDBG[type(dbg)].UnitigNode

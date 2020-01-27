@@ -21,7 +21,6 @@
 #include "boink/boink.hh"
 #include "boink/meta.hh"
 #include "boink/sequences/alphabets.hh"
-#include "boink/kmers/kmerclient.hh"
 #include "boink/storage/sparsepp/spp.h"
 
 #include "boink/hashing/canonical.hh"
@@ -32,8 +31,10 @@
 
 namespace boink::hashing { 
 
+void test();
+
 template <class ShifterType>
-struct UKHS : public kmers::KmerClient {
+struct UKHS {
 
     typedef typename ShifterType::hash_type hash_type;
     typedef typename hash_type::value_type  value_type;
@@ -51,14 +52,16 @@ protected:
 
 public:
 
-    // Window size W. K size is stored in KmerClient.
-    const uint16_t _W;
+    // Window size W; will correspond to K in other dBG contexts
+    const uint16_t W;
+    // The minimizer length
+    const uint16_t K;
 
     explicit UKHS(uint16_t W,
                  uint16_t K,
                  std::vector<std::string>& ukhs) 
-        : KmerClient  (K),
-          _W          (W)
+        : K (K),
+          W (W)
     {
         if (ukhs.front().size() != K) {
             throw BoinkException("K does not match k-mer size from provided UKHS");
@@ -74,10 +77,6 @@ public:
                 ++pid;
             }
         }
-    }
-
-    const uint16_t W() const {
-        return _W;
     }
 
     static std::shared_ptr<UKHS> build(uint16_t W,
@@ -478,20 +477,20 @@ public:
 protected:
 
     explicit UnikmerShifterPolicy(uint16_t K,
-                                  uint16_t _unikmer_K,
+                                  uint16_t unikmer_K,
                                   std::shared_ptr<ukhs_type> ukhs)
         :  span_mixin_type(K),
            window_hasher  (K),
-           unikmer_hasher (_unikmer_K),
+           unikmer_hasher (unikmer_K),
            K              (K),
-           _unikmer_K     (_unikmer_K),
+           _unikmer_K     (unikmer_K),
            ukhs_map       (ukhs)
     {
-        if (ukhs_map->W() != K) {
+        if (ukhs_map->W != K) {
             throw BoinkException("Shifter K does not match UKHS::Map W.");
         }
-        if (ukhs_map->K() != _unikmer_K) {
-            throw BoinkException("Shifter _unikmer_K does not match UKHS::Map K.");
+        if (ukhs_map->K != unikmer_K) {
+            throw BoinkException("Shifter unikmer_K does not match UKHS::Map K.");
         }
     }
 
@@ -522,6 +521,8 @@ protected:
 template <typename HashType, typename Alphabet=DNA_SIMPLE>
 struct UnikmerLemirePolicy : public UnikmerShifterPolicy<RollingHashShifter<HashType, Alphabet>>
 {
+    protected:
+        using UnikmerShifterPolicy<RollingHashShifter<HashType, Alphabet>>::UnikmerShifterPolicy;
 };
 
 typedef UnikmerLemirePolicy<HashModel<uint64_t>> FwdUnikmerPolicy;

@@ -1,10 +1,9 @@
-/* kmerclient.hh: base class for things parametrized by K
- *
- * Copyright (C) 2018 Camille Scott
- * All rights reserved.
- *
- * This software may be modified and distributed under the terms
- * of the MIT license.  See the LICENSE file for details.
+/**
+ * (c) Camille Scott, 2019
+ * File   : exceptions.hh
+ * License: MIT
+ * Author : Camille Scott <camille.scott.w@gmail.com>
+ * Date   : 05.08.2019
  */
 
 #ifndef BOINK_SEQUENCES_EXCEPTIONS_HH

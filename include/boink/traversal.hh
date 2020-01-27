@@ -70,7 +70,9 @@ template <class T>
 struct dBGWalker;
 
 
-template <template <class, class> class GraphType, class StorageType, class ShifterType>
+template <template <class, class> class GraphType,
+                                  class StorageType,
+                                  class ShifterType>
 class dBGWalker<GraphType<StorageType, ShifterType>> : public hashing::HashExtender<ShifterType> {
 
     typedef GraphType<StorageType, ShifterType>     Derived;
@@ -99,14 +101,11 @@ public:
 
     typedef TraversalState::State       State;
 
-protected:
-
-    using extender_type::_K;
+private:
 
     // dummy template for overload specialization
     // for templated member functions
     template<typename T> struct type { };
-
 
 public:
 

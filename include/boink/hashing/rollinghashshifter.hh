@@ -19,7 +19,6 @@
 
 #include "boink/boink.hh"
 #include "boink/meta.hh"
-#include "boink/kmers/kmerclient.hh"
 #include "boink/sequences/alphabets.hh"
 #include "boink/hashing/canonical.hh"
 
@@ -113,13 +112,11 @@ protected:
         : RollingHashShifterBase<HashType>(K),
           K(K)
     {   
-        std::cout << "RollingHashShifter(K) ctor" << std::endl; 
     }
 
     explicit RollingHashShifter(RollingHashShifter const& other)
         : RollingHashShifter(other.K)
     {
-        std::cout << "RollingHashShifter(other) ctor" << std::endl;
     }
 
 };

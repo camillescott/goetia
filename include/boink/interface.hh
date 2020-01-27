@@ -30,10 +30,9 @@
 #include "boink/hashing/hashextender.hh"
 #include "boink/hashing/ukhs.hh"
 #include "boink/hashing/rollinghashshifter.hh"
-#include "boink/hashing/ukhshashshifter.hh"
+#include "boink/hashing/unikmershifter.hh"
 #include "boink/hashing/canonical.hh"
 
-#include "boink/kmers/kmerclient.hh"
 #include "boink/sequences/alphabets.hh"
 #include "boink/sequences/exceptions.hh"
 

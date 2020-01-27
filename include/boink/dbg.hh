@@ -11,7 +11,6 @@
 
 #include "boink/meta.hh"
 #include "boink/hashing/kmeriterator.hh"
-#include "boink/kmers/kmerclient.hh"
 #include "boink/processors.hh"
 #include "boink/storage/storage.hh"
 #include "boink/storage/storage_types.hh"
@@ -61,8 +60,6 @@ public:
 protected:
 
     std::shared_ptr<StorageType> S;
-
-    using walker_type::_K;
 
 public:
 
@@ -187,7 +184,7 @@ public:
      * @Returns   The suffix.
      */
     const std::string suffix(const std::string& kmer) {
-        return kmer.substr(kmer.length() - this->_K + 1);
+        return kmer.substr(kmer.length() - this->K + 1);
     }
 
     /**
@@ -198,7 +195,7 @@ public:
      * @Returns   The prefix.
      */
     const std::string prefix(const std::string& kmer) {
-        return kmer.substr(0, this->_K - 1);
+        return kmer.substr(0, this->K - 1);
     }
 
     /**
@@ -297,7 +294,7 @@ public:
     std::vector<storage::count_t> insert_and_query_sequence(const std::string& sequence)  {
 
         hashing::KmerIterator<ShifterType> iter(sequence, this);
-        std::vector<storage::count_t> counts(sequence.length() - _K + 1);
+        std::vector<storage::count_t> counts(sequence.length() - K + 1);
 
         size_t pos = 0;
         while(!iter.done()) {
@@ -319,7 +316,7 @@ public:
     std::vector<storage::count_t> query_sequence(const std::string& sequence)  {
 
         hashing::KmerIterator<ShifterType> iter(sequence, this);
-        std::vector<storage::count_t> counts(sequence.length() - _K + 1);
+        std::vector<storage::count_t> counts(sequence.length() - K + 1);
 
         size_t pos = 0;
         while(!iter.done()) {
@@ -364,11 +361,11 @@ public:
     }
 
     void save(std::string filename) {
-        S->save(filename, _K);
+        S->save(filename, K);
     }
 
     void load(std::string filename) {
-        uint16_t ksize = _K;
+        uint16_t ksize = K;
         S->load(filename, ksize);
     }
 

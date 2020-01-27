@@ -45,17 +45,6 @@ def pythonize_boink_hashing(klass, name):
 
         klass.load = staticmethod(load)
 
-    shifter_inst, template = is_template_inst(name, 'UnikmerShifter')
-    if shifter_inst:
-        
-        def build(W, K):
-            ukhs_type = klass.ukhs_type
-            ukhs =  ukhs_type.load(W, K)
-            shifter = klass(W, K, ukhs)
-            return shifter
-
-        klass.build = staticmethod(build)
-
     shifter_inst, template = is_template_inst(name, 'HashShifter')
     if shifter_inst:
         def __getattr__(self, arg):
@@ -64,6 +53,16 @@ def pythonize_boink_hashing(klass, name):
                 return attr
 
         klass.__getattr__ = __getattr__
+
+        if 'Unikmer' in name:
+            def build(W, K):
+                ukhs_type = klass.ukhs_type
+                ukhs = ukhs_type.load(W, K)
+                shifter = klass(W, K, ukhs.__smartptr__())
+                return shifter
+
+            klass.build = staticmethod(build)
+
 
         #set_typedef_attrs(klass, ['alphabet', 'hash_type', 'value_type', 'kmer_type'])
 

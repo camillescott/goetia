@@ -26,7 +26,6 @@
 #include "boink/hashing/kmeriterator.hh"
 #include "boink/hashing/rollinghashshifter.hh"
 #include "boink/hashing/ukhs.hh"
-#include "boink/kmers/kmerclient.hh"
 #include "boink/storage/storage_types.hh"
 
 # ifdef DEBUG_CDBG
@@ -76,8 +75,7 @@ struct uDBG {
         uint64_t    partition;
     };
 
-    class Graph : public kmers::KmerClient,
-                  public events::EventNotifier {
+    class Graph : public events::EventNotifier {
 
         typedef spp::sparse_hash_map<value_type, UnitigTip*> tip_map_t;
         typedef typename tip_map_t::const_iterator           tip_map_iter_t;
@@ -99,8 +97,10 @@ struct uDBG {
 
     public:
 
+        const uint16_t K;
+
         Graph(std::shared_ptr<graph_type> dbg)
-            : KmerClient(dbg->K()),
+            : K(dbg->K),
               dbg(dbg) {
         }
 

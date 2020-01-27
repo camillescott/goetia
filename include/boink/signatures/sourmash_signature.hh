@@ -11,7 +11,6 @@
 
 #include <memory>
 
-#include "boink/kmers/kmerclient.hh"
 #include "boink/processors.hh"
 #include "boink/signatures/sourmash/kmer_min_hash.hh"
 
@@ -21,10 +20,11 @@ namespace signatures {
 
 struct SourmashSignature {
 
-   class Signature: public KmerMinHash, 
-                    public kmers::KmerClient {
+   class Signature: public KmerMinHash {
     
     public:
+
+        const uint16_t K;
 
         Signature(unsigned int n, // n hashes
                   unsigned int K, // k-mer size
@@ -32,7 +32,7 @@ struct SourmashSignature {
                   uint32_t seed,
                   uint64_t max_hash)
             : KmerMinHash(n, K, is_protein, seed, max_hash),
-              KmerClient(K) {
+              K(K) {
             
         }
 

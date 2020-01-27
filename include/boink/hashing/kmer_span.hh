@@ -23,13 +23,10 @@ void test();
 template <bool Enable = true>
 class KmerSpanMixinImpl {
 
-private:
-
-    uint16_t _K;
-
 public:
 
     static const bool enabled = true;
+    const uint16_t K;
 
     const bool is_loaded() const {
         return loaded;
@@ -38,7 +35,7 @@ public:
 protected:
 
     KmerSpanMixinImpl(uint16_t K)
-        : _K(K),
+        : K(K),
           kmer_buffer(new char[K]),
           kmer_window(kmer_buffer, kmer_buffer + K, kmer_buffer, K),
           loaded(false)
@@ -47,7 +44,6 @@ protected:
     }
 
     ~KmerSpanMixinImpl() {
-        std::cout << "delete span buffer" << std::endl;
         delete [] kmer_buffer;
     }
 
@@ -65,7 +61,7 @@ protected:
 
     __attribute__((visibility("default")))
     void load(const std::string& sequence) {
-        for (uint16_t i = 0; i < _K; ++i)  {
+        for (uint16_t i = 0; i < K; ++i)  {
             kmer_window.push_back(sequence[i]);
         }
         loaded = true;
@@ -73,7 +69,7 @@ protected:
 
     __attribute__((visibility("default")))
     void load(const char * sequence) {
-        for (uint16_t i = 0; i < _K; ++i)  {
+        for (uint16_t i = 0; i < K; ++i)  {
             kmer_window.push_back(sequence[i]);
         }
         loaded = true;
@@ -91,7 +87,7 @@ protected:
     template <typename Iterator>
     __attribute__((visibility("default")))
     void load(Iterator begin) {
-        for (uint16_t i = 0; i < _K; ++i)  {
+        for (uint16_t i = 0; i < K; ++i)  {
             kmer_window.push_back(*begin);
             ++begin;
         }

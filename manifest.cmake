@@ -28,7 +28,6 @@ set(_headers
     include/boink/hashing/ukhs.hh
     include/boink/interface.hh
     include/boink/is_detected.hh
-    include/boink/kmers/kmerclient.hh
     include/boink/meta.hh
     include/boink/metrics.hh
     include/boink/minimizers.hh

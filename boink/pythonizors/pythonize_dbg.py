@@ -47,6 +47,5 @@ def pythonize_boink(klass, name):
         klass.right_degree = right_degree
         klass.shallow_clone = shallow_clone
         klass.hashes = hashes 
-        klass.K = property(klass.K)
 
 

@@ -11,6 +11,18 @@
 #include "boink/hashing/hashshifter.hh"
 
 namespace boink::hashing {
+
     template class HashShifter<FwdUnikmerPolicy>;
+    template HashShifter<FwdUnikmerPolicy>::HashShifter(uint16_t, uint16_t&&, std::shared_ptr<typename FwdUnikmerPolicy::ukhs_type>&&);
+    template HashShifter<FwdUnikmerPolicy>::HashShifter(const std::string&, uint16_t, uint16_t&&, std::shared_ptr<typename FwdUnikmerPolicy::ukhs_type>&&);
+
     template class HashShifter<CanUnikmerPolicy>;   
+    template HashShifter<CanUnikmerPolicy>::HashShifter(uint16_t, uint16_t&&, std::shared_ptr<typename CanUnikmerPolicy::ukhs_type>&&);
+    template HashShifter<CanUnikmerPolicy>::HashShifter(const std::string&, uint16_t, uint16_t&&, std::shared_ptr<typename CanUnikmerPolicy::ukhs_type>&&);
+
+void test() {
+    std::vector<std::string> seqs = {"AAAAAAA"};
+    auto ukhs = std::make_shared<typename FwdUnikmerShifter::ukhs_type>(21, 7, seqs);
+    FwdUnikmerShifter s(21, 7, ukhs);
+}
 }

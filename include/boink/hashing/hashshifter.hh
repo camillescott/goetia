@@ -16,7 +16,6 @@
 #include <string>
 #include <vector>
 
-#include "boink/kmers/kmerclient.hh"
 #include "boink/hashing/canonical.hh"
 #include "boink/boink.hh"
 
@@ -78,7 +77,7 @@ public:
 
     typedef ShiftPolicy<HashType, Alphabet>              shift_policy;
     typedef typename shift_policy::value_type            value_type;
-    typedef HashType                                     hash_type;
+    typedef typename shift_policy::hash_type             hash_type;
     typedef typename shift_policy::kmer_type             kmer_type;
     typedef Alphabet                                     alphabet;
 
@@ -95,7 +94,6 @@ public:
           initialized(false)
     {
         hash_base(start);
-        std::cout << "HashShifter ctor " << this << std::endl;
     }
 
     template<typename... ExtraArgs>
@@ -104,18 +102,12 @@ public:
         : shift_policy(K, std::forward<ExtraArgs>(args)...),
           initialized(false)
     {
-        std::cout << "HashShifter ctor " << this << std::endl;
     }
 
     explicit HashShifter(const HashShifter& other)
         : shift_policy(*static_cast<const shift_policy*>(&other)),
           initialized(false)
     {
-    }
-
-    ~HashShifter()
-    {
-        std::cout << "HashShifter dstor" << this << std::endl;
     }
 
     hash_type get() {
@@ -156,7 +148,6 @@ public:
     }
 
     hash_type hash_base(const char * sequence) {
-        std::cout << "HashShifter::hash_base(const char *) " << sequence << std::endl;
         auto h = this->hash_base_impl(sequence);
         initialized = true;
         return h;

@@ -60,14 +60,17 @@ struct UTagger {
 
         std::shared_ptr<graph_type> dbg;
         std::shared_ptr<ukhs_type>  ukhs;
-        const uint16_t              unikmer_k;
+
+        const uint16_t              W;
+        const uint16_t              K;
 
         StreamingTagger(std::shared_ptr<graph_type>& dbg,
                         std::shared_ptr<ukhs_type>&  ukhs)
             : EventNotifier(),
               dbg(dbg),
               ukhs(ukhs),
-              unikmer_k(ukhs->K())
+              W(dbg->K),
+              K(ukhs->K)
         {
         }
 
