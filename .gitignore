@@ -95,6 +95,8 @@ ENV/
 *.swo
 .ccls-cache/
 
+.vscode
+
 *.cg
 *.info
 *.json
