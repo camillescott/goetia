@@ -9,8 +9,7 @@
 #include "boink/dbg.hh"
 
 #include "boink/storage/storage_types.hh"
-#include "boink/hashing/rollinghashshifter.hh"
-#include "boink/hashing/ukhshashshifter.hh"
+#include "boink/hashing/shifter_types.hh"
 
 
 namespace boink {

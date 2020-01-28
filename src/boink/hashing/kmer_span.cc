@@ -8,15 +8,3 @@
 
 
 #include "boink/hashing/kmer_span.hh"
-
-namespace boink::hashing {
-
-template
-void KmerSpanMixinImpl<true>::load<std::string::iterator>(std::string::iterator begin,
-                                                          std::string::iterator end);
-
-template
-void KmerSpanMixinImpl<true>::load<std::deque<char>::iterator>(std::deque<char>::iterator begin,
-                                                               std::deque<char>::iterator end);
-
-}

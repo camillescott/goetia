@@ -327,7 +327,7 @@ function(cppyy_add_bindings pkg pkg_version author author_email)
     file(MAKE_DIRECTORY ${pkg_dir})
     add_custom_command(OUTPUT ${cpp_file} ${rootmap_file} ${pcm_file}
                        COMMAND ${ROOT_genreflex_CMD} ${genreflex_args} ${genreflex_cxxflags}
-                       DEPENDS ${ARG_INTERFACE_FILE}
+                       DEPENDS ${ARG_INTERFACE_FILE} ${ARG_HEADERS}
                        WORKING_DIRECTORY ${pkg_dir}
     )
 

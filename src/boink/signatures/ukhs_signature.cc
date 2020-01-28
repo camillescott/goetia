@@ -10,24 +10,26 @@
 #include "boink/signatures/ukhs_signature.hh"
 
 #include "boink/storage/storage_types.hh"
-#include "boink/hashing/rollinghashshifter.hh"
+#include "boink/hashing/canonical.hh"
 
 
 namespace boink {
+    
+    template class signatures::UnikmerSignature<storage::BitStorage, hashing::HashModel<uint64_t>>;
+    template class signatures::UnikmerSignature<storage::BitStorage, hashing::CanonicalModel<uint64_t>>;
 
-    template class signatures::UnikmerSignature<storage::BitStorage, hashing::FwdRollingShifter>;
-    template class signatures::UnikmerSignature<storage::BitStorage, hashing::CanRollingShifter>;
+    template class signatures::UnikmerSignature<storage::SparseppSetStorage, hashing::HashModel<uint64_t>>;
+    template class signatures::UnikmerSignature<storage::SparseppSetStorage, hashing::CanonicalModel<uint64_t>>;
 
-    template class signatures::UnikmerSignature<storage::SparseppSetStorage, hashing::FwdRollingShifter>;
-    template class signatures::UnikmerSignature<storage::SparseppSetStorage, hashing::CanRollingShifter>;
+    template class signatures::UnikmerSignature<storage::ByteStorage, hashing::HashModel<uint64_t>>;
+    template class signatures::UnikmerSignature<storage::ByteStorage, hashing::CanonicalModel<uint64_t>>;
 
-    template class signatures::UnikmerSignature<storage::ByteStorage, hashing::FwdRollingShifter>;
-    template class signatures::UnikmerSignature<storage::ByteStorage, hashing::CanRollingShifter>;
+    template class signatures::UnikmerSignature<storage::NibbleStorage, hashing::HashModel<uint64_t>>;
+    template class signatures::UnikmerSignature<storage::NibbleStorage, hashing::CanonicalModel<uint64_t>>;
 
-    template class signatures::UnikmerSignature<storage::NibbleStorage, hashing::FwdRollingShifter>;
-    template class signatures::UnikmerSignature<storage::NibbleStorage, hashing::CanRollingShifter>;
+    template class signatures::UnikmerSignature<storage::QFStorage, hashing::HashModel<uint64_t>>;
+    template class signatures::UnikmerSignature<storage::QFStorage, hashing::CanonicalModel<uint64_t>>;
 
-    template class signatures::UnikmerSignature<storage::QFStorage, hashing::FwdRollingShifter>;
-    template class signatures::UnikmerSignature<storage::QFStorage, hashing::CanRollingShifter>;
+
 
 }

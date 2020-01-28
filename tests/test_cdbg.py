@@ -38,6 +38,8 @@ class TestFindNewSegments:
     @pytest.mark.benchmark(group='cdbg-segments')
     def test_fork_core_first(self, ksize, length, graph, compactor, right_fork,
                                    check_fp, benchmark):
+        import cppyy.ll
+        cppyy.ll.set_signals_as_exception(True)
         (core, branch), pivot = right_fork()
         check_fp()
 
@@ -290,7 +292,7 @@ class TestFindNewSegments:
         assert segments[5].length == len(mut) - (pivotR + 1)
 
 
-@using(ksize=15, length=100, hasher_type=libboink.hashing.FwdRollingShifter)
+@using(ksize=15, length=100, hasher_type=FwdRollingShifter)
 @exact_backends()
 class TestDecisionNodes(object):
 
@@ -466,7 +468,7 @@ class TestDecisionNodes(object):
         assert compactor.cdbg.n_unodes == 2
 
 
-@using(ksize=15, length=100, hasher_type=libboink.hashing.RollingHashShifter)
+@using(ksize=15, length=100, hasher_type=FwdRollingShifter)
 class TestUnitigBuildExtend(object):
 
     def test_left_fork_unode_creation(self, ksize, length, graph, compactor,
@@ -568,7 +570,7 @@ class TestUnitigBuildExtend(object):
         print(left)
         print(right)
 
-        compactor.insert_sequence(left);
+        compactor.insert_sequence(left)
         assert compactor.cdbg.n_unodes == 1
         unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
         assert unode.sequence == left
@@ -705,7 +707,7 @@ class TestUnitigBuildExtend(object):
         assert compactor.cdbg.query_unode_end(graph.hash(left[-ksize:])) is None
 
 
-@using(hasher_type=libboink.hashing.RollingHashShifter)
+@using(hasher_type=FwdRollingShifter)
 class TestUnitigSplit(object):
 
     def test_split_full_fwd(self, left_comb, right_comb, ksize, tip_length, n_branches,
@@ -1113,7 +1115,7 @@ class TestUnitigSplit(object):
         assert rbottom.left_end == graph.hash(bottom[L+2:L+2+ksize])
 
 
-@using(hasher_type=libboink.hashing.RollingHashShifter)
+@using(hasher_type=FwdRollingShifter)
 class TestCircularUnitigs:
 
     @using(ksize=15,
@@ -1327,7 +1329,7 @@ class TestCircularUnitigs:
         print((' ' * (pivot+1)) + cycled_loop_unode.sequence)
 
 
-@using(hasher_type=libboink.hashing.RollingHashShifter)
+@using(hasher_type=FwdRollingShifter)
 class TestBreadthFirstTraversal:
 
     @using(ksize=21, length=100)
@@ -1377,7 +1379,7 @@ class TestBreadthFirstTraversal:
         assert len(nodes) == 6
 
 
-@using(hasher_type=libboink.hashing.RollingHashShifter)
+@using(hasher_type=FwdRollingShifter)
 class TestFindConnectedComponents:
 
     @using(ksize=21, length=100)

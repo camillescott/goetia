@@ -39,7 +39,6 @@
 #include "boink/hashing/kmeriterator.hh"
 #include "boink/hashing/hashextender.hh"
 #include "boink/hashing/rollinghashshifter.hh"
-#include "boink/kmers/kmerclient.hh"
 #include "boink/storage/storage_types.hh"
 #include "boink/cdbg/cdbg_types.hh"
 #include "boink/cdbg/metrics.hh"
@@ -300,8 +299,7 @@ public:
     typedef DecisionNode * DecisionNodePtr;
     typedef UnitigNode * UnitigNodePtr;
 
-    class Graph : public kmers::KmerClient,
-                  public events::EventNotifier {
+    class Graph : public events::EventNotifier {
 
         /* Map of k-mer hash --> DecisionNode. DecisionNodes take
          * their k-mer hash value as their Node ID.
@@ -345,12 +343,13 @@ public:
 
     public:
 
+        const uint16_t K;
         std::shared_ptr<graph_type> dbg;
         std::shared_ptr<cDBGMetrics> metrics;
 
         Graph(std::shared_ptr<graph_type> dbg,
               uint64_t minimizer_window_size=8)
-            : KmerClient(dbg->K()),
+            : K(dbg->K),
               EventNotifier(),
               dbg(dbg),
               _n_updates(0),
@@ -433,7 +432,7 @@ public:
 
         std::vector<DecisionNode*> query_dnodes(const std::string& sequence)  {
 
-            hashing::KmerIterator<shifter_type> kmers(sequence, this->_K);
+            hashing::KmerIterator<shifter_type> kmers(sequence, this->K);
             std::vector<DecisionNode*> result;
             while(!kmers.done()) {
                 hash_type h = kmers.next();
@@ -484,12 +483,12 @@ public:
 
         CompactNode * find_rc_cnode(CompactNode * root)  {
 
-    std::string  rc_seq  = alphabet::reverse_complement(root->sequence.substr(0, this->_K));
-    hash_type        rc_hash = dbg->hash(rc_seq);
-    CompactNode * rc_node = query_cnode(rc_hash);
+            std::string  rc_seq  = alphabet::reverse_complement(root->sequence.substr(0, this->K));
+            hash_type        rc_hash = dbg->hash(rc_seq);
+            CompactNode * rc_node = query_cnode(rc_hash);
 
-    return rc_node;
-}
+            return rc_node;
+        }
 
         /* Neighbor-finding and traversal.
          *
@@ -526,7 +525,7 @@ public:
             dbg->set_cursor(unode->sequence.c_str());
             auto left_shifts = dbg->left_extensions();
 
-            dbg->set_cursor(unode->sequence.c_str() + unode->sequence.size() - this->_K);
+            dbg->set_cursor(unode->sequence.c_str() + unode->sequence.size() - this->K);
             auto right_shifts = dbg->right_extensions();
 
             uint8_t n_left = 0;
@@ -631,7 +630,7 @@ public:
         node_meta_t recompute_node_meta(UnitigNode * unode) {
 
             pdebug("Recompute node meta for " << unode->node_id);
-            if (unode->sequence.size() == this->_K) {
+            if (unode->sequence.size() == this->K) {
                 return TRIVIAL;
             } else if (unode->left_end() == unode->right_end()) {
                 return CIRCULAR;
@@ -748,7 +747,7 @@ public:
             pdebug("CLIP: " << *unode << " from " << (clip_from == hashing::DIR_LEFT ? std::string("LEFT") : std::string("RIGHT")) <<
                    " and swap " << old_unode_end << " to " << new_unode_end);
 
-            if (unode->sequence.length() == this->_K) {
+            if (unode->sequence.length() == this->K) {
                 metrics->decrement_cdbg_node(unode->meta());
                 delete_unode(unode);
                 pdebug("CLIP complete: deleted null unode.");
@@ -847,7 +846,7 @@ public:
                     split_at = unode->sequence.find(split_kmer);
                     pdebug("Split k-mer found at " << split_at);
                     unode->sequence = unode->sequence.substr(split_at + 1) +
-                                      unode->sequence.substr((this->_K - 1), split_at);
+                                      unode->sequence.substr((this->K - 1), split_at);
                     switch_unode_ends(unode->left_end(), new_left_end);
                     unitig_end_map.insert(std::make_pair(new_right_end, unode));
 
@@ -869,14 +868,14 @@ public:
                         << new_left_end << " right of root, at " << split_at
                         << std::endl << *unode);
 
-                assert((split_at != 0) && (split_at != unode->sequence.size() - this->_K));
+                assert((split_at != 0) && (split_at != unode->sequence.size() - this->K));
                 right_unitig = unode->sequence.substr(split_at + 1);
 
                 // set the left unode right end to the new right end
                 right_unode_right_end = unode->right_end();
                 switch_unode_ends(unode->right_end(), new_right_end);
                 unode->set_right_end(new_right_end);
-                unode->sequence = unode->sequence.substr(0, split_at + this->_K - 1);
+                unode->sequence = unode->sequence.substr(0, split_at + this->K - 1);
                 
                 metrics->n_splits++;
                 metrics->decrement_cdbg_node(unode->meta());
@@ -936,9 +935,9 @@ public:
                 metrics->decrement_cdbg_node(right_unode->meta());
                 metrics->n_circular_merges++;
                 std::string extend = span_sequence;
-                //if (n_span_kmers < this->_K - 1) {
+                //if (n_span_kmers < this->K - 1) {
                     pdebug("Overlap between merged sequence, trimming right " << n_span_kmers);
-                    extend = span_sequence.substr(this->_K-1, n_span_kmers);
+                    extend = span_sequence.substr(this->K-1, n_span_kmers);
                 //} 
                 extend_unode(hashing::DIR_RIGHT,
                              extend,
@@ -951,13 +950,13 @@ public:
                        << " with " << span_sequence 
                        << std::endl << *left_unode << std::endl << *right_unode);
 
-                if (n_span_kmers < this->_K - 1) {
-                    size_t trim = (this->_K - 1) - n_span_kmers;
+                if (n_span_kmers < this->K - 1) {
+                    size_t trim = (this->K - 1) - n_span_kmers;
                     pdebug("Overlap between merged sequence, trimming right " << trim);
                     right_sequence = right_unode->sequence.substr(trim);
                 } else {
                     pdebug("No overlap, adding segment sequence, " << n_span_kmers);
-                    right_sequence = span_sequence.substr(this->_K - 1, n_span_kmers - this->_K + 1)
+                    right_sequence = span_sequence.substr(this->K - 1, n_span_kmers - this->K + 1)
                                                            + right_unode->sequence;
                 }
                 std::copy(right_unode->tags.begin(), right_unode->tags.end(),
@@ -1225,7 +1224,7 @@ public:
                     l.sink_name = root;
                     l.source_orientation_forward = true;
                     l.sink_orientation_forward = true;
-                    l.cigar = std::to_string(_K) + "M";
+                    l.cigar = std::to_string(K) + "M";
 
                     std::string link_name = get_link_name(in_node->node_id, it->second->node_id);
                     gfak::opt_elem id_elem;
@@ -1243,7 +1242,7 @@ public:
                     l.sink_name = out_node->get_name();
                     l.source_orientation_forward = true;
                     l.sink_orientation_forward = true;
-                    l.cigar = std::to_string(_K) + "M";
+                    l.cigar = std::to_string(K) + "M";
 
                     std::string link_name = get_link_name(it->second->node_id, out_node->node_id);
                     gfak::opt_elem id_elem;

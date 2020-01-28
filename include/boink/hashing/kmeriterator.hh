@@ -22,18 +22,15 @@
 #include "boink/boink.hh"
 #include "boink/hashing/hashshifter.hh"
 #include "boink/sequences/exceptions.hh"
-#include "boink/kmers/kmerclient.hh"
 
-
-#include "boink/hashing/rollinghashshifter.hh"
-#include "boink/hashing/ukhs.hh"
+#include "boink/hashing/shifter_types.hh"
 
 
 namespace boink {
 namespace hashing {
 
 template <class ShifterType>
-class KmerIterator : public kmers::KmerClient {
+class KmerIterator {
 
     const std::string _seq;
     unsigned int index;
@@ -44,52 +41,55 @@ public:
 
     typedef ShifterType                     shifter_type;
     typedef typename ShifterType::hash_type hash_type;
+    const uint16_t                          K;
 
     ShifterType * shifter;
 
     template<typename... Args>
     __attribute__((visibility("default")))
-    KmerIterator(const std::string& seq, uint16_t K, Args&&... args)
-        : KmerClient(K), 
+    explicit KmerIterator(const std::string& seq, uint16_t K, Args&&... args)
+        : K(K), 
           _seq(seq), 
           index(0), 
           _initialized(false), 
           _shifter_owner(true)
     {
 
-        if (_seq.length() < _K) {
+        if (_seq.length() < K) {
             throw SequenceLengthException("Sequence must have length >= K");
         }
         shifter = new ShifterType(seq, K, std::forward<Args>(args)...);
     }
 
     __attribute__((visibility("default")))
-    KmerIterator(const std::string& seq, ShifterType * shifter)
-        : KmerClient(shifter->K()), 
+    explicit KmerIterator(const std::string& seq, ShifterType * shifter)
+        : K(shifter->K), 
           _seq(seq),
           index(0), 
           _initialized(false),
           _shifter_owner(false), 
           shifter(shifter) 
     {
-        if (_seq.length() < _K) {
+        if (_seq.length() < K) {
             throw SequenceLengthException("Sequence must have length >= K");
         }
+        shifter->hash_base(_seq);
     }
 
     __attribute__((visibility("default")))
-    KmerIterator(const std::string& seq, ShifterType& shifter_proto)
-        : KmerClient(shifter_proto.K()), 
+    explicit KmerIterator(const std::string& seq, ShifterType& shifter_proto)
+        : K(shifter_proto.K), 
           _seq(seq), 
           index(0), 
           _initialized(false), 
           _shifter_owner(true)
     {
 
-        if (_seq.length() < _K) {
+        if (_seq.length() < K) {
             throw SequenceLengthException("Sequence must have length >= K");
         }
         shifter = new ShifterType(shifter_proto);
+        shifter->hash_base(_seq);
     }
 
     __attribute__((visibility("default")))
@@ -102,9 +102,8 @@ public:
     __attribute__((visibility("default")))
     hash_type first()  {
         _initialized = true;
-
         index += 1;
-        return shifter->hash_base(_seq);
+        return shifter->get();
     }
 
     __attribute__((visibility("default")))
@@ -117,7 +116,7 @@ public:
             throw InvalidCharacterException("past end of iterator");
         }
 
-        auto ret = shifter->shift_right(_seq[index - 1], _seq[index + _K - 1]);
+        auto ret = shifter->shift_right(_seq[index - 1], _seq[index + K - 1]);
         index += 1;
 
         return ret;
@@ -125,7 +124,7 @@ public:
 
     __attribute__((visibility("default")))
     bool done() const  {
-        return (index + _K > _seq.length());
+        return (index + K > _seq.length());
     }
 
     __attribute__((visibility("default")))
@@ -136,8 +135,8 @@ public:
 
     __attribute__((visibility("default")))
     unsigned int get_end_pos() const {
-        if (!_initialized) { return _K; }
-        return index + _K - 1;
+        if (!_initialized) { return K; }
+        return index + K - 1;
     }
 };
 

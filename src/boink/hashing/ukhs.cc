@@ -8,22 +8,27 @@
 
 #include <string>
 
-#include "boink/hashing/ukhs.hh"
 #include "boink/hashing/rollinghashshifter.hh"
+#include "boink/hashing/hashshifter.hh"
+#include "boink/hashing/ukhs.hh"
+
 
 namespace boink::hashing {
 
     template class UKHS<FwdRollingShifter>;
     template class UKHS<CanRollingShifter>;
-    template class UnikmerShifter<FwdRollingShifter>;
-    template class UnikmerShifter<CanRollingShifter>;
+    template class UnikmerShifterPolicy<FwdLemirePolicy>;
+    template class UnikmerShifterPolicy<CanLemirePolicy>;
+    template class UnikmerLemirePolicy<HashModel<uint64_t>, DNA_SIMPLE>;
+    template class UnikmerLemirePolicy<CanonicalModel<uint64_t>, DNA_SIMPLE>;
 
     template<> template<>
-    typename UnikmerShifter<FwdRollingShifter>::hash_type
-    UnikmerShifter<FwdRollingShifter>::_hash_base<std::string::iterator>(std::string::iterator begin,
-                                                                         std::string::iterator end);
+    typename UnikmerShifterPolicy<FwdLemirePolicy>::hash_type
+    UnikmerShifterPolicy<FwdLemirePolicy>::hash_base_impl<std::string::iterator>(std::string::iterator begin,
+                                                                                 std::string::iterator end);
     template<> template<>
-    typename UnikmerShifter<CanRollingShifter>::hash_type
-    UnikmerShifter<CanRollingShifter>::_hash_base<std::string::iterator>(std::string::iterator begin,
-                                                                         std::string::iterator end);
+    typename UnikmerShifterPolicy<CanLemirePolicy>::hash_type
+    UnikmerShifterPolicy<CanLemirePolicy>::hash_base_impl<std::string::iterator>(std::string::iterator begin,
+                                                                                 std::string::iterator end);
+                                                                    
 }

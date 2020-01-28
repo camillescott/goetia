@@ -18,7 +18,6 @@
 #include "boink/hashing/kmeriterator.hh"
 #include "boink/hashing/rollinghashshifter.hh"
 #include "boink/hashing/canonical.hh"
-#include "boink/kmers/kmerclient.hh"
 
 #include "boink/parsing/parsing.hh"
 #include "boink/parsing/readers.hh"
@@ -156,20 +155,21 @@ struct WKMinimizer {
 
     typedef InteriorMinimizer<value_type> minimizer_type;
 
-    class Minimizer : public minimizer_type,
-                      public kmers::KmerClient {
+    class Minimizer : public minimizer_type {
 
     public:
+
+        const uint16_t K;
 
         Minimizer(int64_t window_size,
                   uint16_t K)
             : minimizer_type(window_size),
-              kmers::KmerClient(K) {
+              K(K) {
         }
 
         auto get_minimizers(const std::string& sequence)
         -> typename minimizer_type::vector_type {
-            hashing::KmerIterator<ShifterType> iter(sequence, this->_K);
+            hashing::KmerIterator<ShifterType> iter(sequence, K);
             this->reset();
             
             while(!iter.done()) {
@@ -181,7 +181,7 @@ struct WKMinimizer {
         }
 
         std::vector<value_type> get_minimizer_values(const std::string& sequence) {
-            hashing::KmerIterator<ShifterType> iter(sequence, this->_K);
+            hashing::KmerIterator<ShifterType> iter(sequence, K);
             this->reset();
 
             while(!iter.done()) {
@@ -196,7 +196,7 @@ struct WKMinimizer {
             typename minimizer_type::vector_type minimizers = get_minimizers(sequence);
             std::vector<std::pair<std::string, int64_t>> kmers;
             for (auto min : minimizers) {
-                kmers.push_back(std::make_pair(sequence.substr(min.second, this->_K),
+                kmers.push_back(std::make_pair(sequence.substr(min.second, K),
                                                min.second));
             }
             return kmers;
@@ -242,7 +242,7 @@ struct WKMinimizer {
                 _output_stream << this->n_reads() << ","
                                << min.second << ","
                                << min.first << ","
-                               << read.sequence.substr(min.second, M.K())
+                               << read.sequence.substr(min.second, M.K)
                                << std::endl;
             }
         }

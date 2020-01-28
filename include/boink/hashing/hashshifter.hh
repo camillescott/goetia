@@ -16,15 +16,16 @@
 #include <string>
 #include <vector>
 
-#include "boink/kmers/kmerclient.hh"
 #include "boink/hashing/canonical.hh"
 #include "boink/boink.hh"
 
 #include "boink/sequences/alphabets.hh"
 #include "boink/sequences/exceptions.hh"
 
-#include "boink/ring_span.hpp"
 #include "boink/meta.hh"
+
+#include "boink/hashing/rollinghashshifter.hh"
+
 
 namespace boink::hashing {
 
@@ -45,7 +46,7 @@ struct has_minimizer {
 
 
 /**
- * @Synopsis  CRTP base class for shifter adapters. Implementations
+ * @Synopsis  Policy client class for shifter adapters. Implementations
  *            must define _shift_left, _shift_right, _get, _hash_base,
  *            and _hash. This class is mostly stateless; it just does basic
  *            error handling and dispatches to the implementation.
@@ -54,51 +55,88 @@ struct has_minimizer {
  * @tparam HashType  Hash return type. Specialize for canonical.
  * @tparam Alphabet  The alphabet to hash over.
  */
-template <class Derived,
-          class HashType = HashModel<uint64_t>,
-          class Alphabet = DNA_SIMPLE>
-class HashShifter : public kmers::KmerClient,
-                    public Tagged<HashShifter<Derived,
-                                              HashType,
-                                              Alphabet>> {
+
+template<class T>
+struct HashShifter;
+
+template <template<typename, typename> typename ShiftPolicy,
+                                       typename HashType,
+                                       typename Alphabet>
+class HashShifter<ShiftPolicy<HashType, Alphabet>>
+    : public ShiftPolicy<HashType, Alphabet>,
+      public Tagged<HashShifter<ShiftPolicy<HashType, Alphabet>>> {
 
 protected:
 
     bool initialized;
-    typedef Tagged<HashShifter<Derived, HashType, Alphabet>> tagged_type;
+    typedef Tagged<HashShifter<ShiftPolicy<HashType, Alphabet>>> tagged_type;
 
 public:
 
-    typedef HashShifter<Derived, HashType, Alphabet> type;
-    typedef typename HashType::value_type            value_type;
-    typedef HashType                                 hash_type;
-    typedef KmerModel<hash_type>                     kmer_type;
+    typedef HashShifter<ShiftPolicy<HashType, Alphabet>> type;
+    typedef type                                         shifter_type;
 
-    typedef Alphabet alphabet;
+    typedef ShiftPolicy<HashType, Alphabet>              shift_policy;
+    typedef typename shift_policy::value_type            value_type;
+    typedef typename shift_policy::hash_type             hash_type;
+    typedef typename shift_policy::kmer_type             kmer_type;
+    typedef Alphabet                                     alphabet;
+    static constexpr bool has_kmer_span = shift_policy::has_kmer_span;
 
     using tagged_type::NAME;
     using tagged_type::OBJECT_ABI_VERSION;
 
+    using shift_policy::K;
+
+    friend shift_policy;
+
+    template<typename... ExtraArgs>
+    explicit HashShifter(const std::string& start,
+                         uint16_t           K,
+                         ExtraArgs&&...     args)
+        : shift_policy(K, std::forward<ExtraArgs>(args)...),
+          initialized(false)
+    {
+        hash_base(start);
+    }
+
+    template<typename... ExtraArgs>
+    explicit HashShifter(uint16_t        K,
+                         ExtraArgs&&... args)
+        : shift_policy(K, std::forward<ExtraArgs>(args)...),
+          initialized(false)
+    {
+    }
+
+    explicit HashShifter(const HashShifter& other)
+        : ShiftPolicy<HashType, Alphabet>(static_cast<const shift_policy &>(other)),
+          initialized(false)
+    {
+    }
+
+    HashShifter() = delete;
+
     hash_type get() {
-        return derived()._get();
+        //std::cout << "HashShifter get()" << std::endl;
+        return this->get_impl();
     }
 
     hash_type shift_right(const char& out, const char& in) {
         if (!initialized) {
             throw UninitializedShifterException();
         }
-        return derived()._shift_right(out, in);
+        return this->shift_right_impl(out, in);
     }
 
     hash_type shift_left(const char& in, const char& out) {
         if (!initialized) {
             throw UninitializedShifterException();
         }
-        return derived()._shift_left(in, out);
+        return this->shift_left_impl(in, out);
     }
 
     hash_type hash_base(const std::string& sequence) {
-        if (sequence.length() < _K) {
+        if (sequence.length() < K) {
             throw SequenceLengthException("Sequence must at least length K");
         }
 
@@ -108,22 +146,22 @@ public:
 
     template<class It>
     hash_type hash_base(It begin, It end) {
-        if (std::distance(begin, end) != _K) {
+        if (std::distance(begin, end) != K) {
             throw SequenceLengthException("Iterator distance must be length K");
         }
-        hash_type h = derived()._hash_base(begin, end);
+        hash_type h = this->hash_base_impl(begin, end);
         initialized = true;
         return h;
     }
 
     hash_type hash_base(const char * sequence) {
-        auto h = derived()._hash_base(sequence);
+        auto h = this->hash_base_impl(sequence);
         initialized = true;
         return h;
     }
 
     const hash_type hash(const std::string& sequence) const {
-        Derived hasher(derived());
+        type hasher(*this);
         return hasher.hash_base(sequence);
     }
 
@@ -134,6 +172,7 @@ public:
         if (sequence.length() < K) {
             throw SequenceLengthException("Sequence must at least length K");
         }
+        //std::cout << "static HashShifter::hash" << std::endl;
         return hash(sequence.c_str(), K, std::forward<ExtraArgs>(args)...);
     }
 
@@ -141,40 +180,21 @@ public:
     static hash_type hash(const char * sequence,
                           const uint16_t K,
                           ExtraArgs&&... args) {
-
-        return Derived::_hash(sequence, K, std::forward<ExtraArgs>(args)...);
+        
+        type hasher(K, std::forward<ExtraArgs>(args)...);
+        return hasher.hash_base(sequence);
     }
 
     bool is_initialized() const {
         return initialized;
     }
-
-private:
-
-    HashShifter(const std::string& start,
-                uint16_t           K)
-        : KmerClient(K),
-          initialized(false)
-    {
-        hash_base(start);
-    }
-
-    HashShifter(uint16_t K)
-        : KmerClient(K),
-          initialized(false)
-    {
-    }
-
-    friend Derived;
-
-    Derived& derived() {
-        return *static_cast<Derived*>(this);
-    }
-
-    const Derived& derived() const {
-        return *static_cast<const Derived*>(this);
-    }
 };
+
+extern template class HashShifter<FwdLemirePolicy>;
+extern template class HashShifter<CanLemirePolicy>;
+
+typedef HashShifter<FwdLemirePolicy> FwdRollingShifter;
+typedef HashShifter<CanLemirePolicy> CanRollingShifter;
 
 } // boink
 

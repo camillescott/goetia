@@ -18,14 +18,14 @@
 #include <vector>
 
 #include "boink/boink.hh"
-#include "boink/hashing/kmeriterator.hh"
-#include "boink/hashing/hashextender.hh"
 #include "boink/event_types.hh"
 #include "boink/reporting/reporters.hh"
 #include "boink/processors.hh"
-#include "boink/kmers/kmerclient.hh"
+
+#include "boink/hashing/kmeriterator.hh"
+#include "boink/hashing/hashextender.hh"
 #include "boink/hashing/ukhs.hh"
-#include "boink/hashing/rollinghashshifter.hh"
+#include "boink/hashing/unikmershifter.hh"
 #include "boink/hashing/canonical.hh"
 #include "boink/storage/storage_types.hh"
 
@@ -42,57 +42,58 @@ public:
 };
 
 
-template <class StorageType, class BaseShifterType>
+template <class StorageType, class HashType>
 struct UnikmerSignature {
 
-    typedef StorageType                              storage_type;
-    typedef hashing::UnikmerShifter<BaseShifterType> shifter_type;
-    typedef typename shifter_type::ukhs_type         ukhs_type;
-    typedef PdBG<StorageType, BaseShifterType>       pdbg_type;
+    typedef StorageType                                 storage_type;
+    typedef hashing::UnikmerLemirePolicy<HashType>      shift_policy;
+    typedef hashing::HashShifter<shift_policy>          shifter_type;
+    typedef typename shifter_type::ukhs_type            ukhs_type;
+    typedef PdBG<StorageType, shifter_type>             pdbg_type;
 
     _boink_model_typedefs_from_shiftertype(shifter_type)
 
-    class Signature : public kmers::KmerClient {
+    class Signature {
 
     protected:
 
         std::shared_ptr<ukhs_type> ukhs_map;
-
         std::shared_ptr<pdbg_type> signature;
 
     public:
 
-        const uint16_t                        bucket_K;
+        const uint16_t W;
+        const uint16_t K;
 
         template <typename... Args>
-        explicit Signature(uint16_t K,
-                           uint16_t bucket_K,
+        explicit Signature(uint16_t W,
+                           uint16_t K,
                            std::shared_ptr<ukhs_type> ukhs_map,
                            Args&&... args)
-            : KmerClient  (K),
-              ukhs_map    (ukhs_map),
-              bucket_K    (bucket_K)
+            : W        (W),
+              K        (K),
+              ukhs_map (ukhs_map)
         {
-            signature = std::make_shared<pdbg_type>(K,
-                                                    bucket_K,
+            signature = std::make_shared<pdbg_type>(W,
+                                                    K,
                                                     ukhs_map,
                                                     std::forward<Args>(args)...);
         }
 
         template<typename...Args>
-        static std::shared_ptr<Signature> build(uint16_t K,
-                                                uint16_t bucket_K,
+        static std::shared_ptr<Signature> build(uint16_t W,
+                                                uint16_t K,
                                                 std::shared_ptr<ukhs_type> ukhs_map,
                                                 Args&&... args) {
-            return std::make_shared<Signature>(K, bucket_K, ukhs_map, std::forward<Args>(args)...);
+            return std::make_shared<Signature>(W, K, ukhs_map, std::forward<Args>(args)...);
         }
 
         template<typename U = StorageType>
-        static std::shared_ptr<Signature> build(uint16_t K,
-                                                uint16_t bucket_K,
+        static std::shared_ptr<Signature> build(uint16_t W,
+                                                uint16_t K,
                                                 std::shared_ptr<ukhs_type> ukhs_map,
                                                 typename std::enable_if_t<std::is_same<U, boink::storage::SparseppSetStorage>::value, U*> = 0) {
-            return std::make_shared<Signature>(K, bucket_K, ukhs_map);
+            return std::make_shared<Signature>(W, K, ukhs_map);
         }
 
         inline void insert(const std::string& kmer) {
@@ -131,7 +132,7 @@ struct UnikmerSignature {
         */
     };
 
-    typedef UnikmerSignature<StorageType, BaseShifterType>::Signature signature_type;
+    typedef typename UnikmerSignature<StorageType, HashType>::Signature signature_type;
 
     using Processor = InserterProcessor<Signature>; 
 
@@ -180,20 +181,20 @@ struct UnikmerSignature {
 
 };
 
-extern template class signatures::UnikmerSignature<storage::BitStorage, hashing::FwdRollingShifter>;
-extern template class signatures::UnikmerSignature<storage::BitStorage, hashing::CanRollingShifter>;
+extern template class signatures::UnikmerSignature<storage::BitStorage, hashing::HashModel<uint64_t>>;
+extern template class signatures::UnikmerSignature<storage::BitStorage, hashing::CanonicalModel<uint64_t>>;
 
-extern template class signatures::UnikmerSignature<storage::SparseppSetStorage, hashing::FwdRollingShifter>;
-extern template class signatures::UnikmerSignature<storage::SparseppSetStorage, hashing::CanRollingShifter>;
+extern template class signatures::UnikmerSignature<storage::SparseppSetStorage, hashing::HashModel<uint64_t>>;
+extern template class signatures::UnikmerSignature<storage::SparseppSetStorage, hashing::CanonicalModel<uint64_t>>;
 
-extern template class signatures::UnikmerSignature<storage::ByteStorage, hashing::FwdRollingShifter>;
-extern template class signatures::UnikmerSignature<storage::ByteStorage, hashing::CanRollingShifter>;
+extern template class signatures::UnikmerSignature<storage::ByteStorage, hashing::HashModel<uint64_t>>;
+extern template class signatures::UnikmerSignature<storage::ByteStorage, hashing::CanonicalModel<uint64_t>>;
 
-extern template class signatures::UnikmerSignature<storage::NibbleStorage, hashing::FwdRollingShifter>;
-extern template class signatures::UnikmerSignature<storage::NibbleStorage, hashing::CanRollingShifter>;
+extern template class signatures::UnikmerSignature<storage::NibbleStorage, hashing::HashModel<uint64_t>>;
+extern template class signatures::UnikmerSignature<storage::NibbleStorage, hashing::CanonicalModel<uint64_t>>;
 
-extern template class signatures::UnikmerSignature<storage::QFStorage, hashing::FwdRollingShifter>;
-extern template class signatures::UnikmerSignature<storage::QFStorage, hashing::CanRollingShifter>;
+extern template class signatures::UnikmerSignature<storage::QFStorage, hashing::HashModel<uint64_t>>;
+extern template class signatures::UnikmerSignature<storage::QFStorage, hashing::CanonicalModel<uint64_t>>;
 
 
 

@@ -21,18 +21,20 @@
 #include "boink/boink.hh"
 #include "boink/meta.hh"
 #include "boink/sequences/alphabets.hh"
-#include "boink/hashing/canonical.hh"
-#include "boink/kmers/kmerclient.hh"
 #include "boink/storage/sparsepp/spp.h"
-#include "boink/hashing/hashshifter.hh"
+
+#include "boink/hashing/canonical.hh"
 #include "boink/hashing/kmer_span.hh"
 #include "boink/hashing/rollinghashshifter.hh"
+#include "boink/hashing/hashshifter.hh"
 
 
 namespace boink::hashing { 
 
+void test();
+
 template <class ShifterType>
-struct UKHS : public kmers::KmerClient {
+struct UKHS {
 
     typedef typename ShifterType::hash_type hash_type;
     typedef typename hash_type::value_type  value_type;
@@ -50,14 +52,16 @@ protected:
 
 public:
 
-    // Window size W. K size is stored in KmerClient.
-    const uint16_t _W;
+    // Window size W; will correspond to K in other dBG contexts
+    const uint16_t W;
+    // The minimizer length
+    const uint16_t K;
 
     explicit UKHS(uint16_t W,
                  uint16_t K,
                  std::vector<std::string>& ukhs) 
-        : KmerClient  (K),
-          _W          (W)
+        : K (K),
+          W (W)
     {
         if (ukhs.front().size() != K) {
             throw BoinkException("K does not match k-mer size from provided UKHS");
@@ -73,10 +77,6 @@ public:
                 ++pid;
             }
         }
-    }
-
-    const uint16_t W() const {
-        return _W;
     }
 
     static std::shared_ptr<UKHS> build(uint16_t W,
@@ -104,14 +104,13 @@ public:
     }
 };
 
+template<typename T>
+struct UnikmerShifterPolicy;
 
-template<class ShifterType>
-class UnikmerShifter : public HashShifter<UnikmerShifter<ShifterType>,
-                                          WmerModel<typename UKHS<ShifterType>::hash_type,
-                                                    typename UKHS<ShifterType>::Unikmer
-                                                   >
-                                         >,
-                       public KmerSpanMixin<>::type {
+template<template <typename, typename> typename ShiftPolicy,
+                                       typename HashType,
+                                       typename Alphabet>
+class UnikmerShifterPolicy<ShiftPolicy<HashType, Alphabet>> : public KmerSpan {
 
     /* Shifter that keeps track of each k-mer's associated
      * Unikmer. The hash_type will end being composed as:
@@ -136,52 +135,42 @@ class UnikmerShifter : public HashShifter<UnikmerShifter<ShifterType>,
      * this way concerning directionality, and there will usually
      * only be one unikmer in the window anyway, so it will have
      * less overhead.
+     * 
+     * NOTE: This is both a valid shifter policy for HashShifter AND
+     *       and valid extension policy for HashExtender.
      */
 
 
 public:
 
-    typedef UKHS<ShifterType>                                   ukhs_type;
-    typedef ShifterType                                         ukhs_shifter_type;
-    typedef typename KmerSpanMixin<>::type                      span_mixin_type;
-    // reach all the way through and extract value_type
-    // from UKHS -- generally, uint64_t
-    typedef typename ukhs_type::Unikmer                         minimizer_type;
-    typedef WmerModel<typename UKHS<ShifterType>::hash_type,
-                      typename UKHS<ShifterType>::Unikmer>      hash_type;
-    typedef typename hash_type::value_type                      value_type;
+    // policy typedefs for HashShifter
+    typedef ShiftPolicy<HashType, Alphabet>                     base_shift_policy;
+    typedef HashShifter<base_shift_policy>                      base_shifter_type;
 
-    // so if we follow the usual HashShifter model, wmer_type
-    // here should actually be hash_type, but we're a couple layers
-    // of composition deep and this helps with clarity. so,
-    // the interface functions that return hash_type in BaseShifter
-    // will return wmer_type in UnikmerShifter -- in the end,
-    // they are the same types.
+    typedef UnikmerShifterPolicy<base_shift_policy>             type;
+
+    // Shared typedefs
+    typedef UKHS<base_shifter_type>                             ukhs_type;
+    typedef typename ukhs_type::Unikmer                         minimizer_type;
+    typedef WmerModel<typename ukhs_type::hash_type,
+                      typename ukhs_type::Unikmer>              hash_type;
+    typedef KmerModel<hash_type>                                kmer_type;
+    typedef typename hash_type::value_type                      value_type;
+    typedef Alphabet                                            alphabet;
+
     typedef hash_type                                           wmer_type;
     typedef ShiftModel<wmer_type, DIR_LEFT>                     shift_left_type;
     typedef ShiftModel<wmer_type, DIR_RIGHT>                    shift_right_type;
 
-
-    typedef HashShifter<UnikmerShifter<ShifterType>, wmer_type> BaseShifter;
-    typedef typename BaseShifter::alphabet                      alphabet;
-
-    using BaseShifter::NAME;
-    using BaseShifter::OBJECT_ABI_VERSION;
+    static constexpr bool has_kmer_span = true;
 
 protected:
 
-    friend BaseShifter;
-
-    using BaseShifter::_K;
-
-    // K size of the window, "W" of the W,K UKHS
-    // Same as HashShifter->_K
-    uint16_t _window_K;
     // K size of the unikmer
     uint16_t _unikmer_K;
 
-    ShifterType window_hasher;
-    ShifterType unikmer_hasher;
+    base_shifter_type window_hasher;
+    base_shifter_type unikmer_hasher;
 
     // Current position of the unikmer hasher within
     // the window: it will need to be moved across the window
@@ -190,14 +179,14 @@ protected:
 
     // We'll store the unikmers for the current window and their
     // indices, only finding the minimum when queried.
-    std::deque<minimizer_type>    window_unikmers;
-    std::deque<size_t>     unikmer_indices;
+    std::deque<minimizer_type> window_unikmers;
+    std::deque<size_t>         unikmer_indices;
 
     void shift_unikmers_left() {
         for (auto& index : unikmer_indices) {
             ++index;
         }
-        if (unikmer_indices.back() > _K - _unikmer_K) {
+        if (unikmer_indices.back() > K - _unikmer_K) {
             unikmer_indices.pop_back();
             window_unikmers.pop_back();
         }
@@ -206,17 +195,17 @@ protected:
     void update_unikmer_left(const char c) {
         if (!unikmer_hasher_on_left) {
             // if we're not on the left of the window, reset the cursor there
-            unikmer_hasher.hash_base(kmer_window.begin(),
-                                     kmer_window.begin() + _unikmer_K);
+            unikmer_hasher.hash_base(ring.begin(),
+                                     ring.begin() + _unikmer_K);
 
             unikmer_hasher_on_left = true;
         }
         // othewise just shift the new symbol on
-           //std::cout << "Reverse update, "
-        //          << *(kmer_window.begin() + _unikmer_K - 1)
+        // std::cout << "Reverse update, "
+        //          << *(ring.begin() + _unikmer_K - 1)
         //          << " => "
         //          << c << std::endl;
-        unikmer_hasher.shift_left(c, *(kmer_window.begin() + _unikmer_K - 1));
+        unikmer_hasher.shift_left(c, *(ring.begin() + _unikmer_K - 1));
 
         shift_unikmers_left();
         auto unikmer = ukhs_map->query(unikmer_hasher.get());
@@ -248,20 +237,20 @@ protected:
         // if the ukhs hasher is on the left, reset the cursor
         if (unikmer_hasher_on_left) {
             //std::cout << "UnikmerShifter set_unikmer_hasher_right_suffix" << std::endl;
-            unikmer_hasher.hash_base(kmer_window.begin() + this->_K - _unikmer_K,
-                                     kmer_window.end());
+            unikmer_hasher.hash_base(ring.begin() + K - _unikmer_K,
+                                     ring.end());
             unikmer_hasher_on_left = false;
         }
             //std::cout << "UnikmerShifter update: "
-            //          << *(kmer_window.begin() + this->_K - _unikmer_K)
+            //          << *(ring.begin() + K - _unikmer_K)
             //          << " => " << c << std::endl;
-        unikmer_hasher.shift_right(*(kmer_window.begin() + this->_K - _unikmer_K), c);
+        unikmer_hasher.shift_right(*(ring.begin() + K - _unikmer_K), c);
         
         shift_unikmers_right();
         auto unikmer = ukhs_map->query(unikmer_hasher.get());
         if (unikmer) {
             //std::cout << "UnikmerShifter: found unikmer" << std::endl;
-            unikmer_indices.push_back(this->_K - _unikmer_K);
+            unikmer_indices.push_back(K - _unikmer_K);
             window_unikmers.push_back(unikmer.value());
         }
         //std::cout << "UnikmerShifter: leave update_unikmer, uhash: " << cur_unikmer << std::endl;
@@ -287,51 +276,13 @@ public:
 
     // W,K unikmer map
     std::shared_ptr<ukhs_type> ukhs_map;
-
-    explicit UnikmerShifter(uint16_t K,
-                            uint16_t _unikmer_K,
-                            std::shared_ptr<ukhs_type> ukhs)
-        : BaseShifter    (K),
-          span_mixin_type(K),
-          window_hasher  (K),
-          unikmer_hasher (_unikmer_K),
-          _window_K       (K),
-          _unikmer_K      (_unikmer_K),
-          ukhs_map       (ukhs)
-    {
-        if (ukhs_map->W() != K) {
-            throw BoinkException("Shifter K does not match UKHS::Map W.");
-        }
-        if (ukhs_map->K() != _unikmer_K) {
-            throw BoinkException("Shifter _unikmer_K does not match UKHS::Map K.");
-        }
-    }
-
-    explicit UnikmerShifter(UnikmerShifter& other)
-        : UnikmerShifter(other.window_K(),
-                         other.unikmer_K(),
-                         other.ukhs_map)
-    {
-    }
-
-    explicit UnikmerShifter(const UnikmerShifter& other)
-        : UnikmerShifter(other.window_K(),
-                         other.unikmer_K(),
-                         other.ukhs_map)
-    {
-    }
-
-    using BaseShifter::K;
-
-    uint16_t window_K() const {
-        return _window_K;
-    }
+    const uint16_t K;
 
     uint16_t unikmer_K() const {
         return _unikmer_K;
     }
 
-    wmer_type _hash_base(const char * sequence) {
+    wmer_type hash_base_impl(const char * sequence) {
         wmer_type h = _hash(sequence,
                             window_hasher,
                             unikmer_hasher,
@@ -346,7 +297,7 @@ public:
     }
 
     template<class It>
-    wmer_type _hash_base(It begin, It end) {
+    wmer_type hash_base_impl(It begin, It end) {
         // TODO: this does extra copying
         this->load(begin, end);
         wmer_type h = _hash(this->to_string().c_str(),
@@ -360,8 +311,8 @@ public:
         return h;
     }
 
-    wmer_type _get() {
-        typename ShifterType::hash_type hash = window_hasher.get();
+    wmer_type get_impl() {
+        typename base_shifter_type::hash_type hash = window_hasher.get();
         minimizer_type minimizer = get_min_unikmer(window_unikmers);
         return {hash, minimizer};
     }
@@ -371,7 +322,7 @@ public:
                            const uint16_t K,
                            const std::shared_ptr<ukhs_type>& ukhs) {
 
-        UnikmerShifter shifter(W,
+        UnikmerShifterPolicy shifter(W,
                                K,
                                ukhs);
         return shifter._hash(sequence,
@@ -383,8 +334,8 @@ public:
     }
 
     static wmer_type _hash(const char *                sequence,
-                           ShifterType&                window_hasher,
-                           ShifterType&                unikmer_hasher,
+                           base_shifter_type&               window_hasher,
+                           base_shifter_type&               unikmer_hasher,
                            std::shared_ptr<ukhs_type>& ukhs_map,
                            std::deque<minimizer_type>& window_unikmers,
                            std::deque<size_t>&         unikmer_indices) {
@@ -401,16 +352,16 @@ public:
             window_unikmers.push_back(unikmer.value());
         }
 
-        for (uint16_t i = unikmer_hasher.K(); i < window_hasher.K(); ++i) {
+        for (uint16_t i = unikmer_hasher.K; i < window_hasher.K; ++i) {
             // once we've eaten the first K bases, start keeping
             // track of unikmers
 
-            unikmer_hasher.shift_right(sequence[i - unikmer_hasher.K()],
+            unikmer_hasher.shift_right(sequence[i - unikmer_hasher.K],
                                        sequence[i]);
 
             unikmer = ukhs_map->query(unikmer_hasher.get());
             if (unikmer) {
-                unikmer_indices.push_back(i - unikmer_hasher.K() + 1);
+                unikmer_indices.push_back(i - unikmer_hasher.K + 1);
                 window_unikmers.push_back(unikmer.value());
             }
 
@@ -420,29 +371,45 @@ public:
     }
 
 
-    wmer_type _shift_left(const char in, const char out) {
+    wmer_type shift_left_impl(const char in, const char out) {
         // update main window left
-        this->window_hasher.shift_left(in, out);
+        window_hasher.shift_left(in, out);
         update_unikmer_left(in);
-        this->kmer_window.push_front(in);
-        return this->get();
+        ring.push_front(in);
+        return get_impl();
     }
 
-    wmer_type _shift_right(const char out, const char in) {
+    wmer_type shift_left_impl(const char in) {
+        // update main window left
+        window_hasher.shift_left(in, this->back());
+        update_unikmer_left(in);
+        ring.push_front(in);
+        return get_impl();
+    }
+
+    wmer_type shift_right_impl(const char out, const char in) {
         // update main window right
-        this->window_hasher.shift_right(out, in);
+        window_hasher.shift_right(out, in);
         update_unikmer_right(in);
-        this->kmer_window.push_back(in);
-        return this->get();
+        ring.push_back(in);
+        return get_impl();
     }
 
-    auto _left_extensions(const std::string_view& symbols)
+    wmer_type shift_right_impl(const char in) {
+        // update main window right
+        window_hasher.shift_right(this->front(), in);
+        update_unikmer_right(in);
+        ring.push_back(in);
+        return get_impl();
+    }
+
+    auto left_extensions_impl()
     -> std::vector<shift_left_type> {
 
         std::vector<shift_left_type> hashes;
 
         // First get the min unikmer in the W-1 prefix, if there is one
-        auto _last = unikmer_indices.back() > this->_K - _unikmer_K ? 
+        auto _last = unikmer_indices.back() > K - _unikmer_K ? 
                      std::end(window_unikmers) - 1 :
                      std::end(window_unikmers);
         auto _min = std::min_element(std::begin(window_unikmers),
@@ -453,17 +420,17 @@ public:
         }
         
         if (!unikmer_hasher_on_left) {
-            unikmer_hasher.hash_base(kmer_window.begin(),
-                                     kmer_window.begin() + _unikmer_K);
+            unikmer_hasher.hash_base(ring.begin(),
+                                     ring.begin() + _unikmer_K);
 
             unikmer_hasher_on_left = true;
         }
 
         // now compare each neighbor unikmer to the current min
         // to see if the neighbor w-mer has a different minimizer
-        const char back = this->kmer_window.back();
-        const char uback = *(this->kmer_window.begin() + _unikmer_K - 1);
-        for (const auto& symbol : symbols) {
+        const char back = this->ring.back();
+        const char uback = *(this->ring.begin() + _unikmer_K - 1);
+        for (const auto& symbol : alphabet::SYMBOLS) {
             window_hasher.shift_left(symbol, back);
             unikmer_hasher.shift_left(symbol, uback);
 
@@ -485,7 +452,7 @@ public:
         return hashes;
     }
 
-    auto _right_extensions(const std::string_view& symbols)
+    auto right_extensions_impl()
     -> std::vector<shift_right_type> {
         
         std::vector<shift_right_type> hashes;
@@ -501,15 +468,15 @@ public:
         }
         
         if (unikmer_hasher_on_left) {
-            unikmer_hasher.hash_base(kmer_window.begin() + this->_K - _unikmer_K,
-                                     kmer_window.end());
+            unikmer_hasher.hash_base(ring.begin() + K - _unikmer_K,
+                                     ring.end());
             unikmer_hasher_on_left = false;
         }
 
-        const char front = this->kmer_window.front();
-        const char ufront = *(kmer_window.begin() + this->_K - _unikmer_K);
+        const char front = this->ring.front();
+        const char ufront = *(ring.begin() + K - _unikmer_K);
 
-        for (const auto& symbol : symbols) {
+        for (const auto& symbol : alphabet::SYMBOLS) {
             window_hasher.shift_right(front, symbol);
             unikmer_hasher.shift_right(ufront, symbol);
 
@@ -527,27 +494,75 @@ public:
 
         return hashes;
     }
+
+    hash_type set_cursor_impl(const char * sequence) {
+        this->load(sequence);
+        hash_base_impl(sequence);
+        return get_impl();
+    }
+
+protected:
+
+    explicit UnikmerShifterPolicy(uint16_t K,
+                                  uint16_t unikmer_K,
+                                  std::shared_ptr<ukhs_type> ukhs)
+        :  KmerSpan       (K),
+           window_hasher  (K),
+           unikmer_hasher (unikmer_K),
+           K              (K),
+           _unikmer_K     (unikmer_K),
+           ukhs_map       (std::move(ukhs))
+    {
+        if (ukhs_map->W != K) {
+            throw BoinkException("Shifter K does not match UKHS::Map W.");
+        }
+        if (ukhs_map->K != unikmer_K) {
+            throw BoinkException("Shifter unikmer_K does not match UKHS::Map K.");
+        }
+    }
+
+    explicit UnikmerShifterPolicy(UnikmerShifterPolicy& other)
+        : UnikmerShifterPolicy(other.K,
+                               other.unikmer_K(),
+                               other.ukhs_map)
+    {
+    }
+
+    explicit UnikmerShifterPolicy(const UnikmerShifterPolicy& other)
+        : UnikmerShifterPolicy(other.K,
+                         other.unikmer_K(),
+                         other.ukhs_map)
+    {
+    }
 };
 
-typedef UnikmerShifter<FwdRollingShifter> FwdUnikmerShifter;
-typedef UnikmerShifter<CanRollingShifter> CanUnikmerShifter;
 
-template<>
-struct has_minimizer<FwdUnikmerShifter> {
-    static const bool value = true;
+/**
+ * @brief Works as an alias to convert UnikmerShifter to the HashShifter's
+ *        shifting policy template:w
+ *  specification.
+ * 
+ * @tparam HashType 
+ * @tparam Alphabet 
+ */
+template <typename HashType, typename Alphabet=DNA_SIMPLE>
+struct UnikmerLemirePolicy : public UnikmerShifterPolicy<RollingHashShifter<HashType, Alphabet>>
+{
+    protected:
+        using UnikmerShifterPolicy<RollingHashShifter<HashType, Alphabet>>::UnikmerShifterPolicy;
 };
 
-template<>
-struct has_minimizer<CanUnikmerShifter> {
-    static const bool value = true;
-};
-
+typedef UnikmerLemirePolicy<HashModel<uint64_t>> FwdUnikmerPolicy;
+typedef UnikmerLemirePolicy<CanonicalModel<uint64_t>> CanUnikmerPolicy;
 
 extern template class UKHS<FwdRollingShifter>;
 extern template class UKHS<CanRollingShifter>;
 
-extern template class UnikmerShifter<FwdRollingShifter>;
-extern template class UnikmerShifter<CanRollingShifter>;
+extern template class UnikmerShifterPolicy<FwdLemirePolicy>;
+extern template class UnikmerShifterPolicy<CanLemirePolicy>;
+
+extern template class UnikmerLemirePolicy<HashModel<uint64_t>, DNA_SIMPLE>;
+extern template class UnikmerLemirePolicy<CanonicalModel<uint64_t>, DNA_SIMPLE>;
 
 }
 

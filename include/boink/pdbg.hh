@@ -23,11 +23,10 @@
 #include "boink/hashing/kmeriterator.hh"
 #include "boink/hashing/hashextender.hh"
 #include "boink/hashing/canonical.hh"
-#include "boink/kmers/kmerclient.hh"
 #include "boink/hashing/ukhs.hh"
+#include "boink/hashing/shifter_types.hh"
 #include "boink/storage/storage.hh"
 #include "boink/storage/storage_types.hh"
-#include "boink/hashing/rollinghashshifter.hh"
 #include "boink/storage/partitioned_storage.hh"
 
 #include <algorithm>
@@ -39,14 +38,15 @@ namespace boink {
 
 using storage::PartitionedStorage;
 
-template <class BaseStorageType, class BaseShifterType>
-class PdBG : public kmers::KmerClient {
+template <class BaseStorageType,
+          class ShifterType = hashing::FwdUnikmerShifter>
+class PdBG {
 
 public:
     
-    typedef PdBG<BaseStorageType, BaseShifterType>             graph_type;
-    typedef dBGWalker<PdBG<BaseStorageType, BaseShifterType>>  walker_type;
-    typedef typename hashing::UnikmerShifter<BaseShifterType>  shifter_type;
+    typedef PdBG<BaseStorageType, ShifterType>                 graph_type;
+    typedef ShifterType                                        shifter_type;
+    typedef dBGWalker<PdBG<BaseStorageType, ShifterType>>      walker_type;
     typedef typename shifter_type::ukhs_type                   ukhs_type;
     _boink_model_typedefs_from_shiftertype(shifter_type)
     _boink_walker_typedefs_from_graphtype(walker_type)
@@ -61,6 +61,7 @@ protected:
 
 public:
 
+    const uint16_t K;
     const uint16_t partition_K;
  
     template <typename... Args>
@@ -68,7 +69,7 @@ public:
                   uint16_t  partition_K,
                   std::shared_ptr<ukhs_type>& ukhs,
                   Args&&... args)
-        : KmerClient  (K),
+        : K           (K),
           ukhs        (ukhs),
           partitioner (K, partition_K, ukhs),
           partition_K (partition_K)
@@ -81,7 +82,7 @@ public:
                   uint16_t partition_K,
                   std::shared_ptr<ukhs_type>& ukhs,
                   std::shared_ptr<storage::PartitionedStorage<BaseStorageType>> S)
-        : KmerClient  (K),
+        : K           (K),
           ukhs        (ukhs),
           partitioner (K, partition_K, ukhs),
           partition_K (partition_K),
@@ -91,11 +92,11 @@ public:
     }
 
     inline hash_type hash(const std::string& kmer) const {
-        return shifter_type::hash(kmer, this->_K, partition_K, ukhs);
+        return shifter_type::hash(kmer, K, partition_K, ukhs);
     }
 
     inline hash_type hash(const char * kmer) const {
-        return shifter_type::hash(kmer, this->_K, partition_K, ukhs);
+        return shifter_type::hash(kmer, K, partition_K, ukhs);
     }
 
     inline std::vector<hash_type> get_hashes(const std::string& sequence) {
@@ -112,7 +113,7 @@ public:
     }
 
     inline std::shared_ptr<graph_type> clone() {
-        return std::make_shared<graph_type>(this->_K,
+        return std::make_shared<graph_type>(K,
                                             partition_K,
                                             ukhs,
                                             S);
@@ -231,7 +232,7 @@ public:
     inline std::vector<storage::count_t> insert_and_query_sequence(const std::string& sequence) {
 
         hashing::KmerIterator<extender_type> iter(sequence, &partitioner);
-        std::vector<storage::count_t> counts(sequence.length() - _K + 1);
+        std::vector<storage::count_t> counts(sequence.length() - K + 1);
 
         size_t pos = 0;
         while(!iter.done()) {
@@ -247,7 +248,7 @@ public:
     inline std::vector<storage::count_t> query_sequence(const std::string& sequence) {
 
         hashing::KmerIterator<extender_type> iter(sequence, &partitioner);
-        std::vector<storage::count_t> counts(sequence.length() - _K + 1);
+        std::vector<storage::count_t> counts(sequence.length() - K + 1);
 
         size_t pos = 0;
         while(!iter.done()) {
@@ -263,7 +264,7 @@ public:
     inline std::vector<storage::count_t> query_sequence_rolling(const std::string& sequence) {
 
         hashing::KmerIterator<extender_type> iter(sequence, &partitioner);
-        std::vector<storage::count_t> counts(sequence.length() - _K + 1);
+        std::vector<storage::count_t> counts(sequence.length() - K + 1);
         
         hash_type         h             = iter.next();
         uint64_t          cur_pid       = h.minimizer.partition;
@@ -332,11 +333,11 @@ public:
     }
 
     const std::string suffix(const std::string& kmer) {
-        return kmer.substr(kmer.length() - this->_K + 1);
+        return kmer.substr(kmer.length() - this->K + 1);
     }
 
     const std::string prefix(const std::string& kmer) {
-        return kmer.substr(0, this->_K - 1);
+        return kmer.substr(0, this->K - 1);
     }
 
     std::vector<kmer_type> build_left_kmers(const std::vector<shift_type<hashing::DIR_LEFT>>& nodes,
@@ -403,11 +404,11 @@ public:
     */
 
     void save(std::string filename) {
-        S->save(filename, _K);
+        S->save(filename, K);
     }
 
     void load(std::string filename) {
-        uint16_t ksize = _K;
+        uint16_t ksize = K;
         S->load(filename, ksize);
     }
 
@@ -421,20 +422,20 @@ public:
 };
 
 
-extern template class PdBG<storage::BitStorage, hashing::FwdRollingShifter>;
-extern template class PdBG<storage::BitStorage, hashing::CanRollingShifter>;
+extern template class PdBG<storage::BitStorage, hashing::FwdUnikmerShifter>;
+extern template class PdBG<storage::BitStorage, hashing::CanUnikmerShifter>;
 
-extern template class PdBG<storage::SparseppSetStorage, hashing::FwdRollingShifter>;
-extern template class PdBG<storage::SparseppSetStorage, hashing::CanRollingShifter>;
+extern template class PdBG<storage::SparseppSetStorage, hashing::FwdUnikmerShifter>;
+extern template class PdBG<storage::SparseppSetStorage, hashing::CanUnikmerShifter>;
 
-extern template class PdBG<storage::ByteStorage, hashing::FwdRollingShifter>;
-extern template class PdBG<storage::ByteStorage, hashing::CanRollingShifter>;
+extern template class PdBG<storage::ByteStorage, hashing::FwdUnikmerShifter>;
+extern template class PdBG<storage::ByteStorage, hashing::CanUnikmerShifter>;
 
-extern template class PdBG<storage::NibbleStorage, hashing::FwdRollingShifter>;
-extern template class PdBG<storage::NibbleStorage, hashing::CanRollingShifter>;
+extern template class PdBG<storage::NibbleStorage, hashing::FwdUnikmerShifter>;
+extern template class PdBG<storage::NibbleStorage, hashing::CanUnikmerShifter>;
 
-extern template class PdBG<storage::QFStorage, hashing::FwdRollingShifter>;
-extern template class PdBG<storage::QFStorage, hashing::CanRollingShifter>;
+extern template class PdBG<storage::QFStorage, hashing::FwdUnikmerShifter>;
+extern template class PdBG<storage::QFStorage, hashing::CanUnikmerShifter>;
 
 }
 #endif

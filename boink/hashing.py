@@ -9,6 +9,8 @@ types = [_type for _type, _name in typenames]
 
 
 UKHS = libboink.hashing.UKHS
+HashExtender = libboink.hashing.HashExtender
+extender_selector_t = libboink.hashing.extender_selector_t
 
 for hasher_t, name in typenames:
     globals()[name] = hasher_t

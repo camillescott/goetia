@@ -120,6 +120,8 @@ configure_file(src/boink/boink.pc.in boink.pc @ONLY)
 add_executable(do_bench_storage EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/src/boink/benchmarks/do_bench_storage.cc)
 target_link_libraries(do_bench_storage boink)
 
+add_executable(test_hashing EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/src/boink/benchmarks/benchmark_hashing.cc)
+target_link_libraries(test_hashing boink)
 
 #
 # Set up the Cppyy bindings generation. This is a customized version defined
@@ -161,4 +163,4 @@ install(FILES ${CMAKE_BINARY_DIR}/boink.pc
         DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig
 )
 
-install(CODE "execute_process(COMMAND pip install --no-deps -U ${PY_WHEEL_FILE})")
+install(CODE "execute_process(COMMAND python -m pip install --no-deps -U ${PY_WHEEL_FILE})")

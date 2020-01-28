@@ -16,14 +16,14 @@
 #include "boink/nameof.hpp"
 
 #define _boink_model_typedefs_from_shiftertype(shifter_type) \
-    typedef hashing::HashExtender<shifter_type> extender_type; \
-    typedef typename shifter_type::alphabet     alphabet; \
-    typedef typename shifter_type::hash_type    hash_type; \
-	typedef typename hash_type::value_type      value_type; \
-    typedef typename shifter_type::kmer_type    kmer_type; \
+    typedef typename hashing::extender_selector<shifter_type>::type extender_type; \
+    typedef typename shifter_type::alphabet          alphabet; \
+    typedef typename shifter_type::hash_type         hash_type; \
+	typedef typename hash_type::value_type           value_type; \
+    typedef typename shifter_type::kmer_type         kmer_type; \
     template<bool Dir> using shift_type = hashing::ShiftModel<hash_type, Dir>; \
     typedef std::pair<std::vector<kmer_type>, \
-                      std::vector<kmer_type>>                      neighbor_pair_type;\
+                      std::vector<kmer_type>>         neighbor_pair_type;\
     typedef std::pair<std::vector<shift_type<hashing::DIR_LEFT>>,\
                       std::vector<shift_type<hashing::DIR_RIGHT>>> shift_pair_type;
 

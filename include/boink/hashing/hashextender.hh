@@ -15,9 +15,7 @@
 #include "boink/hashing/canonical.hh"
 #include "boink/hashing/kmer_span.hh"
 #include "boink/hashing/kmeriterator.hh"
-#include "boink/hashing/rollinghashshifter.hh"
-#include "boink/hashing/ukhs.hh"
-
+#include "boink/hashing/shifter_types.hh"
 #include "boink/sequences/alphabets.hh"
 
 #include "boink/is_detected.hh"
@@ -30,7 +28,7 @@ namespace boink::hashing {
 // Detectors for delegating extension machinery    
 template<class ShifterType>
 using left_extension_t =
-    decltype(std::declval<ShifterType&>().left_extensions());
+    decltype(std::declval<ShifterType&>().left_extensions_impl());
 
 template<class ShifterType>
 using supports_left_extension = is_detected<left_extension_t, ShifterType>;
@@ -38,7 +36,7 @@ using supports_left_extension = is_detected<left_extension_t, ShifterType>;
 
 template<class ShifterType>
 using right_extension_t =
-    decltype(std::declval<ShifterType&>().right_extensions());
+    decltype(std::declval<ShifterType&>().right_extensions_impl());
 
 template<class ShifterType>
 using supports_right_extension = is_detected<right_extension_t, ShifterType>;
@@ -63,64 +61,56 @@ using supports_right_extension = is_detected<right_extension_t, ShifterType>;
  *
  * @tparam ShifterType   HashShifter providing the shifting policy.
  */
-template <class ShifterType>
-class HashExtender : public ShifterType,
-                     public KmerSpanMixin<ShifterType>::type {
+
+;
+
+template <typename ExtensionPolicy>
+class HashExtender : public ExtensionPolicy {
 
 public:
 
-    typedef typename KmerSpanMixin<ShifterType>::type span_mixin_type;
+    typedef ExtensionPolicy                         extension_policy;
+    typedef typename extension_policy::shifter_type shifter_type;
+    typedef typename extension_policy::value_type   value_type;
+    typedef typename extension_policy::hash_type    hash_type;
+    typedef typename extension_policy::kmer_type    kmer_type;
+    typedef typename extension_policy::alphabet     alphabet;
 
-    typedef ShifterType                      shifter_type;
-    typedef typename shifter_type::hash_type hash_type;
-    typedef typename hash_type::value_type   value_type;
+    typedef ShiftModel<hash_type, DIR_LEFT>         shift_left_type;
+    typedef ShiftModel<hash_type, DIR_RIGHT>        shift_right_type;
 
-    template<bool Dir>
-        using shift_type = ShiftModel<hash_type, Dir>;
-    typedef ShiftModel<hash_type, DIR_LEFT>  shift_left_type;
-    typedef ShiftModel<hash_type, DIR_RIGHT> shift_right_type;
-
-    typedef KmerModel<hash_type>             kmer_type;
-
-    using ShifterType::_K;
-
-    typedef typename ShifterType::alphabet alphabet;
+    using extension_policy::K;
 
     template<typename... ExtraArgs>
-    HashExtender(const std::string& start,
-                 uint16_t           K,
-                 ExtraArgs&&...     args)
-        : ShifterType(K, std::forward<ExtraArgs>(args)...),
-          span_mixin_type(K)
+    explicit HashExtender(const std::string& start,
+                          uint16_t           K,
+                          ExtraArgs&&...     args)
+        : extension_policy(start, K, std::forward<ExtraArgs>(args)...)
     {
-        set_cursor(start);
+        //std::cout << "END HashExtender(start, K...) ctor " << this << " / " << static_cast<extension_policy*>(this) << std::endl;
     }
 
     template<typename... ExtraArgs>
-    HashExtender(uint16_t K,
-                 ExtraArgs&&... args)
-        : ShifterType(K, std::forward<ExtraArgs>(args)...),
-          span_mixin_type(K)
+    explicit HashExtender(uint16_t K,
+                          ExtraArgs&&... args)
+        : extension_policy(K, std::forward<ExtraArgs>(args)...)
     {
+        //std::cout << "END HashExtender(K...) ctor " << this << " / " << static_cast<extension_policy*>(this) << std::endl;
     }
 
-    HashExtender(const HashExtender& extender)
-        : ShifterType(static_cast<ShifterType>(extender)),
-          span_mixin_type(extender.K())
+    explicit HashExtender(const HashExtender& extender)
+        : extension_policy(static_cast<const extension_policy &>(extender))
     {
+        //std::cout << "END HashExtender(HashExtender...) ctor " << this << " / " << static_cast<extension_policy*>(this) << std::endl;
     }
 
-    HashExtender(const shifter_type& shifter)
-        : ShifterType(shifter),
-          span_mixin_type(shifter.K())
+    explicit HashExtender(const shifter_type& shifter)
+        : extension_policy(shifter)
     {
+        //std::cout << "END HashExtender(shifter_type...) ctor " << this << " / " << static_cast<extension_policy*>(this) << std::endl;
     }
 
-    using shifter_type::get;
-    using shifter_type::shift_right;
-    using shifter_type::shift_left;
-    using shifter_type::K;
-
+    HashExtender() = delete;
 
     /**
      * @Synopsis  Shift cursor left from current value using
@@ -130,87 +120,33 @@ public:
      *
      * @Returns   
      */
-    template<typename Dummy = hash_type>
-    auto shift_left(const char& c)
-    -> std::enable_if_t<KmerSpanMixin<ShifterType>::enabled, Dummy> {
+    hash_type shift_left(const char& c) {
         if (!this->is_loaded()) {
             throw UninitializedShifterException();
         }
 
-        hash_type h = shift_left(c, this->back());
-        this->kmer_window.push_front(c);
-        return h;
+        return this->shift_left_impl(c);
     }
 
-    template<typename Dummy = hash_type>
-    auto shift_left(const char& c)
-    -> std::enable_if_t<!KmerSpanMixin<ShifterType>::enabled, Dummy> {
-        if (!this->is_loaded()) {
-            throw UninitializedShifterException();
-        }
-
-        hash_type h = shift_left(c, this->back());
-        return h;
+    hash_type shift_left(const char& in, const char& out) {
+        return shift_left(in);
     }
 
     /**
      * @Synopsis  Gather the left extensions from the current position using
      *            the given symbols, the default being those from our alphabet.
      *
-     *            NOTE: there is template wonk here. This version is called by
-     *            default, that is, ShifterType is a normal CRTP derivation
-     *            from HashShifter and does not have a _left_extensions
-     *            member function.
-     *
-     * @tparam Dummy    SFINAE dummy var. Do not specialize!
      * @Param symbols   Alphabet to extend with.
      *
      * @Returns   A list of left extensions.
      */
-    template<typename Dummy = std::vector<shift_left_type>>
-    auto left_extensions(const std::string_view& symbols = alphabet::SYMBOLS)
-    -> std::enable_if_t<!supports_left_extension<ShifterType>::value, Dummy> {
+    std::vector<shift_left_type> left_extensions() {
 
         if (!this->is_loaded()) {
             throw UninitializedShifterException();
         }
 
-        std::vector<shift_left_type> hashes;
-        auto back = this->back();
-        for (auto symbol : symbols) {
-            hash_type h = this->shift_left(symbol, back);
-            shift_left_type result(h, symbol);
-            hashes.push_back(result);
-            this->shift_right(symbol, back);
-        }
-
-        return hashes;
-    }
-
-    /**
-     * @Synopsis  Gather the left extensions from the current position using
-     *            the given symbols, the default being those from our alphabet.
-     *
-     *            NOTE: template wonk! If ShifterType has its own _left_extensions
-     *            member function, we delegate to that instead. This is for when
-     *            it's slow to shift left-right-...-left-right repeatedly and
-     *            the shifter needs to provide its own implementation. This also
-     *            avoids a ton of duplicated code via partial template specialization.
-     *
-     * @tparam Dummy    SFINAE dummy var. Do not specialize!
-     * @Param symbols   Alphabet to extend with.
-     *
-     * @Returns   A list of left extensions.
-     */
-    template<typename Dummy = std::vector<shift_left_type>>
-    auto left_extensions(const std::string_view& symbols = alphabet::SYMBOLS)
-    -> std::enable_if_t<supports_left_extension<ShifterType>::value, Dummy> {
-
-        if (!this->is_loaded()) {
-            throw UninitializedShifterException();
-        }
-
-        return ShifterType::_left_extensions(symbols);
+        return this->left_extensions_impl();
     }
 
     /**
@@ -221,86 +157,34 @@ public:
      *
      * @Returns   
      */
-    template<typename Dummy = hash_type>
-    auto shift_right(const char& c)
-    -> std::enable_if_t<KmerSpanMixin<ShifterType>::enabled, Dummy> {
+    hash_type shift_right(const char& c){
         if (!this->is_loaded()) {
             throw UninitializedShifterException();
         }
 
-        hash_type h = shift_right(this->front(), c);
-        this->kmer_window.push_back(c);
-        return h;
+        return this->shift_right_impl(c);
+
     }
 
-
-    template<typename Dummy = hash_type>
-    auto shift_right(const char& c)
-    -> std::enable_if_t<!KmerSpanMixin<ShifterType>::enabled, Dummy> {
-        if (!this->is_loaded()) {
-            throw UninitializedShifterException();
-        }
-
-        hash_type h = shift_right(this->front(), c);
-        return h;
+    hash_type shift_right(const char& out, const char& in) {
+        return shift_right(in);
     }
 
     /**
      * @Synopsis  Gather the right extensions from the current position using
      *            the given symbols, the default being those from our alphabet.
      *
-     *            NOTE: there is template wonk here. This version is called by
-     *            default, that is, ShifterType is a normal CRTP derivation
-     *            from HashShifter and does not have a _left_extensions
-     *            member function.
-     *
-     * @tparam Dummy    SFINAE dummy var. Do not specialize!
      * @Param symbols   Alphabet to extend with.
      *
      * @Returns   A vector of right extensions.
      */
-    template<typename Dummy = std::vector<shift_right_type>>
-    auto right_extensions(const std::string_view& symbols = alphabet::SYMBOLS)
-    -> std::enable_if_t<!supports_right_extension<ShifterType>::value, Dummy> {
+    std::vector<shift_right_type> right_extensions() {
 
         if (!this->is_loaded()) {
             throw UninitializedShifterException();
         }
 
-        std::vector<shift_right_type> hashes;
-        auto front = this->front();
-        for (auto symbol : symbols) {
-            hash_type h = this->shift_right(front, symbol);
-            hashes.push_back(shift_right_type(h, symbol));
-            this->shift_left(front, symbol);
-        }
-        return hashes;
-    }
-
-    /**
-     * @Synopsis  Gather the right extensions from the current position using
-     *            the given symbols, the default being those from our alphabet.
-     *
-     *            NOTE: template wonk! If ShifterType has its own _left_extensions
-     *            member function, we delegate to that instead. This is for when
-     *            it's slow to shift left-right-...-left-right repeatedly and
-     *            the shifter needs to provide its own implementation. This also
-     *            avoids a ton of duplicated code via partial template specialization.
-     *
-     * @tparam Dummy    SFINAE dummy var. Do not specialize!
-     * @Param symbols   Alphabet to extend with.
-     *
-     * @Returns   A vector of right extensions.
-     */
-    template<typename Dummy = std::vector<shift_right_type>>
-    auto right_extensions(const std::string_view& symbols = alphabet::SYMBOLS)
-    -> std::enable_if_t<supports_right_extension<ShifterType>::value, Dummy> {
-
-        if (!this->is_loaded()) {
-            throw UninitializedShifterException();
-        }
-
-        return ShifterType::_right_extensions(symbols);
+        return this->right_extensions_impl();
     }
 
     /**
@@ -310,25 +194,11 @@ public:
      *
      * @Returns   
      */
-    template<typename Dummy = hash_type>
-    auto set_cursor(const std::string& sequence)
-     -> std::enable_if_t<KmerSpanMixin<ShifterType>::enabled, Dummy> {
-        if (sequence.length() < _K) {
+    hash_type set_cursor(const std::string& sequence) {
+        if (sequence.length() < K) {
             throw SequenceLengthException("Sequence must at least length K");
         }
-        this->hash_base(sequence.c_str());
-        this->load(sequence);
-        return get();
-    }
-
-    template<typename Dummy = hash_type>
-    auto set_cursor(const std::string& sequence)
-     -> std::enable_if_t<!KmerSpanMixin<ShifterType>::enabled, Dummy> {
-        if (sequence.length() < _K) {
-            throw SequenceLengthException("Sequence must at least length K");
-        }
-        this->hash_base(sequence.c_str());
-        return get();
+        return set_cursor(sequence.c_str());
     }
 
     /**
@@ -338,21 +208,21 @@ public:
      *
      * @Returns   
      */
-    template<typename Dummy = hash_type>
-    auto set_cursor(const char * sequence)
-    -> std::enable_if_t<KmerSpanMixin<ShifterType>::enabled, Dummy> {
+    hash_type set_cursor(const char * sequence) {
         // less safe! does not check length
-        this->hash_base(sequence);
-        this->load(sequence);
-        return get();
+        return this->set_cursor_impl(sequence);
     }
 
-    template<typename Dummy = hash_type>
-    auto set_cursor(const char * sequence)
-    -> std::enable_if_t<!KmerSpanMixin<ShifterType>::enabled, Dummy> {
-        // less safe! does not check length
-        this->hash_base(sequence);
-        return get();
+    hash_type hash_base(const std::string& sequence) {
+        if (sequence.length() < K) {
+            throw SequenceLengthException("Sequence must at least length K");
+        }
+
+        return set_cursor(sequence);
+    }
+
+    hash_type hash_base(const char * sequence) {
+        return set_cursor(sequence);
     }
 
     /**
@@ -379,23 +249,209 @@ public:
      * @Param result
      */
     void get_cursor(kmer_type& result) {
-        result.hash = get();
+        result.hash = this->get();
         result.kmer = get_cursor();
     }
 };
 
+template <class ShifterType>
+class DefaultExtensionPolicy : public ShifterType,
+                               public KmerSpan {
 
-extern template class HashExtender<FwdRollingShifter>;
-extern template class HashExtender<CanRollingShifter>;
+public:
+
+    typedef ShifterType                      shifter_type;
+    typedef typename shifter_type::hash_type hash_type;
+    typedef typename hash_type::value_type   value_type;
+
+    template<bool Dir>
+        using shift_type = ShiftModel<hash_type, Dir>;
+
+    typedef ShiftModel<hash_type, DIR_LEFT>  shift_left_type;
+    typedef ShiftModel<hash_type, DIR_RIGHT> shift_right_type;
+    typedef KmerModel<hash_type>             kmer_type;
+    typedef typename ShifterType::alphabet   alphabet;
+
+    using shifter_type::K;
+    using shifter_type::hash;
+    using shifter_type::get;
+    using shifter_type::is_initialized;
+
+private:
+
+    using shifter_type::shift_right;
+    using shifter_type::shift_left;
+    using shifter_type::hash_base;
+
+public:
+
+
+    template<typename... ExtraArgs>
+    explicit DefaultExtensionPolicy(uint16_t       K,
+                                    ExtraArgs&&... args)
+        : ShifterType(K, std::forward<ExtraArgs>(args)...),
+          KmerSpan(K)
+    {
+        //std::cout << "END DefaultExtPolicy(K...) ctor " << this << " / " << static_cast<ShifterType*>(this) << std::endl;
+    }
+
+    template<typename... ExtraArgs>
+    explicit DefaultExtensionPolicy(const std::string& start,
+                                    uint16_t           K,
+                                    ExtraArgs&&...     args)
+        : ShifterType(start, K, std::forward<ExtraArgs>(args)...),
+          KmerSpan(K)
+    {
+        this->load(start);
+        //std::cout << "END DefaultExtPolicy (string&, ...) ctor " << this << " / " << static_cast<ShifterType*>(this) << std::endl;
+
+    }
+
+    explicit DefaultExtensionPolicy(const DefaultExtensionPolicy& policy)
+        : ShifterType(static_cast<const ShifterType &>(policy)),
+          KmerSpan(policy.K)
+    {
+        //std::cout << "END DefaultExtPolicy(HashExtender&......) ctor" << this << " / " << static_cast<ShifterType*>(this) << std::endl;
+    }
+
+    explicit DefaultExtensionPolicy(const shifter_type& shifter)
+        : ShifterType(shifter),
+          KmerSpan(shifter.K)
+    {
+        //std::cout << "END DefaultExtPolicy(shifter_type&...) ctor"   << this << " / " << static_cast<ShifterType*>(this) << std::endl;
+    }
+
+    DefaultExtensionPolicy() = delete;
+
+    /**
+     * @Synopsis  Shift cursor left from current value using
+     *            symbol c and return hash value.
+     *
+     * @Param c
+     *
+     * @Returns   
+     */
+    hash_type shift_left_impl(const char& c) {
+        auto h = ShifterType::shift_left(c, this->back());
+        this->ring.push_front(c);
+        return h;
+    }
+
+    /**
+     * @Synopsis  Gather the left extensions from the current position using
+     *            the given symbols, the default being those from our alphabet.
+     *
+     *            NOTE: there is template wonk here. This version is called by
+     *            default, that is, ShifterType is a normal CRTP derivation
+     *            from HashShifter and does not have a _left_extensions
+     *            member function.
+     *
+     * @tparam Dummy    SFINAE dummy var. Do not specialize!
+     * @Param symbols   Alphabet to extend with.
+     *
+     * @Returns   A list of left extensions.
+     */
+    std::vector<shift_left_type> left_extensions_impl() {
+
+        std::vector<shift_left_type> hashes;
+        auto back = this->back();
+        for (const auto& symbol : alphabet::SYMBOLS) {
+            hash_type h = ShifterType::shift_left(symbol, back);
+            shift_left_type result(h, symbol);
+            hashes.push_back(result);
+            ShifterType::shift_right(symbol, back);
+        }
+
+        return hashes;
+    }
+
+    /**
+     * @Synopsis  Shift cursor right from current value using
+     *            symbol c and return hash value.
+     *
+     * @Param c
+     *
+     * @Returns   
+     */
+    hash_type shift_right_impl(const char& c) {
+        auto h = ShifterType::shift_right(this->front(), c);
+        this->ring.push_back(c);
+        return h;
+    }
+
+    /**
+     * @Synopsis  Gather the right extensions from the current position using
+     *            the given symbols, the default being those from our alphabet.
+     *
+     * @Param symbols   Alphabet to extend with.
+     *
+     * @Returns   A vector of right extensions.
+     */
+     std::vector<shift_right_type> right_extensions_impl() {
+
+        std::vector<shift_right_type> hashes;
+        auto front = this->front();
+        for (const auto& symbol : alphabet::SYMBOLS) {
+            hash_type h = ShifterType::shift_right(front, symbol);
+            hashes.push_back(shift_right_type(h, symbol));
+            ShifterType::shift_left(front, symbol);
+        }
+        return hashes;
+    }
+
+    hash_type set_cursor_impl(const char * sequence) {
+        auto h = ShifterType::hash_base(sequence);
+        this->load(sequence);
+        return h;
+    }
+};
+
+typedef HashExtender<DefaultExtensionPolicy<FwdRollingShifter>> FwdRollingExtender;
+typedef HashExtender<DefaultExtensionPolicy<CanRollingShifter>> CanRollingExtender;
+
+typedef HashExtender<FwdUnikmerShifter> FwdUnikmerExtender;
+typedef HashExtender<CanUnikmerShifter> CanUnikmerExtender;
+
+
+template <typename ShifterType>
+struct extender_selector {
+    typedef HashExtender<DefaultExtensionPolicy<ShifterType>> type;
+    typedef ShifterType                                       shifter_type;
+};
+
+
+template<>
+struct extender_selector<FwdUnikmerShifter> {
+    typedef HashExtender<FwdUnikmerShifter> type;
+    typedef FwdUnikmerShifter               shifter_type;
+};
+
+
+template<>
+struct extender_selector<CanUnikmerShifter> {
+    typedef HashExtender<CanUnikmerShifter> type;
+    typedef CanUnikmerShifter               shifter_type;
+};
+
+
+template<typename ShifterType>
+    using extender_selector_t = typename extender_selector<ShifterType>::type;
+
+
+extern template class DefaultExtensionPolicy<FwdRollingShifter>;
+extern template class DefaultExtensionPolicy<CanRollingShifter>;
+
+extern template class HashExtender<DefaultExtensionPolicy<FwdRollingShifter>>;
+extern template class HashExtender<DefaultExtensionPolicy<CanRollingShifter>>;
 
 extern template class HashExtender<FwdUnikmerShifter>;
 extern template class HashExtender<CanUnikmerShifter>;
 
-extern template class KmerIterator<HashExtender<FwdRollingShifter>>;
-extern template class KmerIterator<HashExtender<CanRollingShifter>>;
+extern template class KmerIterator<FwdRollingExtender>;
+extern template class KmerIterator<CanRollingExtender>;
 
-extern template class KmerIterator<HashExtender<FwdUnikmerShifter>>;
-extern template class KmerIterator<HashExtender<CanUnikmerShifter>>;
+extern template class KmerIterator<FwdUnikmerExtender>;
+extern template class KmerIterator<CanUnikmerExtender>;
 
 
 

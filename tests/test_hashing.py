@@ -8,8 +8,15 @@
 import pytest
 from .utils import *
 from boink import libboink
-from boink.hashing import FwdRollingShifter, CanRollingShifter, FwdUnikmerShifter, CanUnikmerShifter
+from boink.hashing import (FwdRollingShifter, CanRollingShifter, 
+                           FwdUnikmerShifter, CanUnikmerShifter,
+                           extender_selector_t)
 
+known_kmer = 'TCACCTGTGTTGTGCTACTTGCGGCGC'
+known_fwd = 13194817695400542713
+known_rc = 4324216031038051805
+known_can = known_rc
+known_hashes = (known_fwd, known_rc)
 
 
 def get_min_unikmer(wmer, uk_map, shifter_type):
@@ -25,6 +32,23 @@ def get_min_unikmer(wmer, uk_map, shifter_type):
     print([f'{i}: {u}' for i, u in zip(positions, unikmers)])
     #print([str(u) for u in unikmers])
     return wmer_hash, min(unikmers, key=lambda elem: elem.value)
+
+@using(ksize=27)
+def test_extender_hash_base_override(hasher, ksize):
+    extender = extender_selector_t[type(hasher)](hasher)
+
+    extender.hash_base(known_kmer)
+    assert extender.get_cursor() == known_kmer
+    assert extender.get().value in known_hashes
+
+
+@using(ksize=27)
+def test_extender_set_cursor(hasher, ksize):
+    extender = extender_selector_t[type(hasher)](hasher)
+
+    extender.set_cursor(known_kmer)
+    assert extender.get_cursor() == known_kmer
+    assert extender.get().value in known_hashes
 
 
 @using(ksize=27)
@@ -129,7 +153,7 @@ def test_unikmer_hash_base(ksize, length, random_sequence, hasher):
 
     for i, kmer in enumerate(kmers(seq, ksize)):
         h = hasher.hash_base(kmer)
-        exp_kmer_hash, exp_ukmer = get_min_unikmer(kmer, hasher.ukhs_map, type(hasher).ukhs_shifter_type)
+        exp_kmer_hash, exp_ukmer = get_min_unikmer(kmer, hasher.ukhs_map, type(hasher).base_shifter_type)
         assert h.value == exp_kmer_hash.value, (i, h)
         assert h.minimizer == exp_ukmer, (i, h)
 
@@ -139,13 +163,13 @@ def test_unikmer_shift_right(ksize, length, random_sequence, hasher):
     seq = random_sequence()
 
     h = hasher.hash_base(seq[:ksize])
-    exp_kmer_hash, exp_ukmer = get_min_unikmer(seq[:ksize], hasher.ukhs_map, type(hasher).ukhs_shifter_type)
+    exp_kmer_hash, exp_ukmer = get_min_unikmer(seq[:ksize], hasher.ukhs_map, type(hasher).base_shifter_type)
     assert h.value == exp_kmer_hash.value
     assert h.minimizer == exp_ukmer
 
     for i in range(1, len(seq) - ksize):
         h = hasher.shift_right(seq[i-1], seq[i + ksize - 1])
-        exp_hash, exp_uk = get_min_unikmer(seq[i:i+ksize], hasher.ukhs_map, type(hasher).ukhs_shifter_type)
+        exp_hash, exp_uk = get_min_unikmer(seq[i:i+ksize], hasher.ukhs_map, type(hasher).base_shifter_type)
 
         assert h.value == exp_hash.value
         assert h.minimizer == exp_uk
@@ -156,13 +180,13 @@ def test_unikmer_shift_left(ksize, length, random_sequence, hasher):
     seq = random_sequence()
 
     h = hasher.hash_base(seq[-ksize:])
-    exp_kmer_hash, exp_ukmer = get_min_unikmer(seq[-ksize:], hasher.ukhs_map, type(hasher).ukhs_shifter_type)
+    exp_kmer_hash, exp_ukmer = get_min_unikmer(seq[-ksize:], hasher.ukhs_map, type(hasher).base_shifter_type)
     assert h.value == exp_kmer_hash.value
     assert h.minimizer == exp_ukmer
 
     for i in range(len(seq) - ksize - 1, -1, -1):
         h = hasher.shift_left(seq[i], seq[i+ksize])
-        exp_hash, exp_uk = get_min_unikmer(seq[i:i+ksize], hasher.ukhs_map, type(hasher).ukhs_shifter_type)
+        exp_hash, exp_uk = get_min_unikmer(seq[i:i+ksize], hasher.ukhs_map, type(hasher).base_shifter_type)
 
         assert h.value == exp_hash.value
         assert h.minimizer == exp_uk
@@ -180,6 +204,75 @@ def test_shift_right(hasher, ksize, length, random_sequence):
 
     assert exp == fwd_hashes
 
+
+@pytest.mark.parametrize('hasher_type', [FwdRollingShifter, CanRollingShifter], indirect=True)
+@using(ksize=27)
+def test_kmeriterator_owner_init(hasher_type, ksize):
+    hasher_type, _ = hasher_type
+    it = libboink.hashing.KmerIterator[hasher_type](known_kmer, ksize)
+    assert it.first().value in known_hashes
+
+
+#@pytest.mark.parametrize('hasher_type', [FwdRollingShifter, CanRollingShifter], indirect=True)
+#@using(ksize=27)
+#def test_kmeriterator_nonowner_init(hasher, ksize, length, random_sequence):
+#    it = libboink.hashing.KmerIterator[type(hasher)](known_kmer, hasher.__smartptr__().get())
+#    assert it.first().value in known_hashes
+#    assert hasher.get().value in known_hashes
+
+
+@pytest.mark.parametrize('hasher_type', [FwdRollingShifter, CanRollingShifter], indirect=True)
+@using(ksize=27)
+def test_kmeriterator_proto_init(hasher, ksize):
+    it = libboink.hashing.KmerIterator[type(hasher)](known_kmer, hasher)
+    assert it.first().value in known_hashes
+
+
+@pytest.mark.parametrize('hasher_type', [FwdRollingShifter, CanRollingShifter], indirect=True)
+def test_kmeriterator(hasher, ksize, length, random_sequence):
+    s = random_sequence()
+
+    exp = [hasher.hash(kmer).value for kmer in kmers(s, ksize)]
+    
+    it = libboink.hashing.KmerIterator[type(hasher)](s, ksize)
+    act = []
+    while not it.done():
+        h = it.next()
+        act.append(h.value)
+    
+    assert act == exp
+
+
+@pytest.mark.parametrize('hasher_type', [FwdRollingShifter, CanRollingShifter], indirect=True)
+def test_kmeriterator_from_proto(hasher, ksize, length, random_sequence):
+    s = random_sequence()
+
+    exp = [hasher.hash(kmer).value for kmer in kmers(s, ksize)]
+    
+    it = libboink.hashing.KmerIterator[type(hasher)](s, hasher)
+    act = []
+    while not it.done():
+        h = it.next()
+        act.append(h.value)
+    
+    assert act == exp
+
+
+
+@pytest.mark.parametrize('hasher_type', [FwdRollingShifter, CanRollingShifter], indirect=True)
+def test_kmeriterator_hashextender(hasher, ksize, length, random_sequence):
+    s = random_sequence()
+    extender = extender_selector_t[type(hasher)](hasher)
+
+    exp = [extender.hash(kmer).value for kmer in kmers(s, ksize)]
+    
+    it = libboink.hashing.KmerIterator[type(extender)](s, ksize)
+    act = []
+    while not it.done():
+        h = it.next()
+        act.append(h.value)
+    
+    assert act == exp
 
 @using(length=30, ksize=27)
 def test_shift_right_left_right(hasher, ksize, length, random_sequence):
