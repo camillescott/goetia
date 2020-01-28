@@ -277,7 +277,7 @@ def test_hashing_2(graph, linear_path, ksize):
 @exact_backends()
 def test_n_unique(graph, random_sequence, ksize, benchmark):
     sequence = random_sequence()
-    kmer_set = set(kmers(sequence, ksize))
+    kmer_set = set((graph.hash(kmer) for kmer in kmers(sequence, ksize)))
     benchmark(graph.insert_sequence, sequence)
 
     assert len(kmer_set) == graph.n_unique()
@@ -311,7 +311,7 @@ def test_pdbg_n_unique(random_sequence, ksize, length, benchmark, partitioned_gr
     graph = partitioned_graph
 
     sequence = random_sequence()
-    kmer_set = set(kmers(sequence, ksize))
+    kmer_set = set((graph.hash(kmer) for kmer in kmers(sequence, ksize)))
     benchmark(graph.insert_sequence, sequence)
 
     for kmer in kmer_set:

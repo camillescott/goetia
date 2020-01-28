@@ -65,7 +65,7 @@ def partitioned_graph(store, ksize):
     ukhs = UKHS[FwdRollingShifter].load(ksize, 7)
     pstore = std.make_shared[libboink.storage.PartitionedStorage[type(store)]](ukhs.n_hashes(),
                                                                                store)
-    graph = std.make_shared[libboink.PdBG[type(store), FwdRollingShifter]](ksize, 7,
+    graph = std.make_shared[libboink.PdBG[type(store), FwdUnikmerShifter]](ksize, 7,
                                                                            ukhs,
                                                                            pstore)
     return graph
@@ -129,7 +129,7 @@ def using(**kwargs):
 
     def pretty(val):
         if 'meta' in type(val).__name__:
-            return val.__name__
+            return pretty_repr(val.__name__)
         else:
             return str(val)
 

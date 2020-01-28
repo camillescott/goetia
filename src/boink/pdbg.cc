@@ -15,16 +15,16 @@ namespace boink {
     template class PdBG<storage::BitStorage, hashing::FwdUnikmerShifter>;
     template class PdBG<storage::BitStorage, hashing::CanUnikmerShifter>;
 
-    // template class PdBG<storage::SparseppSetStorage, hashing::FwdRollingShifter>;
-    // template class PdBG<storage::SparseppSetStorage, hashing::CanRollingShifter>;
+    template class PdBG<storage::SparseppSetStorage, hashing::FwdUnikmerShifter>;
+    template class PdBG<storage::SparseppSetStorage, hashing::CanUnikmerShifter>;
 
-    // template class PdBG<storage::ByteStorage, hashing::FwdRollingShifter>;
-    // template class PdBG<storage::ByteStorage, hashing::CanRollingShifter>;
+    template class PdBG<storage::ByteStorage, hashing::FwdUnikmerShifter>;
+    template class PdBG<storage::ByteStorage, hashing::CanUnikmerShifter>;
 
-    // template class PdBG<storage::NibbleStorage, hashing::FwdRollingShifter>;
-    // template class PdBG<storage::NibbleStorage, hashing::CanRollingShifter>;
+    template class PdBG<storage::NibbleStorage, hashing::FwdUnikmerShifter>;
+    template class PdBG<storage::NibbleStorage, hashing::CanUnikmerShifter>;
 
-    // template class PdBG<storage::QFStorage, hashing::FwdRollingShifter>;
-    // template class PdBG<storage::QFStorage, hashing::CanRollingShifter>;
+    template class PdBG<storage::QFStorage, hashing::FwdUnikmerShifter>;
+    template class PdBG<storage::QFStorage, hashing::CanUnikmerShifter>;
 
 }
