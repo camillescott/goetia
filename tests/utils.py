@@ -37,7 +37,7 @@ def storage_type(request):
                 ids=lambda t: pretty_repr(t))
 def hasher_type(request, ksize):
     _hasher_type = request.param
-    if _hasher_type.__name__.startswith('UnikmerShifter'):
+    if 'Unikmer' in _hasher_type.__name__:
         return _hasher_type, (ksize, 7)
     else:
         return _hasher_type, (ksize,)

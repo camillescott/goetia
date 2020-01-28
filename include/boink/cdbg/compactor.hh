@@ -52,8 +52,9 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
     using DecisionNode   = typename cDBG<graph_type>::DecisionNode;
 
 
-    typedef ShifterType                         shifter_type;
-    typedef hashing::HashExtender<shifter_type> extender_type;
+    typedef ShifterType                                shifter_type;
+    typedef hashing::extender_selector_t<shifter_type> extender_type;
+
     typedef typename shifter_type::alphabet     alphabet;
     typedef typename shifter_type::hash_type    hash_type;
 	typedef typename hash_type::value_type      value_type;

@@ -74,17 +74,21 @@ protected:
 public:
 
     typedef HashShifter<ShiftPolicy<HashType, Alphabet>> type;
+    typedef type                                         shifter_type;
 
     typedef ShiftPolicy<HashType, Alphabet>              shift_policy;
     typedef typename shift_policy::value_type            value_type;
     typedef typename shift_policy::hash_type             hash_type;
     typedef typename shift_policy::kmer_type             kmer_type;
     typedef Alphabet                                     alphabet;
+    static constexpr bool has_kmer_span = shift_policy::has_kmer_span;
 
     using tagged_type::NAME;
     using tagged_type::OBJECT_ABI_VERSION;
 
     using shift_policy::K;
+
+    friend shift_policy;
 
     template<typename... ExtraArgs>
     explicit HashShifter(const std::string& start,
@@ -105,12 +109,15 @@ public:
     }
 
     explicit HashShifter(const HashShifter& other)
-        : shift_policy(*static_cast<const shift_policy*>(&other)),
+        : ShiftPolicy<HashType, Alphabet>(static_cast<const shift_policy &>(other)),
           initialized(false)
     {
     }
 
+    HashShifter() = delete;
+
     hash_type get() {
+        //std::cout << "HashShifter get()" << std::endl;
         return this->get_impl();
     }
 

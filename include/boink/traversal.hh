@@ -73,7 +73,7 @@ struct dBGWalker;
 template <template <class, class> class GraphType,
                                   class StorageType,
                                   class ShifterType>
-class dBGWalker<GraphType<StorageType, ShifterType>> : public hashing::HashExtender<ShifterType> {
+class dBGWalker<GraphType<StorageType, ShifterType>> : public hashing::extender_selector<ShifterType>::type {
 
     typedef GraphType<StorageType, ShifterType>     Derived;
 
@@ -81,7 +81,7 @@ public:
 
     typedef Derived                                 graph_type;
     typedef ShifterType                             shifter_type;
-    typedef hashing::HashExtender<shifter_type>     extender_type;
+    typedef typename hashing::extender_selector<shifter_type>::type extender_type;
 
     typedef typename extender_type::hash_type       hash_type;
     typedef typename hash_type::value_type          value_type;
@@ -280,55 +280,6 @@ public:
         }
         return n_found;
     }
-
-    /**
-     * @Synopsis  Count nodes that short-circuits when more
-     *            than one is found (for traversal).
-     *
-     * @Param graph
-     * @Param nodes
-     * @Param result The shift if n_bound is one.
-     *
-     * @Returns   
-     *
-    template<bool Dir>
-    shift_type<Dir> reduce_nodes(GraphType *                         graph,
-                                 const std::vector<shift_type<Dir>>& extensions) {
-
-        uint8_t n_found = 0;
-        shift_type<Dir> result;
-        for (const auto& ext : extensions) {
-            if(graph->query(ext)) {
-                ++n_found;
-                if (n_found > 1) {
-                    return n_found;
-                }
-                result = ext;
-            }
-        }
-        return result;
-    }
-
-    template<bool Dir>
-    shift_type<Dir> reduce_nodes(GraphType *                         graph,
-                                 const std::vector<shift_type<Dir>>& extensions,
-                                 std::set<hash_type>&                extra) {
-        uint8_t n_found = 0;
-        shift_type<Dir> result;
-        for (const auto& ext : extensions ) {
-            if(graph->query(ext) ||
-               extra.count(ext)) {
-                ++n_found;
-                if (n_found > 1) {
-                    return n_found;
-                }
-                result = ext;
-            }
-        }
-        return result;
-    }
-    */
-
 
     /**
      * @Synopsis  Return only the shifts from nodes that exist in the graph.

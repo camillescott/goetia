@@ -34,9 +34,13 @@ protected:
 
     CyclicHash<value_type> hasher;
 
-    RollingHashShifterBase(uint16_t K)
+    explicit RollingHashShifterBase(uint16_t K)
         : hasher(K) {
-        }
+        
+        //std::cout << "END RollingBase(K) ctor " << this << std::endl;
+    }
+
+    RollingHashShifterBase() = delete;
 };
 
 template<>
@@ -47,7 +51,7 @@ protected:
     CyclicHash<value_type> hasher;
     CyclicHash<value_type> rc_hasher;
 
-    RollingHashShifterBase(uint16_t K)
+    explicit RollingHashShifterBase(uint16_t K)
         : hasher(K),
           rc_hasher(K) {}
 };
@@ -65,6 +69,7 @@ public:
     typedef typename hash_type::value_type value_type;
     typedef KmerModel<hash_type>           kmer_type;
     typedef Alphabet                       alphabet;
+    static constexpr bool has_kmer_span = false;
 
     const uint16_t K;
 
@@ -92,6 +97,7 @@ public:
     }
 
     hash_type get_impl() {
+        //std::cout << "RollingHash: get_impl " << this->hasher.hashvalue << std::endl;;
         return {this->hasher.hashvalue};
     }
 
@@ -112,26 +118,33 @@ protected:
         : RollingHashShifterBase<HashType>(K),
           K(K)
     {   
+        //std::cout << "END RollingHashShifter(K) ctor " << this << " / " << static_cast<RollingHashShifterBase<HashType>*>(this) << std::endl;
     }
 
-    explicit RollingHashShifter(RollingHashShifter const& other)
+    explicit RollingHashShifter(const RollingHashShifter& other)
         : RollingHashShifter(other.K)
     {
+        //std::cout << "END RollingHashShifter(other) ctor " << this << " / " << static_cast<RollingHashShifterBase<HashType>*>(this) << std::endl;
     }
 
+    RollingHashShifter() = delete;
+
 };
-
-
-//
-// Canonical specialization decls (sigh)
-//
 
 
 template<>
 inline RollingHashShifter<CanonicalModel<uint64_t>>
 ::RollingHashShifter(uint16_t K)
-    : RollingHashShifterBase(K),
+    : RollingHashShifterBase<CanonicalModel<uint64_t>>(K),
       K(K)
+{
+}
+
+template<>
+inline RollingHashShifter<CanonicalModel<uint64_t>>
+::RollingHashShifter(const RollingHashShifter& other)
+    : RollingHashShifterBase<CanonicalModel<uint64_t>>(other.K),
+      K(other.K)
 {
 }
 
@@ -165,6 +178,25 @@ RollingHashShifter<CanonicalModel<uint64_t>>
         --end;
 
         ++i;
+    }
+
+    return get_impl();
+}
+
+
+template<>
+inline CanonicalModel<uint64_t>
+RollingHashShifter<CanonicalModel<uint64_t>>
+::hash_base_impl(const char * sequence) {
+    hasher.reset();
+    rc_hasher.reset();
+
+    for (uint16_t i = 0; i < K; ++i) {
+        if (sequence[i] == '\0') {
+            throw SequenceLengthException("Encountered null terminator in k-mer!");
+        }
+        hasher.eat(sequence[i]);
+        rc_hasher.eat(alphabet::complement(sequence[K - i - 1]));
     }
 
     return get_impl();
