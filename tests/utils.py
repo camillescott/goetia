@@ -129,7 +129,7 @@ def using(**kwargs):
 
     def pretty(val):
         if 'meta' in type(val).__name__:
-            return pretty_repr(val.__name__)
+            return pretty_repr(val)
         else:
             return str(val)
 
