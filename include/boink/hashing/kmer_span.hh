@@ -39,7 +39,6 @@ public:
           ring(kmer_buffer, kmer_buffer + K, kmer_buffer, K),
           loaded(false)
     {
-        std::cout << "span enabled with K=" << K << std::endl;
     }
 
     ~KmerSpan() {

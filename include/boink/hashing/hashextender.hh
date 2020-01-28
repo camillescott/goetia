@@ -87,7 +87,7 @@ public:
                           ExtraArgs&&...     args)
         : extension_policy(start, K, std::forward<ExtraArgs>(args)...)
     {
-        std::cout << "END HashExtender(start, K...) ctor " << this << " / " << static_cast<extension_policy*>(this) << std::endl;
+        //std::cout << "END HashExtender(start, K...) ctor " << this << " / " << static_cast<extension_policy*>(this) << std::endl;
     }
 
     template<typename... ExtraArgs>
@@ -95,19 +95,19 @@ public:
                           ExtraArgs&&... args)
         : extension_policy(K, std::forward<ExtraArgs>(args)...)
     {
-        std::cout << "END HashExtender(K...) ctor " << this << " / " << static_cast<extension_policy*>(this) << std::endl;
+        //std::cout << "END HashExtender(K...) ctor " << this << " / " << static_cast<extension_policy*>(this) << std::endl;
     }
 
     explicit HashExtender(const HashExtender& extender)
         : extension_policy(static_cast<const extension_policy &>(extender))
     {
-        std::cout << "END HashExtender(HashExtender...) ctor " << this << " / " << static_cast<extension_policy*>(this) << std::endl;
+        //std::cout << "END HashExtender(HashExtender...) ctor " << this << " / " << static_cast<extension_policy*>(this) << std::endl;
     }
 
     explicit HashExtender(const shifter_type& shifter)
         : extension_policy(shifter)
     {
-        std::cout << "END HashExtender(shifter_type...) ctor " << this << " / " << static_cast<extension_policy*>(this) << std::endl;
+        //std::cout << "END HashExtender(shifter_type...) ctor " << this << " / " << static_cast<extension_policy*>(this) << std::endl;
     }
 
     HashExtender() = delete;
