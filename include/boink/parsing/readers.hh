@@ -102,6 +102,8 @@ protected:
 
 public:
 
+    typedef Record value_type;
+
     SequenceReader(std::unique_ptr<ParserType> pf)
     {
         _parser = std::move(pf);
@@ -156,6 +158,10 @@ private:
     bool        _is_complete;
 
 public:
+
+    typedef Record   value_type;
+    typedef Alphabet alphabet;
+
     FastxParser() 
         : FastxParser("-")
     {
@@ -203,11 +209,21 @@ public:
     Record next() {
         Record record;
         
-        while (!__sync_bool_compare_and_swap(&_spin_lock, 0, 1));
+        //while (!__sync_bool_compare_and_swap(&_spin_lock, 0, 1));
 
         int stat = kseq_read(_kseq);
+
         if (stat >= 0) {
-            Alphabet::validate(_kseq->seq.s, _kseq->seq.l);
+            try {
+                Alphabet::validate(_kseq->seq.s, _kseq->seq.l);
+            } catch (InvalidCharacterException &e) {
+                _spin_lock = 0;
+                throw e;
+            } catch (std::exception& e) {
+                _spin_lock = 0;
+                throw e;
+            }
+
             record.sequence.assign(_kseq->seq.s, _kseq->seq.l);
             record.name.assign(_kseq->name.s, _kseq->name.l);
             if (_kseq->qual.l) {
@@ -219,8 +235,8 @@ public:
             _num_parsed++;
         }
 
-        __asm__ __volatile__ ("" ::: "memory");
-        _spin_lock = 0;
+        //__asm__ __volatile__ ("" ::: "memory");
+        //_spin_lock = 0;
 
         if (stat == -1) {
             _is_complete = true;
@@ -248,38 +264,6 @@ public:
 }; // class FastxParser
 
 
-/*
-class BrokenPairedReader {
-
-    std::unique_ptr<SequenceReaderPtr<FastxParser>> _parser;
-    uint32_t                                    _min_length;
-    bool                                        _force_single;
-    bool                                        _require_paired;
-
-    Read                                        _buffer_sequence;
-    bool                                        _buffer_full;
-
-
-    RecordBundle next() {
-        Read first, second;
-        bool is_pair;
-
-        if (!_buffer_full) {
-            try {
-                first = this->parser->get_next_read();
-            } catch (NoMoreReadsAvailable) {
-                
-            }
-
-        } else {
-            first = _buffer_sequence;
-        }
-    }
-
-};
-*/
-
-
 template <class ParserType = FastxParser<>>
 class SplitPairedReader {
 
@@ -292,6 +276,8 @@ class SplitPairedReader {
     uint64_t                     _n_reads;
 
 public:
+
+    typedef RecordPair value_type;
 
     SplitPairedReader(const std::string &left,
                       const std::string &right,
@@ -313,16 +299,41 @@ public:
 
     RecordPair next() {
         RecordPair result;
+
+        std::exception_ptr left_exc_ptr;
+        std::exception_ptr right_exc_ptr;
+
         try {
             result.left = this->left_parser->next();
         } catch (NoMoreReadsAvailable) {
             result.has_left = false;
+        } catch (InvalidCharacterException) {
+            result.has_left = false;
+            left_exc_ptr = std::current_exception();
+        } catch (InvalidRead) {
+            result.has_left = false;
+            left_exc_ptr = std::current_exception();
         }
 
         try {
             result.right = this->right_parser->next();
         } catch (NoMoreReadsAvailable) {
             result.has_right = false;
+        } catch (InvalidCharacterException) {
+            result.has_right = false;
+            right_exc_ptr = std::current_exception();
+        } catch (InvalidRead) {
+            result.has_right = false;
+            right_exc_ptr = std::current_exception();
+        }
+
+        if (!(result.has_left && result.has_right)) {
+            if (left_exc_ptr) {
+                std::rethrow_exception(left_exc_ptr);
+            }
+            if (right_exc_ptr) {
+                std::rethrow_exception(right_exc_ptr);
+            }
             return result;
         }
 
@@ -344,8 +355,11 @@ public:
 };
 
 extern template class parsing::FastxParser<DNA_SIMPLE>;
+extern template class parsing::FastxParser<DNAN_SIMPLE>;
 extern template class parsing::SequenceReader<parsing::FastxParser<DNA_SIMPLE>>;
+extern template class parsing::SequenceReader<parsing::FastxParser<DNAN_SIMPLE>>;
 extern template class parsing::SplitPairedReader<parsing::FastxParser<DNA_SIMPLE>>;
+extern template class parsing::SplitPairedReader<parsing::FastxParser<DNAN_SIMPLE>>;
 
 
 } // namespace parsing
