@@ -79,7 +79,22 @@ class AsyncSequenceProcessor:
     def __init__(self, processor,
                        sample_iter,
                        broadcast_socket = DEFAULT_SOCKET):
+        """Manages advancing through a concrete FileProcessor
+        CRTP subblass asynchronously. The processor pushes Interval
+        updates on to the `worker_q`, which are also forwarded
+        to an `events_q`. Additional async tasks can subscribe to 
+        either queue; the `events_q` is considered the outward-facing
+        point.
 
+        `sample_iter` should be conform to that produced by
+        `boink.processing.iter_fastx_inputs`.
+        
+        Args:
+            processor (libboink.InserterProcessor<T>): Processor to manage.
+            sample_iter (iterator): Iterator over pairs of or single samples.
+            broadcast_socket (str, optional): AF_UNIX socket to broadcast
+                the events queue on.
+        """
         try:
             os.unlink(broadcast_socket)
         except OSError:
@@ -105,6 +120,13 @@ class AsyncSequenceProcessor:
         self.sample_iter = sample_iter
     
     def subscribe(self, channel: str, collection_q: curio.Queue, subscriber_name: str):
+        """Subscribe to a queue of the given name to a channel.
+        
+        Args:
+            channel (str): Name of the channel.
+            collection_q (curio.Queue): The queue to collect on.
+            subscriber_name (str): Name of the subscriber.
+        """
         try:
             self.channels[channel].subscribe(collection_q, subscriber_name)
         except KerError:
@@ -112,6 +134,12 @@ class AsyncSequenceProcessor:
         print(f'{subscriber_name} subscribed to {channel}.', file=sys.stderr)
     
     def unsubscribe(self, channel: str, collection_q: curio.Queue) -> None:
+        """Stop receving data from the named channel on the given queue.
+        
+        Args:
+            channel (str): Name of the channel.
+            collection_q (curio.Queue): Queue object to remove.
+        """
         try:
             self.channels[channel].unsubscribe(collection_q)
         except KerError:
@@ -162,6 +190,8 @@ class AsyncSequenceProcessor:
             self.worker_q.put(MessageTypes.generate(MessageTypes.SampleFinished, str(sample), n_seqs))
 
     async def status(self):
+        """Writes everything from the events queue to `sys.stderr`.
+        """
         try:
             msg_q = curio.Queue()
             self.subscribe('events_q', msg_q, 'status')
@@ -183,29 +213,21 @@ class AsyncSequenceProcessor:
 
     async def run(self, extra_tasks = None) -> None:
         async with curio.TaskGroup() as g:
-            #cancel = curio.SignalEvent(signal.SIGINT, signal.SIGTERM)
 
+            # Each channel has its own dispatch task
+            # to send data to its subscribers
             for channel_name, channel in self.channels.items():
                 await g.spawn(channel.dispatch)
 
             #await g.spawn(self.broadcaster)
             status = await g.spawn(self.status)
 
+            # Spawn extra tasks to run
             if extra_tasks is not None:
                 for task in extra_tasks:
                     await g.spawn(task)
 
+            # and now we spawn the worker to iterate through
+            # the processor and wait for it to finish
             await self.worker()
-            #await status.wait()
-            #await self.events_q.join()
-            #await g.join()
-
-
-            #await self.worker_q.join()
-            #await self.events_subs.kill()
-
-            #await cancel.wait()
-            #del cancel
-
-            #print('Shutting down server...', file=sys.stderr)
             await g.cancel_remaining()
