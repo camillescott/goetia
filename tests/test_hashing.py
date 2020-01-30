@@ -64,23 +64,27 @@ def test_rolling_hash(hasher, ksize):
         assert h.value == e
 
 
-@using(ksize=7, length=20000)
-@pytest.mark.parametrize
+@using(ksize=21, length=10000)
 def test_hashing_models_hash(hasher, ksize, random_sequence):
     '''test that __hash__ on HashModel and CanonicalModel
     yields the value attribute.
     '''
 
     seq = random_sequence()
+    seq += hasher.alphabet.reverse_complement(seq)
+
     hash_set = set()
     value_set = set()
-    for kmer in kmers(sequence, ksize):
+    for kmer in kmers(seq, ksize):
         h = hasher.hash(kmer)
-        assert hash(h) == h.value
-        hash_set.insert(h)
-        value_set.insert(h.value)
+        # doing hash(h.value) is on purpose! because CPython silently transforms
+        # the result of __hash__ into a 62 bit signed range... sigh
+        assert hash(h) == hash(h.value), (h, h.value)
+        hash_set.add(h)
+        value_set.add(h.value)
     
-    assert hash_set == value_set
+    assert len(hash_set) == len(value_set)
+    assert sorted((h.value for h in hash_set)) == sorted((h for h in value_set))
 
 
 @using(ksize=27)

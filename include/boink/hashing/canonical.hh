@@ -34,13 +34,18 @@ struct HashModel {
 
     value_type hash;
 
-    HashModel(value_type hash)
+    HashModel(const value_type hash)
         : hash(hash)
     {
     }
 
     HashModel()
         : hash(std::numeric_limits<value_type>::max())
+    {
+    }
+
+    HashModel(const HashModel& other)
+        : hash(other.hash)
     {
     }
 
@@ -93,15 +98,21 @@ struct CanonicalModel {
     value_type fw_hash, rc_hash;
 
     CanonicalModel()
-        : fw_hash(),
-          rc_hash()
+        : fw_hash(std::numeric_limits<value_type>::max()),
+          rc_hash(std::numeric_limits<value_type>::max())
     {
     }
 
-    CanonicalModel(value_type fw,
-                   value_type rc)
+    CanonicalModel(const value_type fw,
+                   const value_type rc)
         : fw_hash(fw),
           rc_hash(rc)
+    {
+    }
+
+    CanonicalModel(const CanonicalModel& other)
+        : fw_hash(other.fw_hash),
+          rc_hash(other.rc_hash)
     {
     }
 
@@ -183,7 +194,17 @@ struct WmerModel<HashType<ValueType>, MinimizerType> {
     {
     }
 
-    WmerModel() {}
+    WmerModel()
+        : hash(),
+          minimizer()
+    {
+    }
+
+    WmerModel(const WmerModel& other)
+        : hash(other.hash),
+          minimizer(other.minimizer)
+    {
+    }
 
     const value_type value() const {
         return hash.value();
@@ -261,6 +282,12 @@ struct KmerModel<HashType<ValueType, Extras...>> {
 	KmerModel()
         : hash(),
           kmer(0, ' ')
+    {
+    }
+
+    KmerModel(const KmerModel& other)
+        : hash(other.hash),
+          kmer(other.kmer)
     {
     }
 
@@ -345,7 +372,13 @@ struct ShiftModel<HashType<ValueType, Extras...>, Direction> {
     }
 
     ShiftModel()
-        : symbol('\0')
+        : hash(),
+          symbol('\0')
+    {
+    }
+
+    ShiftModel(const ShiftModel& other)
+        : ShiftModel(other.hash, other.symbol)
     {
     }
 
@@ -405,15 +438,22 @@ struct Partitioned {
     value_type v;
     uint64_t   partition;
 
-    Partitioned(value_type& v,
-                uint64_t   partition)
+    Partitioned(const value_type& v,
+                const uint64_t   partition)
         : v(v),
           partition(partition)
     {
     }
     
     Partitioned()
-        : partition(std::numeric_limits<uint64_t>::max())
+        : v(),
+          partition(std::numeric_limits<uint64_t>::max())
+    {
+    }
+
+    Partitioned(const Partitioned& other)
+        : v(other.v),
+          partition(other.partition)
     {
     }
 
