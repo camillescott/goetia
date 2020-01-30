@@ -79,5 +79,5 @@ def pythonize_boink_hashing(klass, name):
             klass.__ge__ = lambda self, other: self.value >= other.value
             klass.__ne__ = lambda self, other: self.value != other.value
             klass.__repr__ = klass.__str__
-
+            klass.__hash__ = lambda self: self.value
 

@@ -64,8 +64,30 @@ def test_rolling_hash(hasher, ksize):
         assert h.value == e
 
 
+@using(ksize=7, length=20000)
+@pytest.mark.parametrize
+def test_hashing_models_hash(hasher, ksize, random_sequence):
+    '''test that __hash__ on HashModel and CanonicalModel
+    yields the value attribute.
+    '''
+
+    seq = random_sequence()
+    hash_set = set()
+    value_set = set()
+    for kmer in kmers(sequence, ksize):
+        h = hasher.hash(kmer)
+        assert hash(h) == h.value
+        hash_set.insert(h)
+        value_set.insert(h.value)
+    
+    assert hash_set == value_set
+
+
 @using(ksize=27)
 def test_rolling_nonvolatile_hash(hasher, ksize):
+    '''test that hasher.hash([str]) on an instance does not
+    change the hasher state.
+    '''
     seq = 'TCACCTGTGTTGTGCTACTTGCGGCGC'
 
     original = hasher.hash_base(seq)
