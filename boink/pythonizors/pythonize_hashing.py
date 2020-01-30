@@ -71,7 +71,7 @@ def pythonize_boink_hashing(klass, name):
 
         is_inst, _ = is_template_inst(name, check_name)
         if is_inst:
-            
+
             klass.value = property(klass.value)
             klass.__lt__ = lambda self, other: self.value < other.value
             klass.__le__ = lambda self, other: self.value <= other.value
@@ -79,5 +79,4 @@ def pythonize_boink_hashing(klass, name):
             klass.__ge__ = lambda self, other: self.value >= other.value
             klass.__ne__ = lambda self, other: self.value != other.value
             klass.__repr__ = klass.__str__
-
-
+            klass.__hash__ = lambda self: hash(self.value)
