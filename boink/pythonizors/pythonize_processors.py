@@ -41,12 +41,12 @@ def pythonize_boink(klass, name):
         klass.__str__ = lambda self: '<interval_state fine={0} medium={1} coarse={2} end={3}'.format(self.fine, self.medium, self.coarse, self.end)
         def get(self):
             if self.fine:
-                return 'FINE'
+                return 'fine'
             elif self.medium:
-                return 'MEDIUM'
+                return 'medium'
             elif self.coarse:
-                return 'COARSE'
+                return 'coarse'
             else:
-                return 'END'
+                return 'end'
         klass.get = get
 
