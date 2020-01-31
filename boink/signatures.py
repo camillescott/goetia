@@ -11,7 +11,7 @@ import curio
 import numpy as np
 from pyfiglet import Figlet
 
-from boink import libboink
+from boink import libboink, __version__
 from boink.cli import CommandRunner, get_output_interval_args
 from boink.parsing import get_pairing_args, iter_fastx_inputs
 from boink.processors import AsyncSequenceProcessor
@@ -28,8 +28,8 @@ class SourmashRunner(CommandRunner):
         get_output_interval_args(parser)
         group = get_pairing_args(parser)
         group.add_argument('-i', dest='inputs', nargs='+', required=True)
-        parser.add_argument('-K', default=31)
-        parser.add_argument('-N', default=10000)
+        parser.add_argument('-K', default=31, type=int)
+        parser.add_argument('-N', default=10000, type=int)
         parser.add_argument('--echo', default=False, action='store_true',
                             help='echo all events to the terminal.')
         parser.add_argument('--term-graph', default=False, action='store_true',
@@ -107,12 +107,14 @@ class SourmashRunner(CommandRunner):
 
         # set up frame drawing callbacks
         async def on_samplestart(msg):
-            await curio.spawn(frame.draw, messages=[f'Started processing on {msg.samplename}'], draw_dist_plot=False)
+            draw = await curio.spawn(frame.draw, messages=[f'Started processing on {msg.samplename}'], draw_dist_plot=False)
+            await draw.join()
         self.term_graph.ss_listener = self.processor.add_listener('events_q', 'framedraw.samplestart')
         self.term_graph.ss_listener.on_message(SampleStarted, on_samplestart)
         
         async def on_distancecalc(msg):
-            await curio.spawn(frame.draw, msg.t, msg.distance, msg.stdev)
+            draw = await curio.spawn(frame.draw, msg.t, msg.distance, msg.stdev)
+            await draw.join()
         self.term_graph.dc_listener = self.processor.add_listener('events_q', 'framedraw.distancecalc')
         self.term_graph.dc_listener.on_message(DistanceCalc, on_distancecalc)
         
@@ -162,7 +164,6 @@ class TextBlock:
     def __iter__(self):
         yield from self.text
 
-    @curio.async_thread
     def draw(self, term, x, shift_y=None):
         out = term.stream
         
@@ -181,7 +182,7 @@ class TextBlock:
 
 class SignatureStreamFrame:
 
-    def __init__(self, term, args):
+    def __init__(self, term, args, component_name='sourmash stream'):
         import plotille as pt
         self.term = term
         self.args   = args
@@ -194,6 +195,7 @@ class SignatureStreamFrame:
         self.distance_figure.set_x_limits(min_=0)
         self.distance_figure.set_y_limits(min_=0)
         self.distance_figure.color_mode = 'byte'
+        self.distance_figure.origin = False
 
         self.hist_figure = pt.Figure()
         self.hist_figure.width = 30
@@ -202,8 +204,9 @@ class SignatureStreamFrame:
         self.hist_figure.y_label = 'counts'
         self.hist_figure.color_mode = 'byte'
 
-        name_block = Figlet(font='doom').renderText('draff').rstrip().split('\n')
-        name_block[-1] = name_block[-1] + ' stream, v0.1'
+        name_block = Figlet(font='doom').renderText('boink').rstrip().split('\n')
+        name_block[-1] = name_block[-1] + f' {__version__}'
+        name_block.append(f'\n{term.bold}{component_name}{term.normal}')
         self.name_block = TextBlock('\n'.join(name_block))
 
         param_block = term.normal + term.underline + (' ' * 40) + term.normal + '\n\n'
@@ -240,6 +243,7 @@ class SignatureStreamFrame:
     def _print(self, *args, **kwargs):
         self.term.stream.write(*args, **kwargs)
 
+    @curio.async_thread
     def metric_block(self, n_reads, prev_d, stdev):
         return TextBlock(self.metric_text.format(n_reads=n_reads, prev_d=prev_d, stdev=stdev, term=self.term))
 
@@ -247,9 +251,10 @@ class SignatureStreamFrame:
         text = self.message_text.format(messages='\n'.join(messages))
         return TextBlock(text)
 
+    @curio.async_thread
     def figure_block(self, distances, distances_t):
         self.distance_figure.clear()
-        self.distance_figure.plot(distances_t, distances, lc=10)
+        self.distance_figure.plot(distances_t, distances, lc=10, interp=None)
         text = self.distance_figure.show()
         return TextBlock(text)
 
@@ -265,37 +270,38 @@ class SignatureStreamFrame:
                    draw_dist_hist=False):
 
         term = self.term
+        self.distances.append(prev_d)
+        self.distances_t.append(n_reads)
+
         async with curio.TaskGroup() as g:
-            term.stream.write(term.clear_eos)
+            figure = await self.figure_block(self.distances, self.distances_t)
+            metrics = await self.metric_block(n_reads, prev_d, stdev)
+        
+        term.stream.write(term.clear_eos)
 
-            self.distances.append(prev_d)
-            self.distances_t.append(n_reads)
-
+        if draw_dist_plot:
             with term.location():
-                self.name_block.draw(term, 0, shift_y=1)
+                figure.draw(term, max(self.name_block.width, self.param_block.width) + 1, 1)
 
+        with term.location():
+            self.name_block.draw(term, 0, shift_y=1)
+
+        with term.location():
+            self.param_block.draw(term, 0, shift_y=self.name_block.height+4)
+
+        with term.location():
+            metrics.draw(term,
+                            0,
+                            self.name_block.height + self.param_block.height + 4)
+
+        if messages is not None:
             with term.location():
-                self.param_block.draw(term, 0, shift_y=self.name_block.height+4)
+                ypos = _metric_block.height + self.name_block.height + self.param_block.height + 9
+                self.message_block(messages).draw(term, 0, ypos)
 
-            _metric_block = self.metric_block(n_reads, prev_d, stdev)
+        if draw_dist_hist and distances is not None:
             with term.location():
-                _metric_block.draw(term,
-                                0,
-                                self.name_block.height + self.param_block.height + 4)
-
-            if messages is not None:
-                with term.location():
-                    ypos = _metric_block.height + self.name_block.height + self.param_block.height + 9
-                    self.message_block(messages).draw(term, 0, ypos)
-
-
-            if draw_dist_plot:
-                with term.location():
-                    self.figure_block(self.distances, self.distances_t).draw(term, max(self.name_block.width, self.param_block.width) + 1, 1)
-
-            if draw_dist_hist and distances is not None:
-                with term.location():
-                    xpos = max(self.name_block.width, self.param_block.width) + 2
-                    if draw_dist_plot:
-                        xpos += self.distance_figure.width + 5
-                    self.hist_block(distances).draw(term, xpos, 1)
+                xpos = max(self.name_block.width, self.param_block.width) + 2
+                if draw_dist_plot:
+                    xpos += self.distance_figure.width + 5
+                self.hist_block(distances).draw(term, xpos, 1)
