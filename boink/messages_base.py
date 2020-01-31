@@ -17,13 +17,15 @@ class Messages(SchemaBase):
                                                      'msg_type': {'enum': ['DistanceCalc'],
                                                                   'type': 'string'},
                                                      'sample_name': {'type': 'string'},
+                                                     'stdev': {'type': 'number'},
                                                      't': {'minimum': 0,
                                                            'type': 'integer'}},
                                       'required': ['msg_type',
                                                    't',
                                                    'sample_name',
                                                    'delta',
-                                                   'distance'],
+                                                   'distance',
+                                                   'stdev'],
                                       'type': 'object'},
                      'EndStream': {'properties': {'msg_type': {'enum': ['EndStream'],
                                                                'type': 'string'}},
@@ -177,7 +179,7 @@ class Error(SchemaBase):
 class DistanceCalc(SchemaBase):
     """DistanceCalc schema wrapper
 
-    Mapping(required=[msg_type, t, sample_name, delta, distance])
+    Mapping(required=[msg_type, t, sample_name, delta, distance, stdev])
 
     Attributes
     ----------
@@ -190,6 +192,8 @@ class DistanceCalc(SchemaBase):
 
     sample_name : string
 
+    stdev : float
+
     t : integer
 
     """
@@ -197,9 +201,9 @@ class DistanceCalc(SchemaBase):
     _rootschema = Messages._schema
 
     def __init__(self, delta=Undefined, distance=Undefined, msg_type=Undefined, sample_name=Undefined,
-                 t=Undefined, **kwds):
+                 stdev=Undefined, t=Undefined, **kwds):
         super(DistanceCalc, self).__init__(delta=delta, distance=distance, msg_type=msg_type,
-                                           sample_name=sample_name, t=t, **kwds)
+                                           sample_name=sample_name, stdev=stdev, t=t, **kwds)
 
 
 

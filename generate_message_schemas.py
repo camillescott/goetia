@@ -49,7 +49,7 @@ msg_schema = {
         },
         "DistanceCalc": {
             "type": 'object',
-            'required': ['msg_type', 't', 'sample_name', 'delta', 'distance'],
+            'required': ['msg_type', 't', 'sample_name', 'delta', 'distance', 'stdev'],
             'properties': {
                 'msg_type': {'type': 'string',
                              'enum': ['DistanceCalc']},
@@ -60,7 +60,8 @@ msg_schema = {
                           'minimum': 0},
                 'distance': {'type': 'number',
                              'minimum': 0.0,
-                             'maximum': 1.0}
+                             'maximum': 1.0},
+                'stdev': {'type': 'number'}
             }
         },
         'EndStream': {

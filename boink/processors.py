@@ -3,6 +3,7 @@ import curio
 from curio.socket import *
 
 from collections import OrderedDict
+import inspect
 import json
 import os
 import signal
@@ -69,11 +70,17 @@ class MessageHandler:
                 except KeyError:
                     pass
                 else:
-                    callback(msg, *args)
+                    if inspect.iscoroutinefunction(callback):
+                        await callback(msg, *args)
+                    else:
+                        callback(msg, *args)
 
                 if AllMessages in self.handlers:
                     callback, args = self.handlers[AllMessages]
-                    callback(msg, *args)
+                    if inspect.iscoroutinefunction(callback):
+                        await callback(msg, *args)
+                    else:
+                        callback(msg, *args)
 
                 await msg_q.task_done()
         except curio.CancelledError:
@@ -203,7 +210,7 @@ class AsyncSequenceProcessor(UnixBroadcasterMixin):
             subscriber_name (str): Name of the subscriber.
         """
         self.get_channel(channel_name).subscribe(collection_q, subscriber_name)
-        print(f'{subscriber_name} subscribed to {channel_name}.', file=sys.stderr)
+        #print(f'{subscriber_name} subscribed to {channel_name}.', file=sys.stderr)
     
     def unsubscribe(self, channel_name: str,
                           collection_q: curio.Queue) -> None:
