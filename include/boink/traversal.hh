@@ -44,7 +44,7 @@ typedef std::vector<std::string> StringVector;
  * STOP_FWD: there are no neighbors in this direction.
  * DECISION_FWD: there is more than one neighbor.
  * STOP_SEEN: there is a single neighbor but it has been seen.
- * DECISION_RC: There is a single neighbor, but it is a decision in the other direction.
+ * DECISION_BKW: There is a single neighbor, but it is a decision in the other direction.
  * STOP_MASKED: There is a single neighbor, but it is masked.
  * BAD_SEED: The node you tried to start at does not exist.
  * GRAPH_ERROR: The graph is structural unsound (basically a panic).
@@ -55,9 +55,8 @@ namespace TraversalState {
 
     enum State {
         STOP_FWD,
-        STOP_RC,
         DECISION_FWD,
-        DECISION_RC,
+        DECISION_BKW,
         STOP_SEEN,
         STOP_MASKED,
         BAD_SEED,
@@ -661,7 +660,7 @@ public:
             if (out_degree() > 1) {
                 pdebug("Stop: reverse d-node");
                 walk.path.pop_back();
-                walk.end_state = State::DECISION_RC;
+                walk.end_state = State::DECISION_BKW;
                 this->seen.erase(this->get().value());
                 return std::move(walk);
             }
@@ -714,7 +713,7 @@ public:
         while (1) {
             if (in_degree() > 1) {
                 walk.path.pop_back();
-                walk.end_state = State::DECISION_RC;
+                walk.end_state = State::DECISION_BKW;
                 this->seen.erase(this->get().value());
                 return std::move(walk);
             }

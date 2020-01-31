@@ -40,12 +40,22 @@ def pythonize_boink(klass, name):
                 return func(self)
             return _get
 
+        def wrap_vector_ret(func):
+            def wrapped(self, *args, **kwargs):
+                return [item for item in func(self, *args, **kwargs)]
+            return wrapped
+
         klass.add = add
         klass.get_hash = wrap_get(klass.get)
         klass.get = wrap_query(klass.query)
         klass.left_degree = left_degree
         klass.right_degree = right_degree
         klass.shallow_clone = shallow_clone
-        klass.hashes = hashes 
+        klass.hashes = hashes
 
+        klass.left_extensions = wrap_vector_ret(klass.left_extensions)
+        klass.right_extensions = wrap_vector_ret(klass.right_extensions)
+        #klass.filter_nodes = wrap_vector_ret(klass.filter_nodes)
+        #klass.in_neighbors = wrap_vector_ret(klass.in_neighbors)
+        #klass.out_neighbors = wrap_vector_ret(klass.out_neighbors)
 

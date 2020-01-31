@@ -150,7 +150,7 @@ class TestDecisions:
         assert branch == path
         assert graph.left_degree(path[:ksize]) == 1
         assert graph.right_degree(path[:ksize]) == 1
-        assert lwalk.end_state == STATES.DECISION_RC
+        assert lwalk.end_state == STATES.DECISION_BKW
         print('Hash:', graph.hash(sequence[S:S+ksize]))
         assert lwalk.tail() == graph.hash(branch[:ksize])
         assert rwalk.end_state == STATES.STOP_FWD
