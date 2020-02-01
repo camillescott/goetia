@@ -28,7 +28,6 @@
 namespace boink {
 namespace cdbg {
 
-# define DEBUG_CPTR
 # ifdef DEBUG_CPTR
 #   define pdebug(x) do { std::cerr << std::endl << "@ " << __FILE__ <<\
                           ":" << __FUNCTION__ << ":" <<\
