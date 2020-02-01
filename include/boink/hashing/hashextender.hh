@@ -406,8 +406,8 @@ public:
     }
 };
 
-typedef HashExtender<DefaultExtensionPolicy<FwdRollingShifter>> FwdRollingExtender;
-typedef HashExtender<DefaultExtensionPolicy<CanRollingShifter>> CanRollingExtender;
+typedef HashExtender<DefaultExtensionPolicy<FwdLemireShifter>> FwdRollingExtender;
+typedef HashExtender<DefaultExtensionPolicy<CanLemireShifter>> CanRollingExtender;
 
 typedef HashExtender<FwdUnikmerShifter> FwdUnikmerExtender;
 typedef HashExtender<CanUnikmerShifter> CanUnikmerExtender;
@@ -438,11 +438,11 @@ template<typename ShifterType>
     using extender_selector_t = typename extender_selector<ShifterType>::type;
 
 
-extern template class DefaultExtensionPolicy<FwdRollingShifter>;
-extern template class DefaultExtensionPolicy<CanRollingShifter>;
+extern template class DefaultExtensionPolicy<FwdLemireShifter>;
+extern template class DefaultExtensionPolicy<CanLemireShifter>;
 
-extern template class HashExtender<DefaultExtensionPolicy<FwdRollingShifter>>;
-extern template class HashExtender<DefaultExtensionPolicy<CanRollingShifter>>;
+extern template class HashExtender<DefaultExtensionPolicy<FwdLemireShifter>>;
+extern template class HashExtender<DefaultExtensionPolicy<CanLemireShifter>>;
 
 extern template class HashExtender<FwdUnikmerShifter>;
 extern template class HashExtender<CanUnikmerShifter>;

@@ -28,30 +28,30 @@ namespace boink::hashing {
 
 
 template<class HashType>
-struct RollingHashShifterBase {
+struct LemireShifterPolicyBase {
 protected:
     typedef typename HashType::value_type value_type;
 
     CyclicHash<value_type> hasher;
 
-    explicit RollingHashShifterBase(uint16_t K)
+    explicit LemireShifterPolicyBase(uint16_t K)
         : hasher(K) {
         
         //std::cout << "END RollingBase(K) ctor " << this << std::endl;
     }
 
-    RollingHashShifterBase() = delete;
+    LemireShifterPolicyBase() = delete;
 };
 
 template<>
-struct RollingHashShifterBase<Canonical<uint64_t>> {
+struct LemireShifterPolicyBase<Canonical<uint64_t>> {
 protected:
     typedef typename Canonical<uint64_t>::value_type value_type;
 
     CyclicHash<value_type> hasher;
     CyclicHash<value_type> rc_hasher;
 
-    explicit RollingHashShifterBase(uint16_t K)
+    explicit LemireShifterPolicyBase(uint16_t K)
         : hasher(K),
           rc_hasher(K) {}
 };
@@ -59,9 +59,9 @@ protected:
 
 template<typename HashType,
          typename Alphabet = DNA_SIMPLE>
-class RollingHashShifter : public RollingHashShifterBase<HashType> {
+class LemireShifterPolicy : public LemireShifterPolicyBase<HashType> {
 
-    typedef Tagged<RollingHashShifter<HashType, Alphabet>> tagged_type;
+    typedef Tagged<LemireShifterPolicy<HashType, Alphabet>> tagged_type;
 
 public:
 
@@ -114,36 +114,36 @@ public:
 
 protected:
 
-    explicit RollingHashShifter(uint16_t K)
-        : RollingHashShifterBase<HashType>(K),
+    explicit LemireShifterPolicy(uint16_t K)
+        : LemireShifterPolicyBase<HashType>(K),
           K(K)
     {   
-        //std::cout << "END RollingHashShifter(K) ctor " << this << " / " << static_cast<RollingHashShifterBase<HashType>*>(this) << std::endl;
+        //std::cout << "END LemireShifterPolicy(K) ctor " << this << " / " << static_cast<LemireShifterPolicyBase<HashType>*>(this) << std::endl;
     }
 
-    explicit RollingHashShifter(const RollingHashShifter& other)
-        : RollingHashShifter(other.K)
+    explicit LemireShifterPolicy(const LemireShifterPolicy& other)
+        : LemireShifterPolicy(other.K)
     {
-        //std::cout << "END RollingHashShifter(other) ctor " << this << " / " << static_cast<RollingHashShifterBase<HashType>*>(this) << std::endl;
+        //std::cout << "END LemireShifterPolicy(other) ctor " << this << " / " << static_cast<LemireShifterPolicyBase<HashType>*>(this) << std::endl;
     }
 
-    RollingHashShifter() = delete;
+    LemireShifterPolicy() = delete;
 
 };
 
 
 template<>
-inline RollingHashShifter<Canonical<uint64_t>>
-::RollingHashShifter(uint16_t K)
-    : RollingHashShifterBase<Canonical<uint64_t>>(K),
+inline LemireShifterPolicy<Canonical<uint64_t>>
+::LemireShifterPolicy(uint16_t K)
+    : LemireShifterPolicyBase<Canonical<uint64_t>>(K),
       K(K)
 {
 }
 
 template<>
-inline RollingHashShifter<Canonical<uint64_t>>
-::RollingHashShifter(const RollingHashShifter& other)
-    : RollingHashShifterBase<Canonical<uint64_t>>(other.K),
+inline LemireShifterPolicy<Canonical<uint64_t>>
+::LemireShifterPolicy(const LemireShifterPolicy& other)
+    : LemireShifterPolicyBase<Canonical<uint64_t>>(other.K),
       K(other.K)
 {
 }
@@ -151,7 +151,7 @@ inline RollingHashShifter<Canonical<uint64_t>>
 
 template<>
 inline Canonical<uint64_t>
-RollingHashShifter<Canonical<uint64_t>>
+LemireShifterPolicy<Canonical<uint64_t>>
 ::get_impl() {
     return {hasher.hashvalue, rc_hasher.hashvalue};
 }
@@ -159,7 +159,7 @@ RollingHashShifter<Canonical<uint64_t>>
 template<>
 template<class It>
 inline Canonical<uint64_t>
-RollingHashShifter<Canonical<uint64_t>>
+LemireShifterPolicy<Canonical<uint64_t>>
 ::hash_base_impl(It begin, It end) {
 
     hasher.reset();
@@ -186,7 +186,7 @@ RollingHashShifter<Canonical<uint64_t>>
 
 template<>
 inline Canonical<uint64_t>
-RollingHashShifter<Canonical<uint64_t>>
+LemireShifterPolicy<Canonical<uint64_t>>
 ::hash_base_impl(const char * sequence) {
     hasher.reset();
     rc_hasher.reset();
@@ -205,7 +205,7 @@ RollingHashShifter<Canonical<uint64_t>>
 
 template<>
 inline Canonical<uint64_t>
-RollingHashShifter<Canonical<uint64_t>>
+LemireShifterPolicy<Canonical<uint64_t>>
 ::shift_right_impl(const char& out, const char& in) {
     hasher.update(out, in);
     rc_hasher.reverse_update(alphabet::complement(in),
@@ -216,7 +216,7 @@ RollingHashShifter<Canonical<uint64_t>>
 
 template<>
 inline Canonical<uint64_t>
-RollingHashShifter<Canonical<uint64_t>>
+LemireShifterPolicy<Canonical<uint64_t>>
 ::shift_left_impl(const char& in, const char& out) {
     hasher.reverse_update(in, out);
     rc_hasher.update(alphabet::complement(out),
@@ -224,11 +224,11 @@ RollingHashShifter<Canonical<uint64_t>>
     return get_impl();
 }
 
-typedef RollingHashShifter<Hash<uint64_t>> FwdLemirePolicy;
-typedef RollingHashShifter<Canonical<uint64_t>> CanLemirePolicy;
+typedef LemireShifterPolicy<Hash<uint64_t>> FwdLemirePolicy;
+typedef LemireShifterPolicy<Canonical<uint64_t>> CanLemirePolicy;
 
-extern template class RollingHashShifter<Hash<uint64_t>>;
-extern template class RollingHashShifter<Canonical<uint64_t>>;
+extern template class LemireShifterPolicy<Hash<uint64_t>>;
+extern template class LemireShifterPolicy<Canonical<uint64_t>>;
 
 } 
 

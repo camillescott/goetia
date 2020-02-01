@@ -141,8 +141,8 @@ public:
 };
 
 
-extern template class KmerIterator<FwdRollingShifter>;
-extern template class KmerIterator<CanRollingShifter>;
+extern template class KmerIterator<FwdLemireShifter>;
+extern template class KmerIterator<CanLemireShifter>;
 
 extern template class KmerIterator<FwdUnikmerShifter>;
 extern template class KmerIterator<CanUnikmerShifter>;

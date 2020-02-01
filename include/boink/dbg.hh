@@ -405,78 +405,78 @@ public:
 };
 
 
-extern template class dBG<storage::BitStorage, hashing::FwdRollingShifter>;
-extern template class dBG<storage::BitStorage, hashing::CanRollingShifter>;
+extern template class dBG<storage::BitStorage, hashing::FwdLemireShifter>;
+extern template class dBG<storage::BitStorage, hashing::CanLemireShifter>;
 extern template class dBG<storage::BitStorage, hashing::FwdUnikmerShifter>;
 extern template class dBG<storage::BitStorage, hashing::CanUnikmerShifter>;
 
-extern template class dBG<storage::SparseppSetStorage, hashing::FwdRollingShifter>;
-extern template class dBG<storage::SparseppSetStorage, hashing::CanRollingShifter>;
+extern template class dBG<storage::SparseppSetStorage, hashing::FwdLemireShifter>;
+extern template class dBG<storage::SparseppSetStorage, hashing::CanLemireShifter>;
 extern template class dBG<storage::SparseppSetStorage, hashing::FwdUnikmerShifter>;
 extern template class dBG<storage::SparseppSetStorage, hashing::CanUnikmerShifter>;
 
-extern template class dBG<storage::ByteStorage, hashing::FwdRollingShifter>;
-extern template class dBG<storage::ByteStorage, hashing::CanRollingShifter>;
+extern template class dBG<storage::ByteStorage, hashing::FwdLemireShifter>;
+extern template class dBG<storage::ByteStorage, hashing::CanLemireShifter>;
 extern template class dBG<storage::ByteStorage, hashing::FwdUnikmerShifter>;
 extern template class dBG<storage::ByteStorage, hashing::CanUnikmerShifter>;
 
-extern template class dBG<storage::NibbleStorage, hashing::FwdRollingShifter>;
-extern template class dBG<storage::NibbleStorage, hashing::CanRollingShifter>;
+extern template class dBG<storage::NibbleStorage, hashing::FwdLemireShifter>;
+extern template class dBG<storage::NibbleStorage, hashing::CanLemireShifter>;
 extern template class dBG<storage::NibbleStorage, hashing::FwdUnikmerShifter>;
 extern template class dBG<storage::NibbleStorage, hashing::CanUnikmerShifter>;
 
-extern template class dBG<storage::QFStorage, hashing::FwdRollingShifter>;
-extern template class dBG<storage::QFStorage, hashing::CanRollingShifter>;
+extern template class dBG<storage::QFStorage, hashing::FwdLemireShifter>;
+extern template class dBG<storage::QFStorage, hashing::CanLemireShifter>;
 extern template class dBG<storage::QFStorage, hashing::FwdUnikmerShifter>;
 extern template class dBG<storage::QFStorage, hashing::CanUnikmerShifter>;
 
-extern template class dBGWalker<dBG<storage::BitStorage, hashing::FwdRollingShifter>>;
-extern template class dBGWalker<dBG<storage::BitStorage, hashing::CanRollingShifter>>;
+extern template class dBGWalker<dBG<storage::BitStorage, hashing::FwdLemireShifter>>;
+extern template class dBGWalker<dBG<storage::BitStorage, hashing::CanLemireShifter>>;
 extern template class dBGWalker<dBG<storage::BitStorage, hashing::FwdUnikmerShifter>>;
 extern template class dBGWalker<dBG<storage::BitStorage, hashing::CanUnikmerShifter>>;
 
-extern template class dBGWalker<dBG<storage::SparseppSetStorage, hashing::FwdRollingShifter>>;
-extern template class dBGWalker<dBG<storage::SparseppSetStorage, hashing::CanRollingShifter>>;
+extern template class dBGWalker<dBG<storage::SparseppSetStorage, hashing::FwdLemireShifter>>;
+extern template class dBGWalker<dBG<storage::SparseppSetStorage, hashing::CanLemireShifter>>;
 extern template class dBGWalker<dBG<storage::SparseppSetStorage, hashing::FwdUnikmerShifter>>;
 extern template class dBGWalker<dBG<storage::SparseppSetStorage, hashing::CanUnikmerShifter>>;
 
-extern template class dBGWalker<dBG<storage::ByteStorage, hashing::FwdRollingShifter>>;
-extern template class dBGWalker<dBG<storage::ByteStorage, hashing::CanRollingShifter>>;
+extern template class dBGWalker<dBG<storage::ByteStorage, hashing::FwdLemireShifter>>;
+extern template class dBGWalker<dBG<storage::ByteStorage, hashing::CanLemireShifter>>;
 extern template class dBGWalker<dBG<storage::ByteStorage, hashing::FwdUnikmerShifter>>;
 extern template class dBGWalker<dBG<storage::ByteStorage, hashing::CanUnikmerShifter>>;
 
-extern template class dBGWalker<dBG<storage::NibbleStorage, hashing::FwdRollingShifter>>;
-extern template class dBGWalker<dBG<storage::NibbleStorage, hashing::CanRollingShifter>>;
+extern template class dBGWalker<dBG<storage::NibbleStorage, hashing::FwdLemireShifter>>;
+extern template class dBGWalker<dBG<storage::NibbleStorage, hashing::CanLemireShifter>>;
 extern template class dBGWalker<dBG<storage::NibbleStorage, hashing::FwdUnikmerShifter>>;
 extern template class dBGWalker<dBG<storage::NibbleStorage, hashing::CanUnikmerShifter>>;
 
-extern template class dBGWalker<dBG<storage::QFStorage, hashing::FwdRollingShifter>>;
-extern template class dBGWalker<dBG<storage::QFStorage, hashing::CanRollingShifter>>;
+extern template class dBGWalker<dBG<storage::QFStorage, hashing::FwdLemireShifter>>;
+extern template class dBGWalker<dBG<storage::QFStorage, hashing::CanLemireShifter>>;
 extern template class dBGWalker<dBG<storage::QFStorage, hashing::FwdUnikmerShifter>>;
 extern template class dBGWalker<dBG<storage::QFStorage, hashing::CanUnikmerShifter>>;
 
-extern template class hashing::KmerIterator<dBG<storage::BitStorage, hashing::FwdRollingShifter>>;
-extern template class hashing::KmerIterator<dBG<storage::BitStorage, hashing::CanRollingShifter>>;
+extern template class hashing::KmerIterator<dBG<storage::BitStorage, hashing::FwdLemireShifter>>;
+extern template class hashing::KmerIterator<dBG<storage::BitStorage, hashing::CanLemireShifter>>;
 extern template class hashing::KmerIterator<dBG<storage::BitStorage, hashing::FwdUnikmerShifter>>;
 extern template class hashing::KmerIterator<dBG<storage::BitStorage, hashing::CanUnikmerShifter>>;
 
-extern template class hashing::KmerIterator<dBG<storage::SparseppSetStorage, hashing::FwdRollingShifter>>;
-extern template class hashing::KmerIterator<dBG<storage::SparseppSetStorage, hashing::CanRollingShifter>>;
+extern template class hashing::KmerIterator<dBG<storage::SparseppSetStorage, hashing::FwdLemireShifter>>;
+extern template class hashing::KmerIterator<dBG<storage::SparseppSetStorage, hashing::CanLemireShifter>>;
 extern template class hashing::KmerIterator<dBG<storage::SparseppSetStorage, hashing::FwdUnikmerShifter>>;
 extern template class hashing::KmerIterator<dBG<storage::SparseppSetStorage, hashing::CanUnikmerShifter>>;
 
-extern template class hashing::KmerIterator<dBG<storage::ByteStorage, hashing::FwdRollingShifter>>;
-extern template class hashing::KmerIterator<dBG<storage::ByteStorage, hashing::CanRollingShifter>>;
+extern template class hashing::KmerIterator<dBG<storage::ByteStorage, hashing::FwdLemireShifter>>;
+extern template class hashing::KmerIterator<dBG<storage::ByteStorage, hashing::CanLemireShifter>>;
 extern template class hashing::KmerIterator<dBG<storage::ByteStorage, hashing::FwdUnikmerShifter>>;
 extern template class hashing::KmerIterator<dBG<storage::ByteStorage, hashing::CanUnikmerShifter>>;
 
-extern template class hashing::KmerIterator<dBG<storage::NibbleStorage, hashing::FwdRollingShifter>>;
-extern template class hashing::KmerIterator<dBG<storage::NibbleStorage, hashing::CanRollingShifter>>;
+extern template class hashing::KmerIterator<dBG<storage::NibbleStorage, hashing::FwdLemireShifter>>;
+extern template class hashing::KmerIterator<dBG<storage::NibbleStorage, hashing::CanLemireShifter>>;
 extern template class hashing::KmerIterator<dBG<storage::NibbleStorage, hashing::FwdUnikmerShifter>>;
 extern template class hashing::KmerIterator<dBG<storage::NibbleStorage, hashing::CanUnikmerShifter>>;
 
-extern template class hashing::KmerIterator<dBG<storage::QFStorage, hashing::FwdRollingShifter>>;
-extern template class hashing::KmerIterator<dBG<storage::QFStorage, hashing::CanRollingShifter>>;
+extern template class hashing::KmerIterator<dBG<storage::QFStorage, hashing::FwdLemireShifter>>;
+extern template class hashing::KmerIterator<dBG<storage::QFStorage, hashing::CanLemireShifter>>;
 extern template class hashing::KmerIterator<dBG<storage::QFStorage, hashing::FwdUnikmerShifter>>;
 extern template class hashing::KmerIterator<dBG<storage::QFStorage, hashing::CanUnikmerShifter>>;
 

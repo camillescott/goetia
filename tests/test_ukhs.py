@@ -10,17 +10,17 @@
 import pytest
 from .utils import *
 from boink import libboink
-from boink.hashing import (FwdRollingShifter, CanRollingShifter, UKHS)
+from boink.hashing import (FwdLemireShifter, CanLemireShifter, UKHS)
 
 
 @using(ksize=[21,31,41])
 def test_ukhs_query(ksize):
-    utype = UKHS[FwdRollingShifter]
+    utype = UKHS[FwdLemireShifter]
     ukhs = utype.load(ksize, 7)
     unikmers = utype.parse_unikmers(ksize, 7)
 
     for i, kmer in enumerate(unikmers):
-        uhash = FwdRollingShifter.hash(kmer, 7)
+        uhash = FwdLemireShifter.hash(kmer, 7)
         result = ukhs.query(uhash).value()
 
         assert uhash == result.value

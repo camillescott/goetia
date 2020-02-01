@@ -546,17 +546,17 @@ protected:
  * @tparam Alphabet 
  */
 template <typename HashType, typename Alphabet=DNA_SIMPLE>
-struct UnikmerLemirePolicy : public UnikmerShifterPolicy<RollingHashShifter<HashType, Alphabet>>
+struct UnikmerLemirePolicy : public UnikmerShifterPolicy<LemireShifterPolicy<HashType, Alphabet>>
 {
     protected:
-        using UnikmerShifterPolicy<RollingHashShifter<HashType, Alphabet>>::UnikmerShifterPolicy;
+        using UnikmerShifterPolicy<LemireShifterPolicy<HashType, Alphabet>>::UnikmerShifterPolicy;
 };
 
 typedef UnikmerLemirePolicy<Hash<uint64_t>> FwdUnikmerPolicy;
 typedef UnikmerLemirePolicy<Canonical<uint64_t>> CanUnikmerPolicy;
 
-extern template class UKHS<FwdRollingShifter>;
-extern template class UKHS<CanRollingShifter>;
+extern template class UKHS<FwdLemireShifter>;
+extern template class UKHS<CanLemireShifter>;
 
 extern template class UnikmerShifterPolicy<FwdLemirePolicy>;
 extern template class UnikmerShifterPolicy<CanLemirePolicy>;

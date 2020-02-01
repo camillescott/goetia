@@ -1683,20 +1683,20 @@ public:
 
 }
 
-extern template class cdbg::cDBG<dBG<storage::BitStorage, hashing::FwdRollingShifter>>;
-extern template class cdbg::cDBG<dBG<storage::BitStorage, hashing::CanRollingShifter>>;
+extern template class cdbg::cDBG<dBG<storage::BitStorage, hashing::FwdLemireShifter>>;
+extern template class cdbg::cDBG<dBG<storage::BitStorage, hashing::CanLemireShifter>>;
 
-extern template class cdbg::cDBG<dBG<storage::SparseppSetStorage, hashing::FwdRollingShifter>>;
-extern template class cdbg::cDBG<dBG<storage::SparseppSetStorage, hashing::CanRollingShifter>>;
+extern template class cdbg::cDBG<dBG<storage::SparseppSetStorage, hashing::FwdLemireShifter>>;
+extern template class cdbg::cDBG<dBG<storage::SparseppSetStorage, hashing::CanLemireShifter>>;
 
-extern template class cdbg::cDBG<dBG<storage::ByteStorage, hashing::FwdRollingShifter>>;
-extern template class cdbg::cDBG<dBG<storage::ByteStorage, hashing::CanRollingShifter>>;
+extern template class cdbg::cDBG<dBG<storage::ByteStorage, hashing::FwdLemireShifter>>;
+extern template class cdbg::cDBG<dBG<storage::ByteStorage, hashing::CanLemireShifter>>;
 
-extern template class cdbg::cDBG<dBG<storage::NibbleStorage, hashing::FwdRollingShifter>>;
-extern template class cdbg::cDBG<dBG<storage::NibbleStorage, hashing::CanRollingShifter>>;
+extern template class cdbg::cDBG<dBG<storage::NibbleStorage, hashing::FwdLemireShifter>>;
+extern template class cdbg::cDBG<dBG<storage::NibbleStorage, hashing::CanLemireShifter>>;
 
-extern template class cdbg::cDBG<dBG<storage::QFStorage, hashing::FwdRollingShifter>>;
-extern template class cdbg::cDBG<dBG<storage::QFStorage, hashing::CanRollingShifter>>;
+extern template class cdbg::cDBG<dBG<storage::QFStorage, hashing::FwdLemireShifter>>;
+extern template class cdbg::cDBG<dBG<storage::QFStorage, hashing::CanLemireShifter>>;
 
 }
 
