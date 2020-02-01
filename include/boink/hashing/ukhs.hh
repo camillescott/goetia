@@ -122,8 +122,8 @@ class UnikmerShifterPolicy<ShiftPolicy<HashType, Alphabet>> : public KmerSpan {
      *             size_t   partition
      * 
      * At least, assuming value_type is uint64_t, which it basically
-     * always is. That is, hash_type follows WmerModel<uint64_t, Unikmer>, 
-     * and kmer_type will have WmerModel as its hash.
+     * always is. That is, hash_type follows Wmer<uint64_t, Unikmer>, 
+     * and kmer_type will have Wmer as its hash.
      *
      * There will usually be only one associated unikmer
      * for a single k-mer. Sometimes, however, a few unikmers
@@ -152,15 +152,15 @@ public:
     // Shared typedefs
     typedef UKHS<base_shifter_type>                             ukhs_type;
     typedef typename ukhs_type::Unikmer                         minimizer_type;
-    typedef WmerModel<typename ukhs_type::hash_type,
+    typedef Wmer<typename ukhs_type::hash_type,
                       typename ukhs_type::Unikmer>              hash_type;
-    typedef KmerModel<hash_type>                                kmer_type;
+    typedef Kmer<hash_type>                                kmer_type;
     typedef typename hash_type::value_type                      value_type;
     typedef Alphabet                                            alphabet;
 
     typedef hash_type                                           wmer_type;
-    typedef ShiftModel<wmer_type, DIR_LEFT>                     shift_left_type;
-    typedef ShiftModel<wmer_type, DIR_RIGHT>                    shift_right_type;
+    typedef Shift<wmer_type, DIR_LEFT>                     shift_left_type;
+    typedef Shift<wmer_type, DIR_RIGHT>                    shift_right_type;
 
     static constexpr bool has_kmer_span = true;
 
@@ -552,8 +552,8 @@ struct UnikmerLemirePolicy : public UnikmerShifterPolicy<RollingHashShifter<Hash
         using UnikmerShifterPolicy<RollingHashShifter<HashType, Alphabet>>::UnikmerShifterPolicy;
 };
 
-typedef UnikmerLemirePolicy<HashModel<uint64_t>> FwdUnikmerPolicy;
-typedef UnikmerLemirePolicy<CanonicalModel<uint64_t>> CanUnikmerPolicy;
+typedef UnikmerLemirePolicy<Hash<uint64_t>> FwdUnikmerPolicy;
+typedef UnikmerLemirePolicy<Canonical<uint64_t>> CanUnikmerPolicy;
 
 extern template class UKHS<FwdRollingShifter>;
 extern template class UKHS<CanRollingShifter>;
@@ -561,8 +561,8 @@ extern template class UKHS<CanRollingShifter>;
 extern template class UnikmerShifterPolicy<FwdLemirePolicy>;
 extern template class UnikmerShifterPolicy<CanLemirePolicy>;
 
-extern template class UnikmerLemirePolicy<HashModel<uint64_t>, DNA_SIMPLE>;
-extern template class UnikmerLemirePolicy<CanonicalModel<uint64_t>, DNA_SIMPLE>;
+extern template class UnikmerLemirePolicy<Hash<uint64_t>, DNA_SIMPLE>;
+extern template class UnikmerLemirePolicy<Canonical<uint64_t>, DNA_SIMPLE>;
 
 }
 

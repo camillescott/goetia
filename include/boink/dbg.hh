@@ -47,7 +47,7 @@ public:
     typedef typename walker_type::kmer_type          kmer_type;
 
     template<bool Dir>
-        using shift_type = hashing::ShiftModel<hash_type, Dir>;
+        using shift_type = hashing::Shift<hash_type, Dir>;
 
     typedef std::pair<std::vector<shift_type<hashing::DIR_LEFT>>,
                       std::vector<shift_type<hashing::DIR_RIGHT>>> shift_pair_type;

@@ -87,7 +87,7 @@ public:
     typedef typename hash_type::value_type          value_type;
 
     template<bool Dir>
-        using shift_type = hashing::ShiftModel<hash_type, Dir>;
+        using shift_type = hashing::Shift<hash_type, Dir>;
     typedef typename extender_type::shift_left_type  shift_left_type;
     typedef typename extender_type::shift_right_type shift_right_type;
 
@@ -112,7 +112,7 @@ public:
     template<bool Dir>
     struct WalkBase {
         kmer_type                                        start;
-        std::vector<hashing::ShiftModel<hash_type, Dir>> path;
+        std::vector<hashing::Shift<hash_type, Dir>> path;
         TraversalState::State                            end_state;
 
         const hash_type head() const {

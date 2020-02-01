@@ -45,6 +45,9 @@ def pythonize_boink(klass, name):
                 return [item for item in func(self, *args, **kwargs)]
             return wrapped
 
+        def wrap_walk(func):
+            pass
+
         klass.add = add
         klass.get_hash = wrap_get(klass.get)
         klass.get = wrap_query(klass.query)

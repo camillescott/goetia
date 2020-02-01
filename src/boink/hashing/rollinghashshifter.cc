@@ -13,8 +13,8 @@ namespace boink {
 
 namespace hashing {
 
-template class RollingHashShifter<HashModel<uint64_t>>;
-template class RollingHashShifter<CanonicalModel<uint64_t>>;
+template class RollingHashShifter<Hash<uint64_t>>;
+template class RollingHashShifter<Canonical<uint64_t>>;
 
 }
 }

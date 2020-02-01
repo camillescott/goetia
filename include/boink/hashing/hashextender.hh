@@ -76,8 +76,8 @@ public:
     typedef typename extension_policy::kmer_type    kmer_type;
     typedef typename extension_policy::alphabet     alphabet;
 
-    typedef ShiftModel<hash_type, DIR_LEFT>         shift_left_type;
-    typedef ShiftModel<hash_type, DIR_RIGHT>        shift_right_type;
+    typedef Shift<hash_type, DIR_LEFT>         shift_left_type;
+    typedef Shift<hash_type, DIR_RIGHT>        shift_right_type;
 
     using extension_policy::K;
 
@@ -265,11 +265,11 @@ public:
     typedef typename hash_type::value_type   value_type;
 
     template<bool Dir>
-        using shift_type = ShiftModel<hash_type, Dir>;
+        using shift_type = Shift<hash_type, Dir>;
 
-    typedef ShiftModel<hash_type, DIR_LEFT>  shift_left_type;
-    typedef ShiftModel<hash_type, DIR_RIGHT> shift_right_type;
-    typedef KmerModel<hash_type>             kmer_type;
+    typedef Shift<hash_type, DIR_LEFT>  shift_left_type;
+    typedef Shift<hash_type, DIR_RIGHT> shift_right_type;
+    typedef Kmer<hash_type>             kmer_type;
     typedef typename ShifterType::alphabet   alphabet;
 
     using shifter_type::K;

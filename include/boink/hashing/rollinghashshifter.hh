@@ -44,9 +44,9 @@ protected:
 };
 
 template<>
-struct RollingHashShifterBase<CanonicalModel<uint64_t>> {
+struct RollingHashShifterBase<Canonical<uint64_t>> {
 protected:
-    typedef typename CanonicalModel<uint64_t>::value_type value_type;
+    typedef typename Canonical<uint64_t>::value_type value_type;
 
     CyclicHash<value_type> hasher;
     CyclicHash<value_type> rc_hasher;
@@ -67,7 +67,7 @@ public:
 
     typedef HashType                       hash_type;
     typedef typename hash_type::value_type value_type;
-    typedef KmerModel<hash_type>           kmer_type;
+    typedef Kmer<hash_type>           kmer_type;
     typedef Alphabet                       alphabet;
     static constexpr bool has_kmer_span = false;
 
@@ -133,33 +133,33 @@ protected:
 
 
 template<>
-inline RollingHashShifter<CanonicalModel<uint64_t>>
+inline RollingHashShifter<Canonical<uint64_t>>
 ::RollingHashShifter(uint16_t K)
-    : RollingHashShifterBase<CanonicalModel<uint64_t>>(K),
+    : RollingHashShifterBase<Canonical<uint64_t>>(K),
       K(K)
 {
 }
 
 template<>
-inline RollingHashShifter<CanonicalModel<uint64_t>>
+inline RollingHashShifter<Canonical<uint64_t>>
 ::RollingHashShifter(const RollingHashShifter& other)
-    : RollingHashShifterBase<CanonicalModel<uint64_t>>(other.K),
+    : RollingHashShifterBase<Canonical<uint64_t>>(other.K),
       K(other.K)
 {
 }
 
 
 template<>
-inline CanonicalModel<uint64_t>
-RollingHashShifter<CanonicalModel<uint64_t>>
+inline Canonical<uint64_t>
+RollingHashShifter<Canonical<uint64_t>>
 ::get_impl() {
     return {hasher.hashvalue, rc_hasher.hashvalue};
 }
 
 template<>
 template<class It>
-inline CanonicalModel<uint64_t>
-RollingHashShifter<CanonicalModel<uint64_t>>
+inline Canonical<uint64_t>
+RollingHashShifter<Canonical<uint64_t>>
 ::hash_base_impl(It begin, It end) {
 
     hasher.reset();
@@ -185,8 +185,8 @@ RollingHashShifter<CanonicalModel<uint64_t>>
 
 
 template<>
-inline CanonicalModel<uint64_t>
-RollingHashShifter<CanonicalModel<uint64_t>>
+inline Canonical<uint64_t>
+RollingHashShifter<Canonical<uint64_t>>
 ::hash_base_impl(const char * sequence) {
     hasher.reset();
     rc_hasher.reset();
@@ -204,8 +204,8 @@ RollingHashShifter<CanonicalModel<uint64_t>>
 
 
 template<>
-inline CanonicalModel<uint64_t>
-RollingHashShifter<CanonicalModel<uint64_t>>
+inline Canonical<uint64_t>
+RollingHashShifter<Canonical<uint64_t>>
 ::shift_right_impl(const char& out, const char& in) {
     hasher.update(out, in);
     rc_hasher.reverse_update(alphabet::complement(in),
@@ -215,8 +215,8 @@ RollingHashShifter<CanonicalModel<uint64_t>>
 
 
 template<>
-inline CanonicalModel<uint64_t>
-RollingHashShifter<CanonicalModel<uint64_t>>
+inline Canonical<uint64_t>
+RollingHashShifter<Canonical<uint64_t>>
 ::shift_left_impl(const char& in, const char& out) {
     hasher.reverse_update(in, out);
     rc_hasher.update(alphabet::complement(out),
@@ -224,11 +224,11 @@ RollingHashShifter<CanonicalModel<uint64_t>>
     return get_impl();
 }
 
-typedef RollingHashShifter<HashModel<uint64_t>> FwdLemirePolicy;
-typedef RollingHashShifter<CanonicalModel<uint64_t>> CanLemirePolicy;
+typedef RollingHashShifter<Hash<uint64_t>> FwdLemirePolicy;
+typedef RollingHashShifter<Canonical<uint64_t>> CanLemirePolicy;
 
-extern template class RollingHashShifter<HashModel<uint64_t>>;
-extern template class RollingHashShifter<CanonicalModel<uint64_t>>;
+extern template class RollingHashShifter<Hash<uint64_t>>;
+extern template class RollingHashShifter<Canonical<uint64_t>>;
 
 } 
 

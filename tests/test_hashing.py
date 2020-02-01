@@ -66,7 +66,7 @@ def test_rolling_hash(hasher, ksize):
 
 @using(ksize=21, length=10000)
 def test_hashing_models_hash(hasher, ksize, random_sequence):
-    '''test that __hash__ on HashModel and CanonicalModel
+    '''test that __hash__ on Hash and Canonical
     yields the value attribute.
     '''
 
