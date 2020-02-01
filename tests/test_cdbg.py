@@ -469,6 +469,7 @@ class TestDecisionNodes(object):
 
 
 @using(ksize=15, length=100, hasher_type=FwdLemireShifter)
+@exact_backends()
 class TestUnitigBuildExtend(object):
 
     def test_left_fork_unode_creation(self, ksize, length, graph, compactor,
@@ -708,6 +709,7 @@ class TestUnitigBuildExtend(object):
 
 
 @using(hasher_type=FwdLemireShifter)
+@exact_backends()
 class TestUnitigSplit(object):
 
     def test_split_full_fwd(self, left_comb, right_comb, ksize, tip_length, n_branches,
@@ -1116,6 +1118,7 @@ class TestUnitigSplit(object):
 
 
 @using(hasher_type=FwdLemireShifter)
+@exact_backends()
 class TestCircularUnitigs:
 
     @using(ksize=15,
@@ -1380,6 +1383,7 @@ class TestBreadthFirstTraversal:
 
 
 @using(hasher_type=FwdLemireShifter)
+@exact_backends()
 class TestFindConnectedComponents:
 
     @using(ksize=21, length=100)
