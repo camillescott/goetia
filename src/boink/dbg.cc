@@ -15,6 +15,7 @@
 namespace boink {
 
     template class dBG<storage::BitStorage, hashing::FwdLemireShifter>;
+    template class Masked<storage::BitStorage, hashing::FwdLemireShifter, std::set<typename hashing::FwdLemireShifter::hash_type>>;
     template class dBG<storage::BitStorage, hashing::CanLemireShifter>;
     template class dBG<storage::BitStorage, hashing::FwdUnikmerShifter>;
     template class dBG<storage::BitStorage, hashing::CanUnikmerShifter>;

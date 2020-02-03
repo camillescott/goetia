@@ -17,19 +17,19 @@ def pythonize_boink(klass, name):
     is_walker, _ = is_template_inst(name, 'dBGWalker')
     if is_walker:
 
-        def wrap_walk(wrapped):
-            def _walk(self, seed=None, mask=None):
-                if mask is None:
-                    mask = std.set[type(self).hash_type]()
-                if seed is None:
-                    return wrapped(self, mask)
-                else:
-                    return wrapped(self, seed, mask)
-            return _walk
+        # def wrap_walk(wrapped):
+        #     def _walk(self, seed=None, mask=None):
+        #         if mask is None:
+        #             mask = std.set[type(self).hash_type]()
+        #         if seed is None:
+        #             return wrapped(self, mask)
+        #         else:
+        #             return wrapped(self, seed, mask)
+        #     return _walk
 
-        klass.walk_left = wrap_walk(klass.walk_left)
-        klass.walk_right = wrap_walk(klass.walk_right)
-        klass.walk = wrap_walk(klass.walk)
+        # klass.walk_left = wrap_walk(klass.walk_left)
+        # klass.walk_right = wrap_walk(klass.walk_right)
+        # klass.walk = wrap_walk(klass.walk)
 
         klass.cursor = property(klass.get_cursor)
         klass.cursor = klass.cursor.setter(lambda self, seed: self.set_cursor(seed))
