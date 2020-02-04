@@ -120,7 +120,6 @@ class TestLinear:
 
 class TestDecisions:
 
-
     def test_decision_fwd(self, ksize, right_fork, graph, consume, check_fp):
         (sequence, branch), S = right_fork()
         check_fp()
@@ -188,3 +187,24 @@ class TestDecisions:
 
         lwalk, rwalk = graph.walk(bottom[-ksize:])
         assert bottom == lwalk.glue(rwalk)
+
+
+class TestMasked:
+
+    def test_linear_masked_right(self, ksize, linear_path, graph, consume, check_fp):
+        # test that masking a k-mer stops traversal
+        contig = linear_path()
+        check_fp()
+        consume()
+
+        mask = std.set[graph.hash_type]()
+        stopper = contig[5:5+ksize]
+        mask.insert(graph.hash(stopper))
+        masked = libboink.Masked[graph.storage_type, graph.shifter_type, std.set[graph.hash_type]](graph, mask)
+
+        start = contig[:ksize]
+        walk_unmasked = graph.walk_right(start)
+        walk_masked = masked.walk_right(start)
+
+        assert walk_unmasked.to_string() == contig
+        assert walk_masked.to_string() == contig[:ksize+4]

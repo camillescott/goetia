@@ -710,21 +710,24 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
 
             pdebug(lfiltered.size() << " left, " << rfiltered.size() << " right");
 
-            auto masked = Masked<StorageType, ShifterType, std::set<hash_type>>(*dbg, processed);
+            //auto masked = Masked<StorageType, ShifterType, std::set<hash_type>>(*dbg, processed);
+            WalkStopper<hash_type> stopper_func(processed);
 
             if (lfiltered.size()) {
                 // size should always be 1 here
                 pdebug("Found a valid left neighbor, search this way... ("
                        << lfiltered.size() << " in filtered set, should always be 1.)");
                 auto start = lfiltered.back();
-                auto walk = masked.walk_left(start.kmer);
+                //auto walk = masked.walk_left(start.kmer);
+                auto walk = dbg->walk_left(start.kmer, stopper_func);
                 hash_type end_hash = walk.tail();
 
                 if (walk.end_state != State::STOP_SEEN) {
                     dbg->clear_seen();
 
                     if (walk.end_state == State::DECISION_FWD) {
-                        auto step = masked.step_right();
+                        //auto step = masked.step_right();
+                        auto step = dbg->step_right();
                         pdebug("stopped on DECISION_FWD " << step.first);
                         if (step.first == State::STEP) {
                             pdebug("pop off path");
@@ -779,7 +782,8 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
                 pdebug("Found a valid right neighbor, search this way... ("
                        << rfiltered.size() << " in filtered set, should be 1.");
                 auto start = rfiltered.back();
-                auto walk = masked.walk_right(start.kmer);
+                //auto walk = masked.walk_right(start.kmer);
+                auto walk = dbg->walk_right(start.kmer, stopper_func);
                 hash_type end_hash = walk.tail();
 
                 if (walk.end_state != State::STOP_SEEN) {
@@ -787,7 +791,8 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
 
                     if (walk.end_state == State::DECISION_FWD) {
 
-                        auto step = masked.step_left();
+                        //auto step = masked.step_left();
+                        auto step = dbg->step_left();
                         if (step.first == State::STEP) {
                             end_hash = step.second.front();
                             walk.path.pop_back();
