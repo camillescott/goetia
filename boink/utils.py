@@ -49,8 +49,6 @@ def set_typedef_attrs(dst_klass, attrs):
         setattr(dst_klass, attr, property(lambda self: getattr(type(self), attr)))
 
 
-
-
 def pretty_repr(tname):
     namespaces = ['boink', 'hashing', 'sequences', 'kmers', 'storage', 'cdbg', 'parsing', 'reporting', 'events', 'metrics']
     pretty = tname.__name__.replace(' >', '>').replace('  >', '>')
@@ -60,3 +58,6 @@ def pretty_repr(tname):
         pretty = pretty.replace(old, new)
     pretty = '(' + pretty + ')'
     return pretty
+
+
+class Namespace(): pass

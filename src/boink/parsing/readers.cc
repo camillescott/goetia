@@ -11,8 +11,11 @@
 
 namespace boink::parsing {
 
-    template class parsing::FastxParser<DNA_SIMPLE>;
-    template class parsing::SequenceReader<parsing::FastxParser<DNA_SIMPLE>>;
-    template class parsing::SplitPairedReader<parsing::FastxParser<DNA_SIMPLE>>;
+    template class FastxParser<DNA_SIMPLE>;
+    template class FastxParser<DNAN_SIMPLE>;
+    template class SequenceReader<parsing::FastxParser<DNA_SIMPLE>>;
+    template class SequenceReader<parsing::FastxParser<DNAN_SIMPLE>>;
+    template class SplitPairedReader<parsing::FastxParser<DNA_SIMPLE>>;
+    template class SplitPairedReader<parsing::FastxParser<DNAN_SIMPLE>>;
 
 }

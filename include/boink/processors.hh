@@ -61,7 +61,7 @@ public:
 
     bool poll(uint64_t incr=1) {
         counter += incr;
-        if (counter == interval) {
+        if (counter >= interval) {
             counter = 0;
             return true;
         } else {
@@ -122,6 +122,9 @@ protected:
 
     std::array<IntervalCounter, 3> counters;
     uint64_t                       _n_reads;
+    uint64_t                       _n_invalid;
+    uint64_t                       _n_too_short;
+    bool                           _verbose;
 
     bool _ticked(interval_state tick) {
         return tick.fine || tick.medium || tick.coarse || tick.end;
@@ -184,12 +187,17 @@ public:
 
     FileProcessor(uint64_t fine_interval   = DEFAULT_INTERVALS::FINE,
                   uint64_t medium_interval = DEFAULT_INTERVALS::MEDIUM,
-                  uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE)
+                  uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE,
+                  bool     verbose         = false)
         :  events::EventNotifier(),
            counters { fine_interval, 
                       medium_interval,
                       coarse_interval },
-          _n_reads(0) {
+          _n_reads(0),
+          _n_invalid(0),
+          _n_too_short(0),
+          _verbose(verbose)
+    {
         
     }
 
@@ -267,6 +275,33 @@ public:
         }
     }
 
+    template<typename ReaderType>
+    auto handle_next(ReaderType& reader)
+    -> std::optional<typename ReaderType::value_type> {
+        try {
+            auto record = reader.next();
+            return record;
+        } catch (InvalidCharacterException &e) {
+            if (_verbose) {
+                std::cerr << "WARNING: Bad sequence encountered at "
+                          << this->_n_reads
+                          << ", exception was "
+                          << e.what() << std::endl;
+            }
+            _n_invalid++;
+            return {};
+        }  catch (parsing::InvalidRead& e) {
+            if (_verbose) {
+                std::cerr << "WARNING: Bad invalid read encountered at "
+                          << this->_n_reads
+                          << ", exception was "
+                          << e.what() << std::endl;
+            }
+            _n_invalid++;
+            return {};
+        }
+    }
+
     /**
      * @Synopsis  Consume the next FINE_INTERVAL sequences and return the
      *            current interval state when completed.
@@ -276,13 +311,16 @@ public:
      * @Returns   interval_state with current interval.
      */
     interval_state advance(parsing::SplitPairedReader<ParserType>& reader) {
-        parsing::RecordPair bundle;
-
+        std::optional<parsing::RecordPair> bundle;
         while(!reader.is_complete()) {
-            bundle = reader.next();
-            derived().process_sequence(bundle);
+            bundle = handle_next(reader);
+            
+            if (!bundle) {
+                continue;
+            }
 
-            int _bundle_count = bundle.has_left + bundle.has_right;
+            derived().process_sequence(bundle.value());
+            int _bundle_count = bundle.value().has_left + bundle.value().has_right;
             _n_reads += _bundle_count;
 
             auto tick_result = _notify_tick(_bundle_count);
@@ -303,19 +341,23 @@ public:
      * @Returns   interval_state with current interval.
      */
     interval_state advance(std::shared_ptr<parsing::SequenceReader<ParserType>>& parser) {
-        parsing::Record read;
 
+        std::optional<parsing::Record> record;
         // Iterate through the reads and consume their k-mers.
+        int i = 0;
         while (!parser->is_complete()) {
             try {
-                read = parser->next();
+                record = handle_next(*parser);
             } catch (parsing::NoMoreReadsAvailable) {
                 break;
             }
+            
+            if(!record) {
+                continue;
+            }
 
-            derived().process_sequence(read);
+            derived().process_sequence(record.value());
  
-
             __sync_add_and_fetch( &_n_reads, 1 );
             auto tick_result = _notify_tick(1);
 
@@ -335,6 +377,27 @@ public:
      */
     uint64_t n_reads() const {
         return _n_reads;
+    }
+
+    uint64_t n_invalid() const {
+        return _n_invalid;
+    }
+
+    uint64_t n_too_short() const {
+        return _n_too_short;
+    }
+
+    template<typename... Args>
+    static std::shared_ptr<Derived> build(Args&&... args,
+                                          uint64_t fine_interval,
+                                          uint64_t medium_interval,
+                                          uint64_t coarse_interval,
+                                          bool     verbose) {
+        return Derived::build(std::forward<Args>(args)...,
+                              fine_interval,
+                              medium_interval,
+                              coarse_interval,
+                              verbose);
     }
 
 private:
@@ -374,10 +437,6 @@ protected:
     typedef FileProcessor<InserterProcessor<InserterType, ParserType>,
                           ParserType> Base;
 
-    uint64_t _n_invalid;
-    uint64_t _n_too_short;
-    bool     _verbose;
-
 public:
 
     using Base::process_sequence;
@@ -387,12 +446,9 @@ public:
                       uint64_t medium_interval = DEFAULT_INTERVALS::MEDIUM,
                       uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE,
                       bool     verbose         = false)
-        : Base(fine_interval, medium_interval, coarse_interval),
+        : Base(fine_interval, medium_interval, coarse_interval, verbose),
           inserter(inserter),
-          _n_inserted(0),
-          _n_invalid(0),
-          _n_too_short(0),
-          _verbose(verbose)
+          _n_inserted(0)
     {
     }
 
@@ -400,23 +456,15 @@ public:
         size_t this_n_inserted;
         try {
             this_n_inserted = inserter->insert_sequence(read.sequence);
-        } catch (InvalidCharacterException &e) {
-            if (_verbose) {
-                std::cerr << "WARNING: Bad sequence encountered at "
-                          << this->_n_reads << ": "
-                          << read.sequence << ", exception was "
-                          << e.what() << std::endl;
-            }
-            _n_invalid++;
-            return;
         } catch (SequenceLengthException &e) {
-            if (_verbose) {
+            if (this->_verbose) {
                 std::cerr << "WARNING: Skipped sequence that was too short: read "
                           << this->_n_reads << " with sequence "
                           << read.sequence 
                           << std::endl;
             }
-            _n_too_short++;
+            return;
+        } catch (InvalidCharacterException& e) {
             return;
         } catch (std::exception &e) {
             std::cerr << "ERROR: Exception thrown at " << this->_n_reads 
@@ -429,18 +477,6 @@ public:
 
     void report() {
 
-    }
-
-    uint64_t n_inserted() const {
-        return _n_inserted;
-    }
-
-    uint64_t n_invalid() const {
-        return _n_invalid;
-    }
-
-    uint64_t n_too_short() const {
-        return _n_too_short;
     }
 
     static std::shared_ptr<InserterProcessor<InserterType, ParserType>> build(std::shared_ptr<InserterType> inserter,

@@ -7,7 +7,7 @@
 # Date   : 14.10.2019
 
 from boink import libboink
-from boink.hashing import types as hasher_types
+from boink.hashing import typenames as hasher_types
 from boink.storage import get_storage_args, process_storage_args
 
 
@@ -31,7 +31,6 @@ def get_graph_args(parser):
     group.add_argument('-K', '--ksize', type=int, default=31)
     group.add_argument('--hasher', choices=list(hasher_types.keys()),
                        default='LemireShifterPolicy')
-
     get_storage_args(parser)
 
     return group

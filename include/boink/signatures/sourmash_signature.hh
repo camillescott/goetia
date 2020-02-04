@@ -12,6 +12,8 @@
 #include <memory>
 
 #include "boink/processors.hh"
+#include "boink/sequences/alphabets.hh"
+#include "boink/parsing/readers.hh"
 #include "boink/signatures/sourmash/kmer_min_hash.hh"
 
 
@@ -51,9 +53,7 @@ struct SourmashSignature {
         }
     };
 
-
-    using Processor = InserterProcessor<Signature>;
-
+    using Processor = InserterProcessor<Signature, parsing::FastxParser<DNA_SIMPLE>>;
 
 };
 

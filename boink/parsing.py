@@ -7,9 +7,9 @@ import os
 PAIRING_MODES     = ('split', 'interleaved', 'single')
 
 SequenceReader    = libboink.parsing.SequenceReader
-FastxParser       = libboink.parsing.FastxParser
+FastxParser       = libboink.parsing.FastxParser[libboink.DNA_SIMPLE]
 
-FastxReader       = SequenceReader[FastxParser]
+FastxReader       = libboink.parsing.SequenceReader[FastxParser]
 SplitPairedReader = libboink.parsing.SplitPairedReader[FastxParser]
 
 
