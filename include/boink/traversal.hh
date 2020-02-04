@@ -73,6 +73,7 @@ namespace TraversalState {
 template<typename HashType>
 struct NullWalkFunctor {
     bool operator()(HashType& node) { return true; }
+    virtual ~NullWalkFunctor() {}
 };
 
 //
