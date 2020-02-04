@@ -189,6 +189,7 @@ class TestDecisions:
         assert bottom == lwalk.glue(rwalk)
 
 
+@using(ksize=21, length=100)
 class TestMasked:
 
     def test_linear_masked_right(self, ksize, linear_path, graph, consume, check_fp):
@@ -208,3 +209,58 @@ class TestMasked:
 
         assert walk_unmasked.to_string() == contig
         assert walk_masked.to_string() == contig[:ksize+4]
+
+    def test_masked_right_decision_fwd(self, ksize, right_fork, graph, consume, check_fp):
+        '''Tests that the mask turns a forward decision node into a non-decision node.
+        '''
+        (sequence, branch), S = right_fork()
+        check_fp()
+        consume()
+
+        branch_start = branch[:ksize]
+        mask = std.set[graph.hash_type]()
+        mask.insert(graph.hash(branch_start))
+        masked = libboink.Masked[graph.storage_type, graph.shifter_type, std.set[graph.hash_type]](graph, mask)
+
+        walk = masked.walk_right(sequence[:ksize])
+        path = walk.to_string()
+        assert walk.end_state == STATES.STOP_FWD
+        assert path == sequence
+        assert walk.tail() == graph.hash(sequence[-ksize:])
+    
+    def test_linear_masked_left(self, ksize, linear_path, graph, consume, check_fp):
+        # test that masking a k-mer stops traversal
+        contig = linear_path()
+        check_fp()
+        consume()
+
+        mask = std.set[graph.hash_type]()
+        stopper = contig[5:5+ksize]
+        mask.insert(graph.hash(stopper))
+        masked = libboink.Masked[graph.storage_type, graph.shifter_type, std.set[graph.hash_type]](graph, mask)
+
+        start = contig[-ksize:]
+        walk_unmasked = graph.walk_left(start)
+        walk_masked = masked.walk_left(start)
+
+        assert walk_unmasked.to_string() == contig
+        assert walk_masked.to_string() == contig[6:]
+
+    def test_masked_left_decision_fwd(self, ksize, left_fork, graph, consume, check_fp):
+        '''Tests that the mask turns a forward decision node into a non-decision node.
+        '''
+        (sequence, branch), S = left_fork()
+        check_fp()
+        consume()
+
+        branch_start = branch[-ksize:]
+        mask = std.set[graph.hash_type]()
+        mask.insert(graph.hash(branch_start))
+        masked = libboink.Masked[graph.storage_type, graph.shifter_type, std.set[graph.hash_type]](graph, mask)
+
+        walk = masked.walk_left(sequence[-ksize:])
+        path = walk.to_string()
+        assert walk.end_state == STATES.STOP_FWD
+        assert path == sequence
+        assert walk.tail() == graph.hash(sequence[:ksize])
+    
