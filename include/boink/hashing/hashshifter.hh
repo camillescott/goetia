@@ -193,8 +193,8 @@ public:
 extern template class HashShifter<FwdLemirePolicy>;
 extern template class HashShifter<CanLemirePolicy>;
 
-typedef HashShifter<FwdLemirePolicy> FwdRollingShifter;
-typedef HashShifter<CanLemirePolicy> CanRollingShifter;
+typedef HashShifter<FwdLemirePolicy> FwdLemireShifter;
+typedef HashShifter<CanLemirePolicy> CanLemireShifter;
 
 } // boink
 

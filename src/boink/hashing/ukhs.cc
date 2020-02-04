@@ -15,12 +15,12 @@
 
 namespace boink::hashing {
 
-    template class UKHS<FwdRollingShifter>;
-    template class UKHS<CanRollingShifter>;
+    template class UKHS<FwdLemireShifter>;
+    template class UKHS<CanLemireShifter>;
     template class UnikmerShifterPolicy<FwdLemirePolicy>;
     template class UnikmerShifterPolicy<CanLemirePolicy>;
-    template class UnikmerLemirePolicy<HashModel<uint64_t>, DNA_SIMPLE>;
-    template class UnikmerLemirePolicy<CanonicalModel<uint64_t>, DNA_SIMPLE>;
+    template class UnikmerLemirePolicy<Hash<uint64_t>, DNA_SIMPLE>;
+    template class UnikmerLemirePolicy<Canonical<uint64_t>, DNA_SIMPLE>;
 
     template<> template<>
     typename UnikmerShifterPolicy<FwdLemirePolicy>::hash_type

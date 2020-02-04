@@ -253,8 +253,8 @@ struct WKMinimizer {
 };
 
 extern template class InteriorMinimizer<uint64_t>;
-extern template class WKMinimizer<hashing::FwdRollingShifter>;
-extern template class WKMinimizer<hashing::CanRollingShifter>;
+extern template class WKMinimizer<hashing::FwdLemireShifter>;
+extern template class WKMinimizer<hashing::CanLemireShifter>;
 
 }
 

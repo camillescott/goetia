@@ -12,7 +12,7 @@
 namespace boink {
 
 template class InteriorMinimizer<uint64_t>;
-template class WKMinimizer<hashing::FwdRollingShifter>;
-template class WKMinimizer<hashing::CanRollingShifter>;
+template class WKMinimizer<hashing::FwdLemireShifter>;
+template class WKMinimizer<hashing::CanLemireShifter>;
 
 }

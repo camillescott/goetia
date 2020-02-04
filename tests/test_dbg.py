@@ -9,7 +9,7 @@ import pytest
 from cppyy.gbl import std
 
 from .utils import *
-from boink.hashing import FwdRollingShifter, UKHS
+from boink.hashing import FwdLemireShifter, UKHS
 import pytest
 
 
@@ -261,7 +261,7 @@ def test_get_kmer_hashes(graph, ksize, length, linear_path):
 
 @using(ksize=[21, 31, 41], length=1000)
 def test_hashing_2(graph, linear_path, ksize):
-    ''' Graph.hash uses a stand alone hasher for RollingHashShifters,
+    ''' Graph.hash uses a stand alone hasher for LemireShifterPolicys,
     Graph.hashes uses a KmerIterator; check that they give the same
     results.'''
 

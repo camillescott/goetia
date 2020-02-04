@@ -21,7 +21,7 @@ from boink.hashing import types as hashing_types
 from boink.utils import check_trait, pretty_repr
 from boink.storage import _types as storage_types
 
-from boink.hashing import (FwdRollingShifter, CanRollingShifter,
+from boink.hashing import (FwdLemireShifter, CanLemireShifter,
                            FwdUnikmerShifter, CanUnikmerShifter,
                            UKHS)
 
@@ -32,7 +32,7 @@ def storage_type(request):
     return _storage_type, params
 
 
-@pytest.fixture(params=[FwdRollingShifter, CanRollingShifter,
+@pytest.fixture(params=[FwdLemireShifter, CanLemireShifter,
                         FwdUnikmerShifter, CanUnikmerShifter],
                 ids=lambda t: pretty_repr(t))
 def hasher_type(request, ksize):
@@ -62,7 +62,7 @@ def store(storage_type):
 
 @pytest.fixture
 def partitioned_graph(store, ksize):
-    ukhs = UKHS[FwdRollingShifter].load(ksize, 7)
+    ukhs = UKHS[FwdLemireShifter].load(ksize, 7)
     pstore = std.make_shared[libboink.storage.PartitionedStorage[type(store)]](ukhs.n_hashes(),
                                                                                store)
     graph = std.make_shared[libboink.PdBG[type(store), FwdUnikmerShifter]](ksize, 7,

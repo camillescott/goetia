@@ -28,7 +28,6 @@
 namespace boink {
 namespace cdbg {
 
-# define DEBUG_CPTR
 # ifdef DEBUG_CPTR
 #   define pdebug(x) do { std::cerr << std::endl << "@ " << __FILE__ <<\
                           ":" << __FUNCTION__ << ":" <<\
@@ -61,7 +60,7 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
     typedef typename shifter_type::kmer_type    kmer_type;
 
     template<bool Dir>
-        using shift_type = hashing::ShiftModel<hash_type, Dir>;
+        using shift_type = hashing::Shift<hash_type, Dir>;
 
     typedef dBGWalker<graph_type>               walker_type;
     template<bool Dir>
@@ -1358,13 +1357,13 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
 }
 }
 
-extern template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::SparseppSetStorage, boink::hashing::FwdRollingShifter>>;
-extern template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::BitStorage, boink::hashing::FwdRollingShifter>>;
-extern template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::ByteStorage, boink::hashing::FwdRollingShifter>>;
-extern template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::NibbleStorage, boink::hashing::FwdRollingShifter>>;
-extern template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::QFStorage, boink::hashing::FwdRollingShifter>>;
+extern template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::SparseppSetStorage, boink::hashing::FwdLemireShifter>>;
+extern template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::BitStorage, boink::hashing::FwdLemireShifter>>;
+extern template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::ByteStorage, boink::hashing::FwdLemireShifter>>;
+extern template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::NibbleStorage, boink::hashing::FwdLemireShifter>>;
+extern template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::QFStorage, boink::hashing::FwdLemireShifter>>;
 
-extern template class std::deque<boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::SparseppSetStorage, boink::hashing::FwdRollingShifter>>>;
+extern template class std::deque<boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::SparseppSetStorage, boink::hashing::FwdLemireShifter>>>;
 
 
 #undef pdebug

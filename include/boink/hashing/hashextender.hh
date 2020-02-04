@@ -76,8 +76,8 @@ public:
     typedef typename extension_policy::kmer_type    kmer_type;
     typedef typename extension_policy::alphabet     alphabet;
 
-    typedef ShiftModel<hash_type, DIR_LEFT>         shift_left_type;
-    typedef ShiftModel<hash_type, DIR_RIGHT>        shift_right_type;
+    typedef Shift<hash_type, DIR_LEFT>         shift_left_type;
+    typedef Shift<hash_type, DIR_RIGHT>        shift_right_type;
 
     using extension_policy::K;
 
@@ -265,11 +265,11 @@ public:
     typedef typename hash_type::value_type   value_type;
 
     template<bool Dir>
-        using shift_type = ShiftModel<hash_type, Dir>;
+        using shift_type = Shift<hash_type, Dir>;
 
-    typedef ShiftModel<hash_type, DIR_LEFT>  shift_left_type;
-    typedef ShiftModel<hash_type, DIR_RIGHT> shift_right_type;
-    typedef KmerModel<hash_type>             kmer_type;
+    typedef Shift<hash_type, DIR_LEFT>  shift_left_type;
+    typedef Shift<hash_type, DIR_RIGHT> shift_right_type;
+    typedef Kmer<hash_type>             kmer_type;
     typedef typename ShifterType::alphabet   alphabet;
 
     using shifter_type::K;
@@ -406,8 +406,8 @@ public:
     }
 };
 
-typedef HashExtender<DefaultExtensionPolicy<FwdRollingShifter>> FwdRollingExtender;
-typedef HashExtender<DefaultExtensionPolicy<CanRollingShifter>> CanRollingExtender;
+typedef HashExtender<DefaultExtensionPolicy<FwdLemireShifter>> FwdRollingExtender;
+typedef HashExtender<DefaultExtensionPolicy<CanLemireShifter>> CanRollingExtender;
 
 typedef HashExtender<FwdUnikmerShifter> FwdUnikmerExtender;
 typedef HashExtender<CanUnikmerShifter> CanUnikmerExtender;
@@ -438,11 +438,11 @@ template<typename ShifterType>
     using extender_selector_t = typename extender_selector<ShifterType>::type;
 
 
-extern template class DefaultExtensionPolicy<FwdRollingShifter>;
-extern template class DefaultExtensionPolicy<CanRollingShifter>;
+extern template class DefaultExtensionPolicy<FwdLemireShifter>;
+extern template class DefaultExtensionPolicy<CanLemireShifter>;
 
-extern template class HashExtender<DefaultExtensionPolicy<FwdRollingShifter>>;
-extern template class HashExtender<DefaultExtensionPolicy<CanRollingShifter>>;
+extern template class HashExtender<DefaultExtensionPolicy<FwdLemireShifter>>;
+extern template class HashExtender<DefaultExtensionPolicy<CanLemireShifter>>;
 
 extern template class HashExtender<FwdUnikmerShifter>;
 extern template class HashExtender<CanUnikmerShifter>;

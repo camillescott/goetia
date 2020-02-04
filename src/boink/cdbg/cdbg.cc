@@ -14,18 +14,18 @@
 
 namespace boink {
 
-template class cdbg::cDBG<dBG<storage::BitStorage, hashing::FwdRollingShifter>>;
-template class cdbg::cDBG<dBG<storage::BitStorage, hashing::CanRollingShifter>>;
+template class cdbg::cDBG<dBG<storage::BitStorage, hashing::FwdLemireShifter>>;
+template class cdbg::cDBG<dBG<storage::BitStorage, hashing::CanLemireShifter>>;
 
-template class cdbg::cDBG<dBG<storage::SparseppSetStorage, hashing::FwdRollingShifter>>;
-template class cdbg::cDBG<dBG<storage::SparseppSetStorage, hashing::CanRollingShifter>>;
+template class cdbg::cDBG<dBG<storage::SparseppSetStorage, hashing::FwdLemireShifter>>;
+template class cdbg::cDBG<dBG<storage::SparseppSetStorage, hashing::CanLemireShifter>>;
 
-template class cdbg::cDBG<dBG<storage::ByteStorage, hashing::FwdRollingShifter>>;
-template class cdbg::cDBG<dBG<storage::ByteStorage, hashing::CanRollingShifter>>;
+template class cdbg::cDBG<dBG<storage::ByteStorage, hashing::FwdLemireShifter>>;
+template class cdbg::cDBG<dBG<storage::ByteStorage, hashing::CanLemireShifter>>;
 
-template class cdbg::cDBG<dBG<storage::NibbleStorage, hashing::FwdRollingShifter>>;
-template class cdbg::cDBG<dBG<storage::NibbleStorage, hashing::CanRollingShifter>>;
+template class cdbg::cDBG<dBG<storage::NibbleStorage, hashing::FwdLemireShifter>>;
+template class cdbg::cDBG<dBG<storage::NibbleStorage, hashing::CanLemireShifter>>;
 
-template class cdbg::cDBG<dBG<storage::QFStorage, hashing::FwdRollingShifter>>;
-template class cdbg::cDBG<dBG<storage::QFStorage, hashing::CanRollingShifter>>;
+template class cdbg::cDBG<dBG<storage::QFStorage, hashing::FwdLemireShifter>>;
+template class cdbg::cDBG<dBG<storage::QFStorage, hashing::CanLemireShifter>>;
 }

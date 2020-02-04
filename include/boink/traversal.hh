@@ -10,6 +10,7 @@
 #ifndef BOINK_ASSEMBLY_HH
 #define BOINK_ASSEMBLY_HH
 
+#include "boink/boink.hh"
 #include "boink/hashing/kmeriterator.hh"
 #include "boink/hashing/hashextender.hh"
 #include "boink/hashing/canonical.hh"
@@ -44,7 +45,7 @@ typedef std::vector<std::string> StringVector;
  * STOP_FWD: there are no neighbors in this direction.
  * DECISION_FWD: there is more than one neighbor.
  * STOP_SEEN: there is a single neighbor but it has been seen.
- * DECISION_RC: There is a single neighbor, but it is a decision in the other direction.
+ * DECISION_BKW: There is a single neighbor, but it is a decision in the other direction.
  * STOP_MASKED: There is a single neighbor, but it is masked.
  * BAD_SEED: The node you tried to start at does not exist.
  * GRAPH_ERROR: The graph is structural unsound (basically a panic).
@@ -55,9 +56,8 @@ namespace TraversalState {
 
     enum State {
         STOP_FWD,
-        STOP_RC,
         DECISION_FWD,
-        DECISION_RC,
+        DECISION_BKW,
         STOP_SEEN,
         STOP_MASKED,
         BAD_SEED,
@@ -87,7 +87,7 @@ public:
     typedef typename hash_type::value_type          value_type;
 
     template<bool Dir>
-        using shift_type = hashing::ShiftModel<hash_type, Dir>;
+        using shift_type = hashing::Shift<hash_type, Dir>;
     typedef typename extender_type::shift_left_type  shift_left_type;
     typedef typename extender_type::shift_right_type shift_right_type;
 
@@ -112,7 +112,7 @@ public:
     template<bool Dir>
     struct WalkBase {
         kmer_type                                        start;
-        std::vector<hashing::ShiftModel<hash_type, Dir>> path;
+        std::vector<hashing::Shift<hash_type, Dir>> path;
         TraversalState::State                            end_state;
 
         const hash_type head() const {
@@ -126,7 +126,6 @@ public:
                 return start;
             }
         }
-
     };
 
     template<bool Dir = hashing::DIR_RIGHT, typename Dummy = void>
@@ -148,6 +147,19 @@ public:
         const std::string glue(const WalkImpl<hashing::DIR_LEFT>& left) const {
             return left.to_string() + this->to_string().substr(start.kmer.size());
         }
+
+        const std::string glue(const WalkImpl<hashing::DIR_RIGHT>& right) const {
+            return this->to_string() + right.to_string().substr(start.kmer.size());
+        }
+
+        const char retreat_symbol() const {
+            size_t position = path.size();
+            if (position < start.kmer.size()) {
+                return start.kmer[position];
+            } else {
+                return path[position - start.kmer.size()].symbol;
+            }
+        }
     };
 
     template<typename Dummy>
@@ -155,6 +167,15 @@ public:
         using WalkBase<hashing::DIR_LEFT>::start;
         using WalkBase<hashing::DIR_LEFT>::path;
         using WalkBase<hashing::DIR_LEFT>::end_state;
+
+        const char retreat_symbol() const {
+            size_t position = path.size();
+            if (position < start.kmer.size()) {
+                return start.kmer[start.kmer.size() - position - 1];
+            } else {
+                return path[position - start.kmer.size()].symbol;
+            }
+        }   
 
         const std::string to_string() const {
             std::string str(0, ' ');
@@ -182,6 +203,7 @@ public:
         using walk_type::to_string;
         using walk_type::head;
         using walk_type::tail;
+        using walk_type::retreat_symbol;
         using walk_type::glue;
     };
 
@@ -661,7 +683,7 @@ public:
             if (out_degree() > 1) {
                 pdebug("Stop: reverse d-node");
                 walk.path.pop_back();
-                walk.end_state = State::DECISION_RC;
+                walk.end_state = State::DECISION_BKW;
                 this->seen.erase(this->get().value());
                 return std::move(walk);
             }
@@ -714,7 +736,7 @@ public:
         while (1) {
             if (in_degree() > 1) {
                 walk.path.pop_back();
-                walk.end_state = State::DECISION_RC;
+                walk.end_state = State::DECISION_BKW;
                 this->seen.erase(this->get().value());
                 return std::move(walk);
             }

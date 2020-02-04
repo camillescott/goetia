@@ -1,8 +1,8 @@
 from boink import libboink
 
 
-typenames = [(libboink.hashing.FwdRollingShifter, 'FwdRollingShifter'),
-             (libboink.hashing.CanRollingShifter, 'CanRollingShifter'),
+typenames = [(libboink.hashing.FwdLemireShifter, 'FwdLemireShifter'),
+             (libboink.hashing.CanLemireShifter, 'CanLemireShifter'),
              (libboink.hashing.FwdUnikmerShifter, 'FwdUnikmerShifter'),
              (libboink.hashing.CanUnikmerShifter, 'CanUnikmerShifter')]
 types = [_type for _type, _name in typenames]

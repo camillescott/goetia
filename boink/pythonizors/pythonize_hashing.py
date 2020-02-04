@@ -66,8 +66,8 @@ def pythonize_boink_hashing(klass, name):
 
         #set_typedef_attrs(klass, ['alphabet', 'hash_type', 'value_type', 'kmer_type'])
 
-    for check_name in ['HashModel', 'CanonicalModel', 'WmerModel',
-                       'KmerModel', 'ShiftModel', 'Partitioned']:
+    for check_name in ['Hash', 'Canonical', 'Wmer',
+                       'Kmer', 'Shift', 'Partitioned']:
 
         is_inst, _ = is_template_inst(name, check_name)
         if is_inst:
