@@ -21,7 +21,7 @@
     typedef typename shifter_type::hash_type         hash_type; \
 	typedef typename hash_type::value_type           value_type; \
     typedef typename shifter_type::kmer_type         kmer_type; \
-    template<bool Dir> using shift_type = hashing::ShiftModel<hash_type, Dir>; \
+    template<bool Dir> using shift_type = hashing::Shift<hash_type, Dir>; \
     typedef std::pair<std::vector<kmer_type>, \
                       std::vector<kmer_type>>         neighbor_pair_type;\
     typedef std::pair<std::vector<shift_type<hashing::DIR_LEFT>>,\

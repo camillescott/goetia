@@ -181,20 +181,20 @@ struct UnikmerSignature {
 
 };
 
-extern template class signatures::UnikmerSignature<storage::BitStorage, hashing::HashModel<uint64_t>>;
-extern template class signatures::UnikmerSignature<storage::BitStorage, hashing::CanonicalModel<uint64_t>>;
+extern template class signatures::UnikmerSignature<storage::BitStorage, hashing::Hash<uint64_t>>;
+extern template class signatures::UnikmerSignature<storage::BitStorage, hashing::Canonical<uint64_t>>;
 
-extern template class signatures::UnikmerSignature<storage::SparseppSetStorage, hashing::HashModel<uint64_t>>;
-extern template class signatures::UnikmerSignature<storage::SparseppSetStorage, hashing::CanonicalModel<uint64_t>>;
+extern template class signatures::UnikmerSignature<storage::SparseppSetStorage, hashing::Hash<uint64_t>>;
+extern template class signatures::UnikmerSignature<storage::SparseppSetStorage, hashing::Canonical<uint64_t>>;
 
-extern template class signatures::UnikmerSignature<storage::ByteStorage, hashing::HashModel<uint64_t>>;
-extern template class signatures::UnikmerSignature<storage::ByteStorage, hashing::CanonicalModel<uint64_t>>;
+extern template class signatures::UnikmerSignature<storage::ByteStorage, hashing::Hash<uint64_t>>;
+extern template class signatures::UnikmerSignature<storage::ByteStorage, hashing::Canonical<uint64_t>>;
 
-extern template class signatures::UnikmerSignature<storage::NibbleStorage, hashing::HashModel<uint64_t>>;
-extern template class signatures::UnikmerSignature<storage::NibbleStorage, hashing::CanonicalModel<uint64_t>>;
+extern template class signatures::UnikmerSignature<storage::NibbleStorage, hashing::Hash<uint64_t>>;
+extern template class signatures::UnikmerSignature<storage::NibbleStorage, hashing::Canonical<uint64_t>>;
 
-extern template class signatures::UnikmerSignature<storage::QFStorage, hashing::HashModel<uint64_t>>;
-extern template class signatures::UnikmerSignature<storage::QFStorage, hashing::CanonicalModel<uint64_t>>;
+extern template class signatures::UnikmerSignature<storage::QFStorage, hashing::Hash<uint64_t>>;
+extern template class signatures::UnikmerSignature<storage::QFStorage, hashing::Canonical<uint64_t>>;
 
 
 

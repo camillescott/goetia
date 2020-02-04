@@ -10,9 +10,11 @@
 #ifndef BOINK_ASSEMBLY_HH
 #define BOINK_ASSEMBLY_HH
 
+#include "boink/boink.hh"
 #include "boink/hashing/kmeriterator.hh"
 #include "boink/hashing/hashextender.hh"
 #include "boink/hashing/canonical.hh"
+#include "boink/storage/storage.hh"
 
 #include <deque>
 #include <memory>
@@ -44,8 +46,9 @@ typedef std::vector<std::string> StringVector;
  * STOP_FWD: there are no neighbors in this direction.
  * DECISION_FWD: there is more than one neighbor.
  * STOP_SEEN: there is a single neighbor but it has been seen.
- * DECISION_RC: There is a single neighbor, but it is a decision in the other direction.
- * STOP_MASKED: There is a single neighbor, but it is masked.
+ * DECISION_BKW: There is a single neighbor, but it is a decision in the other direction.
+ * STOP_CALLBACK: There is a single neighbor, but it was rejected
+ *                by the callback function.
  * BAD_SEED: The node you tried to start at does not exist.
  * GRAPH_ERROR: The graph is structural unsound (basically a panic).
  * STEP: None of the above: we can move.
@@ -55,27 +58,65 @@ namespace TraversalState {
 
     enum State {
         STOP_FWD,
-        STOP_RC,
         DECISION_FWD,
-        DECISION_RC,
+        DECISION_BKW,
         STOP_SEEN,
         STOP_MASKED,
+        STOP_CALLBACK,
         BAD_SEED,
         GRAPH_ERROR,
         STEP
     };
 }
 
+
+template<typename HashType>
+struct NullWalkFunctor {
+    bool operator()(HashType& node) { return true; }
+    virtual ~NullWalkFunctor() {}
+};
+
+//
+// Functor for `walk` that will mask only mid-unitig --
+// that is, the walk will be stopped on a node if it
+// is in the given set.
+//
+template<typename HashType>
+struct WalkStopper {
+
+    std::set<HashType>& stoppers;
+
+    explicit WalkStopper(std::set<HashType>& stoppers)
+        : stoppers(stoppers) {}
+
+    bool operator()(HashType& node) { 
+        if (stoppers.count(node)) {
+            found = node;
+            return false;
+        }
+        return true;
+    }
+
+    std::optional<HashType> get() {
+        return found;
+    }
+
+    protected:
+        std::optional<HashType> found;
+};
+
+
 template <class T>
 struct dBGWalker;
 
 
-template <template <class, class> class GraphType,
-                                  class StorageType,
-                                  class ShifterType>
-class dBGWalker<GraphType<StorageType, ShifterType>> : public hashing::extender_selector<ShifterType>::type {
+template <template <class, class, class...> class GraphType,
+                    class StorageType,
+                           class ShifterType,
+                                  class... Extras> // Dummy param to handle query in derived classes
+class dBGWalker<GraphType<StorageType, ShifterType, Extras...>> : public hashing::extender_selector<ShifterType>::type {
 
-    typedef GraphType<StorageType, ShifterType>     Derived;
+    typedef GraphType<StorageType, ShifterType, Extras...>     Derived;
 
 public:
 
@@ -87,7 +128,7 @@ public:
     typedef typename hash_type::value_type          value_type;
 
     template<bool Dir>
-        using shift_type = hashing::ShiftModel<hash_type, Dir>;
+        using shift_type = hashing::Shift<hash_type, Dir>;
     typedef typename extender_type::shift_left_type  shift_left_type;
     typedef typename extender_type::shift_right_type shift_right_type;
 
@@ -99,7 +140,8 @@ public:
     typedef std::pair<std::vector<shift_type<hashing::DIR_LEFT>>,
                       std::vector<shift_type<hashing::DIR_RIGHT>>> shift_pair_type;
 
-    typedef TraversalState::State       State;
+    typedef TraversalState::State                    State;
+    typedef NullWalkFunctor<hash_type>               null_walk_func_t;
 
 private:
 
@@ -112,7 +154,7 @@ public:
     template<bool Dir>
     struct WalkBase {
         kmer_type                                        start;
-        std::vector<hashing::ShiftModel<hash_type, Dir>> path;
+        std::vector<hashing::Shift<hash_type, Dir>> path;
         TraversalState::State                            end_state;
 
         const hash_type head() const {
@@ -126,7 +168,6 @@ public:
                 return start;
             }
         }
-
     };
 
     template<bool Dir = hashing::DIR_RIGHT, typename Dummy = void>
@@ -148,6 +189,19 @@ public:
         const std::string glue(const WalkImpl<hashing::DIR_LEFT>& left) const {
             return left.to_string() + this->to_string().substr(start.kmer.size());
         }
+
+        const std::string glue(const WalkImpl<hashing::DIR_RIGHT>& right) const {
+            return this->to_string() + right.to_string().substr(start.kmer.size());
+        }
+
+        const char retreat_symbol() const {
+            size_t position = path.size();
+            if (position < start.kmer.size()) {
+                return start.kmer[position];
+            } else {
+                return path[position - start.kmer.size()].symbol;
+            }
+        }
     };
 
     template<typename Dummy>
@@ -155,6 +209,15 @@ public:
         using WalkBase<hashing::DIR_LEFT>::start;
         using WalkBase<hashing::DIR_LEFT>::path;
         using WalkBase<hashing::DIR_LEFT>::end_state;
+
+        const char retreat_symbol() const {
+            size_t position = path.size();
+            if (position < start.kmer.size()) {
+                return start.kmer[start.kmer.size() - position - 1];
+            } else {
+                return path[position - start.kmer.size()].symbol;
+            }
+        }   
 
         const std::string to_string() const {
             std::string str(0, ' ');
@@ -182,6 +245,7 @@ public:
         using walk_type::to_string;
         using walk_type::head;
         using walk_type::tail;
+        using walk_type::retreat_symbol;
         using walk_type::glue;
     };
 
@@ -301,6 +365,23 @@ public:
         }
         return result;
     }
+
+    template<bool Dir>
+    auto filter_nodes(const std::vector<shift_type<Dir>>& extensions,
+                      std::vector<storage::count_t>& counts)
+    -> std::vector<shift_type<Dir>> {
+
+        std::vector<shift_type<Dir>> result;
+        for (const auto& ext : extensions) {
+            auto count = derived().query(ext);
+            if (count != 0) {
+                result.push_back(ext);
+                counts.push_back(count);
+            }
+        }
+        return result;
+    }
+
 
 
     /**
@@ -529,19 +610,26 @@ public:
     }
 
     /**
-     * @Synopsis  Gather and filter left neighbors from the current cursor,
-     *            then step left if the look_state was STEP.
-     *
-     * @Param graph
-     *
-     * @Returns   Pair of the traversal state and any found neighbors.
+     * @brief Take a single step in DIR_LEFT, if possible. WalkFunctor is a
+     *        a callback that takes `hash_type` and returns true if the node
+     *        is admitted, and false if not. It is only triggered if STEP_LEFT
+     *        is satisfied, meaning it is used to check nodes inside unitigs.
+     * 
+     * @tparam WalkFunctor 
+     * @param f 
+     * @return std::pair<State, std::vector<shift_type<hashing::DIR_LEFT>>> 
      */
-    auto step_left()
+    template<typename WalkFunctor>
+    auto step_left(WalkFunctor& f)
     -> std::pair<State, std::vector<shift_type<hashing::DIR_LEFT>>> {
 
         auto neighbors = this->filter_nodes(this->left_extensions());
         auto state = look_state(neighbors);
         if (state == State::STEP) {
+            if (!f(neighbors.front().hash)) {
+                return {State::STOP_CALLBACK, std::move(neighbors)};
+            }
+
             this->shift_left(neighbors.front().symbol);
             this->seen.insert(neighbors.front().value());
         }
@@ -549,72 +637,69 @@ public:
     }
 
     /**
-     * @Synopsis  Step left, while masking the nodes in mask.
-     *
-     * @Param graph
-     * @Param mask
-     *
-     * @Returns   
+     * @brief Overload for step_left with default null functor for WalkFunctor.
+     * 
+     * @return std::pair<State, std::vector<shift_type<hashing::DIR_LEFT>>> 
      */
-    auto step_left(std::set<hash_type>& mask)
+    auto step_left()
     -> std::pair<State, std::vector<shift_type<hashing::DIR_LEFT>>> {
-
-        auto neighbors = this->filter_nodes(this->left_extensions());
-        auto state = look_state(neighbors);
-        if (state == State::STEP) {
-            if (mask.count(neighbors.front())) {
-                state = State::STOP_MASKED;
-            } else {
-                this->shift_left(neighbors.front().symbol);
-                this->seen.insert(neighbors.front().value());
-            }
-        }
-        return {state, std::move(neighbors)};
+        null_walk_func_t func;
+        return step_left(func);
     }
 
-    auto step_right()
+    /**
+     * @brief Take a single step in DIR_RIGHT, if possible. WalkFunctor is a
+     *        a callback that takes `hash_type` and returns true if the node
+     *        is admitted, and false if not. It is only triggered if STEP_LEFT
+     *        is satisfied, meaning it is used to check nodes inside unitigs.
+     * 
+     * @tparam WalkFunctor 
+     * @param f 
+     * @return std::pair<State, std::vector<shift_type<hashing::DIR_RIGHT>>> 
+     */
+    template<typename WalkFunctor>
+    auto step_right(WalkFunctor& f)
     -> std::pair<State, std::vector<shift_type<hashing::DIR_RIGHT>>> {
 
         auto neighbors = this->filter_nodes(this->right_extensions());
         auto state = look_state(neighbors);
         if (state == State::STEP) {
+            if (!f(neighbors.front().hash)) {
+                return {State::STOP_CALLBACK, std::move(neighbors)};
+            }
+
             this->shift_right(neighbors.front().symbol);
             this->seen.insert(neighbors.front().value());
         }
         return {state, std::move(neighbors)};
     }
 
-    auto step_right(std::set<hash_type>& mask)
+    /**
+     * @brief Overload for step_right with default null functor for WalkFunctor.
+     * 
+     * @return std::pair<State, std::vector<shift_type<hashing::DIR_RIGHT>>> 
+     */
+    auto step_right()
     -> std::pair<State, std::vector<shift_type<hashing::DIR_RIGHT>>> {
-
-        auto neighbors = this->filter_nodes(this->right_extensions());
-        auto state = look_state(neighbors);
-        if (state == State::STEP) {
-            if (mask.count(neighbors.front())) {
-                state = State::STOP_MASKED;
-            } else {
-                this->shift_right(neighbors.front().symbol);
-                this->seen.insert(neighbors.front().value());
-            }
-        }
-        return {state, std::move(neighbors)};
+        null_walk_func_t func;
+        return step_right(func);
     }
 
     /**
-     * @Synopsis  Make as many steps left as possible, starting at seed,
-     *            stopping when a STOP state is encountered. If seed
-     *            does not exist in the graph, terminates immediately
-     *            on BAD_SEED.
-     *
-     * @Param graph
-     * @Param seed
-     * @Param path The string spelled out by the walk.
-     * @Param mask Nodes the mask out of the graph.
-     *
-     * @Returns   
+     * @brief Make as many steps left as possible, starting at seed,
+     *        stopping when a STOP state is encountered. If seed
+     *        does not exist in the graph, terminates immediately
+     *        on BAD_SEED. Stops if WalkFunctor returns false on
+     *        a State::STEP.
+     * 
+     * @tparam WalkFunctor 
+     * @param seed 
+     * @param f 
+     * @return Walk<hashing::DIR_LEFT> 
      */
-    Walk<hashing::DIR_LEFT> walk_left(const std::string&   seed,
-                                      std::set<hash_type>& mask) {
+    template<typename WalkFunctor>
+    Walk<hashing::DIR_LEFT> walk_left(const std::string& seed,
+                                      WalkFunctor& f) {
 
         this->set_cursor(seed);
         auto seed_hash = this->get();
@@ -623,21 +708,35 @@ public:
                                          {},
                                          State::BAD_SEED};
             return walk;
-        } 
-        return walk_left(mask);
+        }
+
+        return walk_left(f);
     }
 
+    /**
+     * @brief Overload for walk_left with default null walk functor.
+     * 
+     * @param seed 
+     * @return Walk<hashing::DIR_LEFT> 
+     */
+    Walk<hashing::DIR_LEFT> walk_left(const std::string& seed) {
+        null_walk_func_t func;
+        return walk_left(seed, func);
+    }
 
     /**
-     * @Synopsis  Walk left, from the current cursor position.
-     *
-     * @Param graph
-     * @Param path
-     * @Param mask
-     *
-     * @Returns   
+     * @brief Make as many steps left as possible, starting at cursor,
+     *        stopping when a STOP state is encountered. If seed
+     *        does not exist in the graph, terminates immediately
+     *        on BAD_SEED. Stops if WalkFunctor returns false on
+     *        a State::STEP.
+     * 
+     * @tparam WalkFunctor 
+     * @param f 
+     * @return Walk<hashing::DIR_LEFT> 
      */
-    Walk<hashing::DIR_LEFT> walk_left(std::set<hash_type>& mask) {
+    template<typename WalkFunctor>
+    Walk<hashing::DIR_LEFT> walk_left(WalkFunctor& f) {
 
         Walk<hashing::DIR_LEFT> walk;
 
@@ -648,7 +747,7 @@ public:
         walk.start.kmer = this->get_cursor();
 
         // take the first step without check for reverse d-nodes
-        auto step = step_left(mask);
+        auto step = step_left(f);
 
         if (step.first != State::STEP) {
             walk.end_state = step.first;
@@ -661,12 +760,12 @@ public:
             if (out_degree() > 1) {
                 pdebug("Stop: reverse d-node");
                 walk.path.pop_back();
-                walk.end_state = State::DECISION_RC;
+                walk.end_state = State::DECISION_BKW;
                 this->seen.erase(this->get().value());
                 return std::move(walk);
             }
 
-            step = step_left(mask);
+            step = step_left(f);
 
             if (step.first != State::STEP) {
                 walk.end_state = step.first;
@@ -678,8 +777,31 @@ public:
         }
     }
 
-    Walk<hashing::DIR_RIGHT> walk_right(const std::string&   seed,
-                                        std::set<hash_type>& mask) {
+    /**
+     * @brief Overload for walk_left with default null walk functor.
+     * 
+     * @return Walk<hashing::DIR_LEFT> 
+     */
+    Walk<hashing::DIR_LEFT> walk_left() {
+        null_walk_func_t func;
+        return walk_left(func);
+    }
+
+    /**
+     * @brief Make as many steps right as possible, starting at seed,
+     *        stopping when a STOP state is encountered. If seed
+     *        does not exist in the graph, terminates immediately
+     *        on BAD_SEED. Stops if WalkFunctor returns false on
+     *        a State::STEP.
+     * 
+     * @tparam WalkFunctor 
+     * @param seed 
+     * @param f 
+     * @return Walk<hashing::DIR_RIGHT> 
+     */
+    template<typename WalkFunctor>
+    Walk<hashing::DIR_RIGHT> walk_right(const std::string& seed,
+                                        WalkFunctor& f) {
 
         this->set_cursor(seed);
         auto seed_hash = this->get();
@@ -689,10 +811,33 @@ public:
                                            State::BAD_SEED};
             return walk;
         }
-        return walk_right(mask);
+        return walk_right(f);
     }
 
-    Walk<hashing::DIR_RIGHT> walk_right(std::set<hash_type>& mask) {
+    /**
+     * @brief Overload for walk_right with default null walk functor.
+     * 
+     * @param seed 
+     * @return Walk<hashing::DIR_RIGHT> 
+     */
+    Walk<hashing::DIR_RIGHT> walk_right(const std::string& seed) {
+        null_walk_func_t func;
+        return walk_right(seed, func);
+    }
+
+    /**
+     * @brief Make as many steps right as possible, starting at cursor,
+     *        stopping when a STOP state is encountered. If seed
+     *        does not exist in the graph, terminates immediately
+     *        on BAD_SEED. Stops if WalkFunctor returns false on
+     *        a State::STEP.
+     * 
+     * @tparam WalkFunctor 
+     * @param f 
+     * @return Walk<hashing::DIR_RIGHT> 
+     */
+    template<typename WalkFunctor>
+    Walk<hashing::DIR_RIGHT> walk_right(WalkFunctor& f) {
 
         Walk<hashing::DIR_RIGHT> walk;
 
@@ -702,7 +847,7 @@ public:
         walk.start.hash = start_hash;
         walk.start.kmer = this->get_cursor();
 
-        auto step = step_right(mask);
+        auto step = step_right(f);
 
         if (step.first != State::STEP) {
             walk.end_state = step.first;
@@ -714,12 +859,12 @@ public:
         while (1) {
             if (in_degree() > 1) {
                 walk.path.pop_back();
-                walk.end_state = State::DECISION_RC;
+                walk.end_state = State::DECISION_BKW;
                 this->seen.erase(this->get().value());
                 return std::move(walk);
             }
 
-            step = step_right(mask);
+            step = step_right(f);
 
             if (step.first != State::STEP) {
                 walk.end_state = step.first;
@@ -730,8 +875,27 @@ public:
         }
     }
 
-    walk_pair_type walk(const std::string&  seed,
-                        std::set<hash_type> mask) {
+    /**
+     * @brief Overload for walk_right with default null walk functor.
+     * 
+     * @return Walk<hashing::DIR_RIGHT> 
+     */
+    Walk<hashing::DIR_RIGHT> walk_right() {
+        null_walk_func_t func;
+        return walk_right(func);
+    }
+
+    /**
+     * @brief Make both left and right walks starting at seed.
+     * 
+     * @tparam WalkFunctor 
+     * @param seed 
+     * @param f 
+     * @return walk_pair_type 
+     */
+    template<typename WalkFunctor>
+    walk_pair_type walk(const std::string& seed,
+                        WalkFunctor& f) {
 
         this->set_cursor(seed);
         auto seed_hash = this->get();
@@ -741,10 +905,21 @@ public:
                     {start, {}, State::BAD_SEED}};
         }
 
-        auto left_walk = walk_left(mask);
+        auto left_walk = walk_left(f);
         this->set_cursor(seed);
-        auto right_walk = walk_right(mask);
+        auto right_walk = walk_right(f);
         return {left_walk, right_walk};
+    }
+
+    /**
+     * @brief Default overload of walk with null_walk_func_t.
+     * 
+     * @param seed 
+     * @return walk_pair_type 
+     */
+    walk_pair_type walk(const std::string& seed) {
+        null_walk_func_t func;
+        return walk(seed, func);
     }
                   
     bool is_decision_kmer(const std::string& node,

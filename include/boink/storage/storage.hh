@@ -77,7 +77,7 @@ namespace storage {
 using MuxGuard = std::lock_guard<std::mutex>;
 
 typedef uint8_t                     byte_t;
-typedef uint16_t                    count_t;
+typedef int16_t                     count_t;
 typedef std::pair<count_t, count_t> full_count_t;
 
 template<class Storage> 

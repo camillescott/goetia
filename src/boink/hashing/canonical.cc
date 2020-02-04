@@ -9,25 +9,25 @@
 #include "boink/hashing/canonical.hh"
 
 
-/*
+
 namespace boink::hashing {
 
-template class HashModel<uint64_t>;
-template class CanonicalModel<HashModel<uint64_t>>;
+    template class boink::hashing::Hash<uint64_t>;
+    template class boink::hashing::Canonical<boink::hashing::Hash<uint64_t>>;
 
-template class KmerModel<HashModel<uint64_t>>;
-template class KmerModel<CanonicalModel<HashModel<uint64_t>>>;
+    template class boink::hashing::Kmer<boink::hashing::Hash<uint64_t>>;
+    template class boink::hashing::Kmer<boink::hashing::Canonical<uint64_t>>;
 
-template class KmerModel<UnikmerWmer>;
-template class KmerModel<CanonicalUnikmerWmer>;
+    template class boink::hashing::Kmer<boink::hashing::UnikmerWmer>;
+    template class boink::hashing::Kmer<boink::hashing::CanonicalUnikmerWmer>;
 
-template class WmerModel<Hash, Unikmer>;
-template class WmerModel<Canonical, CanonicalUnikmer>;
+    template class boink::hashing::Wmer<boink::hashing::Hash<uint64_t>, boink::hashing::Unikmer>;
+    template class boink::hashing::Wmer<boink::hashing::Canonical<uint64_t>, boink::hashing::CanonicalUnikmer>;
 
-template class ShiftModel<Hash, DIR_LEFT>;
-template class ShiftModel<Hash, DIR_RIGHT>;
-template class ShiftModel<Canonical, DIR_LEFT>;
-template class ShiftModel<Canonical, DIR_RIGHT>;
+    template class boink::hashing::Shift<boink::hashing::Hash<uint64_t>, boink::hashing::DIR_LEFT>;
+    template class boink::hashing::Shift<boink::hashing::Hash<uint64_t>, boink::hashing::DIR_RIGHT>;
+    template class boink::hashing::Shift<boink::hashing::Canonical<uint64_t>, boink::hashing::DIR_LEFT>;
+    template class boink::hashing::Shift<boink::hashing::Canonical<uint64_t>, boink::hashing::DIR_RIGHT>;
 
 }
-*/
+

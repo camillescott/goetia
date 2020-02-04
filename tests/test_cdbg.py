@@ -13,7 +13,7 @@ import pytest
 from tests.utils import *
 
 from boink import libboink, nullptr
-from boink.hashing import FwdRollingShifter
+from boink.hashing import FwdLemireShifter
 
 import cppyy.ll
 cppyy.ll.set_signals_as_exception(True)
@@ -31,7 +31,7 @@ def compactor(ksize, graph, compactor_type):
     return compactor
 
 
-@using(ksize=15, length=100, hasher_type=FwdRollingShifter)
+@using(ksize=15, length=100, hasher_type=FwdLemireShifter)
 @exact_backends()
 class TestFindNewSegments:
 
@@ -292,7 +292,7 @@ class TestFindNewSegments:
         assert segments[5].length == len(mut) - (pivotR + 1)
 
 
-@using(ksize=15, length=100, hasher_type=FwdRollingShifter)
+@using(ksize=15, length=100, hasher_type=FwdLemireShifter)
 @exact_backends()
 class TestDecisionNodes(object):
 
@@ -468,7 +468,8 @@ class TestDecisionNodes(object):
         assert compactor.cdbg.n_unodes == 2
 
 
-@using(ksize=15, length=100, hasher_type=FwdRollingShifter)
+@using(ksize=15, length=100, hasher_type=FwdLemireShifter)
+@exact_backends()
 class TestUnitigBuildExtend(object):
 
     def test_left_fork_unode_creation(self, ksize, length, graph, compactor,
@@ -707,7 +708,8 @@ class TestUnitigBuildExtend(object):
         assert compactor.cdbg.query_unode_end(graph.hash(left[-ksize:])) is None
 
 
-@using(hasher_type=FwdRollingShifter)
+@using(hasher_type=FwdLemireShifter)
+@exact_backends()
 class TestUnitigSplit(object):
 
     def test_split_full_fwd(self, left_comb, right_comb, ksize, tip_length, n_branches,
@@ -943,9 +945,13 @@ class TestUnitigSplit(object):
 
     @using(ksize=15,
            length=100)
+    @pytest.mark.xfail(reason="Problem with generator")
     def test_tandem_decision_unitig_clipping(self, ksize, length, graph, compactor,
                                           tandem_quad_forks, check_fp):
         (core, left_branches, right_branches), left_pivot, right_pivot = tandem_quad_forks()
+        check_fp()
+
+        print(core, left_branches, right_branches, sep='\n')
         left_dkmer = core[left_pivot:left_pivot+ksize]
         right_dkmer = core[right_pivot:right_pivot+ksize]
         print('left d-node:', left_dkmer, left_pivot, graph.hash(left_dkmer))
@@ -1115,7 +1121,8 @@ class TestUnitigSplit(object):
         assert rbottom.left_end == graph.hash(bottom[L+2:L+2+ksize])
 
 
-@using(hasher_type=FwdRollingShifter)
+@using(hasher_type=FwdLemireShifter)
+@exact_backends()
 class TestCircularUnitigs:
 
     @using(ksize=15,
@@ -1329,7 +1336,7 @@ class TestCircularUnitigs:
         print((' ' * (pivot+1)) + cycled_loop_unode.sequence)
 
 
-@using(hasher_type=FwdRollingShifter)
+@using(hasher_type=FwdLemireShifter)
 class TestBreadthFirstTraversal:
 
     @using(ksize=21, length=100)
@@ -1379,7 +1386,8 @@ class TestBreadthFirstTraversal:
         assert len(nodes) == 6
 
 
-@using(hasher_type=FwdRollingShifter)
+@using(hasher_type=FwdLemireShifter)
+@exact_backends()
 class TestFindConnectedComponents:
 
     @using(ksize=21, length=100)

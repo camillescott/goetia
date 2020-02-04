@@ -11,16 +11,16 @@
 
 namespace boink::hashing {
 
-    template class DefaultExtensionPolicy<FwdRollingShifter>;
-    template class DefaultExtensionPolicy<CanRollingShifter>;
+    template class DefaultExtensionPolicy<FwdLemireShifter>;
+    template class DefaultExtensionPolicy<CanLemireShifter>;
 
-    template class HashExtender<DefaultExtensionPolicy<FwdRollingShifter>>;
-    template HashExtender<DefaultExtensionPolicy<FwdRollingShifter>>::HashExtender(uint16_t);
-    template HashExtender<DefaultExtensionPolicy<FwdRollingShifter>>::HashExtender(const std::string&, uint16_t);
+    template class HashExtender<DefaultExtensionPolicy<FwdLemireShifter>>;
+    template HashExtender<DefaultExtensionPolicy<FwdLemireShifter>>::HashExtender(uint16_t);
+    template HashExtender<DefaultExtensionPolicy<FwdLemireShifter>>::HashExtender(const std::string&, uint16_t);
 
-    template class HashExtender<DefaultExtensionPolicy<CanRollingShifter>>;
-    template HashExtender<DefaultExtensionPolicy<CanRollingShifter>>::HashExtender(uint16_t);
-    template HashExtender<DefaultExtensionPolicy<CanRollingShifter>>::HashExtender(const std::string&, uint16_t);
+    template class HashExtender<DefaultExtensionPolicy<CanLemireShifter>>;
+    template HashExtender<DefaultExtensionPolicy<CanLemireShifter>>::HashExtender(uint16_t);
+    template HashExtender<DefaultExtensionPolicy<CanLemireShifter>>::HashExtender(const std::string&, uint16_t);
 
     template class HashExtender<FwdUnikmerShifter>;
     template class HashExtender<CanUnikmerShifter>;

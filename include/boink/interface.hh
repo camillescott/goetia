@@ -81,22 +81,4 @@ template bool operator!=(const std::STLTYPE< TTYPE >::iterator&,                
                          const std::STLTYPE< TTYPE >::iterator&);                 \
 }
 
-
-template class boink::hashing::HashModel<uint64_t>;
-template class boink::hashing::CanonicalModel<boink::hashing::HashModel<uint64_t>>;
-
-template class boink::hashing::Partitioned<boink::hashing::HashModel<uint64_t>>;
-template class boink::hashing::Partitioned<boink::hashing::CanonicalModel<uint64_t>>;
-
-template class boink::hashing::KmerModel<boink::hashing::HashModel<uint64_t>>;
-template class boink::hashing::KmerModel<boink::hashing::CanonicalModel<boink::hashing::HashModel<uint64_t>>>;
-template class boink::hashing::KmerModel<boink::hashing::UnikmerWmer>;
-template class boink::hashing::KmerModel<boink::hashing::CanonicalUnikmerWmer>;
-
-template class boink::hashing::ShiftModel<boink::hashing::Hash, boink::hashing::DIR_LEFT>;
-template class boink::hashing::ShiftModel<boink::hashing::Hash, boink::hashing::DIR_RIGHT>;
-template class boink::hashing::ShiftModel<boink::hashing::Canonical, boink::hashing::DIR_LEFT>;
-template class boink::hashing::ShiftModel<boink::hashing::Canonical, boink::hashing::DIR_RIGHT>;
-
-
 #endif

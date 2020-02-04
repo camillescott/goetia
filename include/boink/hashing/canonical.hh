@@ -28,23 +28,23 @@ inline constexpr bool DIR_RIGHT = true;
  * @tparam ValueType Underlying storage type.
  */
 template<class ValueType = uint64_t>
-struct HashModel {
+struct Hash {
     
     typedef ValueType value_type;
 
     value_type hash;
 
-    HashModel(const value_type hash)
+    Hash(const value_type hash)
         : hash(hash)
     {
     }
 
-    HashModel()
+    Hash()
         : hash(std::numeric_limits<value_type>::max())
     {
     }
 
-    HashModel(const HashModel& other)
+    Hash(const Hash& other)
         : hash(other.hash)
     {
     }
@@ -58,17 +58,17 @@ struct HashModel {
     }
 
     __attribute__((visibility("default")))
-    friend bool operator>(const HashModel& lhs, const HashModel& rhs) {
+    friend bool operator>(const Hash& lhs, const Hash& rhs) {
         return lhs.value() > rhs.value();
     }
 
     __attribute__((visibility("default")))
-    friend bool operator<(const HashModel& lhs, const HashModel& rhs) {
+    friend bool operator<(const Hash& lhs, const Hash& rhs) {
         return lhs.value() < rhs.value();
     }
 
     __attribute__((visibility("default")))
-    friend bool operator==(const HashModel& lhs, const HashModel& rhs) {
+    friend bool operator==(const Hash& lhs, const Hash& rhs) {
         return lhs.value() == rhs.value();
     }
 };
@@ -76,8 +76,8 @@ struct HashModel {
 template<class ValueType>
 __attribute__((visibility("default")))
 inline std::ostream&
-operator<<(std::ostream& os, const HashModel<ValueType>& _this) {
-    os << "<HashModel h=" << _this.value()
+operator<<(std::ostream& os, const Hash<ValueType>& _this) {
+    os << "<Hash h=" << _this.value()
        << ">";
     return os;
 }
@@ -86,31 +86,31 @@ operator<<(std::ostream& os, const HashModel<ValueType>& _this) {
 /**
  * @Synopsis  Model for a canonical k-mer. Stores two value_type
  *            as fw and rc hashes; value() provides the canonical
- *            hash. Matches HashModel interface.
+ *            hash. Matches Hash interface.
  *
  * @tparam ValueType
  */
-template<class ValueType>
-struct CanonicalModel {
+template<class ValueType = uint64_t>
+struct Canonical {
 
     typedef ValueType value_type;
 
     value_type fw_hash, rc_hash;
 
-    CanonicalModel()
+    Canonical()
         : fw_hash(std::numeric_limits<value_type>::max()),
           rc_hash(std::numeric_limits<value_type>::max())
     {
     }
 
-    CanonicalModel(const value_type fw,
+    Canonical(const value_type fw,
                    const value_type rc)
         : fw_hash(fw),
           rc_hash(rc)
     {
     }
 
-    CanonicalModel(const CanonicalModel& other)
+    Canonical(const Canonical& other)
         : fw_hash(other.fw_hash),
           rc_hash(other.rc_hash)
     {
@@ -129,17 +129,17 @@ struct CanonicalModel {
     }
 
     __attribute__((visibility("default")))
-    friend bool operator>(const CanonicalModel& lhs, const CanonicalModel& rhs) {
+    friend bool operator>(const Canonical& lhs, const Canonical& rhs) {
         return lhs.value() > rhs.value();
     }
 
     __attribute__((visibility("default")))
-    friend bool operator<(const CanonicalModel& lhs, const CanonicalModel& rhs) {
+    friend bool operator<(const Canonical& lhs, const Canonical& rhs) {
         return lhs.value() < rhs.value();
     }
 
     __attribute__((visibility("default")))
-    friend bool operator==(const CanonicalModel& lhs, const CanonicalModel& rhs) {
+    friend bool operator==(const Canonical& lhs, const Canonical& rhs) {
         return lhs.value() == rhs.value();
     }
 
@@ -147,8 +147,8 @@ struct CanonicalModel {
 
 template<class ValueType> __attribute__((visibility("default")))
 inline std::ostream&
-operator<<(std::ostream& os, const CanonicalModel<ValueType>& _this) {
-    os << "<CanonicalModel"
+operator<<(std::ostream& os, const Canonical<ValueType>& _this) {
+    os << "<Canonical"
        << " fw=" << _this.fw_hash
        << " rc=" << _this.rc_hash
        << " sign=" << _this.sign()
@@ -159,9 +159,9 @@ operator<<(std::ostream& os, const CanonicalModel<ValueType>& _this) {
 
 /**
  * @Synopsis  Helper struct so we can write, for example, 
- *                WmerModel<HashModel<uint64_t>, Unikmer>
+ *                Wmer<Hash<uint64_t>, Unikmer>
  *            instead of
- *                WmerModel<HashModel, uint64_t, Unikmer>
+ *                Wmer<Hash, uint64_t, Unikmer>
  *            which makes later composition more general and
  *       safer.
  *
@@ -169,16 +169,16 @@ operator<<(std::ostream& os, const CanonicalModel<ValueType>& _this) {
  * @tparam MinimizerType
  */
 template<class T, class MinimizerType>
-struct WmerModel;
+struct Wmer;
 
 
 /**
- * @Synopsis  A HashModel with an associated minimizer.
+ * @Synopsis  A Hash with an associated minimizer.
  *
  */
 template<template<class> class HashType, class ValueType,
          class MinimizerType>
-struct WmerModel<HashType<ValueType>, MinimizerType> {
+struct Wmer<HashType<ValueType>, MinimizerType> {
    
     typedef HashType<ValueType> hash_type;
     typedef ValueType           value_type;
@@ -187,20 +187,20 @@ struct WmerModel<HashType<ValueType>, MinimizerType> {
     hash_type     hash;
     minimizer_type minimizer;
 
-    WmerModel(const hash_type&     hash,
+    Wmer(const hash_type&     hash,
               const minimizer_type& minimizer)
         : hash(hash),
           minimizer(minimizer)
     {
     }
 
-    WmerModel()
+    Wmer()
         : hash(),
           minimizer()
     {
     }
 
-    WmerModel(const WmerModel& other)
+    Wmer(const Wmer& other)
         : hash(other.hash),
           minimizer(other.minimizer)
     {
@@ -219,17 +219,17 @@ struct WmerModel<HashType<ValueType>, MinimizerType> {
     }
 
     __attribute__((visibility("default")))
-    friend bool operator>(const WmerModel& lhs, const WmerModel& rhs) {
+    friend bool operator>(const Wmer& lhs, const Wmer& rhs) {
         return lhs.hash > rhs.hash;
     }
 
     __attribute__((visibility("default")))
-    friend bool operator<(const WmerModel& lhs, const WmerModel& rhs) {
+    friend bool operator<(const Wmer& lhs, const Wmer& rhs) {
         return lhs.hash < rhs.hash;
     }
 
     __attribute__((visibility("default")))
-    friend bool operator==(const WmerModel& lhs, const WmerModel& rhs) {
+    friend bool operator==(const Wmer& lhs, const Wmer& rhs) {
         return lhs.hash == rhs.hash;
     }
 };
@@ -240,8 +240,8 @@ template<template<class> class HashType, class ValueType,
 __attribute__((visibility("default")))
 inline std::ostream&
 operator<<(std::ostream& os,
-           const WmerModel<HashType<ValueType>, MinimizerType>& wmer) {
-    os << "<WmerModel"
+           const Wmer<HashType<ValueType>, MinimizerType>& wmer) {
+    os << "<Wmer"
        << " hash=" << wmer.hash
        << " minimizer=" << wmer.minimizer
        << ">";
@@ -250,21 +250,21 @@ operator<<(std::ostream& os,
 
 
 template<typename T>
-struct KmerModel;
+struct Kmer;
 
 /**
  * @Synopsis  Models a Kmer: a Hash and its string repr. The hash_type
- *            must comform to the HashModel template interface.
+ *            must comform to the Hash template interface.
  *
- *            NOTE: The variadic Extras parameter is need so that KmerModel
- *            can accept a WmerModel as its HashType (or for that matter,
- *            anything that comforms to HashModel but takes extra
+ *            NOTE: The variadic Extras parameter is need so that Kmer
+ *            can accept a Wmer as its HashType (or for that matter,
+ *            anything that comforms to Hash but takes extra
  *            template parameters). Naturally, Extras can also just
- *            be empty, in which case it matches regular HashModel<uint64_t>
+ *            be empty, in which case it matches regular Hash<uint64_t>
  *            etc.
  */
 template<template<class, class...> class HashType, class ValueType, class...Extras>
-struct KmerModel<HashType<ValueType, Extras...>> {
+struct Kmer<HashType<ValueType, Extras...>> {
 
     typedef HashType<ValueType, Extras...> hash_type;
     typedef typename hash_type::value_type value_type;
@@ -272,20 +272,20 @@ struct KmerModel<HashType<ValueType, Extras...>> {
     hash_type hash;
     std::string kmer;
 
-    KmerModel(const hash_type& hash,
+    Kmer(const hash_type& hash,
               const std::string& kmer)
         : hash(hash),
           kmer(kmer)
     {
     }
 
-	KmerModel()
+	Kmer()
         : hash(),
           kmer(0, ' ')
     {
     }
 
-    KmerModel(const KmerModel& other)
+    Kmer(const Kmer& other)
         : hash(other.hash),
           kmer(other.kmer)
     {
@@ -304,17 +304,17 @@ struct KmerModel<HashType<ValueType, Extras...>> {
     }
 
     __attribute__((visibility("default")))
-    friend bool operator>(const KmerModel& lhs, const KmerModel& rhs) {
+    friend bool operator>(const Kmer& lhs, const Kmer& rhs) {
         return lhs.hash > rhs.hash;
     }
 
     __attribute__((visibility("default")))
-    friend bool operator<(const KmerModel& lhs, const KmerModel& rhs) {
+    friend bool operator<(const Kmer& lhs, const Kmer& rhs) {
         return lhs.hash < rhs.hash;
     }
 
     __attribute__((visibility("default")))
-    friend bool operator==(const KmerModel& lhs, const KmerModel& rhs) {
+    friend bool operator==(const Kmer& lhs, const Kmer& rhs) {
         return lhs.hash == rhs.hash;
     }
 };
@@ -324,8 +324,8 @@ template<template<class, class...> class HashType, class ValueType,
          class...Extras>
 __attribute__((visibility("default")))
 inline std::ostream&
-operator<<(std::ostream& os, const KmerModel<HashType<ValueType, Extras...>>& kmer) {
-    os << "<KmerModel"
+operator<<(std::ostream& os, const Kmer<HashType<ValueType, Extras...>>& kmer) {
+    os << "<Kmer"
        << " hash=" << kmer.hash
        << " kmer=" << kmer.kmer
        << ">";
@@ -336,9 +336,9 @@ operator<<(std::ostream& os, const KmerModel<HashType<ValueType, Extras...>>& km
 
 /**
  * @Synopsis  helper struct so we can write, for example, 
- *                ShiftModel<HashModel<uint64_t>, DIR_LEFT>
+ *                Shift<Hash<uint64_t>, DIR_LEFT>
  *            instead of
- *                ShiftModel<HashModel, uint64_t, DIR_LEFT>
+ *                Shift<Hash, uint64_t, DIR_LEFT>
  *            which makes later composition more general and
  *            safer. See specialization below.
  *
@@ -346,16 +346,16 @@ operator<<(std::ostream& os, const KmerModel<HashType<ValueType, Extras...>>& km
  * @tparam Direction 
  */
 template <class T, bool Direction>
-struct ShiftModel;
+struct Shift;
 
 /**
- * @Synopsis  Models a directional shift; conforms to HashModel
+ * @Synopsis  Models a directional shift; conforms to Hash
  *            and provides the direction and extension symbol.
  *
  */
 template <template<class, class...> class HashType, class ValueType, class... Extras,
           bool Direction>
-struct ShiftModel<HashType<ValueType, Extras...>, Direction> {
+struct Shift<HashType<ValueType, Extras...>, Direction> {
     
     typedef HashType<ValueType, Extras...> hash_type;
     typedef typename hash_type::value_type value_type;
@@ -364,21 +364,21 @@ struct ShiftModel<HashType<ValueType, Extras...>, Direction> {
     hash_type hash;
     char symbol;
 
-    ShiftModel(const hash_type hash,
+    Shift(const hash_type hash,
                const char symbol)
         : hash(hash),
           symbol(symbol)
     {
     }
 
-    ShiftModel()
+    Shift()
         : hash(),
           symbol('\0')
     {
     }
 
-    ShiftModel(const ShiftModel& other)
-        : ShiftModel(other.hash, other.symbol)
+    Shift(const Shift& other)
+        : Shift(other.hash, other.symbol)
     {
     }
 
@@ -395,17 +395,17 @@ struct ShiftModel<HashType<ValueType, Extras...>, Direction> {
     }
 
     __attribute__((visibility("default")))
-    friend bool operator>(const ShiftModel& lhs, const ShiftModel& rhs) {
+    friend bool operator>(const Shift& lhs, const Shift& rhs) {
         return lhs.hash > rhs.hash;
     }
 
     __attribute__((visibility("default")))
-    friend bool operator<(const ShiftModel& lhs, const ShiftModel& rhs) {
+    friend bool operator<(const Shift& lhs, const Shift& rhs) {
         return lhs.hash < rhs.hash;
     }
 
     __attribute__((visibility("default")))
-    friend bool operator==(const ShiftModel& lhs, const ShiftModel& rhs) {
+    friend bool operator==(const Shift& lhs, const Shift& rhs) {
         return lhs.hash == rhs.hash;
     }
 };
@@ -415,8 +415,8 @@ template <template<class, class...> class HashType, class ValueType, class... Ex
 __attribute__((visibility("default")))
 inline std::ostream&
 operator<<(std::ostream& os,
-           const ShiftModel<HashType<ValueType, Extras...>, Direction>& shift) {
-    os << "<ShiftModel"
+           const Shift<HashType<ValueType, Extras...>, Direction>& shift) {
+    os << "<Shift"
        << " hash=" << shift.hash
        << " symbol=" << shift.symbol
        << " direction=" << shift.direction
@@ -490,23 +490,37 @@ operator<<(std::ostream& os, const Partitioned<ValueType>& p) {
 }
 
 
-typedef boink::hashing::HashModel<uint64_t> Hash;
-typedef boink::hashing::CanonicalModel<uint64_t> Canonical;
 
-typedef boink::hashing::KmerModel<boink::hashing::HashModel<uint64_t>> Kmer;
-typedef boink::hashing::KmerModel<boink::hashing::CanonicalModel<uint64_t>> CanonicalKmer;
+typedef boink::hashing::Partitioned<boink::hashing::Hash<>> Unikmer;
+typedef boink::hashing::Partitioned<boink::hashing::Canonical<>> CanonicalUnikmer;
 
-typedef boink::hashing::Partitioned<boink::hashing::Hash> Unikmer;
-typedef boink::hashing::Partitioned<boink::hashing::Canonical> CanonicalUnikmer;
+typedef boink::hashing::Wmer<boink::hashing::Hash<>, boink::hashing::Unikmer> UnikmerWmer;
+typedef boink::hashing::Wmer<boink::hashing::Canonical<>, boink::hashing::CanonicalUnikmer> CanonicalUnikmerWmer;
 
-typedef boink::hashing::WmerModel<boink::hashing::Hash, boink::hashing::Unikmer> UnikmerWmer;
-typedef boink::hashing::WmerModel<boink::hashing::Canonical, boink::hashing::CanonicalUnikmer> CanonicalUnikmerWmer;
-
-typedef boink::hashing::ShiftModel<boink::hashing::Hash, boink::hashing::DIR_LEFT> LeftShift;
-typedef boink::hashing::ShiftModel<boink::hashing::Hash, boink::hashing::DIR_RIGHT> RightShift;
-typedef boink::hashing::ShiftModel<boink::hashing::Canonical, boink::hashing::DIR_LEFT> LeftCanonicalShift;
-typedef boink::hashing::ShiftModel<boink::hashing::Canonical, boink::hashing::DIR_RIGHT> RightCanonicalShift;
+typedef boink::hashing::Shift<boink::hashing::Hash<>, boink::hashing::DIR_LEFT> LeftShift;
+typedef boink::hashing::Shift<boink::hashing::Hash<>, boink::hashing::DIR_RIGHT> RightShift;
+typedef boink::hashing::Shift<boink::hashing::Canonical<>, boink::hashing::DIR_LEFT> LeftCanonicalShift;
+typedef boink::hashing::Shift<boink::hashing::Canonical<>, boink::hashing::DIR_RIGHT> RightCanonicalShift;
 
 }
+
+extern template class boink::hashing::Hash<uint64_t>;
+extern template class boink::hashing::Canonical<boink::hashing::Hash<uint64_t>>;
+
+extern template class boink::hashing::Kmer<boink::hashing::Hash<uint64_t>>;
+extern template class boink::hashing::Kmer<boink::hashing::Canonical<uint64_t>>;
+
+extern template class boink::hashing::Kmer<boink::hashing::UnikmerWmer>;
+extern template class boink::hashing::Kmer<boink::hashing::CanonicalUnikmerWmer>;
+
+extern template class boink::hashing::Wmer<boink::hashing::Hash<uint64_t>, boink::hashing::Unikmer>;
+extern template class boink::hashing::Wmer<boink::hashing::Canonical<uint64_t>, boink::hashing::CanonicalUnikmer>;
+
+extern template class boink::hashing::Shift<boink::hashing::Hash<uint64_t>, boink::hashing::DIR_LEFT>;
+extern template class boink::hashing::Shift<boink::hashing::Hash<uint64_t>, boink::hashing::DIR_RIGHT>;
+extern template class boink::hashing::Shift<boink::hashing::Canonical<uint64_t>, boink::hashing::DIR_LEFT>;
+extern template class boink::hashing::Shift<boink::hashing::Canonical<uint64_t>, boink::hashing::DIR_RIGHT>;
+
+
 
 #endif

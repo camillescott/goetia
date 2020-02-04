@@ -120,7 +120,6 @@ class TestLinear:
 
 class TestDecisions:
 
-
     def test_decision_fwd(self, ksize, right_fork, graph, consume, check_fp):
         (sequence, branch), S = right_fork()
         check_fp()
@@ -150,7 +149,7 @@ class TestDecisions:
         assert branch == path
         assert graph.left_degree(path[:ksize]) == 1
         assert graph.right_degree(path[:ksize]) == 1
-        assert lwalk.end_state == STATES.DECISION_RC
+        assert lwalk.end_state == STATES.DECISION_BKW
         print('Hash:', graph.hash(sequence[S:S+ksize]))
         assert lwalk.tail() == graph.hash(branch[:ksize])
         assert rwalk.end_state == STATES.STOP_FWD
@@ -188,3 +187,171 @@ class TestDecisions:
 
         lwalk, rwalk = graph.walk(bottom[-ksize:])
         assert bottom == lwalk.glue(rwalk)
+
+
+@using(ksize=21, length=100)
+class TestMasked:
+
+    def test_linear_masked_right(self, ksize, linear_path, graph, consume, check_fp):
+        # test that masking a k-mer stops traversal
+        contig = linear_path()
+        check_fp()
+        consume()
+
+        mask = std.set[graph.hash_type]()
+        stopper = contig[5:5+ksize]
+        mask.insert(graph.hash(stopper))
+        masked = libboink.Masked[graph.storage_type, graph.shifter_type, std.set[graph.hash_type]](graph, mask)
+
+        start = contig[:ksize]
+        walk_unmasked = graph.walk_right(start)
+        walk_masked = masked.walk_right(start)
+
+        assert walk_unmasked.to_string() == contig
+        assert walk_masked.to_string() == contig[:ksize+4]
+
+    def test_masked_right_decision_fwd(self, ksize, right_fork, graph, consume, check_fp):
+        '''Tests that the mask turns a forward decision node into a non-decision node.
+        '''
+        (sequence, branch), S = right_fork()
+        check_fp()
+        consume()
+
+        branch_start = branch[:ksize]
+        mask = std.set[graph.hash_type]()
+        mask.insert(graph.hash(branch_start))
+        masked = libboink.Masked[graph.storage_type, graph.shifter_type, std.set[graph.hash_type]](graph, mask)
+
+        walk = masked.walk_right(sequence[:ksize])
+        path = walk.to_string()
+        assert walk.end_state == STATES.STOP_FWD
+        assert path == sequence
+        assert walk.tail() == graph.hash(sequence[-ksize:])
+    
+    def test_linear_masked_left(self, ksize, linear_path, graph, consume, check_fp):
+        # test that masking a k-mer stops traversal
+        contig = linear_path()
+        check_fp()
+        consume()
+
+        mask = std.set[graph.hash_type]()
+        stopper = contig[5:5+ksize]
+        mask.insert(graph.hash(stopper))
+        masked = libboink.Masked[graph.storage_type, graph.shifter_type, std.set[graph.hash_type]](graph, mask)
+
+        start = contig[-ksize:]
+        walk_unmasked = graph.walk_left(start)
+        walk_masked = masked.walk_left(start)
+
+        assert walk_unmasked.to_string() == contig
+        assert walk_masked.to_string() == contig[6:]
+
+    def test_masked_left_decision_fwd(self, ksize, left_fork, graph, consume, check_fp):
+        '''Tests that the mask turns a forward decision node into a non-decision node.
+        '''
+        (sequence, branch), S = left_fork()
+        check_fp()
+        consume()
+
+        branch_start = branch[-ksize:]
+        mask = std.set[graph.hash_type]()
+        mask.insert(graph.hash(branch_start))
+        masked = libboink.Masked[graph.storage_type, graph.shifter_type, std.set[graph.hash_type]](graph, mask)
+
+        walk = masked.walk_left(sequence[-ksize:])
+        path = walk.to_string()
+        assert walk.end_state == STATES.STOP_FWD
+        assert path == sequence
+        assert walk.tail() == graph.hash(sequence[:ksize])
+
+
+@using(ksize=21, length=100)
+class TestWalkStopperFunctor:
+
+    def test_linear_stop_functor_right(self, ksize, linear_path, graph, consume, check_fp):
+        ''' Test that stop functor stops walk_right
+        '''
+        contig = linear_path()
+        check_fp()
+        consume()
+
+        stop_set = std.set[graph.hash_type]()
+        stop_kmer = contig[5:5+ksize]
+        stop_set.insert(graph.hash(stop_kmer))
+        stopper = libboink.WalkStopper[graph.hash_type](stop_set)
+
+        start = contig[:ksize]
+        walk = graph.walk_right(start, stopper)
+
+        assert walk.to_string() == contig[:ksize+4]
+
+    def test_linear_stop_functor_left(self, ksize, linear_path, graph, consume, check_fp):
+        ''' Test that stop functor stops walk_left
+        '''
+        contig = linear_path()
+        check_fp()
+        consume()
+
+        stop_set = std.set[graph.hash_type]()
+        stop_kmer = contig[5:5+ksize]
+        stop_set.insert(graph.hash(stop_kmer))
+        stopper = libboink.WalkStopper[graph.hash_type](stop_set)
+
+        start = contig[-ksize:]
+        walk = graph.walk_left(start, stopper)
+
+        assert walk.to_string() == contig[6:]
+
+    def test_right_decision_fwd_stopper(self, ksize, right_fork, graph, consume, check_fp):
+        ''' Test that the stop functor does NOT prevent a DECISION_FWD state.
+        '''
+        (sequence, branch), S = right_fork()
+        check_fp()
+        consume()
+
+        branch_start = branch[:ksize]
+        stop_set = std.set[graph.hash_type]()
+        stop_set.insert(graph.hash(branch_start))
+        stopper = libboink.WalkStopper[graph.hash_type](stop_set)
+
+        walk = graph.walk_right(sequence[:ksize], stopper)
+        assert walk.end_state == STATES.DECISION_FWD
+
+    def test_left_decision_fwd_stopper(self, ksize, left_fork, graph, consume, check_fp):
+        ''' Test that the stop functor does NOT prevent a DECISION_FWD state.
+        '''
+        (sequence, branch), S = left_fork()
+        check_fp()
+        consume()
+
+        branch_start = branch[-ksize:]
+        stop_set = std.set[graph.hash_type]()
+        stop_set.insert(graph.hash(branch_start))
+        stopper = libboink.WalkStopper[graph.hash_type](stop_set)
+
+        walk = graph.walk_left(sequence[-ksize:], stopper)
+        assert walk.end_state == STATES.DECISION_FWD
+
+
+@using(ksize=21, length=100)
+class TestPythonWalkFunctor:
+
+    @pytest.mark.xfail
+    def test_simple_python_functor(self, ksize, linear_path, graph, consume, check_fp):
+        ''' Test that a Python functor can be passed to walk.
+        '''
+        contig = linear_path()
+        check_fp()
+        consume()
+
+        stop_hash = graph.hash(contig[5:5+ksize])
+        class StopperFunctor(graph.null_walk_func_t):
+            def __call__(self, node):
+                return node != stop_hash
+        stopper = StopperFunctor()
+
+        start = contig[:ksize]
+        walk = graph.walk_right(start, stopper)
+
+        assert walk.to_string() == contig[:ksize+4]
+

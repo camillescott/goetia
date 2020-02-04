@@ -11,9 +11,9 @@
 #include "boink/hashing/rollinghashshifter.hh"
 
 
-template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::SparseppSetStorage, boink::hashing::FwdRollingShifter>>;
-template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::BitStorage, boink::hashing::FwdRollingShifter>>;
-template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::ByteStorage, boink::hashing::FwdRollingShifter>>;
-template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::NibbleStorage, boink::hashing::FwdRollingShifter>>;
-template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::QFStorage, boink::hashing::FwdRollingShifter>>;
+template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::SparseppSetStorage, boink::hashing::FwdLemireShifter>>;
+// template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::BitStorage, boink::hashing::FwdLemireShifter>>;
+// template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::ByteStorage, boink::hashing::FwdLemireShifter>>;
+// template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::NibbleStorage, boink::hashing::FwdLemireShifter>>;
+// template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::QFStorage, boink::hashing::FwdLemireShifter>>;
 

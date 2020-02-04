@@ -30,7 +30,7 @@ def get_graph_args(parser):
     group = parser.add_argument_group('dBG')
     group.add_argument('-K', '--ksize', type=int, default=31)
     group.add_argument('--hasher', choices=list((name for _, name in hasher_types)),
-                       default='RollingHashShifter')
+                       default='LemireShifterPolicy')
 
     get_storage_args(parser)
 

@@ -11,8 +11,8 @@
 
 namespace boink::hashing {
 
-    template class KmerIterator<FwdRollingShifter>;
-    template class KmerIterator<CanRollingShifter>;
+    template class KmerIterator<FwdLemireShifter>;
+    template class KmerIterator<CanLemireShifter>;
 
     template class KmerIterator<FwdUnikmerShifter>;
     template class KmerIterator<CanUnikmerShifter>;
