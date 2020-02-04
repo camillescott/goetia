@@ -709,18 +709,24 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
             // nodes or because neighbor is a properly oriented unitig end
 
             pdebug(lfiltered.size() << " left, " << rfiltered.size() << " right");
+
+            //auto masked = Masked<StorageType, ShifterType, std::set<hash_type>>(*dbg, processed);
+            WalkStopper<hash_type> stopper_func(processed);
+
             if (lfiltered.size()) {
                 // size should always be 1 here
                 pdebug("Found a valid left neighbor, search this way... ("
                        << lfiltered.size() << " in filtered set, should always be 1.)");
                 auto start = lfiltered.back();
-                auto walk = dbg->walk_left(start.kmer, processed);
+                //auto walk = masked.walk_left(start.kmer);
+                auto walk = dbg->walk_left(start.kmer, stopper_func);
                 hash_type end_hash = walk.tail();
 
                 if (walk.end_state != State::STOP_SEEN) {
                     dbg->clear_seen();
 
                     if (walk.end_state == State::DECISION_FWD) {
+                        //auto step = masked.step_right();
                         auto step = dbg->step_right();
                         pdebug("stopped on DECISION_FWD " << step.first);
                         if (step.first == State::STEP) {
@@ -776,7 +782,8 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
                 pdebug("Found a valid right neighbor, search this way... ("
                        << rfiltered.size() << " in filtered set, should be 1.");
                 auto start = rfiltered.back();
-                auto walk = dbg->walk_right(start.kmer, processed);
+                //auto walk = masked.walk_right(start.kmer);
+                auto walk = dbg->walk_right(start.kmer, stopper_func);
                 hash_type end_hash = walk.tail();
 
                 if (walk.end_state != State::STOP_SEEN) {
@@ -784,6 +791,7 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
 
                     if (walk.end_state == State::DECISION_FWD) {
 
+                        //auto step = masked.step_left();
                         auto step = dbg->step_left();
                         if (step.first == State::STEP) {
                             end_hash = step.second.front();
@@ -1358,10 +1366,10 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
 }
 
 extern template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::SparseppSetStorage, boink::hashing::FwdLemireShifter>>;
-extern template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::BitStorage, boink::hashing::FwdLemireShifter>>;
-extern template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::ByteStorage, boink::hashing::FwdLemireShifter>>;
-extern template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::NibbleStorage, boink::hashing::FwdLemireShifter>>;
-extern template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::QFStorage, boink::hashing::FwdLemireShifter>>;
+// extern template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::BitStorage, boink::hashing::FwdLemireShifter>>;
+// extern template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::ByteStorage, boink::hashing::FwdLemireShifter>>;
+// extern template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::NibbleStorage, boink::hashing::FwdLemireShifter>>;
+// extern template class boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::QFStorage, boink::hashing::FwdLemireShifter>>;
 
 extern template class std::deque<boink::cdbg::StreamingCompactor<boink::dBG<boink::storage::SparseppSetStorage, boink::hashing::FwdLemireShifter>>>;
 

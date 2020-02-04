@@ -28,6 +28,14 @@
 
 namespace boink {
 
+
+// forward decl for friendship
+template <class StorageType,
+          class ShifterType,
+          class MaskType>
+struct Masked;
+
+
 template <class StorageType,
           class ShifterType>
 class dBG : public dBGWalker<dBG<StorageType, ShifterType>> {
@@ -55,7 +63,9 @@ public:
     typedef std::pair<std::vector<kmer_type>,
                       std::vector<kmer_type>>             neighbor_pair_type;
 
-
+    template <typename StT, typename ShT,
+               typename M>
+    friend class Masked;
 
 protected:
 
@@ -79,6 +89,17 @@ public:
     }
 
     /**
+     * @brief Creates a "reference copy" -- another dBG sharing the same storage.
+     * 
+     * @param other 
+     */
+    dBG(const dBG& other)
+        : walker_type(static_cast<const walker_type&>(other)),
+          S(other.S)
+    {
+    }
+
+    /**
      * @Synopsis Build a dBG instance owned by a shared_ptr. 
      *
      * @Param args  Variadic args to forward on to dBG constructor
@@ -86,20 +107,16 @@ public:
      * @Returns     shared_ptr owning the dBG.
      */
 
-    //static std::shared_ptr<dBG<StorageType, ShifterType>>
-    //__attribute__((used)) build(ShifterType& hasher, std::shared_ptr<StorageType> S);
-    static std::shared_ptr<dBG<StorageType, ShifterType>>
-    __attribute__((used)) build(std::shared_ptr<StorageType> S,
-                                ShifterType& hasher)  {
-        return std::make_shared<dBG<StorageType, ShifterType>>(S, hasher);
+    static std::shared_ptr<dBG> build(std::shared_ptr<StorageType> S,
+                                      ShifterType& hasher)  {
+        return std::make_shared<dBG>(S, hasher);
     }
 
     template<typename... Args>
-    static std::shared_ptr<dBG<StorageType, ShifterType>>
-    __attribute__((used)) build(std::shared_ptr<StorageType> S,
-                                uint16_t K,
-                                Args&&... args) {
-        return std::make_shared<dBG<StorageType, ShifterType>>(S, K, std::forward<Args>(args)...);
+    static std::shared_ptr<dBG> build(std::shared_ptr<StorageType> S,
+                                      uint16_t K,
+                                      Args&&... args) {
+        return std::make_shared<dBG>(S, K, std::forward<Args>(args)...);
     }
 
     /**
@@ -107,9 +124,9 @@ public:
      *
      * @Returns   shared_ptr owning the clone.
      */
-    std::shared_ptr<dBG<StorageType, ShifterType>> clone() {
-        return std::make_shared<dBG<StorageType, ShifterType>>(S->clone(),
-                                                               *this);
+    std::shared_ptr<dBG> clone() {
+        return std::make_shared<dBG>(S->clone(),
+                                     *this);
     }
 
     /**
@@ -151,11 +168,11 @@ public:
      * @Returns   The count of the k-mer.
      */
     const storage::count_t query(const std::string& kmer) {
-        return S->query(this->hash(kmer).value());
+        return query(this->hash(kmer));
     }
 
-    const storage::count_t query(const hash_type& hashed_kmer) const  {
-        return S->query(hashed_kmer.value());
+    const storage::count_t query(const hash_type& h) const {
+        return S->query(h.value());
     }
 
     /**
@@ -402,7 +419,67 @@ public:
 
     using Processor = InserterProcessor<dBG>;
 
+ };
+
+
+
+template <class StorageType,
+          class ShifterType,
+          class MaskType>
+struct Masked : public dBGWalker<Masked<StorageType, ShifterType, MaskType>> {
+
+    typedef ShifterType                         shifter_type;
+    typedef dBGWalker<Masked<StorageType, ShifterType, MaskType>> walker_type;
+    typedef typename shifter_type::alphabet     alphabet;
+
+    typedef typename shifter_type::hash_type    hash_type;
+    typedef typename hash_type::value_type      value_type;
+    typedef typename shifter_type::kmer_type    kmer_type;
+
+    typedef MaskType                 mask_type;
+    mask_type&                                  mask;
+    std::shared_ptr<StorageType>                S;
+    const uint16_t                              K;
+
+    Masked(dBG<StorageType, ShifterType>& graph, mask_type& mask)
+        : walker_type(graph.get_hasher()),
+          S(graph.S),
+          mask(mask),
+          K(graph.K)
+    {
+    }
+
+    const storage::count_t query(const std::string& kmer) {
+        hash_type h = shifter_type::hash(kmer, K);
+        if (mask.count(h)) {
+            return 0;
+        }
+        return S->query(h.value());
+    }
+
+    const storage::count_t query(const hash_type& h) const  {
+        if (mask.count(h)) {
+            return 0;
+        }
+        return S->query(h.value());
+    }
+
+    std::vector<storage::count_t> query_sequence(const std::string& sequence)  {
+
+        hashing::KmerIterator<ShifterType> iter(sequence, this);
+        std::vector<storage::count_t> counts(sequence.length() - K + 1);
+
+        size_t pos = 0;
+        while(!iter.done()) {
+            hash_type h = iter.next();
+            counts[pos] = query(h);
+            ++pos;
+        }
+
+        return counts;
+    }
 };
+
 
 
 extern template class dBG<storage::BitStorage, hashing::FwdLemireShifter>;

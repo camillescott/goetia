@@ -10,6 +10,7 @@ from cppyy.gbl import std
 
 from .utils import *
 from boink.hashing import FwdLemireShifter, UKHS
+from boink.storage import count_t
 import pytest
 
 
@@ -199,7 +200,7 @@ def test_neighbors(graph, ksize, linear_path):
 def test_insert_sequence_overload(graph, ksize, length, linear_path):
     x = linear_path()
     hashes = std.vector[type(graph).hash_type]()
-    report = std.vector['unsigned short']()
+    report = std.vector[count_t]()
     n_consumed = graph.insert_sequence(x, hashes, report)
     num_kmers = sum(report)
     assert num_kmers == len(x) - ksize + 1   # num k-mers consumed

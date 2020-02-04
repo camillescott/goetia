@@ -17,8 +17,12 @@ BitStorage         = libboink.storage.BitStorage
 ByteStorage        = libboink.storage.ByteStorage
 NibbleStorage      = libboink.storage.NibbleStorage
 
+count_t            = libboink.storage.count_t
+
+
 def is_counting(klass):
     return check_trait(libboink.storage.is_counting, klass)
+
 
 def is_probabilistic(klass):
     return check_trait(libboink.storage.is_probabilistic, klass)

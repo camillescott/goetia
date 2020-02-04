@@ -945,9 +945,13 @@ class TestUnitigSplit(object):
 
     @using(ksize=15,
            length=100)
+    @pytest.mark.xfail(reason="Problem with generator")
     def test_tandem_decision_unitig_clipping(self, ksize, length, graph, compactor,
                                           tandem_quad_forks, check_fp):
         (core, left_branches, right_branches), left_pivot, right_pivot = tandem_quad_forks()
+        check_fp()
+
+        print(core, left_branches, right_branches, sep='\n')
         left_dkmer = core[left_pivot:left_pivot+ksize]
         right_dkmer = core[right_pivot:right_pivot+ksize]
         print('left d-node:', left_dkmer, left_pivot, graph.hash(left_dkmer))
