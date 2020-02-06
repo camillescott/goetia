@@ -13,14 +13,17 @@ namespace boink::parsing {
 
 
 template<class Alphabet>
-FastxParser<Alphabet>::FastxParser(const std::string& infile, bool strict) 
+FastxParser<Alphabet>::FastxParser(const std::string& infile,
+                                   bool strict,
+                                   uint32_t min_length) 
     : _filename(infile),
         _spin_lock(0),
         _n_parsed(0),
         _have_qualities(false),
         _is_complete(false),
         _strict(strict),
-        _n_skipped(0)
+        _n_skipped(0),
+        _min_length(min_length)
 {
     _fp = gzopen(_filename.c_str(), "r");
     _kseq = kseq_init(_fp);

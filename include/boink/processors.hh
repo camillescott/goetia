@@ -122,8 +122,7 @@ protected:
 
     std::array<IntervalCounter, 3> counters;
     uint64_t                       _n_reads;
-    uint64_t                       _n_invalid;
-    uint64_t                       _n_too_short;
+    uint64_t                       _n_skipped;
     bool                           _verbose;
 
     bool _ticked(interval_state tick) {
@@ -194,8 +193,6 @@ public:
                       medium_interval,
                       coarse_interval },
           _n_reads(0),
-          _n_invalid(0),
-          _n_too_short(0),
           _verbose(verbose)
     {
         
@@ -216,10 +213,12 @@ public:
      */
     uint64_t process(const std::string& left_filename,
                      const std::string& right_filename,
+                     bool strict = false,
                      uint32_t min_length=0,
                      bool force_name_match=false) {
         parsing::SplitPairedReader<ParserType> reader(left_filename,
                                                       right_filename,
+                                                      strict,
                                                       min_length,
                                                       force_name_match);
         return process(reader);
@@ -244,8 +243,10 @@ public:
      *
      * @Returns   Number of sequences consumed.
      */
-    uint64_t process(std::string const &filename) {
-        auto reader  = ParserType::build(filename);
+    uint64_t process(std::string const &filename,
+                     bool strict = false,
+                     uint32_t min_length = 0) {
+        auto reader  = ParserType::build(filename, strict, min_length);
         return process(reader);
     }
 
@@ -288,7 +289,6 @@ public:
                           << ", exception was "
                           << e.what() << std::endl;
             }
-            _n_invalid++;
             return {};
         }  catch (parsing::InvalidRead& e) {
             if (_verbose) {
@@ -297,7 +297,6 @@ public:
                           << ", exception was "
                           << e.what() << std::endl;
             }
-            _n_invalid++;
             return {};
         }
     }
@@ -344,7 +343,6 @@ public:
 
         std::optional<parsing::Record> record;
         // Iterate through the reads and consume their k-mers.
-        int i = 0;
         while (!parser->is_complete()) {
             record = handle_next(*parser);
             
@@ -373,14 +371,6 @@ public:
      */
     uint64_t n_reads() const {
         return _n_reads;
-    }
-
-    uint64_t n_invalid() const {
-        return _n_invalid;
-    }
-
-    uint64_t n_too_short() const {
-        return _n_too_short;
     }
 
     template<typename... Args>
