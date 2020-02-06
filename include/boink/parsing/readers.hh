@@ -93,56 +93,6 @@ struct InvalidReadPair : public  BoinkException {
 };
 
 
-template<typename ParserType>
-class SequenceReader {
-
-protected:
-
-    std::unique_ptr<ParserType> _parser;
-
-public:
-
-    SequenceReader(std::unique_ptr<ParserType> pf)
-    {
-        _parser = std::move(pf);
-    }
-
-    SequenceReader(SequenceReader& other)
-    {
-        _parser = std::move(other._parser);
-    }
-
-    SequenceReader& operator=(SequenceReader& other) {
-        _parser = std::move(other._parser);
-        return *this;
-    }
-
-    SequenceReader(SequenceReader&&) noexcept {}
-    SequenceReader& operator=(SequenceReader&&) noexcept {}
-
-    static auto build(const std::string& filename)
-    -> std::shared_ptr<SequenceReader<ParserType>> {
-        return std::make_shared<SequenceReader<ParserType>>(
-                   std::move(std::make_unique<ParserType>(filename))
-               );
-    }
-
-    virtual ~SequenceReader() {}
-
-    Record next() {
-        return _parser->next();
-    }
-
-    size_t num_parsed() const {
-        return _parser->num_parsed();
-    }
-
-    bool is_complete() const {
-        return _parser->is_complete();
-    }
-}; // class SequenceReader
-
-
 template<class Alphabet = DNA_SIMPLE>
 class FastxParser
 {
@@ -151,72 +101,96 @@ private:
     kseq_t *    _kseq;
     gzFile      _fp;
     uint32_t    _spin_lock;
-    size_t      _num_parsed;
+    size_t      _n_parsed;
     bool        _have_qualities;
     bool        _is_complete;
+    bool        _strict;
+    uint64_t    _n_skipped;
+
+    uint32_t    _min_length;
 
 public:
+    typedef Record   value_type;
+    typedef Alphabet alphabet;
+    
     FastxParser() 
         : FastxParser("-")
     {
     }
 
-    FastxParser(const std::string& infile)
-        : _filename(infile),
-          _spin_lock(0),
-          _num_parsed(0),
-          _have_qualities(false),
-          _is_complete(false)
-    {
-        _fp = gzopen(_filename.c_str(), "r");
-        _kseq = kseq_init(_fp);
+    FastxParser(const std::string& infile,
+               bool strict = false,
+               uint32_t min_length = 0);
 
-        __asm__ __volatile__ ("" ::: "memory");
-    }
 
-    FastxParser(FastxParser& other)
+    FastxParser(FastxParser&& other)
         : _filename(std::move(other._filename)),
           _spin_lock(other._spin_lock),
-          _num_parsed(other._num_parsed),
+          _n_parsed(other._n_parsed),
           _have_qualities(other._have_qualities),
           _fp(other._fp),
           _kseq(other._kseq),
-          _is_complete(other._is_complete)
+          _is_complete(other._is_complete),
+          _strict(other._strict),
+          _n_skipped(other._n_skipped),
+          _min_length(other._min_length)
     {
         other._is_complete = true;
     }
 
     FastxParser& operator=(FastxParser& other) = delete;
+    ~FastxParser();
 
-    FastxParser(FastxParser&&) noexcept;
-    FastxParser& operator=(FastxParser&&)  = delete;
-
-    ~FastxParser() {
-        kseq_destroy(_kseq);
-        gzclose(_fp);
+    static std::shared_ptr<FastxParser> build(const std::string& filename,
+                                              bool strict = false,
+                                              uint32_t min_length = 0) {
+        return std::make_shared<FastxParser>(filename, strict, min_length);
     }
 
-    static std::shared_ptr<SequenceReader<FastxParser>> build(const std::string& filename) {
-        return SequenceReader<FastxParser>::build(filename);
-    }
+    std::optional<Record> next() {
+        if (is_complete()) {
+            throw NoMoreReadsAvailable();
+        }
 
-    Record next() {
         Record record;
         
         while (!__sync_bool_compare_and_swap(&_spin_lock, 0, 1));
 
         int stat = kseq_read(_kseq);
         if (stat >= 0) {
-            Alphabet::validate(_kseq->seq.s, _kseq->seq.l);
-            record.sequence.assign(_kseq->seq.s, _kseq->seq.l);
-            record.name.assign(_kseq->name.s, _kseq->name.l);
-            if (_kseq->qual.l) {
-                record.quality.assign(_kseq->qual.s, _kseq->qual.l);
-                if (_num_parsed == 0) {
-                    _have_qualities = true;
+            try {
+                Alphabet::validate(_kseq->seq.s, _kseq->seq.l);
+            } catch (InvalidCharacterException &e) {
+                _spin_lock = 0;
+                ++_n_skipped;
+                if (_strict) {
+                    throw e;
+                } else {
+                    stat = -4;
+                }
+
+            } catch (std::exception& e) {
+                ++_n_skipped;
+                _spin_lock = 0;
+                throw e;
+            }
+
+            if (_kseq->seq.l < _min_length) {
+                stat = -4;
+                ++_n_skipped;
+            }
+
+            if (stat >= 0) {
+                record.sequence.assign(_kseq->seq.s, _kseq->seq.l);
+                record.name.assign(_kseq->name.s, _kseq->name.l);
+                if (_kseq->qual.l) {
+                    record.quality.assign(_kseq->qual.s, _kseq->qual.l);
+                    if (_n_parsed == 0) {
+                        _have_qualities = true;
+                    }
                 }
             }
-            _num_parsed++;
+            ++_n_parsed;
         }
 
         __asm__ __volatile__ ("" ::: "memory");
@@ -224,10 +198,11 @@ public:
 
         if (stat == -1) {
             _is_complete = true;
-            throw NoMoreReadsAvailable();
+            return {};
         }
 
         if (stat == -2) {
+            ++_n_skipped;
             throw InvalidRead("Sequence and quality lengths differ");
         }
 
@@ -235,11 +210,19 @@ public:
             throw BoinkFileException("Error reading stream.");
         }
 
+        if (stat == -4) {
+            return {};
+        }
+
         return record;
     }
 
-    size_t num_parsed() const {
-        return _num_parsed;
+    size_t n_parsed() const {
+        return _n_parsed;
+    }
+
+    size_t n_skipped() const {
+        return _n_skipped;
     }
 
     bool is_complete() const {
@@ -248,60 +231,39 @@ public:
 }; // class FastxParser
 
 
-/*
-class BrokenPairedReader {
-
-    std::unique_ptr<SequenceReaderPtr<FastxParser>> _parser;
-    uint32_t                                    _min_length;
-    bool                                        _force_single;
-    bool                                        _require_paired;
-
-    Read                                        _buffer_sequence;
-    bool                                        _buffer_full;
-
-
-    RecordBundle next() {
-        Read first, second;
-        bool is_pair;
-
-        if (!_buffer_full) {
-            try {
-                first = this->parser->get_next_read();
-            } catch (NoMoreReadsAvailable) {
-                
-            }
-
-        } else {
-            first = _buffer_sequence;
-        }
-    }
-
-};
-*/
-
-
 template <class ParserType = FastxParser<>>
 class SplitPairedReader {
 
-    typedef SequenceReader<ParserType> reader_type;
+    typedef ParserType                     parser_type;
+    typedef typename parser_type::alphabet alphabet;
 
-    std::shared_ptr<reader_type> left_parser;
-    std::shared_ptr<reader_type> right_parser;
-    uint32_t                     _min_length;
+    std::shared_ptr<parser_type> left_parser;
+    std::shared_ptr<parser_type> right_parser;
     bool                         _force_name_match;
-    uint64_t                     _n_reads;
+    bool                         _strict;
+    uint64_t                     _n_skipped;
 
 public:
 
     SplitPairedReader(const std::string &left,
                       const std::string &right,
-                      uint32_t min_length=0,
-                      bool force_name_match=false)
-        : _min_length(min_length),
-          _force_name_match(force_name_match) {
+                      bool strict = false,
+                      uint32_t min_length = 0,
+                      bool force_name_match = false)
+        :  _force_name_match(force_name_match),
+          _strict(strict),
+          _n_skipped(0) {
         
-        left_parser = reader_type::build(left);
-        right_parser = reader_type::build(right);
+        left_parser = parser_type::build(left, strict, min_length);
+        right_parser = parser_type::build(right, strict, min_length);
+    }
+
+    static std::shared_ptr<SplitPairedReader<ParserType>> build(const std::string &left,
+                                                                const std::string &right,
+                                                                bool strict = false,
+                                                                uint32_t min_length = 0,
+                                                                bool force_name_match = false) {
+        return std::make_shared<SplitPairedReader<ParserType>>(left, right, strict, min_length, force_name_match);
     }
 
     bool is_complete() const {
@@ -312,40 +274,68 @@ public:
     }
 
     RecordPair next() {
-        RecordPair result;
+        if (is_complete()) {
+            throw NoMoreReadsAvailable();
+        }
+
+        std::optional<Record> left, right;
+        std::exception_ptr left_exc_ptr, right_exc_ptr;
+        
         try {
-            result.left = this->left_parser->next();
-        } catch (NoMoreReadsAvailable) {
-            result.has_left = false;
+            left = this->left_parser->next();
+        } catch (InvalidCharacterException) {
+            left_exc_ptr = std::current_exception();
+        } catch (InvalidRead) {
+            left_exc_ptr = std::current_exception();
         }
 
         try {
-            result.right = this->right_parser->next();
-        } catch (NoMoreReadsAvailable) {
-            result.has_right = false;
-            return result;
+            right = this->right_parser->next();
+        } catch (InvalidCharacterException) {
+            right_exc_ptr = std::current_exception();
+        } catch (InvalidRead) {
+            right_exc_ptr = std::current_exception();
         }
 
-        result.has_left = true;
-        result.has_right = true;
-
-        if (this->_force_name_match) {
-            if (!check_is_pair(result.left.name, result.right.name)) {
-                throw BoinkException("Unpaired reads");
+        if (_strict) {
+            if (left_exc_ptr) {
+                std::rethrow_exception(left_exc_ptr);
+            }
+            if (right_exc_ptr) {
+                std::rethrow_exception(right_exc_ptr);
             }
         }
 
-        if (this->_min_length > 0) {
-            filter_length(result, this->_min_length);
+        if (this->_force_name_match && left && right) {
+            if (!check_is_pair(left.value().name, right.value().name)) {
+                if (_strict) {
+                    throw BoinkException("Unpaired reads");
+                } else {
+                    _n_skipped += 2;
+                    return {{}, {}};
+                }
+            }
         }
 
-        return result;
+        return std::make_pair(left, right);
+    }
+
+    uint64_t n_skipped() const {
+        return _n_skipped + left_parser->n_skipped() + right_parser->n_skipped();
+    }
+
+    uint64_t n_parsed() const {
+        return left_parser->n_parsed() + right_parser->n_parsed();
     }
 };
 
 extern template class parsing::FastxParser<DNA_SIMPLE>;
-extern template class parsing::SequenceReader<parsing::FastxParser<DNA_SIMPLE>>;
+extern template class parsing::FastxParser<DNAN_SIMPLE>;
+extern template class parsing::FastxParser<IUPAC_NUCL>;
+
 extern template class parsing::SplitPairedReader<parsing::FastxParser<DNA_SIMPLE>>;
+extern template class parsing::SplitPairedReader<parsing::FastxParser<DNAN_SIMPLE>>;
+extern template class parsing::SplitPairedReader<parsing::FastxParser<IUPAC_NUCL>>;
 
 
 } // namespace parsing

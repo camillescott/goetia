@@ -32,4 +32,21 @@ def test_dbg_inserter(graph, datadir, ksize):
             assert graph.get(kmer) == graph2.get(kmer)
 
 
+def test_chunked_dbg_inserter(graph, datadir, ksize):
+    consumer = type(graph).Processor.build(graph, 10000, 10000, 10000)
+    rfile = datadir('random-20-a.fa')
 
+    for _ in consumer.chunked_process(rfile):
+        pass
+
+    graph2 = graph.shallow_clone()
+    for record in screed.open(rfile):
+        for kmer in kmers(record.sequence, ksize):
+            assert graph.get(kmer)
+            assert not graph2.get(kmer)
+            assert graph.get(kmer) != graph2.get(kmer)
+
+    for record in screed.open(rfile):
+        graph2.insert_sequence(record.sequence)
+        for kmer in kmers(record.sequence, ksize):
+            assert graph.get(kmer) == graph2.get(kmer)

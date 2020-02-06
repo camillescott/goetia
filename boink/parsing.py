@@ -6,11 +6,8 @@ import os
 
 PAIRING_MODES     = ('split', 'interleaved', 'single')
 
-SequenceReader    = libboink.parsing.SequenceReader
 FastxParser       = libboink.parsing.FastxParser
-
-FastxReader       = SequenceReader[FastxParser]
-SplitPairedReader = libboink.parsing.SplitPairedReader[FastxParser]
+SplitPairedReader = libboink.parsing.SplitPairedReader
 
 
 def get_pairing_args(parser):
