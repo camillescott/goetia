@@ -93,56 +93,6 @@ struct InvalidReadPair : public  BoinkException {
 };
 
 
-template<typename ParserType>
-class SequenceReader {
-
-protected:
-
-    std::unique_ptr<ParserType> _parser;
-
-public:
-
-    SequenceReader(std::unique_ptr<ParserType> pf)
-    {
-        _parser = std::move(pf);
-    }
-
-    SequenceReader(SequenceReader& other)
-    {
-        _parser = std::move(other._parser);
-    }
-
-    SequenceReader& operator=(SequenceReader& other) {
-        _parser = std::move(other._parser);
-        return *this;
-    }
-
-    SequenceReader(SequenceReader&&) noexcept {}
-    SequenceReader& operator=(SequenceReader&&) noexcept {}
-
-    static auto build(const std::string& filename)
-    -> std::shared_ptr<SequenceReader<ParserType>> {
-        return std::make_shared<SequenceReader<ParserType>>(
-                   std::move(std::make_unique<ParserType>(filename))
-               );
-    }
-
-    virtual ~SequenceReader() {}
-
-    Record next() {
-        return _parser->next();
-    }
-
-    size_t num_parsed() const {
-        return _parser->num_parsed();
-    }
-
-    bool is_complete() const {
-        return _parser->is_complete();
-    }
-}; // class SequenceReader
-
-
 template<class Alphabet = DNA_SIMPLE>
 class FastxParser
 {
@@ -156,23 +106,15 @@ private:
     bool        _is_complete;
 
 public:
+    typedef Alphabet alphabet;
+    
     FastxParser() 
         : FastxParser("-")
     {
     }
 
-    FastxParser(const std::string& infile)
-        : _filename(infile),
-          _spin_lock(0),
-          _num_parsed(0),
-          _have_qualities(false),
-          _is_complete(false)
-    {
-        _fp = gzopen(_filename.c_str(), "r");
-        _kseq = kseq_init(_fp);
+    FastxParser(const std::string& infile);
 
-        __asm__ __volatile__ ("" ::: "memory");
-    }
 
     FastxParser(FastxParser& other)
         : _filename(std::move(other._filename)),
@@ -191,13 +133,10 @@ public:
     FastxParser(FastxParser&&) noexcept;
     FastxParser& operator=(FastxParser&&)  = delete;
 
-    ~FastxParser() {
-        kseq_destroy(_kseq);
-        gzclose(_fp);
-    }
+    ~FastxParser();
 
-    static std::shared_ptr<SequenceReader<FastxParser>> build(const std::string& filename) {
-        return SequenceReader<FastxParser>::build(filename);
+    static std::shared_ptr<FastxParser> build(const std::string& filename) {
+        return std::make_shared<FastxParser>(filename);
     }
 
     Record next() {
@@ -283,10 +222,11 @@ class BrokenPairedReader {
 template <class ParserType = FastxParser<>>
 class SplitPairedReader {
 
-    typedef SequenceReader<ParserType> reader_type;
+    typedef ParserType                     parser_type;
+    typedef typename parser_type::alphabet alphabet;
 
-    std::shared_ptr<reader_type> left_parser;
-    std::shared_ptr<reader_type> right_parser;
+    std::shared_ptr<parser_type> left_parser;
+    std::shared_ptr<parser_type> right_parser;
     uint32_t                     _min_length;
     bool                         _force_name_match;
     uint64_t                     _n_reads;
@@ -300,8 +240,15 @@ public:
         : _min_length(min_length),
           _force_name_match(force_name_match) {
         
-        left_parser = reader_type::build(left);
-        right_parser = reader_type::build(right);
+        left_parser = parser_type::build(left);
+        right_parser = parser_type::build(right);
+    }
+
+    static std::shared_ptr<SplitPairedReader<ParserType>> build(const std::string &left,
+                                                                const std::string &right,
+                                                                uint32_t min_length=0,
+                                                                bool force_name_match=false) {
+        return std::make_shared<SplitPairedReader<ParserType>>(left, right, min_length, force_name_match);
     }
 
     bool is_complete() const {
@@ -344,8 +291,12 @@ public:
 };
 
 extern template class parsing::FastxParser<DNA_SIMPLE>;
-extern template class parsing::SequenceReader<parsing::FastxParser<DNA_SIMPLE>>;
+extern template class parsing::FastxParser<DNAN_SIMPLE>;
+extern template class parsing::FastxParser<IUPAC_NUCL>;
+
 extern template class parsing::SplitPairedReader<parsing::FastxParser<DNA_SIMPLE>>;
+extern template class parsing::SplitPairedReader<parsing::FastxParser<DNAN_SIMPLE>>;
+extern template class parsing::SplitPairedReader<parsing::FastxParser<IUPAC_NUCL>>;
 
 
 } // namespace parsing

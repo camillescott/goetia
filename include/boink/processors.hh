@@ -237,11 +237,11 @@ public:
      * @Returns   Number of sequences consumed.
      */
     uint64_t process(std::string const &filename) {
-        auto reader  = parsing::SequenceReader<ParserType>::build(filename);
+        auto reader  = ParserType::build(filename);
         return process(reader);
     }
 
-    uint64_t process(std::shared_ptr<parsing::SequenceReader<ParserType>>& reader) {
+    uint64_t process(std::shared_ptr<ParserType>& reader) {
         while(1) {
             auto state = advance(reader);
             if (state.end) {
@@ -302,7 +302,7 @@ public:
      *
      * @Returns   interval_state with current interval.
      */
-    interval_state advance(std::shared_ptr<parsing::SequenceReader<ParserType>>& parser) {
+    interval_state advance(std::shared_ptr<ParserType>& parser) {
         parsing::Record read;
 
         // Iterate through the reads and consume their k-mers.

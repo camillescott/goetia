@@ -6,13 +6,22 @@ def pythonize_boink(klass, name):
 
     is_inst, _ = is_template_inst(name, 'FileProcessor')
     if is_inst:
-        def chunked_process(self, filename, right_filename=None):
-            from boink.parsing import FastxReader, SplitPairedReader
-            if right_filename is None:
-                parser = FastxReader.build(filename)
+        def chunked_process(self, file, right_file=None, alphabet=None):
+            if type(file) in (str, bytes):
+                from boink.parsing import FastxReader, SplitPairedReader
+                from boink.alphabets import DNA_SIMPLE
+
+                if alphabet is None:
+                    alphabet = DNA_SIMPLE
+
+                if right_file is None:
+                    parser = FastxReader[alphabet].build(file)
+                else:
+                    parser = SplitPairedReader.build(file,
+                                                     right_file)
             else:
-                parser = SplitPairedReader(filename,
-                                           right_filename)
+                parser = file
+            
             while True:
                 state = self.advance(parser)
                 yield self.n_reads(), state
