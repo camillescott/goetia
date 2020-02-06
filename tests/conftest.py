@@ -44,3 +44,13 @@ def datadir(tmpdir, request):
         return filepath
 
     return getter
+
+
+@pytest.fixture
+def random_fasta(random_sequence, fastx_writer):
+
+    def get(N):
+        sequences = [random_sequence() for i in range(N)]
+        return sequences, str(fastx_writer(sequences))
+    
+    return get
