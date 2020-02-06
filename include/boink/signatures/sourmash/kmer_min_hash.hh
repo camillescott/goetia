@@ -2,34 +2,24 @@
 #define KMER_MIN_HASH_HH
 
 #include <algorithm>
-#include <cstring>
 #include <set>
 #include <map>
+#include <memory>
 #include <queue>
 #include <exception>
 #include <string>
 
-#include "boink/hashing/smhasher/MurmurHash3.h"
-#include "boink/sequences/exceptions.hh"
+namespace sourmash {
 
+extern "C" {
+  #include "sourmash.h"
+}
 
-#define tbl \
-  "                                                                "\
-  /*ABCDEFGHIJKLMNOPQRSTUVWXYZ      abcdefghijklmnopqrstuvwxyz    */\
-  " TVGH FCD  M KN   YSAABW R       TVGH FCD  M KN   YSAABW R"
-
-inline uint64_t _hash_murmur(const char * kmer,
-                             unsigned int ksize,
-                             const uint32_t seed) {
-    uint64_t out[2];
-    out[0] = 0; out[1] = 0;
-    murmurhash::MurmurHash3_x64_128((void *)kmer, ksize, seed, &out);
-    return out[0];
+uint64_t _hash_murmur(const std::string& kmer, const uint32_t seed) {
+  return hash_murmur(kmer.c_str(), seed);
 }
 
 typedef uint64_t HashIntoType;
-
-typedef std::vector<HashIntoType> CMinHashType;
 
 class minhash_exception : public std::exception
 {
@@ -47,419 +37,144 @@ protected:
     const std::string _msg;
 };
 
-// Looks like a iterator but all it does is counts push_backs
-struct Counter {
-  struct value_type {
-    template <typename T> value_type(const T &) {}
-  };
-  void push_back(const value_type &) { ++count; }
-  size_t count = 0;
-};
+void process_errors() {
+	auto err_code = sourmash_err_get_last_code();
 
+	switch (err_code) {
+		case SOURMASH_ERROR_CODE_MISMATCH_KSIZES:
+			throw minhash_exception("different ksizes cannot be compared");
+			break;
+		case SOURMASH_ERROR_CODE_MISMATCH_DNAPROT:
+			throw minhash_exception("DNA/prot minhashes cannot be compared");
+			break;
+		case SOURMASH_ERROR_CODE_MISMATCH_MAX_HASH:
+			throw minhash_exception("mismatch in max_hash; comparison fail");
+			break;
+		case SOURMASH_ERROR_CODE_MISMATCH_SEED:
+			throw minhash_exception("mismatch in seed; comparison fail");
+			break;
+		default: break;
+	}
+}
 
-class KmerMinHash
+class CKmerMinHash
 {
-public:
-    const unsigned int num;
-    const unsigned int ksize;
-    const bool is_protein;
-    const uint32_t seed;
-    const HashIntoType max_hash;
-    CMinHashType mins;
+  protected:
+    KmerMinHash* _this;
 
-    KmerMinHash(unsigned int n, unsigned int k, bool prot, uint32_t s,
-                HashIntoType mx)
-        : num(n), ksize(k), is_protein(prot), seed(s), max_hash(mx) {
-      if (n > 0) {
-        mins.reserve(num + 1);
-      }
-      // only reserve a finite amount of space for unbounded MinHashes
-      else {
-        mins.reserve(1000);
-      }
+  public:
+    CKmerMinHash(unsigned int n, unsigned int k, bool prot, bool dayhoff, bool hp, uint32_t s,
+                HashIntoType mx) {
+      _this = kmerminhash_new(n, k, prot, dayhoff, hp, s, mx, false);
     };
 
-    void check_compatible(const KmerMinHash& other) {
-        if (ksize != other.ksize) {
-            throw minhash_exception("different ksizes cannot be compared");
-        }
-        if (is_protein != other.is_protein) {
-            throw minhash_exception("DNA/prot minhashes cannot be compared");
-        }
-        if (max_hash != other.max_hash) {
-            throw minhash_exception("mismatch in max_hash; comparison fail");
-        }
-        if (seed != other.seed) {
-            throw minhash_exception("mismatch in seed; comparison fail");
-        }
+    CKmerMinHash(KmerMinHash* _this)
+      : _this( _this) {
     }
 
-    virtual void add_hash(const HashIntoType h) {
-      if ((max_hash and h <= max_hash) or not max_hash) {
-        if (mins.size() == 0) {
-          mins.push_back(h);
-          return;
-        }
-        else if (h <= max_hash or mins.back() > h or mins.size() < num) {
-          auto pos = std::lower_bound(std::begin(mins), std::end(mins), h);
+    KmerMinHash* _get_ptr() {
+      return _this;
+    }
 
-          // must still be growing, we know the list won't get too long
-          if (pos == mins.cend()) {
-            mins.push_back(h);
-          }
-          // inserting somewhere in the middle, if this value isn't already
-          // in mins store it and shrink list if needed
-          else if (*pos != h) {
-            mins.insert(pos, h);
-            if (num and mins.size() > num) {
-              mins.pop_back();
+    void add_hash(const HashIntoType h) {
+      kmerminhash_add_hash(_this, h);
+    }
+
+    void remove_hash(const HashIntoType h) {
+      kmerminhash_remove_hash(_this, h);
+    }
+
+    void add_word(const std::string& word) {
+      kmerminhash_add_word(_this, word.c_str());
+    }
+
+    void add_sequence(const char * sequence, bool force=false) {
+      kmerminhash_add_sequence(_this, sequence, force);
+      process_errors();
+    }
+
+    void merge(const CKmerMinHash& other) {
+      kmerminhash_merge(_this, other._this);
+      process_errors();
+    }
+
+    unsigned int count_common(const CKmerMinHash& other, bool downsample = false) {
+      auto v = kmerminhash_count_common(_this, other._this, downsample);
+      process_errors();
+      return v;
+    }
+
+    size_t size() {
+      return kmerminhash_get_mins_size(_this);
+    }
+
+    uint32_t num() { return kmerminhash_num(_this); }
+
+    uint64_t seed() { return kmerminhash_seed(_this); }
+    
+    bool track_abundance() { return kmerminhash_track_abundance(_this); }
+
+    bool is_protein() { return kmerminhash_is_protein(_this); }
+
+    bool dayhoff() { return kmerminhash_dayhoff(_this); }
+
+    uint32_t ksize() { return kmerminhash_ksize(_this); }
+
+    uint64_t max_hash() { return kmerminhash_max_hash(_this); }
+
+    char aa_to_dayhoff(char aa) { return sourmash_aa_to_dayhoff(aa); }
+
+    char translate_codon(const char *codon) { return sourmash_translate_codon(codon); }
+
+    std::vector<HashIntoType> mins() {
+      auto ptr = kmerminhash_get_mins(_this);
+      std::vector<HashIntoType> m(ptr, ptr + kmerminhash_get_mins_size(_this));
+      return m;
+    }
+
+    void set_abundances(std::vector<HashIntoType> mins, std::vector<HashIntoType> abunds) {
+      auto max_h = max_hash();
+      auto n = num();
+      auto min_it = mins.begin();
+      auto last_min = mins.end();
+      auto abund_it = abunds.begin();
+
+      if (track_abundance()) {
+        size_t added = 0;
+        for (; min_it != last_min; ++min_it, ++abund_it) {
+          if (!max_h or *min_it <= max_h) {
+            kmerminhash_mins_push(_this, *min_it);
+            kmerminhash_abunds_push(_this, *abund_it);
+            added += 1;
+            if (n > 0 and added >= n) {
+              break;
             }
           }
         }
       }
     }
 
-    virtual void remove_hash(const HashIntoType h) {
-        auto pos = std::lower_bound(std::begin(mins), std::end(mins), h);
-        if (pos != mins.cend() and *pos == h) {
-          mins.erase(pos);
-        }
+    ~CKmerMinHash() throw() {
+      kmerminhash_free(_this);
     }
-
-    void add_word(const char * word) {
-        const HashIntoType hash = _hash_murmur(word, ksize, seed);
-        add_hash(hash);
-    }
-
-    /* Modifications by camillescott:
-     *  - Use std::string instead of C string
-     *  - Remove seq cleaning; it's already done in read parser
-     *  - Don't copy string for each k-mer: use char pointer
-     *  - Do revcomp on whole sequence rather than each k-mer
-     *  - Use lexicographical_compare in place of operator< (operator< has undefined
-     *    behavior on non-null-terminated C strings)
-     */
-    void add_sequence(const std::string& seq, bool force=false) {
-
-        if (seq.length() < ksize) {
-            return;
-        }
-
-        if (!is_protein) {
-            auto rc = _revcomp(seq);
-            for (unsigned int i = 0; i < seq.length() - ksize + 1; i++) {
-				auto fw_kmer = seq.c_str() + i;
-                auto rc_kmer = rc.c_str() + rc.length() - ksize - i;
-
-                if (! _checkkmerdna(fw_kmer)) {
-                    if (force) {
-                        continue;
-                    } else {
-                        std::string msg = "invalid DNA character in input k-mer: ";
-                        msg += fw_kmer;
-                        throw boink::InvalidCharacterException(msg);
-                    }
-                }
-
-                if (std::lexicographical_compare(fw_kmer,
-                                                 fw_kmer + ksize,
-                                                 rc_kmer,
-                                                 rc_kmer + ksize)) {
-                    add_word(fw_kmer);
-                } else {
-                    add_word(rc_kmer);
-                }
-            }
-        } else {                      // protein
-            std::string rc = _revcomp(seq);
-            for (unsigned int i = 0; i < 3; i++) {
-                std::string aa = _dna_to_aa(seq.substr(i, seq.length() - i));
-                unsigned int aa_ksize = int(ksize / 3);
-                std::string kmer;
-
-                for (unsigned int j = 0; j < aa.length() - aa_ksize + 1; j++) {
-                    kmer = aa.substr(j, aa_ksize);
-                    add_word(kmer.c_str());
-                }
-
-                aa = _dna_to_aa(rc.substr(i, rc.length() - i));
-                aa_ksize = int(ksize / 3);
-
-                for (unsigned int j = 0; j < aa.length() - aa_ksize + 1; j++) {
-                    kmer = aa.substr(j, aa_ksize);
-                    add_word(kmer.c_str());
-                }
-            }
-        }
-    }
-
-    std::string _dna_to_aa(const std::string& dna) {
-        std::string aa;
-        unsigned int dna_size = (dna.size() / 3) * 3; // floor it
-        for (unsigned int j = 0; j < dna_size; j += 3) {
-            std::string codon = dna.substr(j, 3);
-            auto translated = _codon_table.find(codon);
-            if (translated != _codon_table.end()) {
-                // "second" is the element mapped to by the codon
-                aa += translated -> second;
-            } else {
-                // Otherwise, assign the "X" or "unknown" amino acid
-                aa += "X";
-            }
-        }
-        return aa;
-    }
-
-    bool _checkdna(const std::string& seq) const {
-
-        for (size_t i=0; i < seq.length(); ++i) {
-            switch(seq[i]) {
-            case 'A':
-            case 'C':
-            case 'G':
-            case 'T':
-                break;
-            default:
-                return false;
-            }
-        }
-        return true;
-    }
-
-    bool _checkkmerdna(const char * kmer) const {
-
-        for (size_t i=0; i < ksize; ++i) {
-            switch(kmer[i]) {
-            case 'A':
-            case 'C':
-            case 'G':
-            case 'T':
-                break;
-            default:
-                return false;
-            }
-        }
-        return true;
-    }
-
-    std::string _revcomp(const std::string& kmer) const {
-        std::string out = kmer;
-
-        auto from = out.begin();
-        auto to = out.end();
-
-        char c;
-        for (to--; from <= to; from++, to--) {
-            c = tbl[(int)*from];
-            *from = tbl[(int)*to];
-            *to = c;
-        }
-
-        return out;
-    }
-
-    virtual void merge(const KmerMinHash& other) {
-        check_compatible(other);
-
-        CMinHashType merged;
-        merged.reserve(other.mins.size() + mins.size());
-        std::set_union(other.mins.begin(), other.mins.end(),
-                       mins.begin(), mins.end(),
-                       std::back_inserter(merged));
-        if (merged.size() < num or !num) {
-          mins = merged;
-        }
-        else {
-          mins = CMinHashType(std::begin(merged), std::begin(merged) + num);
-        }
-    }
-
-    virtual unsigned int count_common(const KmerMinHash& other) {
-        check_compatible(other);
-
-        Counter counter;
-        std::set_intersection(mins.begin(), mins.end(),
-                              other.mins.begin(), other.mins.end(),
-                              std::back_inserter(counter));
-        return counter.count;
-    }
-
-    virtual size_t size() {
-        return mins.size();
-    }
-
-    virtual ~KmerMinHash() throw() { }
-
-private:
-    std::map<std::string, std::string> _codon_table = {
-        {"TTT", "F"}, {"TTC", "F"},
-        {"TTA", "L"}, {"TTG", "L"},
-
-        {"TCT", "S"}, {"TCC", "S"}, {"TCA", "S"}, {"TCG", "S"},
-
-        {"TAT", "Y"}, {"TAC", "Y"},
-        {"TAA", "*"}, {"TAG", "*"},
-
-        {"TGT", "C"}, {"TGC", "C"},
-        {"TGA", "*"},
-        {"TGG", "W"},
-
-        {"CTT", "L"}, {"CTC", "L"}, {"CTA", "L"}, {"CTG", "L"},
-
-        {"CCT", "P"}, {"CCC", "P"}, {"CCA", "P"}, {"CCG", "P"},
-
-        {"CAT", "H"}, {"CAC", "H"},
-        {"CAA", "Q"}, {"CAG", "Q"},
-
-        {"CGT", "R"}, {"CGC", "R"}, {"CGA", "R"}, {"CGG", "R"},
-
-        {"ATT", "I"}, {"ATC", "I"}, {"ATA", "I"},
-        {"ATG", "M"},
-
-        {"ACT", "T"}, {"ACC", "T"}, {"ACA", "T"}, {"ACG", "T"},
-
-        {"AAT", "N"}, {"AAC", "N"},
-        {"AAA", "K"}, {"AAG", "K"},
-
-        {"AGT", "S"}, {"AGC", "S"},
-        {"AGA", "R"}, {"AGG", "R"},
-
-        {"GTT", "V"}, {"GTC", "V"}, {"GTA", "V"}, {"GTG", "V"},
-
-        {"GCT", "A"}, {"GCC", "A"}, {"GCA", "A"}, {"GCG", "A"},
-
-        {"GAT", "D"}, {"GAC", "D"},
-        {"GAA", "E"}, {"GAG", "E"},
-
-        {"GGT", "G"}, {"GGC", "G"}, {"GGA", "G"}, {"GGG", "G"}
-    };
 };
 
-class KmerMinAbundance: public KmerMinHash {
+class CKmerMinAbundance: public CKmerMinHash {
  public:
-    CMinHashType abunds;
+    CKmerMinAbundance(unsigned int n, unsigned int k, bool prot, bool dayhoff, bool hp, uint32_t seed,
+                     HashIntoType mx) : CKmerMinHash(n, k, prot, dayhoff, hp, seed, mx) {
+      kmerminhash_free(_this);
+      _this = kmerminhash_new(n, k, prot, dayhoff, hp, seed, mx, true);
+    };
 
-    KmerMinAbundance(unsigned int n, unsigned int k, bool prot, uint32_t seed,
-                     HashIntoType mx) :
-        KmerMinHash(n, k, prot, seed, mx) { };
-
-    virtual void add_hash(HashIntoType h) {
-      if ((max_hash and h <= max_hash) or not max_hash) {
-        // empty? add it, if within range / no range specified.
-        if (mins.size() == 0) {
-          mins.push_back(h);
-          abunds.push_back(1);
-          return;
-        } else if (h <= max_hash or mins.back() > h or mins.size() < num) {
-          // "good" hash - within range, smaller than current entry, or
-          // still space.
-          auto pos = std::lower_bound(std::begin(mins), std::end(mins), h);
-
-          // at end -- must still be growing, we know the list won't get too
-          // long
-          if (pos == mins.cend()) {
-            mins.push_back(h);
-            abunds.push_back(1);
-          } else if (*pos != h) {
-          // didn't find hash already in mins, so
-          // inserting somewhere in the middle; shrink list if needed.
-
-            // calculate distance for use w/abunds *before* insert, as
-            // 'mins.insert' may invalidate 'pos'.
-            size_t dist = std::distance(begin(mins), pos);
-            mins.insert(pos, h);
-            abunds.insert(begin(abunds) + dist, 1);
-
-            // now too big? if so, continue.
-            if (mins.size() > num and not max_hash) {
-              mins.pop_back();
-              abunds.pop_back();
-            }
-          } else { // *pos == h - hash value already there, increment count.
-            auto p = std::distance(begin(mins), pos);
-            abunds[p] += 1;
-          }
-        }
-      }
+    std::vector<HashIntoType> abunds() {
+      auto ptr = kmerminhash_get_abunds(_this);
+      std::vector<HashIntoType> m(ptr, ptr + kmerminhash_get_abunds_size(_this));
+      return m;
     }
 
-    virtual void remove_hash(const HashIntoType h) {
-        auto pos = std::lower_bound(std::begin(mins), std::end(mins), h);
-        if (pos != mins.cend() and *pos == h) {
-          mins.erase(pos);
-          size_t dist = std::distance(begin(mins), pos);
-          abunds.erase(begin(abunds) + dist);
-        }
-    }
-
-    virtual void merge(const KmerMinAbundance& other) {
-        check_compatible(other);
-
-        CMinHashType merged_mins;
-        CMinHashType merged_abunds;
-        size_t max_size = other.mins.size() + mins.size();
-
-        merged_mins.reserve(max_size);
-        merged_abunds.reserve(max_size);
-
-        auto it1_m = mins.begin();
-        auto it2_m = other.mins.begin();
-        auto out_m = std::back_inserter(merged_mins);
-
-        auto it1_a = abunds.begin();
-        auto it2_a = other.abunds.begin();
-        auto out_a = std::back_inserter(merged_abunds);
-
-        for (; it1_m != mins.end(); ++out_m, ++out_a) {
-            if (it2_m == other.mins.end()) {
-                /* we reached the end of other.mins,
-                   so just copy the remainder of mins to the output */
-                std::copy(it1_m, mins.end(), out_m);
-                std::copy(it1_a, abunds.end(), out_a);
-                break;
-            }
-            if (*it2_m < *it1_m) {
-                /* other.mins is smaller than mins,
-                   so copy it to output and advance other.mins iterators */
-                *out_m = *it2_m;
-                *out_a = *it2_a;
-                ++it2_m;
-                ++it2_a;
-            } else if (*it2_m == *it1_m) {
-                /* same value in both mins, so sums the abundances
-                   on the output and advances all iterators */
-                *out_m = *it1_m;
-                *out_a = *it1_a + *it2_a;
-                ++it1_m; ++it1_a;
-                ++it2_m; ++it2_a;
-            } else {
-                /* mins is smaller than other.mins,
-                   so copy it to output and advance the mins iterators */
-                *out_m = *it1_m;
-                *out_a = *it1_a;
-                ++it1_m;
-                ++it1_a;
-            }
-        }
-        /* we reached the end of mins/abunds,
-           so just copy the remainder of other to the output
-           (other might already be at the end, in this case nothing happens) */
-        std::copy(it2_m, other.mins.end(), out_m);
-        std::copy(it2_a, other.abunds.end(), out_a);
-
-        if (merged_mins.size() < num) {
-          mins = merged_mins;
-          abunds = merged_abunds;
-        } else {
-          mins = CMinHashType(std::begin(merged_mins), std::begin(merged_mins) + num);
-          abunds = CMinHashType(std::begin(merged_abunds), std::begin(merged_abunds) + num);
-        }
-    }
-
-    virtual size_t size() {
-        return mins.size();
-    }
-
+    ~CKmerMinAbundance() throw() {}
 };
+}
 
 #endif // KMER_MIN_HASH_HH
