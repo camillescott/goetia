@@ -417,12 +417,7 @@ function(cppyy_add_bindings pkg pkg_version author author_email)
     file(COPY ${README_FILE}  DESTINATION . USE_SOURCE_PERMISSIONS)
     file(COPY ${LICENSE_FILE} DESTINATION . USE_SOURCE_PERMISSIONS)
 
-    #
-    # Generate a pytest/nosetest sanity test script.
-    #
     set(PKG ${pkg})
-    configure_file(${CMAKE_SOURCE_DIR}/pkg_templates/test_bindings.py.in ${pkg_dir}/tests/test_bindings.py)
-
     #
     # Generate MANIFEST.in 
     #

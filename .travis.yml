@@ -1,44 +1,18 @@
 language: generic
 sudo: required
-dist: xenial
-matrix:
-    include:
-        - name: "PYTHON36"
-          env: PYVERSION="3.6" COMPILER_NAME=gcc CXX=g++-6 CC=gcc-6
-          addons:
-                apt:
-                    sources:
-                        - ubuntu-toolchain-r-test
-                    packages:
-                        - g++-6
-        - name: "PYTHON37"
-          env: PYVERSION="3.7" COMPILER_NAME=gcc CXX=g++-6 CC=gcc-6
-          addons:
-                apt:
-                    sources:
-                        - ubuntu-toolchain-r-test
-                    packages:
-                        - g++-6
-before_script:
-    - sudo apt-get update
+dist: bionic 
+addons:
+  apt:
+    update: true
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - g++-6
+install:
     - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
     - bash miniconda.sh -b -p $HOME/miniconda
     - export PATH="$HOME/miniconda/bin:$PATH"
     - conda config --set always_yes yes --set changeps1 no
-    - conda config --add channels defaults
-    - conda config --add channels bioconda
-    - conda config --add channels conda-forge
-    - conda update -n base -c defaults conda
     - conda info -a
-    - conda create -n libboink python=$PYVERSION cppyy cmake cxx-compiler c-compiler clangdev=8 libcxx libstdcxx-ng libgcc-ng pytest numpy scipy openmp python-clang screed blessings pytest-benchmark pyfiglet py-cpuinfo
-    - source activate libboink
-    - pip install -r requirements.txt
-    - pip install git+https://github.com/camillescott/debruijnal-enhance-o-tron#egg=debruijnal_enhance_o_tron
-    - conda list
-    - python -c "from clang.cindex import Config; Config.set_library_file('/home/travis/miniconda/envs/libboink/lib/libclang.so'); Config().lib"
-    - mkdir -p build
-    - cd build
-    - python -c "from clang.cindex import Config"
-    - cmake ..
-    - make install VERBOSE=1
-script: py.test -v --benchmark-disable tests/test_dbg.py tests/test_cdbg.py tests/test_traversal.py tests/test_hashing.py tests/test_metrics.py tests/test_minimizers.py tests/test_processors.py 
+    - pip install -U tox-travis tox-conda
+script: tox
