@@ -1,2 +1,3 @@
 plotille
 pytest-randomly
+git+https://github.com/camillescott/debruijnal-enhance-o-tron#egg=debruijnal_enhance_o_tron
