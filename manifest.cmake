@@ -69,7 +69,6 @@ set(_sources
     src/boink/reporting/reporters.cc
     src/boink/hashing/hashshifter.cc
     src/boink/hashing/hashextender.cc
-    src/boink/hashing/alphabets.cc
     src/boink/hashing/kmeriterator.cc
     src/boink/hashing/kmer_span.cc
     src/boink/hashing/rollinghashshifter.cc

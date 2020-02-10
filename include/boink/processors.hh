@@ -122,8 +122,7 @@ protected:
 
     std::array<IntervalCounter, 3> counters;
     uint64_t                       _n_reads;
-    uint64_t                       _n_invalid;
-    uint64_t                       _n_too_short;
+    uint64_t                       _n_skipped;
     bool                           _verbose;
 
     bool _ticked(interval_state tick) {
@@ -194,8 +193,6 @@ public:
                       medium_interval,
                       coarse_interval },
           _n_reads(0),
-          _n_invalid(0),
-          _n_too_short(0),
           _verbose(verbose)
     {
         
@@ -216,10 +213,12 @@ public:
      */
     uint64_t process(const std::string& left_filename,
                      const std::string& right_filename,
+                     bool strict = false,
                      uint32_t min_length=0,
                      bool force_name_match=false) {
         parsing::SplitPairedReader<ParserType> reader(left_filename,
                                                       right_filename,
+                                                      strict,
                                                       min_length,
                                                       force_name_match);
         return process(reader);
@@ -244,12 +243,14 @@ public:
      *
      * @Returns   Number of sequences consumed.
      */
-    uint64_t process(std::string const &filename) {
-        auto reader  = parsing::SequenceReader<ParserType>::build(filename);
+    uint64_t process(std::string const &filename,
+                     bool strict = false,
+                     uint32_t min_length = 0) {
+        auto reader  = ParserType::build(filename, strict, min_length);
         return process(reader);
     }
 
-    uint64_t process(std::shared_ptr<parsing::SequenceReader<ParserType>>& reader) {
+    uint64_t process(std::shared_ptr<ParserType>& reader) {
         while(1) {
             auto state = advance(reader);
             if (state.end) {
@@ -266,12 +267,12 @@ public:
      *
      * @Param bundle ReadBundle containing the two sequences.
      */
-    void process_sequence(parsing::RecordPair& bundle) {
-        if (bundle.has_left) {
-            derived().process_sequence(bundle.left);
+    void process_sequence(parsing::RecordPair& pair) {
+        if (pair.first) {
+            derived().process_sequence(pair.first.value());
         }
-        if (bundle.has_right) {
-            derived().process_sequence(bundle.right);
+        if (pair.second) {
+            derived().process_sequence(pair.second.value());
         }
     }
 
@@ -288,7 +289,6 @@ public:
                           << ", exception was "
                           << e.what() << std::endl;
             }
-            _n_invalid++;
             return {};
         }  catch (parsing::InvalidRead& e) {
             if (_verbose) {
@@ -297,7 +297,6 @@ public:
                           << ", exception was "
                           << e.what() << std::endl;
             }
-            _n_invalid++;
             return {};
         }
     }
@@ -320,7 +319,7 @@ public:
             }
 
             derived().process_sequence(bundle.value());
-            int _bundle_count = bundle.value().has_left + bundle.value().has_right;
+            int _bundle_count = (bool)bundle.value().first + (bool)bundle.value().second;
             _n_reads += _bundle_count;
 
             auto tick_result = _notify_tick(_bundle_count);
@@ -340,16 +339,16 @@ public:
      *
      * @Returns   interval_state with current interval.
      */
-    interval_state advance(std::shared_ptr<parsing::SequenceReader<ParserType>>& parser) {
+    interval_state advance(std::shared_ptr<ParserType>& parser) {
 
         std::optional<parsing::Record> record;
         // Iterate through the reads and consume their k-mers.
         int i = 0;
         while (!parser->is_complete()) {
-            try {
-                record = handle_next(*parser);
-            } catch (parsing::NoMoreReadsAvailable) {
-                break;
+            record = handle_next(*parser);
+            
+            if(!record) {
+                continue;
             }
             
             if(!record) {
@@ -377,14 +376,6 @@ public:
      */
     uint64_t n_reads() const {
         return _n_reads;
-    }
-
-    uint64_t n_invalid() const {
-        return _n_invalid;
-    }
-
-    uint64_t n_too_short() const {
-        return _n_too_short;
     }
 
     template<typename... Args>

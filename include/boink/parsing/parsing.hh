@@ -13,6 +13,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -57,15 +58,7 @@ struct Record {
 };
 
 
-struct RecordPair {
-    
-    bool has_left;
-    bool has_right;
-
-    Record left;
-    Record right;
-
-};
+typedef std::pair<std::optional<Record>, std::optional<Record>> RecordPair;
 
 bool check_char(const char c, const std::string against);
 
@@ -77,8 +70,6 @@ bool check_is_pair(const std::string& left, const std::string& right);
 bool check_is_left(const std::string& name);
 
 bool check_is_right(const std::string& name);
-
-void filter_length(RecordPair& bundle, uint32_t length);
 
 }
 }
