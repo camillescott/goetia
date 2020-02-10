@@ -343,8 +343,13 @@ public:
 
         std::optional<parsing::Record> record;
         // Iterate through the reads and consume their k-mers.
+        int i = 0;
         while (!parser->is_complete()) {
             record = handle_next(*parser);
+            
+            if(!record) {
+                continue;
+            }
             
             if(!record) {
                 continue;

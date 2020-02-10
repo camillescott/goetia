@@ -8,10 +8,12 @@
 
 from boink.cli import BoinkRunner
 from boink.cdbg import cDBGRunner
+from boink.signatures import SourmashRunner
 
 
 def main():
     runner = BoinkRunner()
     runner.add_command('cdbg', cDBGRunner)
+    runner.add_command('sourmash', SourmashRunner)
 
     return runner.run()

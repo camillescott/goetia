@@ -37,12 +37,12 @@ FastxParser<Alphabet>::~FastxParser() {
     gzclose(_fp);
 }
 
-    template class FastxParser<DNA_SIMPLE>;
-    template class FastxParser<DNAN_SIMPLE>;
-    template class FastxParser<IUPAC_NUCL>;
+template class FastxParser<DNA_SIMPLE>;
+template class FastxParser<DNAN_SIMPLE>;
+template class FastxParser<IUPAC_NUCL>;
 
-    template class SplitPairedReader<parsing::FastxParser<DNA_SIMPLE>>;
-    template class SplitPairedReader<parsing::FastxParser<DNAN_SIMPLE>>;
-    template class SplitPairedReader<parsing::FastxParser<IUPAC_NUCL>>;
+template class SplitPairedReader<parsing::FastxParser<DNA_SIMPLE>>;
+template class SplitPairedReader<parsing::FastxParser<DNAN_SIMPLE>>;
+template class SplitPairedReader<parsing::FastxParser<IUPAC_NUCL>>;
 
 }

@@ -110,6 +110,7 @@ private:
     uint32_t    _min_length;
 
 public:
+
     typedef Record   value_type;
     typedef Alphabet alphabet;
     
@@ -154,9 +155,10 @@ public:
 
         Record record;
         
-        while (!__sync_bool_compare_and_swap(&_spin_lock, 0, 1));
+        //while (!__sync_bool_compare_and_swap(&_spin_lock, 0, 1));
 
         int stat = kseq_read(_kseq);
+
         if (stat >= 0) {
             try {
                 Alphabet::validate(_kseq->seq.s, _kseq->seq.l);
@@ -193,8 +195,8 @@ public:
             ++_n_parsed;
         }
 
-        __asm__ __volatile__ ("" ::: "memory");
-        _spin_lock = 0;
+        //__asm__ __volatile__ ("" ::: "memory");
+        //_spin_lock = 0;
 
         if (stat == -1) {
             _is_complete = true;
@@ -245,6 +247,8 @@ class SplitPairedReader {
 
 public:
 
+    typedef RecordPair value_type;
+
     SplitPairedReader(const std::string &left,
                       const std::string &right,
                       bool strict = false,
@@ -274,6 +278,7 @@ public:
     }
 
     RecordPair next() {
+
         if (is_complete()) {
             throw NoMoreReadsAvailable();
         }
@@ -336,7 +341,6 @@ extern template class parsing::FastxParser<IUPAC_NUCL>;
 extern template class parsing::SplitPairedReader<parsing::FastxParser<DNA_SIMPLE>>;
 extern template class parsing::SplitPairedReader<parsing::FastxParser<DNAN_SIMPLE>>;
 extern template class parsing::SplitPairedReader<parsing::FastxParser<IUPAC_NUCL>>;
-
 
 } // namespace parsing
 
