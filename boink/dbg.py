@@ -29,8 +29,8 @@ def Graph(storage_type, shifter_type):
 def get_graph_args(parser):
     group = parser.add_argument_group('dBG')
     group.add_argument('-K', '--ksize', type=int, default=31)
-    group.add_argument('--hasher', choices=list((name for _, name in hasher_types)),
-                       default='LemireShifterPolicy')
+    group.add_argument('--hasher', choices=[name for t, name in hasher_types],
+                       default='FwdLemireShifter')
 
     get_storage_args(parser)
 

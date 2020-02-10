@@ -80,13 +80,14 @@ public:
 /**
  * @Synopsis  Named atomic counter.
  */
-struct Gauge : public std::atomic_uint64_t {
+struct Gauge : public std::atomic_int64_t {
     const std::string    family;
     const std::string    name;
 
     Gauge(const std::string& family,
           const std::string& name)
-        : family(family),
+        : std::atomic_int64_t(0),
+          family(family),
           name(name)
     {
     }    

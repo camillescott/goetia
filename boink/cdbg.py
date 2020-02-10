@@ -129,7 +129,7 @@ class cDBGRunner(CommandRunner):
         self.dbg_t       = args.graph_t
         self.hasher      = args.hasher_t(args.ksize)
         self.storage     = args.storage.build(*args.storage_args)
-        self.dbg         = args.graph_t.build(self.hasher, self.storage)
+        self.dbg         = args.graph_t.build(self.storage, self.hasher)
 
         self.cdbg_t      = libboink.cdbg.cDBG[type(self.dbg)]
 
@@ -181,9 +181,9 @@ class cDBGRunner(CommandRunner):
     def execute(self, args):
         print('boink cdbg: start execution.', file=sys.stderr)
         for sample, prefix in iter_fastx_inputs(args.inputs, args.pairing_mode):
-            for n_reads, state in self.processor.chunked_process(*sample):
+            for n_reads, n_skipped, state in self.processor.chunked_process(*sample):
                 print('...processed {0} sequences.'.format(n_reads))
-                print('\t', self.processor.n_invalid(), 'invalid,', self.processor.n_too_short(), 'too short.')
+                print('\t', n_skipped, 'skipped.')
 
     def teardown(self):
         pass

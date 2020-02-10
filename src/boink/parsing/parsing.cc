@@ -108,14 +108,5 @@ bool check_is_right(const std::string& name) {
     return false;
 }
 
-void filter_length(RecordPair& bundle, uint32_t length) {
-    if (bundle.left.sequence.length() < length) {
-        bundle.has_left = false;
-    }
-    if (bundle.right.sequence.length() < length) {
-        bundle.has_right = false;
-    }
-}
-
 }
 }
