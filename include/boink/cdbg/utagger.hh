@@ -38,9 +38,9 @@ struct UTagger {
     typedef std::tuple<value_type, value_type> link_type;
 
     struct Tag {
-        value_type left_partition;
-        value_type right_partition;
-        link_type  link;
+        uint32_t left_partition;
+        uint32_t right_partition;
+        //link_type  link;
     };
 
     class StreamingTagger :public events::EventNotifier {
@@ -100,6 +100,44 @@ struct UTagger {
         }
 
         /**
+         * @brief Hashes each k-mer in sequence, and gets the set of extensions for each
+         *        k-mer that is new to the dBG.
+         * 
+         * @param sequence 
+         * @return std::vector<std::tuple<hash_type, 
+         *                                size_t,
+         *                                shift_pair_type>>  Each tuple contains the hash, position in sequence,
+         *                                                   and extensions, respectively.
+         */
+        auto find_new_extensions(const std::string& sequence)
+        -> std::vector<std::tuple<hash_type, size_t, shift_pair_type>> {
+
+            // don't confuse dbg.get(), retrieves the raw pointer,
+            // with dbg->get(), which reaches through and gets the cursor hash value
+            hashing::KmerIterator<graph_type> kmer_iter(sequence, dbg.get());
+            std::vector<std::tuple<hash_type, size_t, shift_pair_type>> results;
+
+            size_t position = 0;
+            while(!kmer_iter.done()) {
+                auto hash = kmer_iter.next();
+                if (dbg->insert(hash)) {
+                    // Note that left_extensions() and right_extensions() only collect
+                    // up the *potential* neighbors for the cursor. We do this here
+                    // for all new k-mers in order to minimize the amount of hashing
+                    // we have to do; actually querying them against the graph and filtering
+                    // them out has to wait until all the new k-mers from the sequence
+                    // have been inserted.
+                    results.emplace_back(hash, position, std::make_pair(dbg->left_extensions(),
+                                                                        dbg->right_extensions()));
+                } 
+                ++position;
+            }
+
+            return std::move(results);
+        }
+
+
+        /**
          * @Synopsis  Finds all new tags induced by the insertion of sequence and returns them.
          *
          * @Param sequence 
@@ -108,40 +146,19 @@ struct UTagger {
          */
         tag_map_t find_new_tags(const std::string& sequence) {
 
-
-            // don't confuse dbg.get(), retrieves the raw pointer,
-            // with dbg->get(), which reaches through and gets the cursor hash value
-            hashing::KmerIterator<graph_type> kmer_iter(sequence, dbg.get());
-
-            std::vector<hash_type> hashes;
-            std::deque<shift_pair_type> neighbors;
-            while(!kmer_iter.done()) {
-                auto hash = kmer_iter.next();
-                if (dbg->insert(hash)) {
-                    hashes.push_back(hash);
-                    // Note that left_extensions() and right_extensions() only collect
-                    // up the *potential* neighbors for the cursor. We do this here
-                    // for all new k-mers in order to minimize the amount of hashing
-                    // we have to do; actually querying them against the graph and filtering
-                    // them out has to wait until all the new k-mers from the sequence
-                    // have been inserted.
-                    neighbors.push_back(std::make_pair(dbg->left_extensions(),
-                                                       dbg->right_extensions()));
-                } 
-            }
+            auto hashes = find_new_extensions(sequence);
 
             tag_map_t tags;
             if (hashes.size() == 0) {
                 return tags;
             }
  
-            for (const auto& hash : hashes) {
+            for (const auto& hash_tuple : hashes) {
                 // Now that all the new k-mers have been inserted, we can filter the nodes
                 // against the dBG and reduce the collection down to only the actual neighbors.
-                create_neighborhood_tags(hash,
-                                         dbg->filter_nodes(neighbors.front()),
+                create_neighborhood_tags(std::get<0>(hash_tuple),
+                                         dbg->filter_nodes(std::get<2>(hash_tuple)),
                                          tags);
-                neighbors.pop_front();
             }
 
             return tags;
@@ -162,14 +179,14 @@ struct UTagger {
             for (const shift_type<hashing::DIR_LEFT>& in_neighbor : neighbors.first) {
                 auto tag = create_tag(in_neighbor, root);
                 if (tag) {
-                    tags[tag.value().link] = std::move(tag.value());
+                    tags[std::make_pair(in_neighbor, root)] = std::move(tag.value());
                 }
             }
             // and out neighbors
             for (const shift_type<hashing::DIR_RIGHT>& out_neighbor : neighbors.second) {
                 auto tag = create_tag(root, out_neighbor);
                 if (tag) {
-                    tags[tag.value().link] = std::move(tag.value());
+                    tags[std::make_pair(root, out_neighbor)] = std::move(tag.value());
                 }
             }
 
@@ -191,8 +208,8 @@ struct UTagger {
                 Tag tag;
                 tag.left_partition = first.minimizer.partition;
                 tag.right_partition = second.minimizer.partition;
-                tag.link = std::make_pair(first.hash.value(),
-                                          second.hash.value());
+                //tag.link = std::make_pair(first.hash.value(),
+                //                          second.hash.value());
                 return tag;
             } else {
                 return {};
@@ -223,8 +240,11 @@ struct UTagger {
             if (!is_tag(u, v)) {
                 return {};
             }
+            return query_tag(std::make_pair(u.value(), v.value()));
+        }
 
-            auto search = tag_map.find(std::make_pair(u.value(), v.value()));
+        std::optional<Tag> query_tag(const link_type& link) {
+            auto search = tag_map.find(link);
             if (search != tag_map.end()) {
                 return search->second;
             }
@@ -239,9 +259,9 @@ struct UTagger {
          *
          * @Returns   Ordered vector of tags from sequence.
          */
-        std::vector<Tag> query_sequence_tags(const std::string& sequence) {
+        std::vector<std::pair<link_type, Tag>> query_sequence_tags(const std::string& sequence) {
 
-            std::vector<Tag> tags;
+            std::vector<std::pair<link_type, Tag>> tags;
             hashing::KmerIterator<graph_type> kmer_iter(sequence, dbg.get());
 
             hash_type u = kmer_iter.next();
@@ -250,9 +270,12 @@ struct UTagger {
             }
             while(!kmer_iter.done()) {
                 hash_type v = kmer_iter.next();
-                auto tag = query_tag(u, v);
-                if (tag) {
-                    tags.push_back(tag.value());
+                if (is_tag(u, v)) {
+                    auto link = std::make_pair(u.value(), v.value());
+                    auto tag = query_tag(link);
+                    if (tag) {
+                        tags.emplace_back(link, tag.value());
+                    }
                 }
                 u = v;
             }
@@ -267,10 +290,10 @@ struct UTagger {
          *
          * @Returns   Set of links corresponding to neighboring tags.
          */
-        link_set_t query_neighborhood_tags(const std::string& sequence) {
+        tag_map_t query_neighborhood_tags(const std::string& sequence) {
 
             hashing::KmerIterator<graph_type> kmer_iter(sequence, dbg.get());
-            link_set_t found;
+            tag_map_t found;
 
             while(!kmer_iter.done()) {
                 hash_type root = kmer_iter.next();
@@ -278,13 +301,13 @@ struct UTagger {
                                                                      dbg->right_extensions()));
                 for (const shift_type<hashing::DIR_LEFT>& in_neighbor : neighborhood.first) {
                     if (auto tag = query_tag(in_neighbor, root)) {
-                        found.insert(tag.value().link);
+                        found[std::make_pair(in_neighbor, root)] = tag.value();
                     }
                 }
                 // and out neighbors
                 for (const shift_type<hashing::DIR_RIGHT>& out_neighbor : neighborhood.second) {
                     if (auto tag = query_tag(root, out_neighbor)) {
-                        found.insert(tag.value().link);
+                        found[std::make_pair(root, out_neighbor)] = tag.value();
                     }
                 }
             }
