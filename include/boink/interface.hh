@@ -59,6 +59,7 @@
 #include "boink/cdbg/metrics.hh"
 #include "boink/cdbg/udbg.hh"
 #include "boink/cdbg/utagger.hh"
+#include "boink/cdbg/usparsetagger.hh"
 #include "boink/cdbg/saturating_compactor.hh"
 //#include "boink/cdbg/ucompactor.hh"
 

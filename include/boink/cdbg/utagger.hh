@@ -35,34 +35,53 @@ struct UTagger {
     _boink_walker_typedefs_from_graphtype(walker_type);
 
     typedef typename shifter_type::ukhs_type   ukhs_type;
-    typedef std::tuple<value_type, value_type> link_type;
 
-    struct Tag {
-        uint32_t left_partition;
-        uint32_t right_partition;
-        //link_type  link;
-    };
+    typedef std::tuple<value_type, value_type> link_type;
+    typedef std::tuple<uint32_t, uint32_t>     tag_type;
+
+    typedef std::pair<link_type, tag_type> link_tag_pair;
+
+    typedef spp::sparse_hash_map<link_type,
+                                 tag_type,
+                                 hash_tuple::hash<link_type>> tag_map_t;
+    typedef typename tag_map_t::const_iterator                tag_map_iter_t;
+
+    typedef spp::sparse_hash_set<link_type,
+                                 hash_tuple::hash<link_type>> link_set_t;
+    typedef typename link_set_t::const_iterator               link_set_iter_t;
+
 
     class StreamingTagger :public events::EventNotifier {
 
     public:
 
-        typedef spp::sparse_hash_map<link_type,
-                                     Tag,
-                                     hash_tuple::hash<link_type>> tag_map_t;
-        typedef typename tag_map_t::const_iterator                tag_map_iter_t;
-
-        typedef spp::sparse_hash_set<link_type,
-                                     hash_tuple::hash<link_type>> link_set_t;
-        typedef typename link_set_t::const_iterator               link_set_iter_t;
-
-        tag_map_t                                                 tag_map;
-
         std::shared_ptr<graph_type> dbg;
         std::shared_ptr<ukhs_type>  ukhs;
+        tag_map_t                   tag_map;
 
         const uint16_t              W;
         const uint16_t              K;
+
+        struct TagStopper {
+            std::optional<hash_type> prev;
+            std::optional<link_type> found_link;
+            StreamingTagger *        tagger;
+            
+            explicit TagStopper(StreamingTagger * tagger)
+                : prev{},
+                  found_link{},
+                  tagger(tagger)
+            {}
+
+            bool operator()(hash_type& node) {
+                if (prev && tagger->is_tag(prev.value(), node)) {
+                    found_link = std::make_tuple(prev.value().value(), node.value());
+                    return false;
+                }
+                prev = node;
+                return true;
+            }
+        };
 
         StreamingTagger(std::shared_ptr<graph_type>& dbg,
                         std::shared_ptr<ukhs_type>&  ukhs)
@@ -91,7 +110,7 @@ struct UTagger {
             auto new_tags = find_new_tags(sequence);
             if (new_tags.size()) {
                 for (const auto& item : new_tags) {
-                    tag_map[item.first] = item.second;
+                    tag_map.insert(std::move(item));
                 }
                 return new_tags.size();
             }
@@ -177,16 +196,14 @@ struct UTagger {
                                       tag_map_t&             tags) {
             // check in-neighbors
             for (const shift_type<hashing::DIR_LEFT>& in_neighbor : neighbors.first) {
-                auto tag = create_tag(in_neighbor, root);
-                if (tag) {
-                    tags[std::make_pair(in_neighbor, root)] = std::move(tag.value());
+                if (auto tag = create_tag(in_neighbor, root)) {
+                    tags.insert(std::move(tag.value()));
                 }
             }
             // and out neighbors
             for (const shift_type<hashing::DIR_RIGHT>& out_neighbor : neighbors.second) {
-                auto tag = create_tag(root, out_neighbor);
-                if (tag) {
-                    tags[std::make_pair(root, out_neighbor)] = std::move(tag.value());
+                if (auto tag = create_tag(root, out_neighbor)) {
+                    tags.insert(std::move(tag.value()));
                 }
             }
 
@@ -201,16 +218,13 @@ struct UTagger {
          *
          * @Returns   An std::optional<Tag> containing the Tag if successful.
          */
-        std::optional<Tag> create_tag(const hash_type& first, const hash_type& second) {
+        std::optional<link_tag_pair> create_tag(const hash_type& first, const hash_type& second) {
             if (is_tag(first, second)) {
-                //std::cerr << "\tunikmers don't match" << std::endl;
-                //std::cerr << "\tfirst: " << first << ", second:" << second << std::endl;
-                Tag tag;
-                tag.left_partition = first.minimizer.partition;
-                tag.right_partition = second.minimizer.partition;
-                //tag.link = std::make_pair(first.hash.value(),
-                //                          second.hash.value());
-                return tag;
+                auto tag = std::make_tuple(first.minimizer.partition,
+                                           second.minimizer.partition);
+                auto link = std::make_tuple(first.value(),
+                                            second.value());
+                return std::make_pair(link, tag);
             } else {
                 return {};
             }
@@ -236,14 +250,19 @@ struct UTagger {
          *
          * @Returns An std::optional<Tag> containing the tag if found.  
          */
-        std::optional<Tag> query_tag(const hash_type& u, const hash_type& v) {
+        std::optional<link_tag_pair> query_tag(const hash_type& u, const hash_type& v) {
             if (!is_tag(u, v)) {
                 return {};
             }
-            return query_tag(std::make_pair(u.value(), v.value()));
+
+            auto link = std::make_tuple(u.value(), v.value());
+            if (auto tag = query_tag(link)) {
+                return std::make_pair(link, tag.value());
+            }
+            return {};
         }
 
-        std::optional<Tag> query_tag(const link_type& link) {
+        std::optional<tag_type> query_tag(const link_type& link) {
             auto search = tag_map.find(link);
             if (search != tag_map.end()) {
                 return search->second;
@@ -259,9 +278,9 @@ struct UTagger {
          *
          * @Returns   Ordered vector of tags from sequence.
          */
-        std::vector<std::pair<link_type, Tag>> query_sequence_tags(const std::string& sequence) {
+        std::vector<link_tag_pair> query_sequence_tags(const std::string& sequence) {
 
-            std::vector<std::pair<link_type, Tag>> tags;
+            std::vector<link_tag_pair> tags;
             hashing::KmerIterator<graph_type> kmer_iter(sequence, dbg.get());
 
             hash_type u = kmer_iter.next();
@@ -270,13 +289,12 @@ struct UTagger {
             }
             while(!kmer_iter.done()) {
                 hash_type v = kmer_iter.next();
-                if (is_tag(u, v)) {
-                    auto link = std::make_pair(u.value(), v.value());
-                    auto tag = query_tag(link);
-                    if (tag) {
-                        tags.emplace_back(link, tag.value());
-                    }
+                auto query = query_tag(u, v);
+
+                if (query) {
+                    tags.push_back(std::move(query.value()));
                 }
+
                 u = v;
             }
 
@@ -300,14 +318,14 @@ struct UTagger {
                 auto neighborhood = dbg->filter_nodes(std::make_pair(dbg->left_extensions(),
                                                                      dbg->right_extensions()));
                 for (const shift_type<hashing::DIR_LEFT>& in_neighbor : neighborhood.first) {
-                    if (auto tag = query_tag(in_neighbor, root)) {
-                        found[std::make_pair(in_neighbor, root)] = tag.value();
+                    if (auto query = query_tag(in_neighbor, root)) {
+                        found.insert(std::move(query.value()));
                     }
                 }
                 // and out neighbors
                 for (const shift_type<hashing::DIR_RIGHT>& out_neighbor : neighborhood.second) {
-                    if (auto tag = query_tag(root, out_neighbor)) {
-                        found[std::make_pair(root, out_neighbor)] = tag.value();
+                    if (auto query = query_tag(root, out_neighbor)) {
+                        found.insert(std::move(query.value()));
                     }
                 }
             }
