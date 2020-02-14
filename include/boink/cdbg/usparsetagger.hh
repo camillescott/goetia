@@ -153,7 +153,7 @@ namespace boink::cdbg {
              * @param filtered
              * @return std::vector<std::vector<std::tuple<hash_type, size_t, shift_pair_type>>>
              */
-            auto build_segments(std::vector<std::tuple<hash_type, size_t, shift_pair_type>>& filtered)
+            auto build_new_segments(std::vector<std::tuple<hash_type, size_t, shift_pair_type>>& filtered)
                 -> std::vector<std::vector<std::tuple<hash_type, size_t, shift_pair_type>>> {
 
                 std::vector<std::vector<std::tuple<hash_type, size_t, shift_pair_type>>> segments;
@@ -175,6 +175,8 @@ namespace boink::cdbg {
                     if (std::get<1>(v) != std::get<1>(u) + 1) {
                         segments.emplace_back();
                     }
+
+                    ++i;
                 }
 
                 segments.back().push_back(std::move(filtered.back()));
