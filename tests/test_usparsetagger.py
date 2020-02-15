@@ -16,16 +16,16 @@ from boink.storage import SparseppSetStorage
 
 
 @pytest.fixture
-def tagger(ksize):
-    tagger_type = libboink.cdbg.USparseGraph[SparseppSetStorage].Graph
-    storage = SparseppSetStorage.build()
+def tagger(ksize, store):
+    tagger_type = libboink.cdbg.USparseGraph[type(store)].Graph
     hasher = CanUnikmerShifter.build(ksize, 7)
-    graph = dBG[type(storage), CanUnikmerShifter].build(storage, hasher)
+    graph = dBG[type(store), CanUnikmerShifter].build(store, hasher)
     tagger = tagger_type.build(graph, hasher.ukhs_map)
     return tagger
 
 
 @using(ksize=31, length=100)
+@exact_backends()
 class TestFindNewExtensions:
 
     def test_new_whole_sequence(self, ksize, length, tagger, linear_path):
@@ -60,6 +60,7 @@ class TestFindNewExtensions:
 
 
 @using(ksize=31, length=100)
+@exact_backends()
 class TestFilterNewExtensions:
     
     def test_new_whole_sequence(self, ksize, length, tagger, linear_path):
@@ -104,6 +105,7 @@ class TestFilterNewExtensions:
 
 
 @using(ksize=31, length=100)
+@exact_backends()
 class TestBuildNewSegments:
 
     def test_new_whole_sequence(self, ksize, length, tagger, linear_path):
@@ -182,3 +184,58 @@ class TestBuildNewSegments:
         assert pos == position
         assert len(left) == 1
         assert len(right) == 1
+
+
+@using(ksize=31, length=100)
+@exact_backends()
+class TestSplitNewSegments:
+
+    def test_new_whole_sequence(self, ksize, length, tagger, linear_path):
+        ''' Test that a sequence consisting entirely of new k-mers produces
+        one segment chain matching that produced by TestBuildNewSegments::test_new_whole_sequence.
+        '''
+        sequence = linear_path()
+        segments = tagger.split_new_segments(
+                       tagger.build_new_segments(
+                           tagger.filter_new_extensions(
+                               tagger.find_new_extensions(sequence)
+                           )
+                       )
+                   )   
+
+        assert len(segments) == 1
+
+        extensions = segments[0]
+        assert len(extensions) == len(sequence) - ksize + 1
+        for h, pos, (left, right) in extensions[1:-1]:
+            assert len(left) == 1
+            assert len(right) == 1
+        
+        fh, fpos, (fleft, fright) = extensions[0]
+        assert len(fleft) == 0
+        assert len(fright) == 1
+
+        bh, bpos, (bleft, bright) = extensions[-1]
+        assert len(bleft) == 1
+        assert len(bright) == 0
+
+    def test_fwd_decision_split(self, ksize, length, tagger, right_fork, check_fp):
+        ''' Test that segments get split on FWD decision k-mers.
+        '''
+        (core, branch), pivot = right_fork()
+        check_fp()
+
+        # insert the branch: it does *not* contain the decision k-mer
+        tagger.dbg.insert_sequence(branch)
+        # insert core, which does contain the decision k-mer
+        segments = tagger.split_new_segments(
+                       tagger.build_new_segments(
+                           tagger.filter_new_extensions(
+                               tagger.find_new_extensions(core)
+                           )
+                       )
+                   )   
+
+        print([(pos, len(left), len(right)) for h, pos, (left, right) in segments[0]])
+        assert len(segments) == 2
+

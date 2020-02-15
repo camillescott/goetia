@@ -46,6 +46,8 @@ namespace boink::cdbg {
             value_type lneighbor, rneighbor;
         };
 
+        typedef std::vector<std::tuple<hash_type, size_t, shift_pair_type>> segment_chain_type;
+
         typedef spp::sparse_hash_map<value_type, Tag> tag_map_t;
         typedef typename tag_map_t::const_iterator    tag_map_iter_t;
 
@@ -102,12 +104,12 @@ namespace boink::cdbg {
              *                                                   and extensions, respectively.
              */
             auto find_new_extensions(const std::string& sequence)
-                -> std::vector<std::tuple<hash_type, size_t, shift_pair_type>> {
+                -> segment_chain_type {
 
                 // don't confuse dbg.get(), retrieves the raw pointer,
                 // with dbg->get(), which reaches through and gets the cursor hash value
                 hashing::KmerIterator<graph_type>                           kmer_iter(sequence, dbg.get());
-                std::vector<std::tuple<hash_type, size_t, shift_pair_type>> results;
+                segment_chain_type results;
 
                 size_t position = 0;
                 while (!kmer_iter.done()) {
@@ -136,8 +138,8 @@ namespace boink::cdbg {
              * @param extensions
              * @return std::vector<std::tuple<hash_type, size_t, shift_pair_type>>  The filtered extensions.
              */
-            auto filter_new_extensions(std::vector<std::tuple<hash_type, size_t, shift_pair_type>>& extensions)
-                -> std::vector<std::tuple<hash_type, size_t, shift_pair_type>> {
+            auto filter_new_extensions(segment_chain_type& extensions)
+                -> segment_chain_type {
 
                 for (auto& ext_tuple : extensions) {
                     std::get<2>(ext_tuple) = dbg->filter_nodes(std::get<2>(ext_tuple));
@@ -153,10 +155,15 @@ namespace boink::cdbg {
              * @param filtered
              * @return std::vector<std::vector<std::tuple<hash_type, size_t, shift_pair_type>>>
              */
-            auto build_new_segments(std::vector<std::tuple<hash_type, size_t, shift_pair_type>>& filtered)
-                -> std::vector<std::vector<std::tuple<hash_type, size_t, shift_pair_type>>> {
+            auto build_new_segments(segment_chain_type& filtered)
+                -> std::vector<segment_chain_type> {
 
-                std::vector<std::vector<std::tuple<hash_type, size_t, shift_pair_type>>> segments;
+                std::vector<segment_chain_type> segments;
+
+                if (filtered.empty()) {
+                    return segments;
+                }
+
                 segments.emplace_back();  // make sure there's an empty space to add to
 
                 if (filtered.size() == 1) {
@@ -172,7 +179,8 @@ namespace boink::cdbg {
 
                     segments.back().push_back(std::move(u));
 
-                    if (std::get<1>(v) != std::get<1>(u) + 1) {
+                    // we moved u, it's now segments.back().back() (eeewwww)
+                    if (std::get<1>(v) != std::get<1>(segments.back().back()) + 1) {
                         segments.emplace_back();
                     }
 
@@ -184,68 +192,68 @@ namespace boink::cdbg {
                 return std::move(segments);
             }
 
-            /*
-                        auto build_segments(const std::string&                                           sequence,
-                                            std::vector<std::tuple<hash_type, size_t, shift_pair_type>>& extensions)
-                            -> std::vector<std::tuple<kmer_type,
-                                                      shift_pair_type,
-                                                      size_t,  //
-                                                      kmer_type,
-                                                      shift_pair_type,
-                                                      size_t>> {
+            /**
+             * @brief Given the list of segment chains, split each at new decision k-mers.
+             *
+             * @param segments
+             * @return std::vector<std::vector<std::tuple<hash_type, size_t, shift_pair_type>>>
+             */
+            auto split_new_segments(std::vector<segment_chain_type>& segments) -> std::vector<segment_chain_type> {
 
-                            std::vector<std::tuple<kmer_type,
-                                                   shift_pair_type,
-                                                   size_t,  // left and right tips
-                                                   kmer_type,
-                                                   shift_pair_type,
-                                                   size_t>>
-                                segments;
+                std::vector<segment_chain_type> result;
 
-                            std::optional<std::tuple<hash_type, size_t, shift_pair_type>> left = extensions.front();
+                for (auto& segment : segments) {
+                    append_from(split_segment(segment), result);
+                }
 
-                            size_t i = 1;
-                            while (i < extensions.size()) {
-                                auto u = extensions.at(i - 1);
-                                auto v = extensions.at(i);
+                return std::move(result);
+            }
 
-                                auto u_position  = std::get<1>(u);
-                                auto u_neighbors = std::get<2>(u);
-                                auto v_position  = std::get<1>(v);
-                                auto v_neighbors = std::get<2>(v);
+            /**
+             * @brief Given a single segment chain, split it at new decision k-mers.
+             *
+             * @param segment
+             * @return std::vector<segment_chain_type>
+             */
+            auto split_segment(segment_chain_type& segment) -> std::vector<segment_chain_type> {
 
-                                if (!left) {
-                                    left = v;
-                                }
+                std::vector<segment_chain_type> segments;
 
-                                if (left) {
-                                    if ((neighbors.first.size() == 1 || neighbors.first.size() == 0) &&
-                                        neighbors.second.size() > 1) {
-                                        // right partner is a FWD decision node
-                                        segments.emplace_back(std::get<0>(left.value()),
-                                                              std::get<2>(left.value()),
-                                                              std::get<1>(left.value()),
-                                                              std::get<0>(u),
-                                                              u_neighbors,
-                                                              u_position);
-                                    } else if (v_position != u_position + 1         // we moved to a different segment
-                                               || (v_neighbors.first.size() > 1 &&  // v is a REV decision nodes
-                                                   (v_neighbors.second.size() == 1 || v_neighbors.second.size() == 0)))
-               { segments.emplace_back(std::get<0>
-                                    }
+                if (segment.empty()) {
+                    return segments;
+                }
 
-                                    left = {};
-                                }
+                if (segment.size() == 1) {
+                    segments.push_back(std::move(segment));
+                    return std::move(segments);
+                }
+                segments.emplace_back();
 
-                                // entered new segment positionally
-                                else if (left && position != left_position + 1) {
-                                    segments.emplace_back(
-                                        left.value(), left_neighbors.value(), left_position, h, neighbors, position);
-                                    left = {};
-                                }
-                            }
-                        }
-                        */
+                size_t i = 1;
+                while (i < segment.size()) {
+                    auto u = segment.at(i - 1);
+                    auto v = segment.at(i);
+
+                    segments.back().push_back(std::move(u));
+
+                    //std::cout << "(" << repr(std::get<2>(u).second) << ", " << repr(std::get<2>(v).first) << ")" << std::endl;
+
+                    // u is now segments.back().back() after being moved (gross)
+                    if (std::get<2>(segments.back().back()).second.size() > 1  // split if u is FWD d-node, or v is REV d-node
+                        || std::get<2>(v).first.size() > 1) {
+
+                        //std::cout << "DO SPLIT: " << std::get<1>(u) << std::endl;    
+
+                        segments.emplace_back();
+                    }
+
+                    ++i;
+                }
+
+                segments.back().push_back(std::move(segment.back()));
+
+                return std::move(segments);
+            }
 
             /**
              * @Synopsis  True if the pair (u,v) could be a tag; assumes they are neighbors.

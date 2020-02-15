@@ -80,6 +80,18 @@ bool contains(std::vector<T> collection,
 }
 
 
+template <typename T>
+inline void append_from(std::vector<T> source, std::vector<T>& destination)
+{
+    if (destination.empty())
+        destination = std::move(source);
+    else
+        destination.insert(std::end(destination),
+                   std::make_move_iterator(std::begin(source)),
+                   std::make_move_iterator(std::end(source)));
+}
+
+
 class BoinkException : public std::exception {
 public:
     explicit BoinkException(const std::string& msg = "Generic boink exception.")
