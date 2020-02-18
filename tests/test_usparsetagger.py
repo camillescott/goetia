@@ -5,6 +5,7 @@
 # This software may be modified and distributed under the terms
 # of the MIT license.  See the LICENSE file for details.
 
+import itertools
 import pytest
 
 from tests.utils import *
@@ -239,3 +240,62 @@ class TestSplitNewSegments:
         print([(pos, len(left), len(right)) for h, pos, (left, right) in segments[0]])
         assert len(segments) == 2
 
+        lsegment, rsegment = segments
+        lsegment_rflank, _, (lsegment_rflank_left, lsegment_rflank_right) = lsegment[-1]
+        assert len(lsegment_rflank_right) == 2
+        assert lsegment_rflank == tagger.dbg.hash(core[pivot:pivot+ksize])
+
+        assert rsegment[0][0] == tagger.dbg.hash(core[pivot+1:pivot+ksize+1])
+
+    def test_rev_decision_split(self, ksize, length, tagger, left_fork, check_fp):
+        ''' Test that segments get split on FWD decision k-mers.
+        '''
+        (core, branch), pivot = left_fork()
+        check_fp()
+
+        # insert the branch: it does *not* contain the decision k-mer
+        tagger.dbg.insert_sequence(branch)
+        # insert core, which does contain the decision k-mer
+        segments = tagger.split_new_segments(
+                       tagger.build_new_segments(
+                           tagger.filter_new_extensions(
+                               tagger.find_new_extensions(core)
+                           )
+                       )
+                   )   
+
+        print([(pos, len(left), len(right)) for h, pos, (left, right) in segments[0]])
+        assert len(segments) == 2
+
+        lsegment, rsegment = segments
+        rsegment_lflank, _, (rsegment_lflank_left, rsegment_lflank_right) = rsegment[0]
+        lsegment_rflank, _, (lsegment_rflank_left, lsegment_rflank_right) = lsegment[-1]
+
+        assert len(lsegment_rflank_right) == 1
+        assert lsegment_rflank == tagger.dbg.hash(core[pivot-1:pivot+ksize-1])
+
+        assert len(rsegment_lflank_left) == 2
+        assert rsegment_lflank == tagger.dbg.hash(core[pivot:pivot+ksize])
+
+    def test_full_decision_split(self, ksize, length, tagger, full_decision, check_fp):
+        ''' Test the a full decision k-mer (in and out-degree > 2) gets its own segment.
+        '''
+
+        core, (lbranches, rbranches) = full_decision()
+        #check_fp()
+
+        for seq in itertools.chain(lbranches, rbranches):
+            tagger.dbg.insert_sequence(seq)
+        
+        segments = tagger.split_new_segments(
+                       tagger.build_new_segments(
+                           tagger.filter_new_extensions(
+                               tagger.find_new_extensions(core)
+                           )
+                       )
+                   ) 
+
+        print(len(lbranches))
+        print([(pos, len(left), len(right)) for h, pos, (left, right) in segments[0]])
+        print([(pos, len(left), len(right)) for h, pos, (left, right) in segments[1]])
+        assert len(segments) == 3
