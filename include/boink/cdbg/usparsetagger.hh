@@ -40,11 +40,12 @@ namespace boink::cdbg {
             value_type partner;
             value_type neighbor_tag;
             bool       position;
-        };
+        } __attribute__((__packed__));
 
         struct Tag {
             value_type lneighbor, rneighbor;
-        };
+            bool sign;
+        } __attribute__((__packed__));
 
         typedef std::vector<std::tuple<hash_type, size_t, shift_pair_type>> segment_chain_type;
 
@@ -215,13 +216,18 @@ namespace boink::cdbg {
              * @param segment
              * @return std::vector<segment_chain_type>
              */
-            auto split_segment(segment_chain_type& segment) -> std::vector<segment_chain_type> {
+            auto split_segment(segment_chain_type& segment)  -> std::vector<segment_chain_type> {
+                               //std::set<value_type>& induce_left_from,
+                               //std::set<value_type>& induce_right_from) -> std::vector<segment_chain_type> {
 
                 std::vector<segment_chain_type> segments;
 
                 if (segment.empty()) {
                     return segments;
                 }
+
+                //induce_left_from.insert(std::get<0>(segment.front()).value());
+                //induce_right_from.insert(std::get<0>(segment.front()).value());
 
                 if (segment.size() == 1) {
                     segments.push_back(std::move(segment));
@@ -253,6 +259,17 @@ namespace boink::cdbg {
                 segments.back().push_back(std::move(segment.back()));
 
                 return std::move(segments);
+            }
+
+            void update_from_segments(const std::string& sequence,
+                                      std::vector<segment_chain_type>& segments) {
+
+                
+            }
+
+            void update_from_segment(const std::string& sequence,
+                                     segment_chain_type& segment) {
+
             }
 
             /**

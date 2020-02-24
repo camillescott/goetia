@@ -299,3 +299,13 @@ class TestSplitNewSegments:
         print([(pos, len(left), len(right)) for h, pos, (left, right) in segments[0]])
         print([(pos, len(left), len(right)) for h, pos, (left, right) in segments[1]])
         assert len(segments) == 3
+
+        # middle segment is decision k-mer: check that its has > 1 in and out degree
+        assert len(segments[1][0][2][0]) > 1
+        assert len(segments[1][0][2][1]) > 1
+        # and that it is a single k-mer
+        assert len(segments[1]) == 1
+
+        # check that flanking segments have in-degree and out-degree 1
+        assert len(segments[0][-1][2][1]) == 1
+        assert len(segments[2][0][2][0]) == 1
