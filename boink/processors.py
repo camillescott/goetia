@@ -41,12 +41,14 @@ class QueueManager:
         await self.q.put(None)
     
     async def dispatch(self) -> None:
-        async for msg in self.q:
+        while True:
+            msg = await self.q.get()
             for sub_q in self.subscribers:
                 await sub_q.put(msg)
+            await self.q.task_done()
+
             if msg is None:
                 break
-        await self.q.task_done()
 
 
 class MessageHandler:
@@ -184,6 +186,9 @@ class AsyncSequenceProcessor(UnixBroadcasterMixin):
 
         super().__init__(broadcast_socket)
     
+    def stop(self):
+        self.stopped = True
+
     def get_channel(self, channel: str) -> QueueManager:
         """Query for the given channel name.
         
@@ -229,16 +234,21 @@ class AsyncSequenceProcessor(UnixBroadcasterMixin):
         self.listener_tasks.append(listener.task)
         return listener
 
-    @curio.async_thread
     def worker(self) -> None:
         for sample, prefix in self.sample_iter:
             self.worker_q.put(SampleStarted(sample_name=str(sample)))
             try:
-                for n_seqs, state in self.processor.chunked_process(*sample):
+                for n_seqs, n_skipped, state in self.processor.chunked_process(*sample):
+                    if self.stopped:
+                        self.worker_q.put(Error(t=n_seqs,
+                                                sample_name=str(sample),
+                                                error='Terminated by user.'))
+                        return
                     if not state.end:
                         self.worker_q.put(Interval(t=n_seqs,
                                                    sample_name=str(sample), 
                                                    state=state.get()))
+
                 self.worker_q.put(SampleFinished(t=n_seqs,
                                                  sample_name=str(sample)))
             except Exception as e:
@@ -248,38 +258,35 @@ class AsyncSequenceProcessor(UnixBroadcasterMixin):
                 raise
 
     async def run(self, extra_tasks = None) -> None:
-        try:
-            async with curio.TaskGroup() as g:
+        async with curio.TaskGroup() as g:
 
-                # each channel has its own dispatch task
-                # to send data to its subscribers
-                for channel_name, channel in self.channels.items():
-                    await g.spawn(channel.dispatch)
+            # each channel has its own dispatch task
+            # to send data to its subscribers
+            for channel_name, channel in self.channels.items():
+                await g.spawn(channel.dispatch)
 
-                # start up AF_UNIX broadcaster if desired
-                if self.broadcast_socket is not None:
-                    await g.spawn(self.broadcaster)
+            # start up AF_UNIX broadcaster if desired
+            if self.broadcast_socket is not None:
+                await g.spawn(self.broadcaster)
 
-                if self.run_echo:
-                    listener = self.add_listener('events_q', 'echo')
-                    listener.on_message(AllMessages,
-                                        lambda msg: print(msg.to_json(), file=sys.stderr))
-                
-                # spawn tasks from listener callbacks
-                for task in self.listener_tasks:
+            if self.run_echo:
+                listener = self.add_listener('events_q', 'echo')
+                listener.on_message(AllMessages,
+                                    lambda msg: print(msg.to_json(), file=sys.stderr))
+            
+            # spawn tasks from listener callbacks
+            for task in self.listener_tasks:
+                await g.spawn(task)
+
+            # spawn extra tasks to run
+            if extra_tasks is not None:
+                for task in extra_tasks:
                     await g.spawn(task)
 
-                # spawn extra tasks to run
-                if extra_tasks is not None:
-                    for task in extra_tasks:
-                        await g.spawn(task)
-
-                # and now we spawn the worker to iterate through
-                # the processor and wait for it to finish
-                await self.worker()
-                await self.worker_subs.kill()
-                #await g.cancel_remaining()
-        except curio.TaskGroupError as e:
-            print(f'TaskGroup failed: {e.errors}')
-            for task in e:
-                print(f'Task {task} failed due to: {task.exception}')
+            # and now we spawn the worker to iterate through
+            # the processor and wait for it to finish
+            self.stopped = False
+            signal.signal(signal.SIGINT, lambda signo, frame: self.stop())
+            w = await g.spawn_thread(self.worker)
+            await w.join()
+            await self.worker_subs.kill()
