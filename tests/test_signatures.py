@@ -18,7 +18,7 @@ def test_sourmash_signature(datadir, ksize):
 
     rfile = datadir('random-20-a.fa')
 
-    boink_sig = SourmashSignature.Signature.build(10000, 31, False, 42, 0)
+    boink_sig = SourmashSignature.Signature.build(10000, 31, False, False, False, 42, 0)
     sourmash_sig = sourmash.MinHash(10000, 31)
 
     processor = SourmashSignature.Processor.build(boink_sig)

@@ -9,14 +9,11 @@ def pythonize_boink(klass, name):
         klass.advance.__release_gil__ = True
         klass.process.__release_gil__ = True
 
-        def chunked_process(self, file, right_file=None, alphabet=None):
+        def chunked_process(self, file, right_file=None):
             if type(file) in (str, bytes):
                 from boink.parsing import FastxParser, SplitPairedReader
-                from boink.alphabets import DNA_SIMPLE
 
-                if alphabet is None:
-                    alphabet = DNA_SIMPLE
-                parser_type = FastxParser[alphabet]
+                parser_type = FastxParser[type(self).alphabet]
 
                 if right_file is None:
                     parser = parser_type.build(file)
@@ -31,6 +28,7 @@ def pythonize_boink(klass, name):
                 yield self.n_reads(), parser.n_skipped(), state
                 if state.end:
                     break
+
 
         def wrap_build(build_func):
             def wrapped(*args, fine_interval=10000,
