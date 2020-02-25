@@ -85,6 +85,25 @@ private:
 };
 
 
+struct ANY : public Alphabet<ANY> {
+
+    static constexpr auto SYMBOLS = std::string_view("*");
+    static constexpr auto COMPLEMENTS = std::string_view("*");
+
+    static const char _validate(const char c) {
+        return toupper(c);
+    }
+
+    static const char _complement(const char c) {
+        return c;
+    }
+
+    static std::string _reverse_complement(const std::string& sequence) {
+        return std::string(sequence);
+    }
+};
+
+
 struct DNA_SIMPLE : public Alphabet<DNA_SIMPLE> {
 
     static constexpr auto SYMBOLS = std::string_view("ACGT");

@@ -12,8 +12,9 @@
 #include <memory>
 
 #include "boink/processors.hh"
+#include "boink/sequences/alphabets.hh"
 #include "boink/parsing/readers.hh"
-#include "boink/signatures/sourmash/kmer_min_hash.hh"
+#include "boink/signatures/sourmash/sourmash.hpp"
 
 
 namespace boink {
@@ -21,7 +22,7 @@ namespace signatures {
 
 struct SourmashSignature {
 
-   class Signature: public sourmash::CKmerMinHash {
+   class Signature: public sourmash::MinHash {
     
     public:
 
@@ -34,13 +35,13 @@ struct SourmashSignature {
                   bool hp,
                   uint32_t seed,
                   uint64_t max_hash)
-            : sourmash::CKmerMinHash(n, K, is_protein, dayhoff, hp, seed, max_hash),
+            : sourmash::MinHash(n, K, is_protein, dayhoff, hp, seed, max_hash),
               K(K) 
         {
         }
 
-        Signature(CKmerMinHash* minhash)
-            : sourmash::CKmerMinHash(minhash->_get_ptr()),
+        Signature(MinHash* minhash)
+            : sourmash::MinHash(minhash->_get_ptr()),
               K(K)
         {
         }
@@ -65,8 +66,6 @@ struct SourmashSignature {
 
 
     using Processor = InserterProcessor<Signature, parsing::FastxParser<DNAN_SIMPLE>>;
-
-
 };
 
 

@@ -102,7 +102,10 @@ ENV/
 *.json
 *.tmp
 *.svg
+*.csv
 
+node_modules/
+tox_build/
 
 work/
 data/

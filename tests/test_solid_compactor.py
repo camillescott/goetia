@@ -31,7 +31,7 @@ def solid_compactor(graph, compactor, compactor_type, min_abund):
     return _solid_compactor
 
 
-@using(hasher_type=libboink.hashing.LemireShifterPolicy)
+@using(hasher_type=libboink.hashing.FwdLemireShifter)
 class TestFindSolidSegments:
 
     @using(ksize=21, length=100, min_abund=2)

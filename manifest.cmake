@@ -38,7 +38,7 @@ set(_headers
     include/boink/processors.hh
     include/boink/reporting/reporters.hh
     include/boink/ring_span.hpp
-    include/boink/signatures/sourmash/kmer_min_hash.hh
+    include/boink/signatures/sourmash/sourmash.hpp
     include/boink/signatures/sourmash/sourmash.h
     include/boink/signatures/sourmash_signature.hh
     include/boink/signatures/ukhs_signature.hh
@@ -70,7 +70,6 @@ set(_sources
     src/boink/reporting/reporters.cc
     src/boink/hashing/hashshifter.cc
     src/boink/hashing/hashextender.cc
-    src/boink/hashing/alphabets.cc
     src/boink/hashing/kmeriterator.cc
     src/boink/hashing/kmer_span.cc
     src/boink/hashing/rollinghashshifter.cc
