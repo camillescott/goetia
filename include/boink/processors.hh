@@ -184,6 +184,8 @@ public:
     using events::EventNotifier::register_listener;
     using events::EventNotifier::notify;
 
+    typedef typename ParserType::alphabet alphabet;
+
     FileProcessor(uint64_t fine_interval   = DEFAULT_INTERVALS::FINE,
                   uint64_t medium_interval = DEFAULT_INTERVALS::MEDIUM,
                   uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE,
@@ -216,15 +218,15 @@ public:
                      bool strict = false,
                      uint32_t min_length=0,
                      bool force_name_match=false) {
-        parsing::SplitPairedReader<ParserType> reader(left_filename,
-                                                      right_filename,
-                                                      strict,
-                                                      min_length,
-                                                      force_name_match);
+        auto reader = parsing::SplitPairedReader<ParserType>::build(left_filename,
+                                                                    right_filename,
+                                                                    strict,
+                                                                    min_length,
+                                                                    force_name_match);
         return process(reader);
     }
 
-    uint64_t process(parsing::SplitPairedReader<ParserType>& reader) {
+    uint64_t process(std::shared_ptr<parsing::SplitPairedReader<ParserType>>& reader) {
         while(1) {
             auto state = advance(reader);
             if (state.end) {
@@ -309,10 +311,10 @@ public:
      *
      * @Returns   interval_state with current interval.
      */
-    interval_state advance(parsing::SplitPairedReader<ParserType>& reader) {
+    interval_state advance(std::shared_ptr<parsing::SplitPairedReader<ParserType>>& reader) {
         std::optional<parsing::RecordPair> bundle;
-        while(!reader.is_complete()) {
-            bundle = handle_next(reader);
+        while(!reader->is_complete()) {
+            bundle = handle_next(*reader);
             
             if (!bundle) {
                 continue;
@@ -431,6 +433,7 @@ protected:
 public:
 
     using Base::process_sequence;
+    typedef typename Base::alphabet alphabet;
     
     InserterProcessor(std::shared_ptr<InserterType> inserter,
                       uint64_t fine_interval   = DEFAULT_INTERVALS::FINE,

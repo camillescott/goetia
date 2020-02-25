@@ -21,12 +21,19 @@ def pythonize_boink_signatures(klass, name):
             try:
                 from sourmash import MinHash
             except ImportError:
-                print('Must install sourmash to conver to sourmash.MinHash',
+                print('Must install sourmash to convert to sourmash.MinHash',
                       file=sys.stderr)
                 return None
 
-            sig = MinHash(self.num, self.ksize)
-            sig.add_many(self.mins)
+            sig = MinHash(self.num(),
+                          self.ksize(),
+                          is_protein=self.is_protein(),
+                          dayhoff=self.dayhoff(),
+                          hp=self.hp(),
+                          track_abundance=self.track_abundance(),
+                          seed=self.seed(),
+                          mins=self.mins(),
+                          max_hash=self.max_hash())
 
             return sig
 
