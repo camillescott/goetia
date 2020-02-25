@@ -243,7 +243,6 @@ class SignatureStreamFrame:
     def _print(self, *args, **kwargs):
         self.term.stream.write(*args, **kwargs)
 
-    @curio.async_thread
     def metric_block(self, n_reads, prev_d, stdev):
         return TextBlock(self.metric_text.format(n_reads=n_reads, prev_d=prev_d, stdev=stdev, term=self.term))
 
@@ -251,7 +250,6 @@ class SignatureStreamFrame:
         text = self.message_text.format(messages='\n'.join(messages))
         return TextBlock(text)
 
-    @curio.async_thread
     def figure_block(self, distances, distances_t):
         self.distance_figure.clear()
         self.distance_figure.plot(distances_t, distances, lc=10, interp=None)
@@ -273,10 +271,12 @@ class SignatureStreamFrame:
         self.distances.append(prev_d)
         self.distances_t.append(n_reads)
 
-        async with curio.TaskGroup() as g:
-            figure = await self.figure_block(self.distances, self.distances_t)
-            metrics = await self.metric_block(n_reads, prev_d, stdev)
+        figure_thr = await curio.spawn_thread(self.figure_block, self.distances, self.distances_t)
+        metrics_thr = await curio.spawn_thread(self.metric_block, n_reads, prev_d, stdev)
         
+        figure = await figure_thr.join()
+        metrics = await metrics_thr.join()
+
         term.stream.write(term.clear_eos)
 
         if draw_dist_plot:
@@ -291,8 +291,8 @@ class SignatureStreamFrame:
 
         with term.location():
             metrics.draw(term,
-                            0,
-                            self.name_block.height + self.param_block.height + 4)
+                         0,
+                         self.name_block.height + self.param_block.height + 4)
 
         if messages is not None:
             with term.location():

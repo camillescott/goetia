@@ -481,6 +481,15 @@ struct Masked : public dBGWalker<Masked<StorageType, ShifterType, MaskType>> {
 };
 
 
+template <class StorageType,
+          class ShifterType,
+          class MaskType>
+std::shared_ptr<Masked<StorageType, ShifterType, MaskType>> make_masked(dBG<StorageType, ShifterType>& graph,
+                                                                        MaskType& mask) {
+    return std::make_shared<Masked<StorageType, ShifterType, MaskType>>(graph, mask);
+}
+
+
 
 extern template class dBG<storage::BitStorage, hashing::FwdLemireShifter>;
 extern template class dBG<storage::BitStorage, hashing::CanLemireShifter>;

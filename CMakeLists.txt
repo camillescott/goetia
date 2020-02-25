@@ -54,6 +54,11 @@ find_package(Cppyy)
 #
 find_package(ZLIB REQUIRED)
 
+# Find sourmash
+#
+find_library(LIBSOURMASH sourmash)
+message(STATUS ${LIBSOURMASH})
+
 #
 # Make the default build use c++17 and "RELEASE" (-O3)
 #
@@ -98,6 +103,7 @@ target_include_directories(boink PRIVATE ${ZLIB_INCLUDE_DIRS})
 target_link_libraries(boink
                       Threads::Threads
                       ${ZLIB_LIBRARIES} 
+                      ${LIBSOURMASH}
 )
 
 
