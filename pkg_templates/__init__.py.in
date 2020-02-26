@@ -10,6 +10,6 @@ del initialize
 
 @NAMESPACE_INJECTIONS@
 
-from boink import boink as libboink
-from boink.pythonizors.declarations import *
+from goetia import goetia as libgoetia
+from goetia.pythonizors.declarations import *
 from cppyy import nullptr

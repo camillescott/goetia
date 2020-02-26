@@ -9,8 +9,8 @@
 
 import pytest
 
-from boink import libboink
-from boink.traversal import STATES
+from goetia import libgoetia
+from goetia.traversal import STATES
 
 from .utils import *
 
@@ -201,7 +201,7 @@ class TestMasked:
         mask = std.set[graph.hash_type]()
         stopper = contig[5:5+ksize]
         mask.insert(graph.hash(stopper))
-        masked = libboink.Masked[graph.storage_type, graph.shifter_type, std.set[graph.hash_type]](graph, mask)
+        masked = libgoetia.Masked[graph.storage_type, graph.shifter_type, std.set[graph.hash_type]](graph, mask)
 
         start = contig[:ksize]
         walk_unmasked = graph.walk_right(start)
@@ -220,7 +220,7 @@ class TestMasked:
         branch_start = branch[:ksize]
         mask = std.set[graph.hash_type]()
         mask.insert(graph.hash(branch_start))
-        masked = libboink.Masked[graph.storage_type, graph.shifter_type, std.set[graph.hash_type]](graph, mask)
+        masked = libgoetia.Masked[graph.storage_type, graph.shifter_type, std.set[graph.hash_type]](graph, mask)
 
         walk = masked.walk_right(sequence[:ksize])
         path = walk.to_string()
@@ -237,7 +237,7 @@ class TestMasked:
         mask = std.set[graph.hash_type]()
         stopper = contig[5:5+ksize]
         mask.insert(graph.hash(stopper))
-        masked = libboink.Masked[graph.storage_type, graph.shifter_type, std.set[graph.hash_type]](graph, mask)
+        masked = libgoetia.Masked[graph.storage_type, graph.shifter_type, std.set[graph.hash_type]](graph, mask)
 
         start = contig[-ksize:]
         walk_unmasked = graph.walk_left(start)
@@ -256,7 +256,7 @@ class TestMasked:
         branch_start = branch[-ksize:]
         mask = std.set[graph.hash_type]()
         mask.insert(graph.hash(branch_start))
-        masked = libboink.Masked[graph.storage_type, graph.shifter_type, std.set[graph.hash_type]](graph, mask)
+        masked = libgoetia.Masked[graph.storage_type, graph.shifter_type, std.set[graph.hash_type]](graph, mask)
 
         walk = masked.walk_left(sequence[-ksize:])
         path = walk.to_string()
@@ -278,7 +278,7 @@ class TestWalkStopperFunctor:
         stop_set = std.set[graph.hash_type]()
         stop_kmer = contig[5:5+ksize]
         stop_set.insert(graph.hash(stop_kmer))
-        stopper = libboink.WalkStopper[graph.hash_type](stop_set)
+        stopper = libgoetia.WalkStopper[graph.hash_type](stop_set)
 
         start = contig[:ksize]
         walk = graph.walk_right(start, stopper)
@@ -295,7 +295,7 @@ class TestWalkStopperFunctor:
         stop_set = std.set[graph.hash_type]()
         stop_kmer = contig[5:5+ksize]
         stop_set.insert(graph.hash(stop_kmer))
-        stopper = libboink.WalkStopper[graph.hash_type](stop_set)
+        stopper = libgoetia.WalkStopper[graph.hash_type](stop_set)
 
         start = contig[-ksize:]
         walk = graph.walk_left(start, stopper)
@@ -312,7 +312,7 @@ class TestWalkStopperFunctor:
         branch_start = branch[:ksize]
         stop_set = std.set[graph.hash_type]()
         stop_set.insert(graph.hash(branch_start))
-        stopper = libboink.WalkStopper[graph.hash_type](stop_set)
+        stopper = libgoetia.WalkStopper[graph.hash_type](stop_set)
 
         walk = graph.walk_right(sequence[:ksize], stopper)
         assert walk.end_state == STATES.DECISION_FWD
@@ -327,7 +327,7 @@ class TestWalkStopperFunctor:
         branch_start = branch[-ksize:]
         stop_set = std.set[graph.hash_type]()
         stop_set.insert(graph.hash(branch_start))
-        stopper = libboink.WalkStopper[graph.hash_type](stop_set)
+        stopper = libgoetia.WalkStopper[graph.hash_type](stop_set)
 
         walk = graph.walk_left(sequence[-ksize:], stopper)
         assert walk.end_state == STATES.DECISION_FWD

@@ -30,7 +30,7 @@ EXTRA_PY         = '@EXTRA_PY@'
 CPPYY_PKG_DATA = [CPPYY_LIB_SO, CPPYY_ROOTMAP, CPPYY_PCM, CPPYY_MAP]
 CPPYY_PKG_DATA.extend([ep for ep in EXTRA_PY.split(';') if ep])
 
-PKG_DESC = 'boink: streaming de Bruijn graph compaction and sketching.'
+PKG_DESC = 'goetia: streaming de Bruijn graph compaction and sketching.'
 
 
 class cppyy_build_py(build_py):
@@ -123,8 +123,8 @@ SETUP_METADATA = \
     },
     'entry_points': {
         'console_scripts': [
-            'draff = boink.draff:run_draff',
-            'boink = boink.__main__:main'
+            'draff = goetia.draff:run_draff',
+            'goetia = goetia.__main__:main'
         ]
     }
 }

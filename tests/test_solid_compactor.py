@@ -1,4 +1,4 @@
-# boink/tests/test_cdbg.py
+# goetia/tests/test_cdbg.py
 # Copyright (C) 2018 Camille Scott
 # All rights reserved.
 #
@@ -10,7 +10,7 @@ import sys
 
 import pytest
 
-from boink import libboink
+from goetia import libgoetia
 
 from .utils import *
 from .test_cdbg import compactor, compactor_type
@@ -31,7 +31,7 @@ def solid_compactor(graph, compactor, compactor_type, min_abund):
     return _solid_compactor
 
 
-@using(hasher_type=libboink.hashing.FwdLemireShifter)
+@using(hasher_type=libgoetia.hashing.FwdLemireShifter)
 class TestFindSolidSegments:
 
     @using(ksize=21, length=100, min_abund=2)

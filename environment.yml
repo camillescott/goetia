@@ -1,4 +1,4 @@
-name: boink
+name: goetia
 channels:
     - bioconda
     - conda-forge
@@ -9,5 +9,5 @@ dependencies:
     - ficus
     - sourmash
     - screed
-    - graph-boink
+    - graph-goetia
     - numpy

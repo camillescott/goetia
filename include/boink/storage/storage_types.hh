@@ -1,6 +1,0 @@
-#include "boink/storage/nibblestorage.hh"
-#include "boink/storage/bitstorage.hh"
-#include "boink/storage/storage.hh"
-#include "boink/storage/qfstorage.hh"
-#include "boink/storage/bytestorage.hh"
-#include "boink/storage/sparseppstorage.hh"
