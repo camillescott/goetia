@@ -30,10 +30,10 @@
 namespace goetia::hashing {
 
 
-class UninitializedShifterException : public BoinkException {
+class UninitializedShifterException : public GoetiaException {
 public:
     explicit UninitializedShifterException(const std::string& msg = "Shifter used without hash_base being called.")
-        : BoinkException(msg)
+        : GoetiaException(msg)
     {
     }
 };

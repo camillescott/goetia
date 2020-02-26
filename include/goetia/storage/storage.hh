@@ -128,7 +128,7 @@ public:
     void set_use_bigcount(bool b)
     {
         if (!_supports_bigcount) {
-            throw BoinkException("bigcount is not supported for this storage.");
+            throw GoetiaException("bigcount is not supported for this storage.");
         }
         _use_bigcount = b;
     }

@@ -80,12 +80,12 @@ bool contains(std::vector<T> collection,
 }
 
 
-class BoinkException : public std::exception {
+class GoetiaException : public std::exception {
 public:
-    explicit BoinkException(const std::string& msg = "Generic goetia exception.")
+    explicit GoetiaException(const std::string& msg = "Generic goetia exception.")
         : _msg(msg) { }
 
-    virtual ~BoinkException() throw() { }
+    virtual ~GoetiaException() throw() { }
     virtual const char* what() const throw ()
     {
         return _msg.c_str();
@@ -95,29 +95,29 @@ protected:
     const std::string _msg;
 };
 
-class BoinkFileException: public BoinkException {
+class GoetiaFileException: public GoetiaException {
 public:
-    explicit BoinkFileException(const std::string& msg = "Error reading or writing file.")
-        : BoinkException(msg) { }
+    explicit GoetiaFileException(const std::string& msg = "Error reading or writing file.")
+        : GoetiaException(msg) { }
 };
 
 
-class InvalidStream : public BoinkFileException 
+class InvalidStream : public GoetiaFileException 
 {
 public:
     InvalidStream()
-        : BoinkFileException("Generic InvalidStream error") {}
+        : GoetiaFileException("Generic InvalidStream error") {}
     explicit InvalidStream(const std::string& msg)
-        : BoinkFileException(msg) {}
+        : GoetiaFileException(msg) {}
 };
 
-class StreamReadError : public BoinkFileException
+class StreamReadError : public GoetiaFileException
 {
 public:
     StreamReadError()
-        : BoinkFileException("Generic StreamReadError error") {}
+        : GoetiaFileException("Generic StreamReadError error") {}
     explicit StreamReadError(const std::string& msg)
-        : BoinkFileException(msg) {}
+        : GoetiaFileException(msg) {}
 };
 
 

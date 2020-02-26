@@ -71,25 +71,25 @@ KSEQ_INIT(gzFile, gzread)
 namespace goetia {
 namespace parsing {
 
-struct NoMoreReadsAvailable : public  BoinkFileException {
+struct NoMoreReadsAvailable : public  GoetiaFileException {
     explicit NoMoreReadsAvailable(const std::string& msg) :
-        BoinkFileException(msg) {}
+        GoetiaFileException(msg) {}
     NoMoreReadsAvailable() :
-        BoinkFileException("No more reads available in this stream.") {}
+        GoetiaFileException("No more reads available in this stream.") {}
 };
 
-struct InvalidRead : public  BoinkException {
+struct InvalidRead : public  GoetiaException {
     explicit InvalidRead(const std::string& msg) :
-        BoinkException(msg) {}
+        GoetiaException(msg) {}
     InvalidRead() :
-        BoinkException("Invalid FASTA/Q read") {}
+        GoetiaException("Invalid FASTA/Q read") {}
 };
 
-struct InvalidReadPair : public  BoinkException {
+struct InvalidReadPair : public  GoetiaException {
     explicit InvalidReadPair(const std::string& msg) :
-        BoinkException(msg) {}
+        GoetiaException(msg) {}
     InvalidReadPair() :
-        BoinkException("Invalid read pair detected.") {}
+        GoetiaException("Invalid read pair detected.") {}
 };
 
 
@@ -209,7 +209,7 @@ public:
         }
 
         if (stat == -3) {
-            throw BoinkFileException("Error reading stream.");
+            throw GoetiaFileException("Error reading stream.");
         }
 
         if (stat == -4) {
@@ -272,7 +272,7 @@ public:
 
     bool is_complete() const {
         if (left_parser->is_complete() != right_parser->is_complete()) {
-            throw BoinkException("Mismatched split paired files.");
+            throw GoetiaException("Mismatched split paired files.");
         }
         return left_parser->is_complete();
     }
@@ -314,7 +314,7 @@ public:
         if (this->_force_name_match && left && right) {
             if (!check_is_pair(left.value().name, right.value().name)) {
                 if (_strict) {
-                    throw BoinkException("Unpaired reads");
+                    throw GoetiaException("Unpaired reads");
                 } else {
                     _n_skipped += 2;
                     return {{}, {}};

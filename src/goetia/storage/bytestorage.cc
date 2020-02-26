@@ -187,11 +187,11 @@ ByteStorageFileReader::ByteStorageFileReader(
         } else {
             err = "Unknown error in opening file: " + infilename;
         }
-        throw BoinkFileException(err + " " + strerror(errno));
+        throw GoetiaFileException(err + " " + strerror(errno));
     } catch (const std::exception &e) {
         std::string err = "Unknown error opening file: " + infilename + " "
                           + strerror(errno);
-        throw BoinkFileException(err);
+        throw GoetiaFileException(err);
     }
 
     if (store._counts) {
@@ -222,18 +222,18 @@ ByteStorageFileReader::ByteStorageFileReader(
                 err << std::hex << (int) signature[i];
             }
             err << " Should be: " << SAVED_SIGNATURE;
-            throw BoinkFileException(err.str());
+            throw GoetiaFileException(err.str());
         } else if (!(version == SAVED_FORMAT_VERSION)) {
             std::ostringstream err;
             err << "Incorrect file format version " << (int) version
                 << " while reading k-mer count file from " << infilename
                 << "; should be " << (int) SAVED_FORMAT_VERSION;
-            throw BoinkFileException(err.str());
+            throw GoetiaFileException(err.str());
         } else if (!(ht_type == SAVED_COUNTING_HT)) {
             std::ostringstream err;
             err << "Incorrect file format type " << (int) ht_type
                 << " while reading k-mer count file from " << infilename;
-            throw BoinkFileException(err.str());
+            throw GoetiaFileException(err.str());
         }
 
         infile.read((char *) &use_bigcount, 1);
@@ -294,11 +294,11 @@ ByteStorageFileReader::ByteStorageFileReader(
             err = "Error reading from k-mer count file: " + infilename + " "
                   + strerror(errno);
         }
-        throw BoinkFileException(err);
+        throw GoetiaFileException(err);
     } catch (const std::exception &e) {
         std::string err = "Error reading from k-mer count file: " + infilename + " "
                           + strerror(errno);
-        throw BoinkFileException(err);
+        throw GoetiaFileException(err);
     }
 }
 
@@ -310,7 +310,7 @@ ByteStorageGzFileReader::ByteStorageGzFileReader(
     gzFile infile = gzopen(infilename.c_str(), "rb");
     if (infile == Z_NULL) {
         std::string err = "Cannot open k-mer count file: " + infilename;
-        throw BoinkFileException(err);
+        throw GoetiaFileException(err);
     }
 
     if (store._counts) {
@@ -337,13 +337,13 @@ ByteStorageGzFileReader::ByteStorageGzFileReader(
         std::string err = "K-mer count file read error: " + infilename + " "
                           + strerror(errno);
         gzclose(infile);
-        throw BoinkFileException(err);
+        throw GoetiaFileException(err);
     } else if (!(std::string(signature, 4) == SAVED_SIGNATURE)) {
         std::ostringstream err;
         err << "Does not start with signature for a oxli " <<
             "file: " << signature << " Should be: " <<
             SAVED_SIGNATURE;
-        throw BoinkFileException(err.str());
+        throw GoetiaFileException(err.str());
     } else if (!(version == SAVED_FORMAT_VERSION)
                || !(ht_type == SAVED_COUNTING_HT)) {
         if (!(version == SAVED_FORMAT_VERSION)) {
@@ -352,13 +352,13 @@ ByteStorageGzFileReader::ByteStorageGzFileReader(
                 << " while reading k-mer count file from " << infilename
                 << "; should be " << (int) SAVED_FORMAT_VERSION;
             gzclose(infile);
-            throw BoinkFileException(err.str());
+            throw GoetiaFileException(err.str());
         } else if (!(ht_type == SAVED_COUNTING_HT)) {
             std::ostringstream err;
             err << "Incorrect file format type " << (int) ht_type
                 << " while reading k-mer count file from " << infilename;
             gzclose(infile);
-            throw BoinkFileException(err.str());
+            throw GoetiaFileException(err.str());
         }
     }
 
@@ -373,7 +373,7 @@ ByteStorageGzFileReader::ByteStorageGzFileReader(
         std::string err = "K-mer count file header read error: " + infilename
                           + " " + strerror(errno);
         gzclose(infile);
-        throw BoinkFileException(err);
+        throw GoetiaFileException(err);
     }
 
     ksize = (uint16_t) save_ksize;
@@ -399,7 +399,7 @@ ByteStorageGzFileReader::ByteStorageGzFileReader(
                 err = err + " " + gzerr;
             }
             gzclose(infile);
-            throw BoinkFileException(err);
+            throw GoetiaFileException(err);
         }
 
         tablesize = save_tablesize;
@@ -428,7 +428,7 @@ ByteStorageGzFileReader::ByteStorageGzFileReader(
                     err = err + " " + gzerr;
                 }
                 gzclose(infile);
-                throw BoinkFileException(err);
+                throw GoetiaFileException(err);
             }
 
             loaded += read_b;
@@ -446,7 +446,7 @@ ByteStorageGzFileReader::ByteStorageGzFileReader(
             err = err + " " + gzerr;
         }
         gzclose(infile);
-        throw BoinkFileException(err);
+        throw GoetiaFileException(err);
     }
 
     if (n_counts) {
@@ -468,7 +468,7 @@ ByteStorageGzFileReader::ByteStorageGzFileReader(
                     err = err + " " + gzerr;
                 }
                 gzclose(infile);
-                throw BoinkFileException(err);
+                throw GoetiaFileException(err);
             }
 
             store._bigcounts[kmer] = count;
@@ -484,7 +484,7 @@ ByteStorageFileWriter::ByteStorageFileWriter(
     const ByteStorage& store)
 {
     if (!store._counts[0]) {
-        throw BoinkException();
+        throw GoetiaException();
     }
 
     unsigned int save_ksize = ksize;
@@ -531,7 +531,7 @@ ByteStorageFileWriter::ByteStorageFileWriter(
         }
     }
     if (outfile.fail()) {
-        throw BoinkFileException(strerror(errno));
+        throw GoetiaFileException(strerror(errno));
     }
     outfile.close();
 }
@@ -542,7 +542,7 @@ ByteStorageGzFileWriter::ByteStorageGzFileWriter(
     const ByteStorage &store)
 {
     if (!store._counts[0]) {
-        throw BoinkException();
+        throw GoetiaException();
     }
 
     int errnum = 0;
@@ -555,9 +555,9 @@ ByteStorageGzFileWriter::ByteStorageGzFileWriter(
     if (outfile == NULL) {
         const char * error = gzerror(outfile, &errnum);
         if (errnum == Z_ERRNO) {
-            throw BoinkFileException(strerror(errno));
+            throw GoetiaFileException(strerror(errno));
         } else {
-            throw BoinkFileException(error);
+            throw GoetiaFileException(error);
         }
     }
 
@@ -615,7 +615,7 @@ ByteStorageGzFileWriter::ByteStorageGzFileWriter(
                     msg << strerror(errno);
                 }
                 gzclose(outfile);
-                throw BoinkFileException(msg.str());
+                throw GoetiaFileException(msg.str());
             }
             written += gz_result;
         }
@@ -634,9 +634,9 @@ ByteStorageGzFileWriter::ByteStorageGzFileWriter(
     }
     const char * error = gzerror(outfile, &errnum);
     if (errnum == Z_ERRNO) {
-        throw BoinkFileException(strerror(errno));
+        throw GoetiaFileException(strerror(errno));
     } else if (errnum != Z_OK) {
-        throw BoinkFileException(error);
+        throw GoetiaFileException(error);
     }
     gzclose(outfile);
 }

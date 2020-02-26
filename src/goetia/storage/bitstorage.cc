@@ -127,7 +127,7 @@ void
 BitStorage::update_from(const BitStorage& other)
 {
     if (_tablesizes != other._tablesizes) {
-        throw BoinkException("both nodegraphs must have same table sizes");
+        throw GoetiaException("both nodegraphs must have same table sizes");
     }
 
     byte_t tmp = 0;
@@ -175,7 +175,7 @@ void
 BitStorage::save(std::string outfilename, uint16_t ksize)
 {
     if (!_counts[0]) {
-        throw BoinkException();
+        throw GoetiaException();
     }
 
     unsigned int save_ksize = ksize;
@@ -206,7 +206,7 @@ BitStorage::save(std::string outfilename, uint16_t ksize)
         outfile.write((const char *) _counts[i], tablebytes);
     }
     if (outfile.fail()) {
-        throw BoinkFileException(strerror(errno));
+        throw GoetiaFileException(strerror(errno));
     }
     outfile.close();
 }
@@ -233,13 +233,13 @@ BitStorage::load(std::string infilename, uint16_t &ksize)
         } else {
             err = "Unknown error in opening file: " + infilename;
         }
-        throw BoinkFileException(err);
+        throw GoetiaFileException(err);
     } catch (const std::exception &e) {
         // Catching std::exception is a stopgap for
         // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=66145
         std::string err = "Unknown error opening file: " + infilename + " "
                           + strerror(errno);
-        throw BoinkFileException(err);
+        throw GoetiaFileException(err);
     }
 
     if (_counts) {
@@ -270,18 +270,18 @@ BitStorage::load(std::string infilename, uint16_t &ksize)
                 err << std::hex << (int) signature[i];
             }
             err << " Should be: " << SAVED_SIGNATURE;
-            throw BoinkFileException(err.str());
+            throw GoetiaFileException(err.str());
         } else if (!(version == SAVED_FORMAT_VERSION)) {
             std::ostringstream err;
             err << "Incorrect file format version " << (int) version
                 << " while reading k-mer graph from " << infilename
                 << "; should be " << (int) SAVED_FORMAT_VERSION;
-            throw BoinkFileException(err.str());
+            throw GoetiaFileException(err.str());
         } else if (!(ht_type == SAVED_HASHBITS)) {
             std::ostringstream err;
             err << "Incorrect file format type " << (int) ht_type
                 << " while reading k-mer graph from " << infilename;
-            throw BoinkFileException(err.str());
+            throw GoetiaFileException(err.str());
         }
 
         infile.read((char *) &save_ksize, sizeof(save_ksize));
@@ -319,12 +319,12 @@ BitStorage::load(std::string infilename, uint16_t &ksize)
         } else {
             err = "Error reading from k-mer graph file: " + infilename;
         }
-        throw BoinkFileException(err);
+        throw GoetiaFileException(err);
     } catch (const std::exception &e) {
         // Catching std::exception is a stopgap for
         // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=66145
         std::string err = "Unknown error opening file: " + infilename + " "
                           + strerror(errno);
-        throw BoinkFileException(err);
+        throw GoetiaFileException(err);
     }
 }

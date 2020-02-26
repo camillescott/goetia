@@ -35,10 +35,10 @@ namespace goetia {
 namespace signatures {
 
 
-class IncompatibleSignature : public BoinkException {
+class IncompatibleSignature : public GoetiaException {
 public:
     explicit IncompatibleSignature(const std::string& msg = "Incompatible signatures.")
-        : BoinkException(msg) { }
+        : GoetiaException(msg) { }
 };
 
 

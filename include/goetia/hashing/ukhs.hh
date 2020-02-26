@@ -64,7 +64,7 @@ public:
           W (W)
     {
         if (ukhs.front().size() != K) {
-            throw BoinkException("K does not match k-mer size from provided UKHS");
+            throw GoetiaException("K does not match k-mer size from provided UKHS");
         }
 
         uint64_t pid = 0;
@@ -261,7 +261,7 @@ protected:
         //std::cout << "UnikmerShifter: " << repr(unikmer_indices) << std::endl;
 
         if (window_unikmers.size() == 0) {
-            throw BoinkException("Window should contain unikmer.");
+            throw GoetiaException("Window should contain unikmer.");
         }
         return *std::min_element(std::begin(window_unikmers),
                                  std::end(window_unikmers));
@@ -514,10 +514,10 @@ protected:
            ukhs_map       (std::move(ukhs))
     {
         if (ukhs_map->W != K) {
-            throw BoinkException("Shifter K does not match UKHS::Map W.");
+            throw GoetiaException("Shifter K does not match UKHS::Map W.");
         }
         if (ukhs_map->K != unikmer_K) {
-            throw BoinkException("Shifter unikmer_K does not match UKHS::Map K.");
+            throw GoetiaException("Shifter unikmer_K does not match UKHS::Map K.");
         }
     }
 

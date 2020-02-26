@@ -134,7 +134,7 @@ void
 NibbleStorage::save(std::string outfilename, uint16_t ksize)
 {
     if (!_counts[0]) {
-        throw BoinkException();
+        throw GoetiaException();
     }
 
     unsigned int save_ksize = ksize;
@@ -181,11 +181,11 @@ NibbleStorage::load(std::string infilename, uint16_t& ksize)
         } else {
             err = "Unknown error in opening file: " + infilename;
         }
-        throw BoinkFileException(err + " " + strerror(errno));
+        throw GoetiaFileException(err + " " + strerror(errno));
     } catch (const std::exception &e) {
         std::string err = "Unknown error opening file: " + infilename + " "
                           + strerror(errno);
-        throw BoinkFileException(err);
+        throw GoetiaFileException(err);
     }
 
     if (_counts) {
@@ -216,18 +216,18 @@ NibbleStorage::load(std::string infilename, uint16_t& ksize)
                 err << std::hex << (int) signature[i];
             }
             err << " Should be: " << SAVED_SIGNATURE;
-            throw BoinkFileException(err.str());
+            throw GoetiaFileException(err.str());
         } else if (!(version == SAVED_FORMAT_VERSION)) {
             std::ostringstream err;
             err << "Incorrect file format version " << (int) version
                 << " while reading k-mer count file from " << infilename
                 << "; should be " << (int) SAVED_FORMAT_VERSION;
-            throw BoinkFileException(err.str());
+            throw GoetiaFileException(err.str());
         } else if (!(ht_type == SAVED_SMALLCOUNT)) {
             std::ostringstream err;
             err << "Incorrect file format type " << (int) ht_type
                 << " while reading k-mer count file from " << infilename;
-            throw BoinkFileException(err.str());
+            throw GoetiaFileException(err.str());
         }
 
         infile.read((char *) &save_ksize, sizeof(save_ksize));
@@ -270,11 +270,11 @@ NibbleStorage::load(std::string infilename, uint16_t& ksize)
             err = "Error reading from k-mer count file: " + infilename + " "
                   + strerror(errno);
         }
-        throw BoinkFileException(err);
+        throw GoetiaFileException(err);
     } catch (const std::exception &e) {
         std::string err = "Error reading from k-mer count file: " + infilename + " "
                           + strerror(errno);
-        throw BoinkFileException(err);
+        throw GoetiaFileException(err);
     }
 }
 

@@ -6,13 +6,13 @@
 # Author : Camille Scott <camille.scott.w@gmail.com>
 # Date   : 14.10.2019
 
-from goetia.cli import BoinkRunner
+from goetia.cli import GoetiaRunner
 from goetia.cdbg import cDBGRunner
 from goetia.signatures import SourmashRunner
 
 
 def main():
-    runner = BoinkRunner()
+    runner = GoetiaRunner()
     runner.add_command('cdbg', cDBGRunner)
     runner.add_command('sourmash', SourmashRunner)
 

@@ -13,17 +13,17 @@
 
 namespace goetia {
 
-class InvalidCharacterException : public BoinkException {
+class InvalidCharacterException : public GoetiaException {
 public:
     explicit InvalidCharacterException(const std::string& msg = "Invalid character encountered.")
-        : BoinkException(msg) { }
+        : GoetiaException(msg) { }
 };
 
 
-class SequenceLengthException: public BoinkException {
+class SequenceLengthException: public GoetiaException {
 public:
     explicit SequenceLengthException(const std::string& msg = "Sequence was too short.")
-        : BoinkException(msg) { }
+        : GoetiaException(msg) { }
 
 };
 

@@ -1144,7 +1144,7 @@ public:
                     write_gfa1(out);
                     break;
                 default:
-                    throw BoinkException("Invalid cDBG format.");
+                    throw GoetiaException("Invalid cDBG format.");
             };
         }
 

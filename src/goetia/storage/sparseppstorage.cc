@@ -83,14 +83,14 @@ SparseppSetStorage::deserialize(std::ifstream& in) {
             << name
             << ", should be "
             << Tagged<SparseppSetStorage>::NAME;
-        throw BoinkFileException(err.str());
+        throw GoetiaFileException(err.str());
     } else if (version != Tagged<SparseppSetStorage>::OBJECT_ABI_VERSION) {
         std::ostringstream err;
         err << "File has wrong binary version: found "
             << std::to_string(version)
             << ", expected "
             << std::to_string(Tagged<SparseppSetStorage>::OBJECT_ABI_VERSION);
-        throw BoinkFileException(err.str());
+        throw GoetiaFileException(err.str());
 
     }
 

@@ -35,13 +35,13 @@ class ComboFormatter(argparse.ArgumentDefaultsHelpFormatter,
     pass
 
 
-class BoinkArgumentParser(argparse.ArgumentParser):
+class GoetiaArgumentParser(argparse.ArgumentParser):
     """Specialize ArgumentParser with goetia defaults.
     """
 
     def __init__(self, formatter_class=ComboFormatter,
                  **kwargs):
-        super(BoinkArgumentParser, self).__init__(
+        super(GoetiaArgumentParser, self).__init__(
             formatter_class=formatter_class, **kwargs)
 
         self.add_argument('--version', action=_VersionStdErrAction,
@@ -75,10 +75,10 @@ def print_interval_settings(args):
     print('*', '*' * 10, '*', sep='\n', file=sys.stderr)
 
 
-class BoinkRunner:
+class GoetiaRunner:
 
     def __init__(self):
-        self.parser = BoinkArgumentParser()
+        self.parser = GoetiaArgumentParser()
         self.parser.set_defaults(func = lambda _: self.parser.print_help())
         self.commands = self.parser.add_subparsers()
 

@@ -133,7 +133,7 @@ public:
         if (partition < n_partitions) {
             return partitions[partition].get();
         } else {
-            throw BoinkException("Invalid storage partition: " + std::to_string(partition));
+            throw GoetiaException("Invalid storage partition: " + std::to_string(partition));
         }
     }
 
@@ -143,15 +143,15 @@ public:
 
 
     const bool insert(value_type khash ) {
-        throw BoinkException("Method not available!");
+        throw GoetiaException("Method not available!");
     }
 
     const storage::count_t insert_and_query(value_type khash) {
-        throw BoinkException("Method not available!");
+        throw GoetiaException("Method not available!");
     }
 
     const storage::count_t query(value_type khash) const {
-        throw BoinkException("Method not available!");
+        throw GoetiaException("Method not available!");
     }
 
     std::vector<size_t> get_partition_counts() {

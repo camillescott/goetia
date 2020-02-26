@@ -637,7 +637,7 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
                 }
                 
                 if (n_attempts > max_attempts) {
-                    throw BoinkException("Stuck in split attempt loop, failing.");
+                    throw GoetiaException("Stuck in split attempt loop, failing.");
                 }
             }
         }
