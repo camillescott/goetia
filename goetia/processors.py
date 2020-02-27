@@ -3,6 +3,7 @@ import curio
 from curio.socket import *
 
 from collections import OrderedDict
+from enum import Enum, unique as unique_enum
 import inspect
 import json
 import os
@@ -140,6 +141,16 @@ class UnixBroadcasterMixin:
                     await broadcast_task.cancel()
 
 
+@unique_enum
+class RunState(Enum):
+    READY = 0
+    RUNNING = 1
+    SIGINT = 2
+    STOP_SATURATED = 3
+    STOP_ERROR = 4
+    STOP = 5
+
+
 class AsyncSequenceProcessor(UnixBroadcasterMixin):
 
     def __init__(self, processor,
@@ -184,11 +195,10 @@ class AsyncSequenceProcessor(UnixBroadcasterMixin):
         self.sample_iter = sample_iter
         self.run_echo = echo
 
+        self.state = RunState.READY
+
         super().__init__(broadcast_socket)
     
-    def stop(self):
-        self.stopped = True
-
     def get_channel(self, channel: str) -> QueueManager:
         """Query for the given channel name.
         
@@ -215,7 +225,6 @@ class AsyncSequenceProcessor(UnixBroadcasterMixin):
             subscriber_name (str): Name of the subscriber.
         """
         self.get_channel(channel_name).subscribe(collection_q, subscriber_name)
-        #print(f'{subscriber_name} subscribed to {channel_name}.', file=sys.stderr)
     
     def unsubscribe(self, channel_name: str,
                           collection_q: curio.Queue) -> None:
@@ -235,29 +244,41 @@ class AsyncSequenceProcessor(UnixBroadcasterMixin):
         return listener
 
     def worker(self) -> None:
-        for sample, prefix in self.sample_iter:
-            self.worker_q.put(SampleStarted(sample_name=str(sample)))
+        for sample, name in self.sample_iter:
+            self.worker_q.put(SampleStarted(sample_name=name, file_names=sample))
             try:
                 for n_seqs, n_skipped, state in self.processor.chunked_process(*sample):
-                    if self.stopped:
-                        self.worker_q.put(Error(t=n_seqs,
-                                                sample_name=str(sample),
-                                                error='Terminated by user.'))
+
+                    if self.state is RunState.STOP_SATURATED:
+                        # Saturation is tripped externally: just return immediately.
                         return
+
+                    if self.state is RunState.SIGINT:
+                        # If we're interrupted, inform our listeners that something went wrong.
+                        self.worker_q.put(Error(t=n_seqs,
+                                                sample_name=name,
+                                                file_names=sample,
+                                                error='Process terminated (SIGINT).'))
+                        return
+
                     if not state.end:
                         self.worker_q.put(Interval(t=n_seqs,
-                                                   sample_name=str(sample), 
-                                                   state=state.get()))
+                                                   sample_name=name, 
+                                                   state=state.get(),
+                                                   file_names=sample))
 
                 self.worker_q.put(SampleFinished(t=n_seqs,
-                                                 sample_name=str(sample)))
+                                                 sample_name=name,
+                                                 file_names=sample))
             except Exception as e:
                 self.worker_q.put(Error(t=n_seqs,
-                                        sample_name=str(sample),
-                                        error=str(e)))
+                                        sample_name=name,
+                                        error=str(e),
+                                        file_names=sample))
+                self.state = RunState.STOP_ERROR
                 raise
 
-    async def run(self, extra_tasks = None) -> None:
+    async def start(self, extra_tasks = None) -> None:
         async with curio.TaskGroup() as g:
 
             # each channel has its own dispatch task
@@ -285,8 +306,17 @@ class AsyncSequenceProcessor(UnixBroadcasterMixin):
 
             # and now we spawn the worker to iterate through
             # the processor and wait for it to finish
-            self.stopped = False
-            signal.signal(signal.SIGINT, lambda signo, frame: self.stop())
+            self.state = RunState.RUNNING
+            signal.signal(signal.SIGINT, lambda signo, frame: self.interrupt())
             w = await g.spawn_thread(self.worker)
             await w.join()
             await self.worker_subs.kill()
+
+    def stop(self) -> None:
+        self.state = RunState.STOP
+
+    def interrupt(self) -> None:
+        self.state = RunState.SIGINT
+
+    def saturate(self) -> None:
+        self.state = RunState.STOP_SATURATED

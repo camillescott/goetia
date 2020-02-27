@@ -9,7 +9,7 @@
 from goetia import libgoetia
 from goetia.cli import CommandRunner, get_output_interval_args
 from goetia.dbg import get_graph_args, process_graph_args
-from goetia.parsing import get_pairing_args, iter_fastx_inputs
+from goetia.parsing import get_fastx_args, iter_fastx_inputs
 from goetia.serialization import cDBGSerialization
 from goetia.metadata import CUR_TIME
 
@@ -84,8 +84,6 @@ def process_cdbg_args(args):
     args.track_cdbg_unitig_bp =  join(args.track_cdbg_unitig_bp)
 
 
-
-
 def print_cdbg_args(args):
     print('* cDBG Params', file=sys.stderr)
     print('* Directory: ', args.results_dir, file=sys.stderr)
@@ -112,9 +110,9 @@ class cDBGRunner(CommandRunner):
         get_graph_args(parser)
         get_cdbg_args(parser)
         get_output_interval_args(parser)
-        group = get_pairing_args(parser)
+        group = get_fastx_args(parser)
         group.add_argument('-o', dest='output_filename', default='/dev/stdout')
-        group.add_argument('-i', dest='inputs', nargs='+', required=True)
+        group.add_argument('-i', '--inputs', dest='inputs', nargs='+', required=True)
 
         super().__init__(parser)
 
