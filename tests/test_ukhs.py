@@ -9,8 +9,8 @@
 
 import pytest
 from .utils import *
-from boink import libboink
-from boink.hashing import (FwdLemireShifter, CanLemireShifter, UKHS)
+from goetia import libgoetia
+from goetia.hashing import (FwdLemireShifter, CanLemireShifter, UKHS)
 
 
 @using(ksize=[21,31,41])

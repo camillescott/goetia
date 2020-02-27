@@ -113,13 +113,13 @@ cython_debug/
 Debug/
 
 *.o
-**boink.pc
-**libboink.*
+**goetia.pc
+**libgoetia.*
 **a.out
 _libbuild/
-src/boink/test_assembly
-src/boink/benchmark_boink_consume
-src/boink/benchmark_oxli_consume
+src/goetia/test_assembly
+src/goetia/benchmark_goetia_consume
+src/goetia/benchmark_oxli_consume
 *.pyx.pxi
 *.pxd.pxi
 

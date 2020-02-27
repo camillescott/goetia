@@ -85,4 +85,4 @@ msg_schema = {
 }
 
 api = schemapi.SchemaModuleGenerator(msg_schema, root_name='Messages')
-api.write_module('boink/messages_base.py')
+api.write_module('goetia/messages_base.py')

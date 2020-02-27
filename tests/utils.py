@@ -1,4 +1,4 @@
-# boink/tests/utils.py
+# goetia/tests/utils.py
 # Copyright (C) 2018 Camille Scott
 # All rights reserved.
 #
@@ -15,13 +15,13 @@ from debruijnal_enhance_o_tron.sequence import *
 
 import cppyy.gbl
 from cppyy.gbl import std
-import boink
-from boink import boink as libboink
-from boink.hashing import types as hashing_types
-from boink.utils import check_trait, pretty_repr
-from boink.storage import _types as storage_types
+import goetia
+from goetia import goetia as libgoetia
+from goetia.hashing import types as hashing_types
+from goetia.utils import check_trait, pretty_repr
+from goetia.storage import _types as storage_types
 
-from boink.hashing import (FwdLemireShifter, CanLemireShifter,
+from goetia.hashing import (FwdLemireShifter, CanLemireShifter,
                            FwdUnikmerShifter, CanUnikmerShifter,
                            UKHS)
 
@@ -63,9 +63,9 @@ def store(storage_type):
 @pytest.fixture
 def partitioned_graph(store, ksize):
     ukhs = UKHS[FwdLemireShifter].load(ksize, 7)
-    pstore = std.make_shared[libboink.storage.PartitionedStorage[type(store)]](ukhs.n_hashes(),
+    pstore = std.make_shared[libgoetia.storage.PartitionedStorage[type(store)]](ukhs.n_hashes(),
                                                                                store)
-    graph = std.make_shared[libboink.PdBG[type(store), FwdUnikmerShifter]](ksize, 7,
+    graph = std.make_shared[libgoetia.PdBG[type(store), FwdUnikmerShifter]](ksize, 7,
                                                                            ukhs,
                                                                            pstore)
     return graph
@@ -74,7 +74,7 @@ def partitioned_graph(store, ksize):
 @pytest.fixture()
 def graph(store, hasher, ksize):
 
-    _graph_type = libboink.dBG[type(store), type(hasher)]
+    _graph_type = libgoetia.dBG[type(store), type(hasher)]
     
     return _graph_type.build(store, hasher)
 
@@ -86,7 +86,7 @@ def counting_backends(*args):
     def wrapped(fixture_func):
         return pytest.mark.parametrize('storage_type', 
                                        [(type, args) for type, args in storage_types \
-                                        if check_trait(libboink.storage.is_counting, type)],
+                                        if check_trait(libgoetia.storage.is_counting, type)],
                                        indirect=['storage_type'],
                                        ids=lambda t: pretty_repr(t[0]))(fixture_func)
     return wrapped
@@ -99,7 +99,7 @@ def presence_backends(*args):
     def wrapped(fixture_func):
         return pytest.mark.parametrize('storage_type', 
                                        [(type, args) for type, args in storage_types \
-                                        if not check_trait(libboink.storage.is_counting, type)],
+                                        if not check_trait(libgoetia.storage.is_counting, type)],
                                        indirect=['storage_type'],
                                        ids=lambda t: pretty_repr(t[0]))(fixture_func)
     return wrapped
@@ -112,7 +112,7 @@ def exact_backends(*args):
     def wrapped(fixture_func):
         return pytest.mark.parametrize('storage_type', 
                                        [(type, args) for type, args in storage_types \
-                                        if not check_trait(libboink.storage.is_probabilistic, type)],
+                                        if not check_trait(libgoetia.storage.is_probabilistic, type)],
                                        indirect=['storage_type'],
                                        ids=lambda t: pretty_repr(t[0]))(fixture_func)
     return wrapped

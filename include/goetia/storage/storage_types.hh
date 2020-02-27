@@ -1,0 +1,6 @@
+#include "goetia/storage/nibblestorage.hh"
+#include "goetia/storage/bitstorage.hh"
+#include "goetia/storage/storage.hh"
+#include "goetia/storage/qfstorage.hh"
+#include "goetia/storage/bytestorage.hh"
+#include "goetia/storage/sparseppstorage.hh"

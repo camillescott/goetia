@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.9)
 cmake_policy(SET CMP0063 NEW)
 
 #
-# libboink
+# libgoetia
 #
 
 if(DEFINED ENV{BOINK_VERSION})
@@ -20,11 +20,11 @@ else()
 endif()
 message(STATUS "version: ${python_pkg_version}")
 
-project(boink
+project(goetia
         LANGUAGES CXX  C
         VERSION ${sharedlib_version}
         DESCRIPTION "streaming cDBG and dBG sketching algorithms"
-        HOMEPAGE_URL "https://github.com/camillescott/boink"
+        HOMEPAGE_URL "https://github.com/camillescott/goetia"
         )
 
 if(DEFINED ENV{CONDA_PREFIX})
@@ -79,28 +79,28 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O2")
 set(CMAKE_CXX_FLAGS_DEBUG "-O0")
 
 #
-# The boink shared library needs all the source files, the direct object
+# The goetia shared library needs all the source files, the direct object
 # targets, and the gfakluge static library.
 #
-add_library(boink SHARED
+add_library(goetia SHARED
             ${LIB_SOURCES}
 )
-set_target_properties(boink PROPERTIES LINKER_LANGUAGE CXX)
-set_target_properties(boink PROPERTIES CXX_VISIBILITY_PRESET default)
-set_property(TARGET boink PROPERTY LINK_WHAT_YOU_USE TRUE)
-set_property(TARGET boink PROPERTY VISIBILITY_INLINES_HIDDEN 0)
-set_target_properties(boink PROPERTIES
+set_target_properties(goetia PROPERTIES LINKER_LANGUAGE CXX)
+set_target_properties(goetia PROPERTIES CXX_VISIBILITY_PRESET default)
+set_property(TARGET goetia PROPERTY LINK_WHAT_YOU_USE TRUE)
+set_property(TARGET goetia PROPERTY VISIBILITY_INLINES_HIDDEN 0)
+set_target_properties(goetia PROPERTIES
                       VERSION ${PROJECT_VERSION}
                       SOVERSION 1
 )
 
-#set_target_properties(boink PROPERTIES PUBLIC_HEADER ${LIB_HEADERS})
-target_include_directories(boink
+#set_target_properties(goetia PROPERTIES PUBLIC_HEADER ${LIB_HEADERS})
+target_include_directories(goetia
                            PUBLIC
                            ${CMAKE_SOURCE_DIR}/include
 )
-target_include_directories(boink PRIVATE ${ZLIB_INCLUDE_DIRS})
-target_link_libraries(boink
+target_include_directories(goetia PRIVATE ${ZLIB_INCLUDE_DIRS})
+target_link_libraries(goetia
                       Threads::Threads
                       ${ZLIB_LIBRARIES} 
                       ${LIBSOURMASH}
@@ -108,64 +108,64 @@ target_link_libraries(boink
 
 
 #
-# Add all the include directories. Includes that are only used in boink's
+# Add all the include directories. Includes that are only used in goetia's
 # source files are set private, so that they are not installed.
 #
-target_include_directories(boink PRIVATE third-party/)
-target_include_directories(boink PRIVATE include/)
+target_include_directories(goetia PRIVATE third-party/)
+target_include_directories(goetia PRIVATE include/)
 
 #
-# Configure the boink pc.
+# Configure the goetia pc.
 #
-configure_file(src/boink/boink.pc.in boink.pc @ONLY)
+configure_file(src/goetia/goetia.pc.in goetia.pc @ONLY)
 
 
 #
 # Benchmark exes
 #
-add_executable(do_bench_storage EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/src/boink/benchmarks/do_bench_storage.cc)
-target_link_libraries(do_bench_storage boink)
+add_executable(do_bench_storage EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/src/goetia/benchmarks/do_bench_storage.cc)
+target_link_libraries(do_bench_storage goetia)
 
-add_executable(test_hashing EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/src/boink/benchmarks/benchmark_hashing.cc)
-target_link_libraries(test_hashing boink)
+add_executable(test_hashing EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/src/goetia/benchmarks/benchmark_hashing.cc)
+target_link_libraries(test_hashing goetia)
 
 #
 # Set up the Cppyy bindings generation. This is a customized version defined
-# in boink's cmake/ dir; it uses genreflex rather than calling rootcling directly.
+# in goetia's cmake/ dir; it uses genreflex rather than calling rootcling directly.
 # I did this because I couldn't get rootcling to properly include/exclude classes
 # via the LinkDef header, and I wanted to be able to use the better syntax in
 # the genreflex selection XML anyhow. Also, I think this is now the recommended /
 # more modern way anyhow? Code was modified from the versions cppyy distributes.
 #
 cppyy_add_bindings(
-    "boink" ${python_pkg_version} "Camille Scott" "cswel@ucdavis.edu"
+    "goetia" ${python_pkg_version} "Camille Scott" "cswel@ucdavis.edu"
    LICENSE "MIT"
    LANGUAGE_STANDARD "17"
-   SELECTION_XML  ${CMAKE_SOURCE_DIR}/boink_select.xml
-   INTERFACE_FILE ${BOINK_INCLUDE_ROOT}/include/boink/interface.hh
-   PKG_SRC_DIR    ${CMAKE_SOURCE_DIR}/boink
+   SELECTION_XML  ${CMAKE_SOURCE_DIR}/goetia_select.xml
+   INTERFACE_FILE ${BOINK_INCLUDE_ROOT}/include/goetia/interface.hh
+   PKG_SRC_DIR    ${CMAKE_SOURCE_DIR}/goetia
    TESTS_DIR      ${CMAKE_SOURCE_DIR}/tests
    HEADERS        ${LIB_HEADERS}
    INCLUDE_DIRS   ${BOINK_INCLUDE_ROOT}/include
                   ${CMAKE_CURRENT_SOURCE_DIR}/third-party
                   ${ZLIB_INCLUDE_DIRS}
-   LINK_LIBRARIES boink
+   LINK_LIBRARIES goetia
 )
 
 #
-# libboink's install commands. Installs the libboink shared so,
+# libgoetia's install commands. Installs the libgoetia shared so,
 # its headers, the prometheus headers, and any other public includes.
 #
-install(TARGETS boink
+install(TARGETS goetia
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
-#install(DIRECTORY include/boink/
-#        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/boink
+#install(DIRECTORY include/goetia/
+#        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/goetia
 #)
 
-install(FILES ${CMAKE_BINARY_DIR}/boink.pc
+install(FILES ${CMAKE_BINARY_DIR}/goetia.pc
         DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig
 )
 

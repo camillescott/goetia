@@ -1,0 +1,43 @@
+<lcgdict>
+    <selection>
+        <!-- <namespace pattern="goetia::*"/> -->
+        <namespace pattern="goetia::storage::*"/>
+            <!-- <namespace pattern="goetia::events::*"/> -->
+        <namespace pattern="goetia::signatures::*"/>
+        <namespace pattern="goetia::cdbg::*"/>
+        <namespace pattern="goetia::hashing::*"/>
+        <namespace pattern="goetia::metrics::*"/>
+        <namespace pattern="goetia::TraversalState::*"/>
+
+        <class name="goetia::reporting::*"/>
+        <class name="goetia::hashing::Direction_t"/>
+        <class pattern="goetia::signatures::UnikmerSignature<*>::Signature"/>
+        <class pattern="goetia::cdbg::StreamingCompactor<*>::compact_segment"/>
+
+        <class pattern="goetia::dBGWalker<*>"/>
+
+        <class pattern="goetia::dBG<*, *>"/>
+        <class pattern="goetia::dBG*" />
+        <class pattern="goetia::PdBG<*>"/>
+        <class pattern="goetia::*Processor"/>
+        <class pattern="goetia::*Processor<*>"/>
+		<class pattern="goetia::parsing::*"/>
+        <class pattern="goetia::InteriorMinimizer<*>"/>
+
+        <class name="goetia::DEFAULT_INTERVALS"/>
+
+        <class pattern="std::pair<*,*>"/>
+            <!-- <class pattern="std::enable_shared_from_this<*>" /> -->
+        <class pattern="std::vector<*>" />
+        <class pattern="std::vector<*>::iterator" />
+        <function name="__gnu_cxx::operator=="/>
+        <function name="__gnu_cxx::operator!="/>
+    </selection>        
+    <exclusion>
+        <namespace pattern="Catch::*" />
+        <class name="std::condition_variable" />
+        <class pattern="std::vector<goetia::dBGWalker<*>>"/>
+        <class name="std::vector<std::basic_ofstream<char>>"/>
+        <namespace pattern="goetia::events::*" />
+    </exclusion>
+</lcgdict>

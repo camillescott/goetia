@@ -1,4 +1,4 @@
-# boink/tests/test_processors.py
+# goetia/tests/test_processors.py
 # Copyright (C) 2018 Camille Scott
 # All rights reserved.
 #
@@ -10,7 +10,7 @@ import pytest
 import csv
 
 from .utils import *
-from boink.dbg import dBG
+from goetia.dbg import dBG
 import screed
 
 def test_dbg_inserter(graph, datadir, ksize):

@@ -1,4 +1,4 @@
-# boink/tests/test_parsing.py
+# goetia/tests/test_parsing.py
 # Copyright (C) 2020 Camille Scott
 # All rights reserved.
 #
@@ -8,8 +8,8 @@
 import pytest
 from .utils import *
 
-from boink.parsing import FastxParser, SplitPairedReader
-from boink.alphabets import DNA_SIMPLE, DNAN_SIMPLE, IUPAC_NUCL
+from goetia.parsing import FastxParser, SplitPairedReader
+from goetia.alphabets import DNA_SIMPLE, DNAN_SIMPLE, IUPAC_NUCL
 
 alphabets = [DNA_SIMPLE, DNAN_SIMPLE, IUPAC_NUCL]
 

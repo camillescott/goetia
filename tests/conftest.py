@@ -1,4 +1,4 @@
-# boink/tests/utils.py
+# goetia/tests/utils.py
 # Copyright (C) 2018 Camille Scott
 # All rights reserved.
 #

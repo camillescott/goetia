@@ -1,4 +1,4 @@
-# boink/tests/test_dbg.py
+# goetia/tests/test_dbg.py
 # Copyright (C) 2018 Camille Scott
 # All rights reserved.
 #
@@ -9,8 +9,8 @@ import pytest
 from cppyy.gbl import std
 
 from .utils import *
-from boink.hashing import FwdLemireShifter, UKHS
-from boink.storage import count_t
+from goetia.hashing import FwdLemireShifter, UKHS
+from goetia.storage import count_t
 import pytest
 
 
@@ -308,7 +308,7 @@ def test_clone(graph, ksize, random_sequence):
 @using(ksize=[21, 31, 41], length=[50000, 500000])
 @pytest.mark.benchmark(group='dbg-sequence')
 def test_pdbg_n_unique(random_sequence, ksize, length, benchmark, partitioned_graph, store):
-    from boink.utils import check_trait
+    from goetia.utils import check_trait
     graph = partitioned_graph
 
     sequence = random_sequence()
@@ -318,7 +318,7 @@ def test_pdbg_n_unique(random_sequence, ksize, length, benchmark, partitioned_gr
     for kmer in kmer_set:
         assert graph.query(kmer)
 
-    if check_trait(libboink.storage.is_probabilistic, type(store)):
+    if check_trait(libgoetia.storage.is_probabilistic, type(store)):
         assert abs(len(kmer_set) - graph.n_unique()) < length * .001
     else:
         assert len(kmer_set) == graph.n_unique()
