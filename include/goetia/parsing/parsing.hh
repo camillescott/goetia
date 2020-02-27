@@ -7,8 +7,8 @@
  * of the MIT license.  See the LICENSE file for details.
  */
 
-#ifndef BOINK_PARSING_HH
-#define BOINK_PARSING_HH
+#ifndef GOETIA_PARSING_HH
+#define GOETIA_PARSING_HH
 
 
 #include <algorithm>

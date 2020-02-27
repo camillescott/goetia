@@ -6,8 +6,8 @@
  * Date   : 18.07.2019
  */
 
-#ifndef BOINK_COMPACTOR_HH
-#define BOINK_COMPACTOR_HH
+#ifndef GOETIA_COMPACTOR_HH
+#define GOETIA_COMPACTOR_HH
 
 #include <assert.h>
 #include <cstdint>

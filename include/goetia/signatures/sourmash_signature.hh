@@ -6,8 +6,8 @@
  * Date   : 14.10.2019
  */
 
-#ifndef BOINK_SOURMASH_SIG_HH
-#define BOINK_SOURMASH_SIG_HH
+#ifndef GOETIA_SOURMASH_SIG_HH
+#define GOETIA_SOURMASH_SIG_HH
 
 #include <memory>
 

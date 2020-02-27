@@ -7,8 +7,8 @@
  * of the MIT license.  See the LICENSE file for details.
  */
 
-#ifndef BOINK_CDBG_TYPES_HH
-#define BOINK_CDBG_TYPES_HH
+#ifndef GOETIA_CDBG_TYPES_HH
+#define GOETIA_CDBG_TYPES_HH
 
 #include <climits>
 #include <memory>

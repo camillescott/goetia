@@ -126,13 +126,13 @@ set(_data
 
 if(DEFINED ENV{CONDA_BUILD_DEPLOY})
     message(STATUS "Building a conda deployment, use installed headers.")
-    set(BOINK_INCLUDE_ROOT $ENV{CONDA_PREFIX})
+    set(GOETIA_INCLUDE_ROOT $ENV{CONDA_PREFIX})
 else()
-    set(BOINK_INCLUDE_ROOT ${CMAKE_SOURCE_DIR})
+    set(GOETIA_INCLUDE_ROOT ${CMAKE_SOURCE_DIR})
 endif()
 
 foreach (path ${_headers})
-    list(APPEND LIB_HEADERS ${BOINK_INCLUDE_ROOT}/${path})
+    list(APPEND LIB_HEADERS ${GOETIA_INCLUDE_ROOT}/${path})
 endforeach(path)
 
 foreach (path ${_sources})

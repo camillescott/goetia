@@ -5,7 +5,7 @@
  * Author : Camille Scott <camille.scott.w@gmail.com>
  * Date   : 30.08.2019
  *
- *** END BOINK LICENSE BLOCK
+ *** END GOETIA LICENSE BLOCK
  *
  * This file is part of khmer, https://github.com/dib-lab/khmer/, and is
  * Copyright (C) 2016, The Regents of the University of California.
@@ -43,8 +43,8 @@
  * Contact: khmer-project@idyll.org
  */
 
-#ifndef BOINK_NIBBLESTORAGE_HH
-#define BOINK_NIBBLESTORAGE_HH
+#ifndef GOETIA_NIBBLESTORAGE_HH
+#define GOETIA_NIBBLESTORAGE_HH
 
 #include <cassert>
 #include <cstring>

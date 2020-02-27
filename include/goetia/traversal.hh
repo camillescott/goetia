@@ -7,8 +7,8 @@
  */
 
 
-#ifndef BOINK_ASSEMBLY_HH
-#define BOINK_ASSEMBLY_HH
+#ifndef GOETIA_ASSEMBLY_HH
+#define GOETIA_ASSEMBLY_HH
 
 #include "goetia/goetia.hh"
 #include "goetia/hashing/kmeriterator.hh"

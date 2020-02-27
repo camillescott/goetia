@@ -6,8 +6,8 @@
  * Date   : 10.01.2020
  */
 
-#ifndef BOINK_KMER_SPAN_HH
-#define BOINK_KMER_SPAN_HH
+#ifndef GOETIA_KMER_SPAN_HH
+#define GOETIA_KMER_SPAN_HH
 
 #include <iostream>
 #include <type_traits>

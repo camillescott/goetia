@@ -55,7 +55,7 @@ class GoetiaArgumentParser(argparse.ArgumentParser):
 
 def print_goetia_intro():
     print('*' * 20, '*', sep='\n', file=sys.stderr)
-    print('*    BOINK v{0}'.format(__version__), file=sys.stderr)
+    print('*    GOETIA v{0}'.format(__version__), file=sys.stderr)
     print('*' * 20, '*', sep='\n', file=sys.stderr)
 
 

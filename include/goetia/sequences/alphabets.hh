@@ -7,8 +7,8 @@
  */
 
 
-#ifndef BOINK_ALPHABETS_HH
-#define BOINK_ALPHABETS_HH
+#ifndef GOETIA_ALPHABETS_HH
+#define GOETIA_ALPHABETS_HH
 
 #include <sstream>
 #include <string>

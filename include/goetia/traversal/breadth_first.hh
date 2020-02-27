@@ -6,8 +6,8 @@
  * Date   : 15.11.2019
  */
 
-#ifndef BOINK_BFS_HH
-#define BOINK_BFS_HH
+#ifndef GOETIA_BFS_HH
+#define GOETIA_BFS_HH
 
 #include "goetia/traversal.hh"
 

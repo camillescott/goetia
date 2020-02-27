@@ -6,8 +6,8 @@
  * Date   : 30.08.2019
  */
 
-#ifndef BOINK_DBG_HH
-#define BOINK_DBG_HH
+#ifndef GOETIA_DBG_HH
+#define GOETIA_DBG_HH
 
 #include "goetia/meta.hh"
 #include "goetia/hashing/kmeriterator.hh"

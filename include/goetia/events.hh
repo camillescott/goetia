@@ -10,8 +10,8 @@
  * std-thread-Event-Loop-with-Message-Queue`
  */
 
-#ifndef BOINK_EVENTS_HH
-#define BOINK_EVENTS_HH
+#ifndef GOETIA_EVENTS_HH
+#define GOETIA_EVENTS_HH
 
 #include <iostream>
 #include <sstream>

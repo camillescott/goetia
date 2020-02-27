@@ -7,8 +7,8 @@
  * of the MIT license.  See the LICENSE file for details.
  */
 
-#ifndef BOINK_REPORTERS_HH
-#define BOINK_REPORTERS_HH
+#ifndef GOETIA_REPORTERS_HH
+#define GOETIA_REPORTERS_HH
 
 #include <fstream>
 #include <iostream>

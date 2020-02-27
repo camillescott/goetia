@@ -7,8 +7,8 @@
  */
 
 
-#ifndef BOINK_UDBG_HH
-#define BOINK_UDBG_HH
+#ifndef GOETIA_UDBG_HH
+#define GOETIA_UDBG_HH
 
 // save diagnostic state
 #pragma GCC diagnostic push 

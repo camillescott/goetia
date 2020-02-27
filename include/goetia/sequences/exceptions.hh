@@ -6,8 +6,8 @@
  * Date   : 05.08.2019
  */
 
-#ifndef BOINK_SEQUENCES_EXCEPTIONS_HH
-#define BOINK_SEQUENCES_EXCEPTIONS_HH
+#ifndef GOETIA_SEQUENCES_EXCEPTIONS_HH
+#define GOETIA_SEQUENCES_EXCEPTIONS_HH
 
 #include "goetia/goetia.hh"
 

@@ -12,8 +12,8 @@
  *
  */
 
-#ifndef BOINK_PROCESSORS_HH
-#define BOINK_PROCESSORS_HH
+#ifndef GOETIA_PROCESSORS_HH
+#define GOETIA_PROCESSORS_HH
 
 #include <tuple>
 #include <memory>

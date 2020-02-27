@@ -6,8 +6,8 @@
  * Date   : 08.01.2020
  */
 
-#ifndef BOINK_CANONICAL_HH
-#define BOINK_CANONICAL_HH
+#ifndef GOETIA_CANONICAL_HH
+#define GOETIA_CANONICAL_HH
 
 #include <cstdint>
 #include <iostream>

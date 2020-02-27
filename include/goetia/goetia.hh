@@ -7,8 +7,8 @@
  */
 
 
-#ifndef BOINK_MISC_HH
-#define BOINK_MISC_HH
+#ifndef GOETIA_MISC_HH
+#define GOETIA_MISC_HH
 
 #include <cstdint>
 #include <exception>

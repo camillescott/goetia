@@ -10,8 +10,8 @@
  */
 
 
-#ifndef BOINK_IS_DETECTED_HH
-#define BOINK_IS_DETECTED_HH
+#ifndef GOETIA_IS_DETECTED_HH
+#define GOETIA_IS_DETECTED_HH
 
 #include <type_traits>
 

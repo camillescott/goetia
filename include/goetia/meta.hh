@@ -6,8 +6,8 @@
  * Date   : 05.11.2019
  */
 
-#ifndef BOINK_METAUTIL_HH
-#define BOINK_METAUTIL_HH
+#ifndef GOETIA_METAUTIL_HH
+#define GOETIA_METAUTIL_HH
 
 #include <string>
 #include <utility>

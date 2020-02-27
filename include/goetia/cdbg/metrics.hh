@@ -7,8 +7,8 @@
  * of the MIT license.  See the LICENSE file for details.
  */
 
-#ifndef BOINK_CDBG_METRICS_HH
-#define BOINK_CDBG_METRICS_HH
+#ifndef GOETIA_CDBG_METRICS_HH
+#define GOETIA_CDBG_METRICS_HH
 
 #include <string>
 #include <iostream>

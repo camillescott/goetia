@@ -7,8 +7,8 @@
  * of the MIT license.  See the LICENSE file for details.
  */
 
-#ifndef BOINK_UTILITY_METRICS_HH
-#define BOINK_UTILITY_METRICS_HH
+#ifndef GOETIA_UTILITY_METRICS_HH
+#define GOETIA_UTILITY_METRICS_HH
 
 #include <algorithm>
 #include <atomic>

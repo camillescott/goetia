@@ -14,8 +14,8 @@
  * of the MIT license.  See the LICENSE file for details.
  */
 
-#ifndef BOINK_KMERITERATOR_HH
-#define BOINK_KMERITERATOR_HH
+#ifndef GOETIA_KMERITERATOR_HH
+#define GOETIA_KMERITERATOR_HH
 
 #include <string>
 

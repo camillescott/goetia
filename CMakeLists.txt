@@ -5,9 +5,9 @@ cmake_policy(SET CMP0063 NEW)
 # libgoetia
 #
 
-if(DEFINED ENV{BOINK_VERSION})
-    set(sharedlib_version "$ENV{BOINK_VERSION}")
-    set(python_pkg_version "$ENV{BOINK_VERSION}")
+if(DEFINED ENV{GOETIA_VERSION})
+    set(sharedlib_version "$ENV{GOETIA_VERSION}")
+    set(python_pkg_version "$ENV{GOETIA_VERSION}")
 else()
     execute_process(COMMAND python ../version.py --cmake
                     OUTPUT_VARIABLE sharedlib_version
@@ -142,11 +142,11 @@ cppyy_add_bindings(
    LICENSE "MIT"
    LANGUAGE_STANDARD "17"
    SELECTION_XML  ${CMAKE_SOURCE_DIR}/goetia_select.xml
-   INTERFACE_FILE ${BOINK_INCLUDE_ROOT}/include/goetia/interface.hh
+   INTERFACE_FILE ${GOETIA_INCLUDE_ROOT}/include/goetia/interface.hh
    PKG_SRC_DIR    ${CMAKE_SOURCE_DIR}/goetia
    TESTS_DIR      ${CMAKE_SOURCE_DIR}/tests
    HEADERS        ${LIB_HEADERS}
-   INCLUDE_DIRS   ${BOINK_INCLUDE_ROOT}/include
+   INCLUDE_DIRS   ${GOETIA_INCLUDE_ROOT}/include
                   ${CMAKE_CURRENT_SOURCE_DIR}/third-party
                   ${ZLIB_INCLUDE_DIRS}
    LINK_LIBRARIES goetia

@@ -7,8 +7,8 @@
  */
 
 
-#ifndef BOINK_SPARSEPPSETSTORAGE_HH
-#define BOINK_SPARSEPPSETSTORAGE_HH
+#ifndef GOETIA_SPARSEPPSETSTORAGE_HH
+#define GOETIA_SPARSEPPSETSTORAGE_HH
 
 #include "goetia/meta.hh"
 #include "goetia/storage/storage.hh"

@@ -6,8 +6,8 @@
  * Date   : 06.08.2019
  */
 
-#ifndef BOINK_ROLLINGHASHSHIFTER_HH
-#define BOINK_ROLLINGHASHSHIFTER_HH
+#ifndef GOETIA_ROLLINGHASHSHIFTER_HH
+#define GOETIA_ROLLINGHASHSHIFTER_HH
 
 #include "goetia/goetia.hh"
 #include "goetia/meta.hh"

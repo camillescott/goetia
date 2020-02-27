@@ -6,8 +6,8 @@
  * Date   : 15.10.2019
  */
 
-#ifndef BOINK_SATURATING_CPTOR
-#define BOINK_SATURATING_CPTOR
+#ifndef GOETIA_SATURATING_CPTOR
+#define GOETIA_SATURATING_CPTOR
 
 #include "goetia/processors.hh"
 #include "goetia/parsing/readers.hh"

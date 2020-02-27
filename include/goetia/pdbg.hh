@@ -14,8 +14,8 @@
  * of the MIT license.  See the LICENSE file for details.
  */
 
-#ifndef BOINK_PDBG_HH
-#define BOINK_PDBG_HH
+#ifndef GOETIA_PDBG_HH
+#define GOETIA_PDBG_HH
 
 #include "goetia/goetia.hh"
 #include "goetia/meta.hh"

@@ -6,8 +6,8 @@
  * Date   : 25.09.2019
  */
 
-#ifndef BOINK_INTERFACE_HH
-#define BOINK_INTERFACE_HH
+#ifndef GOETIA_INTERFACE_HH
+#define GOETIA_INTERFACE_HH
 
 // make sure that <condition_variable> does
 // not included from the standard lib because

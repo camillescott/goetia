@@ -6,8 +6,8 @@
  * Date   : 30.08.2019
  */
 
-#ifndef BOINK_UKHS_SIGNATURE_HH
-#define BOINK_UKHS_SIGNATURE_HH
+#ifndef GOETIA_UKHS_SIGNATURE_HH
+#define GOETIA_UKHS_SIGNATURE_HH
 
 #include <algorithm>
 #include <fstream>

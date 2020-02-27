@@ -5,7 +5,7 @@
  * Author : Camille Scott <camille.scott.w@gmail.com>
  * Date   : 15.01.2020
  *
- **** END BOINK LICENSE BLOCK
+ **** END GOETIA LICENSE BLOCK
  *
  * This file is part of khmer, https://github.com/dib-lab/khmer/, and is
  * Copyright (C) 2012-2015, Michigan State University.
@@ -44,8 +44,8 @@
  * Contact: khmer-project@idyll.org
  */
 
-#ifndef BOINK_READERS_HH
-#define BOINK_READERS_HH
+#ifndef GOETIA_READERS_HH
+#define GOETIA_READERS_HH
 
 #include <stddef.h>
 #include <cstdint>

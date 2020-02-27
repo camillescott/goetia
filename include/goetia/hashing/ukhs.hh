@@ -7,8 +7,8 @@
  */
 
 
-#ifndef BOINK_UKHS_HH
-#define BOINK_UKHS_HH
+#ifndef GOETIA_UKHS_HH
+#define GOETIA_UKHS_HH
 
 #include <algorithm>
 #include <climits>

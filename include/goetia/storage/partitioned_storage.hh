@@ -14,8 +14,8 @@
  * of the MIT license.  See the LICENSE file for details.
  */
 
-#ifndef BOINK_PARTITIONEDSTORAGE_HH
-#define BOINK_PARTITIONEDSTORAGE_HH
+#ifndef GOETIA_PARTITIONEDSTORAGE_HH
+#define GOETIA_PARTITIONEDSTORAGE_HH
 
 #include "goetia/goetia.hh"
 #include "goetia/storage/storage.hh"

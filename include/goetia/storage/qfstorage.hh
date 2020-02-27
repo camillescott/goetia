@@ -13,7 +13,7 @@
  * This software may be modified and distributed under the terms
  * of the MIT license.  See the LICENSE file for details.
  *
- *** END BOINK LICENSE BLOCK
+ *** END GOETIA LICENSE BLOCK
  *
  * This file is part of khmer, https://github.com/dib-lab/khmer/, and is
  * Copyright (C) 2016, The Regents of the University of California.
@@ -51,8 +51,8 @@
  * Contact: khmer-project@idyll.org
  */
 
-#ifndef BOINK_QFSTORAGE_HH
-#define BOINK_QFSTORAGE_HH
+#ifndef GOETIA_QFSTORAGE_HH
+#define GOETIA_QFSTORAGE_HH
 
 #include <cassert>
 #include <array>

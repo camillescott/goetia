@@ -6,8 +6,8 @@
  * Date   : 05.08.2019
  */
 
-#ifndef BOINK_UTAGGER_HH
-#define BOINK_UTAGGER_HH
+#ifndef GOETIA_UTAGGER_HH
+#define GOETIA_UTAGGER_HH
 
 #include <memory>
 #include <optional>

@@ -6,8 +6,8 @@
  * Date   : 08.01.2020
  */
 
-#ifndef BOINK_HASHEXTENDER_HH
-#define BOINK_HASHEXTENDER_HH
+#ifndef GOETIA_HASHEXTENDER_HH
+#define GOETIA_HASHEXTENDER_HH
 
 #include <vector>
 

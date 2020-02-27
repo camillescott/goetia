@@ -7,8 +7,8 @@
  */
 
 
-#ifndef BOINK_CDBG_HH
-#define BOINK_CDBG_HH
+#ifndef GOETIA_CDBG_HH
+#define GOETIA_CDBG_HH
 
 #include <algorithm>
 #include <cstdint>

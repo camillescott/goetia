@@ -6,8 +6,8 @@
  * Date   : 30.07.2019
  */
 
-#ifndef BOINK_HASHSHIFTER_HH
-#define BOINK_HASHSHIFTER_HH
+#ifndef GOETIA_HASHSHIFTER_HH
+#define GOETIA_HASHSHIFTER_HH
 
 #include <algorithm>
 #include <cstring>

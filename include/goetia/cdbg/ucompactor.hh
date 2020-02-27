@@ -14,8 +14,8 @@
  * of the MIT license.  See the LICENSE file for details.
  */
 
-#ifndef BOINK_UCOMPACTOR_HH
-#define BOINK_UCOMPACTOR_HH
+#ifndef GOETIA_UCOMPACTOR_HH
+#define GOETIA_UCOMPACTOR_HH
 
 #include <assert.h>
 #include <climits>

@@ -6,8 +6,8 @@
  * Date   : 05.11.2019
  */
 
-#ifndef BOINK_SPP_SERIALIZE_HH
-#define BOINK_SPP_SERIALIZE_HH
+#ifndef GOETIA_SPP_SERIALIZE_HH
+#define GOETIA_SPP_SERIALIZE_HH
 
 #include <fstream>
 
