@@ -4,8 +4,9 @@
 .. image:: https://mybinder.org/badge_logo.svg
     :target: https://mybinder.org/v2/gh/camillescott/goetia/master?filepath=examples%2FStreaming%20Sourmash%20Demo.ipynb
 
-.. image:: docs/img/goetia_logo_v2_small.png
+.. image:: docs/img/goetia_logo_v2.png
     :align: center
+    :scale: 25%
     
 goetia is a c++ library and software package for streaming analysis for de Bruijn Graphs, de Bruijn
 graph compaction, and genome sketching. The c++ library is fully available through Python via
