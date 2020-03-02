@@ -4,6 +4,9 @@
 .. image:: https://mybinder.org/badge_logo.svg
     :target: https://mybinder.org/v2/gh/camillescott/goetia/master?filepath=examples%2FStreaming%20Sourmash%20Demo.ipynb
 
+.. image:: https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat
+    :target: http://bioconda.github.io/recipes/goetia/README.html
+
 .. image:: docs/img/goetia_logo_v2.png
     :align: center
     :scale: 25%
