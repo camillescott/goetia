@@ -26,13 +26,14 @@ and a launched with binder using the badge above.
 
 ### Conda
 
-The primary supported platform is through [cond](https://docs.conda.io/en/latest/miniconda.html). Within a conda
+[conda](https://docs.conda.io/en/latest/miniconda.html) is the supported installation environment. Within a conda
 environment, install with:
 
     conda install goetia
 
-This will install the goetia python package, install the `libgoetia` shared library
-and its headers into `$CONDA_PREFIX`.
+This will install the goetia python package, the `libgoetia` shared library,
+and its headers into `$CONDA_PREFIX`. With the environment activated, you can `import goetia`
+in Python or link against the C++ library with `-lgoetia`.
 
 ### Building from Source
 
@@ -45,6 +46,7 @@ Then create a conda environment:
 
     conda create -y -n goetia -c conda-forge python=3 cppyy cmake cxx-compiler c-compiler clangdev libcxx libstdcxx-ng libgcc-ng pytest numpy scipy openmp python-clang screed blessings pytest-benchmark pyfiglet py-cpuinfo sourmash curio
     conda activate goetia
+    pip install -r requirements.txt # there are a few things not updated on conda yet...
 
 Then build and install with cmake:
 
