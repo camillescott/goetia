@@ -18,7 +18,8 @@ class Messages(SchemaBase):
                                                      'msg_type': {'enum': ['DistanceCalc'],
                                                                   'type': 'string'},
                                                      'sample_name': {'type': 'string'},
-                                                     'stdev': {'type': 'number'},
+                                                     'stat': {'type': 'number'},
+                                                     'stat_type': {'type': 'string'},
                                                      't': {'minimum': 0,
                                                            'type': 'integer'}},
                                       'required': ['msg_type',
@@ -26,7 +27,8 @@ class Messages(SchemaBase):
                                                    'sample_name',
                                                    'delta',
                                                    'distance',
-                                                   'stdev',
+                                                   'stat',
+                                                   'stat_type',
                                                    'file_names'],
                                       'type': 'object'},
                      'EndStream': {'properties': {'msg_type': {'enum': ['EndStream'],
@@ -243,7 +245,7 @@ class Error(SchemaBase):
 class DistanceCalc(SchemaBase):
     """DistanceCalc schema wrapper
 
-    Mapping(required=[msg_type, t, sample_name, delta, distance, stdev, file_names])
+    Mapping(required=[msg_type, t, sample_name, delta, distance, stat, stat_type, file_names])
 
     Attributes
     ----------
@@ -258,7 +260,9 @@ class DistanceCalc(SchemaBase):
 
     sample_name : string
 
-    stdev : float
+    stat : float
+
+    stat_type : string
 
     t : integer
 
@@ -267,10 +271,10 @@ class DistanceCalc(SchemaBase):
     _rootschema = Messages._schema
 
     def __init__(self, delta=Undefined, distance=Undefined, file_names=Undefined, msg_type=Undefined,
-                 sample_name=Undefined, stdev=Undefined, t=Undefined, **kwds):
+                 sample_name=Undefined, stat=Undefined, stat_type=Undefined, t=Undefined, **kwds):
         super(DistanceCalc, self).__init__(delta=delta, distance=distance, file_names=file_names,
-                                           msg_type=msg_type, sample_name=sample_name, stdev=stdev, t=t,
-                                           **kwds)
+                                           msg_type=msg_type, sample_name=sample_name, stat=stat,
+                                           stat_type=stat_type, t=t, **kwds)
 
 
 

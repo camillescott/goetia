@@ -65,19 +65,20 @@ msg_schema = {
         },
         'DistanceCalc': {
             'type': 'object',
-            'required': ['msg_type', 't', 'sample_name', 'delta', 'distance', 'stdev', 'file_names'],
+            'required': ['msg_type', 't', 'sample_name', 'delta', 'distance', 'stat', 'stat_type', 'file_names'],
             'properties': {
                 'msg_type': {'type': 'string',
                              'enum': ['DistanceCalc']},
                 't': {'type': 'integer',
                       'minimum': 0},
                 'sample_name': {'type': 'string'},
+                'stat_type': {'type': 'string'},
                 'delta': {'type': 'integer',
                           'minimum': 0},
                 'distance': {'type': 'number',
                              'minimum': 0.0,
                              'maximum': 1.0},
-                'stdev': {'type': 'number'},
+                'stat': {'type': 'number'},
                 'file_names': {'type': 'array'}
             }
         },
