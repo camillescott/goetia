@@ -193,7 +193,9 @@ class AsyncSequenceProcessor(UnixBroadcasterMixin):
 
         self.processor = processor
         self.sample_iter = sample_iter
-        self.run_echo = echo
+
+        self.run_echo = echo is not None
+        self.echo_file = '/dev/stderr' if echo is True else echo
 
         self.state = RunState.READY
 
@@ -292,8 +294,12 @@ class AsyncSequenceProcessor(UnixBroadcasterMixin):
 
             if self.run_echo:
                 listener = self.add_listener('events_q', 'echo')
+                async def echo(msg):
+                    async with curio.aopen(self.echo_file, 'a') as fp:
+                        await fp.write(f'{msg.to_json()}\n')
+
                 listener.on_message(AllMessages,
-                                    lambda msg: print(msg.to_json(), file=sys.stderr))
+                                    echo)
             
             # spawn tasks from listener callbacks
             for task in self.listener_tasks:

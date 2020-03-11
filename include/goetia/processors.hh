@@ -425,7 +425,7 @@ class InserterProcessor : public FileProcessor<InserterProcessor<InserterType, P
 protected:
 
     std::shared_ptr<InserterType> inserter;
-    uint64_t _n_inserted;
+    uint64_t _n_kmers;
 
     typedef FileProcessor<InserterProcessor<InserterType, ParserType>,
                           ParserType> Base;
@@ -442,14 +442,13 @@ public:
                       bool     verbose         = false)
         : Base(fine_interval, medium_interval, coarse_interval, verbose),
           inserter(inserter),
-          _n_inserted(0)
+          _n_kmers(0)
     {
     }
 
     void process_sequence(const parsing::Record& read) {
-        size_t this_n_inserted;
         try {
-            this_n_inserted = inserter->insert_sequence(read.sequence);
+            inserter->insert_sequence(read.sequence);
         } catch (SequenceLengthException &e) {
             if (this->_verbose) {
                 std::cerr << "WARNING: Skipped sequence that was too short: read "
@@ -466,11 +465,15 @@ public:
                       <<  std::endl;
             throw e;
         }
-        __sync_add_and_fetch(&_n_inserted, this_n_inserted);
+        __sync_add_and_fetch(&_n_kmers, read.sequence.length() - inserter->K + 1);
     }
 
     void report() {
 
+    }
+
+    uint64_t n_kmers() const {
+       return _n_kmers;
     }
 
     static std::shared_ptr<InserterProcessor<InserterType, ParserType>> build(std::shared_ptr<InserterType> inserter,
