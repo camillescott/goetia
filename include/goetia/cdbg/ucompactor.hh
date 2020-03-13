@@ -82,8 +82,7 @@ struct UStreamingCompactor {
     };
 
 
-    class Compactor : public traverser_type,
-                      public events::EventNotifier {
+    class Compactor : public traverser_type{
 
     public:
  
@@ -109,7 +108,6 @@ struct UStreamingCompactor {
         Compactor(std::shared_ptr<dbg_type> dbg,
                   std::shared_ptr<hashing::UKHS::Map> ukhs)
             : traverser_type(dbg->K(), ukhs->K(), ukhs),
-              EventNotifier(),
               dbg(dbg),
               ukhs(ukhs),
               unikmer_k(ukhs->K())

@@ -49,8 +49,6 @@
 #include "goetia/pdbg.hh"
 #include "goetia/traversal.hh"
 
-#include "goetia/reporting/reporters.hh"
-
 #include "goetia/processors.hh"
 
 #include "goetia/cdbg/cdbg_types.hh"

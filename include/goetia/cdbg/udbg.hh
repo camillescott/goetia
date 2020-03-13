@@ -20,7 +20,6 @@
 #include "goetia/goetia.hh"
 #include "goetia/meta.hh"
 
-#include "goetia/events.hh"
 #include "goetia/dbg.hh"
 #include "goetia/traversal.hh"
 #include "goetia/hashing/kmeriterator.hh"
@@ -75,7 +74,7 @@ struct uDBG {
         uint64_t    partition;
     };
 
-    class Graph : public events::EventNotifier {
+    class Graph {
 
         typedef spp::sparse_hash_map<value_type, UnitigTip*> tip_map_t;
         typedef typename tip_map_t::const_iterator           tip_map_iter_t;

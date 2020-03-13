@@ -18,10 +18,6 @@
 #include "goetia/hashing/rollinghashshifter.hh"
 #include "goetia/storage/storage_types.hh"
 #include "goetia/cdbg/cdbg.hh"
-
-#include "goetia/event_types.hh"
-
-#include "goetia/reporting/reporters.hh"
 #include "goetia/processors.hh"
 
 
@@ -171,7 +167,7 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
         double   estimated_fp;
     };
 
-    class Compactor : public events::EventNotifier {
+    class Compactor {
 
     protected:
 
@@ -185,8 +181,7 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
 
         Compactor(std::shared_ptr<graph_type> dbg,
                   uint64_t minimizer_window_size=8)
-            : EventNotifier(),
-              K(dbg->K),
+            : K(dbg->K),
               _minimizer_window_size(minimizer_window_size),
               dbg(dbg)
         {
@@ -1089,7 +1084,7 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
 
     using Processor = InserterProcessor<Compactor>;
 
-
+/*
     class Reporter: public reporting::SingleFileReporter {
 
     protected:
@@ -1148,6 +1143,7 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
             }
         }
     };
+    */
 
     template <class ParserType = parsing::FastxParser<>>
     class NormalizingCompactor : public FileProcessor<NormalizingCompactor<ParserType>,
@@ -1205,7 +1201,6 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
     public:
 
         using Base::process_sequence;
-        using events::EventNotifier::register_listener;
         
         NormalizingCompactor(std::shared_ptr<Compactor> compactor,
                              unsigned int               cutoff,
@@ -1272,7 +1267,7 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
     };
 
     
-    class SolidCompactor : public events::EventNotifier {
+    class SolidCompactor {
 
     private:
 
@@ -1290,8 +1285,7 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
                        unsigned int               min_abund,
                        uint64_t                   abund_table_size,
                        uint16_t                   n_abund_tables)
-            : EventNotifier (),
-              compactor     (compactor),
+            : compactor     (compactor),
               dbg           (compactor->dbg),
               min_abund     (min_abund)
         {

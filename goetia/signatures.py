@@ -16,7 +16,8 @@ from pyfiglet import Figlet
 from sourmash import SourmashSignature, save_signatures
 
 from goetia import libgoetia, __version__
-from goetia.cli import CommandRunner, get_output_interval_args
+from goetia.cli.runner import CommandRunner
+from goetia.cli.args import get_output_interval_args
 from goetia.parsing import get_fastx_args, iter_fastx_inputs
 from goetia.processors import AsyncSequenceProcessor
 from goetia.messages import (Interval, DistanceCalc, SampleStarted, SampleFinished,

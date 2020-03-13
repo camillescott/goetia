@@ -2,7 +2,7 @@
 import curio
 from curio.socket import *
 
-from collections import OrderedDict
+from collections import defaultdict, OrderedDict
 from enum import Enum, unique as unique_enum
 import inspect
 import json
@@ -13,8 +13,11 @@ import threading
 from typing import Awaitable, Optional, Callable, Tuple
 
 from goetia.messages import *
+from goetia import libgoetia
+
 
 DEFAULT_SOCKET = '/tmp/goetia.sock'
+DEFAULT_INTERVALS = libgoetia.DEFAULT_INTERVALS
 
 
 class QueueManager:
@@ -57,7 +60,7 @@ class MessageHandler:
     def __init__(self, name, subscription):
         self.subscription = subscription
         self.name = name
-        self.handlers = {}
+        self.handlers = defaultdict(list)
     
     async def task(self):
         try:
@@ -68,18 +71,14 @@ class MessageHandler:
                 if msg is None:
                     await msg_q.task_done()
                     break
-                try:
-                    callback, args = self.handlers[type(msg)]
-                except KeyError:
-                    pass
-                else:
+                
+                for callback, args in self.handlers[type(msg)]:
                     if inspect.iscoroutinefunction(callback):
                         await callback(msg, *args)
                     else:
                         callback(msg, *args)
 
-                if AllMessages in self.handlers:
-                    callback, args = self.handlers[AllMessages]
+                for callback, args in self.handlers[AllMessages]:
                     if inspect.iscoroutinefunction(callback):
                         await callback(msg, *args)
                     else:
@@ -93,7 +92,7 @@ class MessageHandler:
     
     def on_message(self, msg_class, callback, *args):
         assert type(msg_class) is type
-        self.handlers[msg_class] = (callback, args)
+        self.handlers[msg_class].append((callback, args))
 
 
 class UnixBroadcasterMixin:

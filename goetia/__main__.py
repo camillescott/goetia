@@ -6,8 +6,8 @@
 # Author : Camille Scott <camille.scott.w@gmail.com>
 # Date   : 14.10.2019
 
-from goetia.cli import GoetiaRunner
-from goetia.cdbg import cDBGRunner
+from goetia.cli.runner import GoetiaRunner
+from goetia.cli.cdbg_stream import cDBGRunner
 from goetia.signatures import SourmashRunner
 
 

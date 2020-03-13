@@ -18,8 +18,6 @@
 #include <vector>
 
 #include "goetia/goetia.hh"
-#include "goetia/event_types.hh"
-#include "goetia/reporting/reporters.hh"
 #include "goetia/processors.hh"
 
 #include "goetia/hashing/kmeriterator.hh"
@@ -132,52 +130,8 @@ struct UnikmerSignature {
         */
     };
 
-    typedef typename UnikmerSignature<StorageType, HashType>::Signature signature_type;
-
     using Processor = InserterProcessor<Signature>; 
-
-
-    class Reporter : public reporting::SingleFileReporter {
-
-    private:
-
-        std::shared_ptr<Signature> signature;
-
-    public:
-
-        Reporter(std::shared_ptr<Signature> signature,
-                 const std::string&         filename)
-            : SingleFileReporter(filename, "UnikmerSignature::Reporter"),
-              signature(signature)
-        {
-            _cerr(this->THREAD_NAME << " reporting at MEDIUM interval.");
-            this->msg_type_whitelist.insert(events::MSG_TIME_INTERVAL);
-        }
-
-        
-        static std::shared_ptr<Reporter> build(std::shared_ptr<Signature> signature,
-                                               const std::string&         filename) {
-            return std::make_shared<Reporter>(signature, filename);
-        }
-        
-        
-        virtual void handle_msg(std::shared_ptr<events::Event> event) {
-             if (event->msg_type == events::MSG_TIME_INTERVAL) {
-                auto _event = static_cast<events::TimeIntervalEvent*>(event.get());
-                if (_event->level == events::TimeIntervalEvent::MEDIUM ||
-                    _event->level == events::TimeIntervalEvent::END) {
-                    
-                    _output_stream << _event->t;
-                    auto counts = signature->get_signature();
-                    for (auto& count : counts) {
-                        _output_stream << ", " << count;
-                    }
-                    _output_stream << std::endl;
-                }
-            }       
-        }
-    
-    };
+ 
 
 };
 
