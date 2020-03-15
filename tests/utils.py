@@ -9,7 +9,9 @@ import pytest
 import collections
 import six
 
+import os
 import random
+import subprocess
 
 from debruijnal_enhance_o_tron.sequence import *
 
@@ -151,3 +153,16 @@ def using(**kwargs):
 
     return wrapped
 
+
+def run_shell_cmd(cmd, in_directory=None):
+    cwd = os.getcwd()
+    if in_directory:
+        os.chdir(in_directory)
+
+    print('running: ', ' '.join(cmd))
+    try:
+        p = subprocess.run(' '.join(cmd), shell=True, check=True,
+                           stderr=subprocess.PIPE)
+        return p
+    finally:
+        os.chdir(cwd)

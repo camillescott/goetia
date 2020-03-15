@@ -35,6 +35,7 @@ set(_headers
     include/goetia/pdbg.hh
     include/goetia/processors.hh
     include/goetia/ring_span.hpp
+    include/goetia/solidifier.hh
     include/goetia/signatures/sourmash/sourmash.hpp
     include/goetia/signatures/sourmash/sourmash.h
     include/goetia/signatures/sourmash_signature.hh
@@ -75,6 +76,7 @@ set(_sources
     src/goetia/sequences/alphabets.cc
     src/goetia/dbg.cc
     src/goetia/traversal.cc
+    src/goetia/solidifier.cc
     src/goetia/goetia.cc
     src/goetia/meta.cc
     src/goetia/cdbg/metrics.cc

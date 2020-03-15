@@ -21,7 +21,7 @@ SplitPairedReader = libgoetia.parsing.SplitPairedReader
 def get_fastx_args(parser):
     """Common pairing mode argument."""
     group = parser.add_argument_group('fastx arguments')
-    group.add_argument('--pairing-mode', default='interleaved',
+    group.add_argument('--pairing-mode', default='single',
                         choices=PAIRING_MODES,
                         help='How to interpret read pairing. With `single`, '\
                              'reads will be parsed as singletons, regardless'\

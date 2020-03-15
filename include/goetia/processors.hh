@@ -450,5 +450,107 @@ public:
 
 };
 
+
+/**
+ * @Synopsis  Generic processor for passing reads to a class
+ *            with a `filter_sequence` method.
+ *
+ * @tparam FilterType Class with filter_sequence.
+ * @tparam ParserType Sequence parser type.
+ */
+template <class FilterType,
+          class ParserType = parsing::FastxParser<>>
+class FilterProcessor : public FileProcessor<FilterProcessor<FilterType, ParserType>,
+                                             ParserType> {
+
+protected:
+
+    std::shared_ptr<FilterType> filter;
+    std::ofstream _output_stream; 
+    uint64_t _n_kmers;
+    uint64_t _n_passed;
+
+    typedef FileProcessor<FilterProcessor<FilterType, ParserType>,
+                          ParserType> Base;
+
+public:
+
+    using Base::process_sequence;
+    typedef typename Base::alphabet alphabet;
+    
+    FilterProcessor(std::shared_ptr<FilterType> filter,
+                    const std::string           output_filename,
+                    uint64_t fine_interval   = DEFAULT_INTERVALS::FINE,
+                    uint64_t medium_interval = DEFAULT_INTERVALS::MEDIUM,
+                    uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE,
+                    bool     verbose         = false)
+        : Base(fine_interval, medium_interval, coarse_interval, verbose),
+          filter(filter),
+          _output_stream(output_filename.c_str()),
+          _n_kmers(0),
+          _n_passed(0)
+    {
+    }
+
+    ~FilterProcessor() {
+        _output_stream.close();
+    }
+
+    void process_sequence(const parsing::Record& read) {
+        bool passed = false;
+        try {
+            passed = filter->filter_sequence(read.sequence);
+        } catch (SequenceLengthException &e) {
+            if (this->_verbose) {
+                std::cerr << "WARNING: Skipped sequence that was too short: read "
+                          << this->_n_reads << " with sequence "
+                          << read.sequence 
+                          << std::endl;
+            }
+            return;
+        } catch (InvalidCharacterException& e) {
+            return;
+        } catch (std::exception &e) {
+            std::cerr << "ERROR: Exception thrown at " << this->_n_reads 
+                      << " with msg: " << e.what()
+                      <<  std::endl;
+            throw e;
+        }
+        __sync_add_and_fetch(&_n_kmers, read.sequence.length() - filter->K + 1);
+
+        if (passed) {
+            __sync_add_and_fetch(&_n_passed, 1);
+            read.write_fastx(_output_stream);
+        }
+    }
+
+    void report() {
+
+    }
+
+    uint64_t n_kmers() const {
+       return _n_kmers;
+    }
+
+    static auto build(std::shared_ptr<FilterType> filter,
+                      const std::string           output_filename,
+                      uint64_t fine_interval   = DEFAULT_INTERVALS::FINE,
+                      uint64_t medium_interval = DEFAULT_INTERVALS::MEDIUM,
+                      uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE,
+                      bool verbose             = false)
+    -> std::shared_ptr<FilterProcessor<FilterType, ParserType>> {
+
+        return std::make_shared<FilterProcessor<FilterType,
+                                                ParserType>>(filter,
+                                                             output_filename,
+                                                             fine_interval,
+                                                             medium_interval, 
+                                                             coarse_interval,
+                                                             verbose);
+    }
+
+};
+
+
 } //namespace goetia
 #endif

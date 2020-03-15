@@ -28,16 +28,16 @@ def is_probabilistic(klass):
     return check_trait(libgoetia.storage.is_probabilistic, klass)
 
 
-def get_storage_args(parser):
+def get_storage_args(parser, default='SparseppSetStorage'):
     if 'storage' in [g.title for g in parser._action_groups]:
         return None
 
     group = parser.add_argument_group('storage')
 
     group.add_argument('--storage', choices=list(types.keys()), 
-                       default='SparseppSetStorage')
+                       default=default)
     group.add_argument('-N', '--n_tables', default=4, type=int)
-    group.add_argument('-x', '--max-tablesize', default=int(1e5), type=int)
+    group.add_argument('-x', '--max-tablesize', default=1e5, type=float)
 
     return group
 
@@ -50,5 +50,6 @@ def process_storage_args(args):
 
     args.storage_args = ()
     if args.storage is not libgoetia.storage.SparseppSetStorage:
+        args.max_tablesize = int(args.max_tablesize)
         args.storage_args = (args.max_tablesize, args.n_tables)
 

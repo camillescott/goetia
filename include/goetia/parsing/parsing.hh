@@ -36,7 +36,7 @@ struct Record {
         quality.clear();
     }
 
-    inline void write_fastx(std::ostream& output)
+    inline void write_fastx(std::ostream& output) const
     {
         if (quality.length() != 0) {
             output << "@" << name << '\n'
