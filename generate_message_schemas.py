@@ -11,8 +11,8 @@ msg_schema = {
                              'default': 'Interval'},
                 't': {'type': 'integer',
                        'minimum': 0},
-                'state': {'type': 'string',
-                          'enum': ['fine', 'medium', 'coarse']},
+                'state': {'type': 'array',
+                          'uniqueItems': True},
                 'file_names': {'type': 'array'}
             }
         },

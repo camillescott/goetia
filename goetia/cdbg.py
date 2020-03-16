@@ -7,6 +7,7 @@
 # Date   : 14.10.2019
 
 import json
+import sys
 
 from boltons.iterutils import pairwise
 import curio
@@ -20,7 +21,7 @@ async def compute_connected_component_callback(msg,
                                                out_file,
                                                sample_size,
                                                interval='coarse'):
-    if msg.state == interval:
+    if interval in msg.state:
         result = cdbg_type.compute_connected_component_metrics(cdbg,
                                                                sample_size)
         n_comps, min_comp, max_comp, size_dist = result
@@ -33,7 +34,7 @@ async def compute_connected_component_callback(msg,
                 'size_dist': size_dist}
 
         async with curio.aopen(out_file, 'a') as fp:
-            if fp.tell() != 0:
+            if await fp.tell() != 0:
                 await fp.write(',\n')
             else:
                 await fp.write('[\n')
@@ -45,8 +46,9 @@ async def compute_unitig_fragmentation_callback(msg,
                                                 cdbg,
                                                 out_file,
                                                 bins,
-                                                interval='median'):
-    if msg.state == interval:
+                                                interval='medium'):
+    
+    if interval in msg.state:
         counts = cdbg_type.compute_unitig_fragmentation(cdbg,
                                                         bins)
         data = {'t': msg.t,
@@ -54,10 +56,10 @@ async def compute_unitig_fragmentation_callback(msg,
         for i in range(len(bins) - 1):
             bin_start, bin_end = bins[i], bins[i+1]
             data[f'[{bin_start},{bin_end})'] = counts[i]
-        data[f'[{bin_start},Inf)'] = counts[-1]
+        data[f'[{bin_end},Inf)'] = counts[-1]
 
         async with curio.aopen(out_file, 'a') as fp:
-            if fp.tell() != 0:
+            if await fp.tell() != 0:
                 await fp.write(',\n')
             else:
                 await fp.write('[\n')
@@ -68,7 +70,7 @@ async def write_cdbg_metrics_callback(msg,
                                       compactor,
                                       out_file,
                                       interval='fine'):
-    if msg.state == interval:
+    if interval in msg.state:
         report = compactor.get_report()
         data = {'t': msg.t,
                 'sample_name': msg.sample_name,
@@ -91,7 +93,7 @@ async def write_cdbg_metrics_callback(msg,
                 'estimated_fp': report.estimated_fp}
 
         async with curio.aopen(out_file, 'a') as fp:
-            if fp.tell() != 0:
+            if await fp.tell() != 0:
                 await fp.write(',\n')
             else:
                 await fp.write('[\n')
@@ -103,7 +105,7 @@ async def write_cdbg_callback(msg,
                               out_file_prefix,
                               out_format,
                               interval='coarse'):
-    if msg.state == interval:
+    if interval in msg.state:
         out_file_name = f'{out_file_prefix}.{msg.t}.{out_format}'
         cdbg.write(out_file_name,
                    cDBGSerialization.enum_from_str(out_format))

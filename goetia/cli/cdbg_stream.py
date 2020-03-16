@@ -19,14 +19,13 @@ from goetia.messages import (Interval, SampleStarted, SampleFinished, Error, All
 from goetia.metadata import CUR_TIME
 from goetia.serialization import cDBGSerialization
 
-from goetia.cli.args import get_output_interval_args
+from goetia.cli.args import get_output_interval_args, print_interval_settings
 from goetia.cli.runner import CommandRunner
 
 import curio
 
 import os
 import sys
-
 
 
 class cDBGRunner(CommandRunner):
@@ -62,7 +61,6 @@ class cDBGRunner(CommandRunner):
         self.cdbg_t      = libgoetia.cdbg.cDBG[type(self.dbg)]
 
         self.compactor_t = libgoetia.cdbg.StreamingCompactor[type(self.dbg)]
-        print(self.compactor_t)
 
         self.compactor = self.compactor_t.Compactor.build(self.dbg)
 
@@ -148,7 +146,7 @@ class cDBGRunner(CommandRunner):
         # 
 
         def info_output(msg):
-            info = f'{msg.msg_type}:'\
+            info = f'{msg.msg_type}: {getattr(msg, "state", "")}'\
                    f'\n\tSample:    {msg.sample_name}'\
                    f'\n\tSequences: {msg.t}'
             if msg.msg_type == 'Error':
@@ -188,22 +186,22 @@ def get_cdbg_args(parser):
                         default=['gfa1'])
 
     group.add_argument('--track-cdbg-stats',
-                        metavar='FILE_NAME.csv',
+                        metavar='FILE_NAME.json',
                         nargs='?',
-                        const='goetia.cdbg.stats.csv')
+                        const='goetia.cdbg.stats.json')
 
     group.add_argument('--track-cdbg-components',
-                        metavar='FILE_NAME.csv',
+                        metavar='FILE_NAME.json',
                         nargs='?',
-                        const='goetia.cdbg.components.csv')
+                        const='goetia.cdbg.components.json')
     group.add_argument('--component-sample-size',
                         type=int,
                         default=10000)
 
     group.add_argument('--track-cdbg-unitig-bp',
-                        metavar='FILENAME.csv',
+                        metavar='FILENAME.json',
                         nargs='?',
-                        const='goetia.cdbg.unitigs.bp.csv')
+                        const='goetia.cdbg.unitigs.bp.json')
 
     group.add_argument('--unitig-bp-bins',
                         nargs='+',

@@ -1265,7 +1265,7 @@ public:
             auto seq_len = it->second->sequence.length();
             for (size_t bin_num = 0; bin_num < bins.size() - 1; bin_num++) {
                 if (seq_len >= bins[bin_num] && seq_len < bins[bin_num+1]) {
-                    bin_sums[bin_num] += seq_len;
+                    bin_sums[bin_num] += (seq_len - cdbg->K + 1);
                     break;
                 }
             }

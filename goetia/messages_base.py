@@ -52,10 +52,8 @@ class Messages(SchemaBase):
                                                  'msg_type': {'const': 'Interval',
                                                               'default': 'Interval',
                                                               'type': 'string'},
-                                                 'state': {'enum': ['fine',
-                                                                    'medium',
-                                                                    'coarse'],
-                                                           'type': 'string'},
+                                                 'state': {'type': 'array',
+                                                           'uniqueItems': True},
                                                  't': {'minimum': 0,
                                                        'type': 'integer'}},
                                   'required': ['msg_type',
@@ -120,7 +118,7 @@ class Interval(SchemaBase):
 
     msg_type : string
 
-    state : enum('fine', 'medium', 'coarse')
+    state : List(Mapping(required=[]))
 
     t : integer
 
