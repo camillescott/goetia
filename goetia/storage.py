@@ -37,7 +37,7 @@ def get_storage_args(parser, default='SparseppSetStorage'):
     group.add_argument('--storage', choices=list(types.keys()), 
                        default=default)
     group.add_argument('-N', '--n_tables', default=4, type=int)
-    group.add_argument('-x', '--max-tablesize', default=1e5, type=float)
+    group.add_argument('-x', '--max-tablesize', default=1e8, type=float)
 
     return group
 

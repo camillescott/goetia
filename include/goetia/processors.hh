@@ -532,8 +532,12 @@ public:
        return _n_kmers;
     }
 
+    uint64_t n_passed() const {
+        return _n_passed;
+    }
+
     static auto build(std::shared_ptr<FilterType> filter,
-                      const std::string           output_filename,
+                      const std::string&          output_filename,
                       uint64_t fine_interval   = DEFAULT_INTERVALS::FINE,
                       uint64_t medium_interval = DEFAULT_INTERVALS::MEDIUM,
                       uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE,

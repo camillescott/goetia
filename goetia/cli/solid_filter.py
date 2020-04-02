@@ -6,6 +6,8 @@
 # Author : Camille Scott <camille.scott.w@gmail.com>
 # Date   : 12.03.2020
 
+import sys
+
 from goetia.filters import SolidFilter
 from goetia.dbg import get_graph_args, process_graph_args
 from goetia.cli.args import get_output_interval_args
@@ -23,6 +25,7 @@ class SolidFilterRunner(CommandRunner):
         group = get_fastx_args(parser)
         group.add_argument('-o', dest='output_filename', default='/dev/stdout')
         group.add_argument('-i', '--inputs', dest='inputs', nargs='+', required=True)
+        parser.add_argument('--solid-threshold', type=float, default=0.75)
 
     def postprocess_args(self, args):
         process_graph_args(args)
@@ -33,7 +36,7 @@ class SolidFilterRunner(CommandRunner):
         self.storage     = args.storage.build(*args.storage_args)
         self.dbg         = args.graph_t.build(self.storage, self.hasher)
         self.filter_t    = SolidFilter[self.dbg_t]
-        self.solid_filter = self.filter_t.Filter.build(self.dbg)
+        self.solid_filter = self.filter_t.Filter.build(self.dbg, args.solid_threshold)
 
         self.processor = self.filter_t.Processor.build(self.solid_filter.__smartptr__(),
                                                        args.output_filename,
@@ -45,6 +48,8 @@ class SolidFilterRunner(CommandRunner):
         for sample, name in iter_fastx_inputs(args.inputs, args.pairing_mode, names=args.names):
             for n_seqs, n_skipped, state in self.processor.chunked_process(*sample):
                 pass
+            print(f'{sample}, {name}: {n_seqs} reads, {self.processor.n_passed()} passed filter.',
+                  file=sys.stderr)
 
     def teardown(self):
         pass

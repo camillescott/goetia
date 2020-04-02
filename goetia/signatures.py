@@ -32,6 +32,7 @@ UnikmerSketch  = libgoetia.signatures.UnikmerSignature
 class SourmashRunner(CommandRunner):
 
     def __init__(self, parser):
+        get_output_interval_args(parser)
         group = get_fastx_args(parser)
         group.add_argument('-i', dest='inputs', nargs='+', required=True)
         parser.add_argument('-K', default=31, type=int)
@@ -51,6 +52,7 @@ class SourmashRunner(CommandRunner):
         parser.add_argument('--cutoff', default=0.999, type=float)
         parser.add_argument('--saturation-policy', choices=list(SaturationPolicies.keys()),
                             default='median.distance')
+        parser.add_argument('--saturate', default=False, action='store_true')
 
         parser.add_argument('--tick-length', default=100000, type=int,
                             help='Approx. number of k-mers in a tick.')
@@ -87,9 +89,10 @@ class SourmashRunner(CommandRunner):
         # build the underlying Processor specialized for sourmash signature
         self.signature = self.make_signature(args)
         processor = SourmashSketch.Processor.build(self.signature,
-                                                   1000,
-                                                   10000,
-                                                   100000)
+                                                   args.fine_interval,
+                                                   args.medium_interval,
+                                                   args.coarse_interval)
+        
         # get the sample iter
         sample_iter = iter_fastx_inputs(args.inputs, args.pairing_mode, names=args.names)
 
@@ -108,7 +111,7 @@ class SourmashRunner(CommandRunner):
         # set up a callback from Interval events on the sequence processor
         def on_interval(msg, events_q, args, sigs):
 
-            kmer_time = self.processor.processor.n_inserted()
+            kmer_time = self.processor.processor.n_kmers()
             sig = self.signature.to_sourmash()
             distance, delta, stat = self.tracker.push(sig, msg.t, kmer_time)
 
@@ -122,12 +125,12 @@ class SourmashRunner(CommandRunner):
                                        file_names=msg.file_names)
                 events_q.put(out_msg)
 
-            if args.save_stream and not self.tracker.saturated:
+            if args.save_stream:
                 sigs.append(SourmashSignature(sig,
                                               name=f'{msg.sample_name}:{msg.t}',
                                               filename=format_filenames(msg.file_names)))
 
-            if self.tracker.saturated:
+            if self.tracker.saturated and args.saturate:
                 events_q.put(SampleSaturated(t=msg.t,
                                              sample_name=msg.sample_name,
                                              file_names=msg.file_names))
