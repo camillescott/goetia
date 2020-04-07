@@ -1,67 +1,85 @@
-import schemapi
+from goetia import schemapi
 
 msg_schema = {
     'definitions': {
         'Interval': {
-            "type": "object",
-            "required": ["msg_type", "t", "state", 'sample_name'],
+            'type': 'object',
+            'required': ['msg_type', 't', 'state', 'sample_name', 'file_names'],
             'properties': {
                 'msg_type': {'type': 'string',
                              'const': 'Interval',
                              'default': 'Interval'},
                 't': {'type': 'integer',
                        'minimum': 0},
-                'state': {'type': 'string',
-                          'enum': ['fine', 'medium', 'coarse']}
+                'state': {'type': 'array',
+                          'uniqueItems': True},
+                'file_names': {'type': 'array'}
             }
         },
         'SampleStarted': {
-            "type": "object",
-            "required": ["msg_type", "sample_name"],
-            "properties": {
-                "msg_type": {"type": "string",
-                             "enum": ['SampleStarted']},
-                "sample_name": {"type": "string"}
+            'type': 'object',
+            'required': ['msg_type', 'sample_name', 'file_names'],
+            'properties': {
+                'msg_type': {'type': 'string',
+                             'enum': ['SampleStarted']},
+                'sample_name': {'type': 'string'},
+                'file_names': {'type': 'array'}
             }
         },
-        "SampleFinished": {
-            "type": "object",
-            "required": ["msg_type", "sample_name", "t"],
-            "properties": {
+        'SampleFinished': {
+            'type': 'object',
+            'required': ['msg_type', 'sample_name', 't', 'file_names'],
+            'properties': {
                 'msg_type': {'type': 'string',
                              'enum': ['SampleFinished']},
                 't': {'type': 'integer',
                       'minimum': 0},
-                "sample_name": {"type": "string"}
+                'sample_name': {'type': 'string'},
+                'file_names': {'type': 'array'}
             }
         },
-        "Error": {
-            "type": 'object',
-            'required': ['msg_type', 't', 'sample_name', 'error'],
+        'SampleSaturated': {
+            'type': 'object',
+            'required': ['msg_type', 'sample_name', 't', 'file_names'],
+            'properties': {
+                'msg_type': {'type': 'string',
+                             'enum': ['SampleSaturated']},
+                't': {'type': 'integer',
+                      'minimum': 0},
+                'sample_name': {'type': 'string'},
+                'file_names': {'type': 'array'}
+            }
+        },
+        'Error': {
+            'type': 'object',
+            'required': ['msg_type', 't', 'sample_name', 'error', 'file_names'],
             'properties': {
                 'msg_type': {'type': 'string',
                               'enum': ['Error']},
                 't': {'type': 'integer',
                       'minimum': 0},
-                "sample_name": {"type": "string"},
-                "error": {"type": "string"}
+                'sample_name': {'type': 'string'},
+                'error': {'type': 'string'},
+                'file_names': {'type': 'array'}
             }
         },
-        "DistanceCalc": {
-            "type": 'object',
-            'required': ['msg_type', 't', 'sample_name', 'delta', 'distance', 'stdev'],
+        'DistanceCalc': {
+            'type': 'object',
+            'required': ['msg_type', 't', 'sample_name', 'delta', 'distance', 'stat', 'stat_type', 'file_names'],
             'properties': {
                 'msg_type': {'type': 'string',
                              'enum': ['DistanceCalc']},
                 't': {'type': 'integer',
                       'minimum': 0},
                 'sample_name': {'type': 'string'},
+                'stat_type': {'type': 'string'},
                 'delta': {'type': 'integer',
                           'minimum': 0},
                 'distance': {'type': 'number',
                              'minimum': 0.0,
                              'maximum': 1.0},
-                'stdev': {'type': 'number'}
+                'stat': {'type': 'number'},
+                'file_names': {'type': 'array'}
             }
         },
         'EndStream': {
@@ -74,13 +92,14 @@ msg_schema = {
         }
 
     },
-    "oneOf": [
-        {"$ref": "#/definitions/Interval"},
-        {"$ref": "#/definitions/SampleStarted"},
-        {"$ref": "#/definitions/SampleFinished"},
-        {"$ref": "#/definitions/Error"},
-        {"$ref": "#/definitions/DistanceCalc"},
-        {"$ref": "#/definitions/EndStream"}
+    'oneOf': [
+        {'$ref': '#/definitions/Interval'},
+        {'$ref': '#/definitions/SampleStarted'},
+        {'$ref': '#/definitions/SampleFinished'},
+        {'$ref': '#/definitions/SampleSaturated'},
+        {'$ref': '#/definitions/Error'},
+        {'$ref': '#/definitions/DistanceCalc'},
+        {'$ref': '#/definitions/EndStream'}
     ]
 }
 

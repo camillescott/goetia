@@ -10,8 +10,6 @@ set(_headers
     include/goetia/cdbg/udbg.hh
     include/goetia/cdbg/utagger.hh
     include/goetia/dbg.hh
-    include/goetia/events.hh
-    include/goetia/event_types.hh
     include/goetia/sequences/alphabets.hh
     include/goetia/hashing/hash_combine.hh
     include/goetia/hashing/canonical.hh
@@ -36,8 +34,8 @@ set(_headers
     include/goetia/parsing/readers.hh
     include/goetia/pdbg.hh
     include/goetia/processors.hh
-    include/goetia/reporting/reporters.hh
     include/goetia/ring_span.hpp
+    include/goetia/solidifier.hh
     include/goetia/signatures/sourmash/sourmash.hpp
     include/goetia/signatures/sourmash/sourmash.h
     include/goetia/signatures/sourmash_signature.hh
@@ -66,8 +64,6 @@ set(_sources
     src/goetia/signatures/ukhs_signature.cc
     src/goetia/signatures/sourmash_signature.cc
     src/goetia/benchmarks/bench_storage.cc
-    src/goetia/events.cc
-    src/goetia/reporting/reporters.cc
     src/goetia/hashing/hashshifter.cc
     src/goetia/hashing/hashextender.cc
     src/goetia/hashing/kmeriterator.cc
@@ -80,6 +76,7 @@ set(_sources
     src/goetia/sequences/alphabets.cc
     src/goetia/dbg.cc
     src/goetia/traversal.cc
+    src/goetia/solidifier.cc
     src/goetia/goetia.cc
     src/goetia/meta.cc
     src/goetia/cdbg/metrics.cc

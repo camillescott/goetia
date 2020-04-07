@@ -24,9 +24,6 @@
 #include "goetia/goetia.hh"
 #include "goetia/parsing/parsing.hh"
 #include "goetia/parsing/readers.hh"
-#include "goetia/events.hh"
-#include "goetia/event_types.hh"
-
 #include "goetia/sequences/exceptions.hh"
 
 
@@ -80,10 +77,7 @@ public:
 /**
  * @Synopsis  Reports the current sequence-processing interval.
  *            The intervals themselves are defined by the user
- *            and given to the processor; the processor notifies
- *            all its registered listeners with an interval_state
- *            stored on a TimeIntervalEvent when an interval
- *            is ticked.
+ *            and given to the processor.
  */
 struct interval_state {
 	bool fine;
@@ -116,7 +110,7 @@ struct interval_state {
  */
 template <class Derived,
           class ParserType = parsing::FastxParser<>>
-class FileProcessor : public events::EventNotifier {
+class FileProcessor {
 
 protected:
 
@@ -143,24 +137,12 @@ protected:
         if (counters[0].poll(n_ticks)) {
              //std::cerr << "processed " << _n_reads << " sequences." << std::endl;               
              derived().report();
-             auto event = std::make_shared<events::TimeIntervalEvent>();
-             event->level = events::TimeIntervalEvent::FINE;
-             event->t = _n_reads;
-             notify(event);
              result.fine = true;
         }
         if (counters[1].poll(n_ticks)) {
-             auto event = std::make_shared<events::TimeIntervalEvent>();
-             event->level = events::TimeIntervalEvent::MEDIUM;
-             event->t = _n_reads;
-             notify(event);
              result.medium = true;
         }
         if (counters[2].poll(n_ticks)) {
-             auto event = std::make_shared<events::TimeIntervalEvent>();
-             event->level = events::TimeIntervalEvent::COARSE;
-             event->t = _n_reads;
-             notify(event);
              result.coarse = true;
         }
 
@@ -168,21 +150,7 @@ protected:
         return result;
     }
 
-    /**
-     * @Synopsis  Notifiy listeners that parsing is complete.
-     */
-    void _notify_stop() {
-        auto event = std::make_shared<events::TimeIntervalEvent>();
-        event->level = events::TimeIntervalEvent::END;
-        event->t = _n_reads;
-        notify(event);
-    }
-
-
 public:
-
-    using events::EventNotifier::register_listener;
-    using events::EventNotifier::notify;
 
     typedef typename ParserType::alphabet alphabet;
 
@@ -190,10 +158,9 @@ public:
                   uint64_t medium_interval = DEFAULT_INTERVALS::MEDIUM,
                   uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE,
                   bool     verbose         = false)
-        :  events::EventNotifier(),
-           counters { fine_interval, 
-                      medium_interval,
-                      coarse_interval },
+        : counters { fine_interval, 
+                     medium_interval,
+                     coarse_interval },
           _n_reads(0),
           _verbose(verbose)
     {
@@ -329,7 +296,6 @@ public:
                 return tick_result;
             }
         }
-        _notify_stop();
         return interval_state(false, false, false, true);
     }
 
@@ -367,7 +333,6 @@ public:
             }
 
         }
-        _notify_stop();
         return interval_state(false, false, false, true);
     }
 
@@ -425,7 +390,7 @@ class InserterProcessor : public FileProcessor<InserterProcessor<InserterType, P
 protected:
 
     std::shared_ptr<InserterType> inserter;
-    uint64_t _n_inserted;
+    uint64_t _n_kmers;
 
     typedef FileProcessor<InserterProcessor<InserterType, ParserType>,
                           ParserType> Base;
@@ -442,14 +407,13 @@ public:
                       bool     verbose         = false)
         : Base(fine_interval, medium_interval, coarse_interval, verbose),
           inserter(inserter),
-          _n_inserted(0)
+          _n_kmers(0)
     {
     }
 
     void process_sequence(const parsing::Record& read) {
-        size_t this_n_inserted;
         try {
-            this_n_inserted = inserter->insert_sequence(read.sequence);
+            inserter->insert_sequence(read.sequence);
         } catch (SequenceLengthException &e) {
             if (this->_verbose) {
                 std::cerr << "WARNING: Skipped sequence that was too short: read "
@@ -466,11 +430,15 @@ public:
                       <<  std::endl;
             throw e;
         }
-        __sync_add_and_fetch(&_n_inserted, this_n_inserted);
+        __sync_add_and_fetch(&_n_kmers, read.sequence.length() - inserter->K + 1);
     }
 
     void report() {
 
+    }
+
+    uint64_t n_kmers() const {
+       return _n_kmers;
     }
 
     static std::shared_ptr<InserterProcessor<InserterType, ParserType>> build(std::shared_ptr<InserterType> inserter,
@@ -481,6 +449,112 @@ public:
     }
 
 };
+
+
+/**
+ * @Synopsis  Generic processor for passing reads to a class
+ *            with a `filter_sequence` method.
+ *
+ * @tparam FilterType Class with filter_sequence.
+ * @tparam ParserType Sequence parser type.
+ */
+template <class FilterType,
+          class ParserType = parsing::FastxParser<>>
+class FilterProcessor : public FileProcessor<FilterProcessor<FilterType, ParserType>,
+                                             ParserType> {
+
+protected:
+
+    std::shared_ptr<FilterType> filter;
+    std::ofstream _output_stream; 
+    uint64_t _n_kmers;
+    uint64_t _n_passed;
+
+    typedef FileProcessor<FilterProcessor<FilterType, ParserType>,
+                          ParserType> Base;
+
+public:
+
+    using Base::process_sequence;
+    typedef typename Base::alphabet alphabet;
+    
+    FilterProcessor(std::shared_ptr<FilterType> filter,
+                    const std::string           output_filename,
+                    uint64_t fine_interval   = DEFAULT_INTERVALS::FINE,
+                    uint64_t medium_interval = DEFAULT_INTERVALS::MEDIUM,
+                    uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE,
+                    bool     verbose         = false)
+        : Base(fine_interval, medium_interval, coarse_interval, verbose),
+          filter(filter),
+          _output_stream(output_filename.c_str()),
+          _n_kmers(0),
+          _n_passed(0)
+    {
+    }
+
+    ~FilterProcessor() {
+        _output_stream.close();
+    }
+
+    void process_sequence(const parsing::Record& read) {
+        bool passed = false;
+        try {
+            passed = filter->filter_sequence(read.sequence);
+        } catch (SequenceLengthException &e) {
+            if (this->_verbose) {
+                std::cerr << "WARNING: Skipped sequence that was too short: read "
+                          << this->_n_reads << " with sequence "
+                          << read.sequence 
+                          << std::endl;
+            }
+            return;
+        } catch (InvalidCharacterException& e) {
+            return;
+        } catch (std::exception &e) {
+            std::cerr << "ERROR: Exception thrown at " << this->_n_reads 
+                      << " with msg: " << e.what()
+                      <<  std::endl;
+            throw e;
+        }
+        __sync_add_and_fetch(&_n_kmers, read.sequence.length() - filter->K + 1);
+
+        if (passed) {
+            __sync_add_and_fetch(&_n_passed, 1);
+            read.write_fastx(_output_stream);
+        }
+    }
+
+    void report() {
+
+    }
+
+    uint64_t n_kmers() const {
+       return _n_kmers;
+    }
+
+    uint64_t n_passed() const {
+        return _n_passed;
+    }
+
+    static auto build(std::shared_ptr<FilterType> filter,
+                      const std::string&          output_filename,
+                      uint64_t fine_interval   = DEFAULT_INTERVALS::FINE,
+                      uint64_t medium_interval = DEFAULT_INTERVALS::MEDIUM,
+                      uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE,
+                      bool verbose             = false)
+    -> std::shared_ptr<FilterProcessor<FilterType, ParserType>> {
+
+        return std::make_shared<FilterProcessor<FilterType,
+                                                ParserType>>(filter,
+                                                             output_filename,
+                                                             fine_interval,
+                                                             medium_interval, 
+                                                             coarse_interval,
+                                                             verbose);
+    }
+
+};
+
 
 } //namespace goetia
 #endif

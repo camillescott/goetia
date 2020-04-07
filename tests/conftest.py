@@ -9,9 +9,12 @@
 from distutils import dir_util
 import os
 
+import pytest
+
 from debruijnal_enhance_o_tron.fixtures.subgraphs import *
 from debruijnal_enhance_o_tron.fixtures.sequence import *
 from debruijnal_enhance_o_tron.fixtures.collectors import *
+
 
 @pytest.fixture
 def fastx_writer(tmpdir):

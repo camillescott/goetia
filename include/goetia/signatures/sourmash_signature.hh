@@ -70,7 +70,7 @@ namespace goetia::signatures {
 
             size_t insert_sequence(const std::string& sequence) {
                 this->add_sequence(sequence.c_str());
-                return 1;
+                return sequence.length() - K + 1;
             }
         };
 

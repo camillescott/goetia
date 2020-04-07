@@ -48,13 +48,10 @@ def pythonize_goetia(klass, name):
     if 'interval_state' in name:
         klass.__str__ = lambda self: '<interval_state fine={0} medium={1} coarse={2} end={3}'.format(self.fine, self.medium, self.coarse, self.end)
         def get(self):
-            if self.fine:
-                return 'fine'
-            elif self.medium:
-                return 'medium'
-            elif self.coarse:
-                return 'coarse'
-            else:
-                return 'end'
+            result = []
+            for state in ['end', 'coarse', 'medium', 'fine']:
+                if getattr(self, state):
+                    result.append(state)
+            return result
         klass.get = get
 

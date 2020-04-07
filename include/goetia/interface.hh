@@ -48,8 +48,7 @@
 #include "goetia/dbg.hh"
 #include "goetia/pdbg.hh"
 #include "goetia/traversal.hh"
-
-#include "goetia/reporting/reporters.hh"
+#include "goetia/solidifier.hh"
 
 #include "goetia/processors.hh"
 

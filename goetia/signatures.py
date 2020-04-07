@@ -6,39 +6,66 @@
 # Author : Camille Scott <camille.scott.w@gmail.com>
 # Date   : 15.10.2019
 
+import os
+import sys
+
 import blessings
 import curio
-import numpy as np
 from pyfiglet import Figlet
 
+from sourmash import SourmashSignature, save_signatures
+
 from goetia import libgoetia, __version__
-from goetia.cli import CommandRunner, get_output_interval_args
-from goetia.parsing import get_pairing_args, iter_fastx_inputs
+from goetia.cli.runner import CommandRunner
+from goetia.cli.args import get_output_interval_args
+from goetia.parsing import get_fastx_args, iter_fastx_inputs
 from goetia.processors import AsyncSequenceProcessor
-from goetia.messages import Interval, DistanceCalc, SampleStarted, SampleFinished
+from goetia.messages import (Interval, DistanceCalc, SampleStarted, SampleFinished,
+                             SampleSaturated, Error)
+from goetia.saturation import SaturationPolicies
 from goetia.utils import Namespace
 
-SourmashSignature = libgoetia.signatures.SourmashSignature
-UnikmerSignature  = libgoetia.signatures.UnikmerSignature
+SourmashSketch = libgoetia.signatures.SourmashSignature
+UnikmerSketch  = libgoetia.signatures.UnikmerSignature
 
 
 class SourmashRunner(CommandRunner):
 
     def __init__(self, parser):
         get_output_interval_args(parser)
-        group = get_pairing_args(parser)
+        group = get_fastx_args(parser)
         group.add_argument('-i', dest='inputs', nargs='+', required=True)
         parser.add_argument('-K', default=31, type=int)
-        parser.add_argument('-N', default=10000, type=int)
-        parser.add_argument('--echo', default=False, action='store_true',
-                            help='echo all events to the terminal.')
+        parser.add_argument('-N', default=2500, type=int)
+        parser.add_argument('--scaled', default=0, type=int)
+
+        parser.add_argument('--save-sig',
+                            help='Save the final, saturated signature to '
+                                 'the given filename.')
+        parser.add_argument('--save-stream',
+                            action='store_true',
+                            default=False,
+                            help='Save the entire stream of signatures to '
+                                 'the filename given in save-sig.')
+
+        parser.add_argument('--distance-output', nargs='?')
+        parser.add_argument('--cutoff', default=0.999, type=float)
+        parser.add_argument('--saturation-policy', choices=list(SaturationPolicies.keys()),
+                            default='median.distance')
+        parser.add_argument('--saturate', default=False, action='store_true')
+
+        parser.add_argument('--tick-length', default=100000, type=int,
+                            help='Approx. number of k-mers in a tick.')
+        parser.add_argument('--window-size', default=5, type=int,
+                            help='Number of ticks in a window.')
+
+        parser.add_argument('--echo', default=None,
+                            help='echo all events to the given file.')
         parser.add_argument('--term-graph', default=False, action='store_true',
                             help='draw a live distance graph the terminal.')
 
-        parser.add_argument('--distance-output', nargs='?')
-        parser.add_argument('--stdev-cutoff', default=0.00001, type=float)
-        parser.add_argument('--window-size', default=5, type=int)
-
+        parser.add_argument('--curio-monitor', default=False, action='store_true',
+                            help='Run curio kernel monitor for async debugging.')
 
         super().__init__(parser)
 
@@ -46,21 +73,28 @@ class SourmashRunner(CommandRunner):
         if args.term_graph:
             self.term_graph = Namespace()
             self.term_graph.term = blessings.Terminal()
-            # minghash sigs only use jaccard distance
+            # minhash sigs only use jaccard distance
             args.distance_metric = 'jaccard'
+        if args.save_stream and not args.save_sig:
+            print('--save-stream requires --save-sig', file=sys.stderr)
+            sys.exit(1)
+
+    def make_signature(self, args):
+        if args.scaled:
+            return SourmashSketch.Signature.build(0, args.K, False, False, False, 42, args.scaled)
+        else:
+            return SourmashSketch.Signature.build(args.N, args.K, False, False, False, 42, 0)
 
     def setup(self, args):
-        # build the sourmash signature
-        self.signature = SourmashSignature.Signature.build(args.N, args.K, False, 42, 0)
-
         # build the underlying Processor specialized for sourmash signature
-        processor = SourmashSignature.Processor.build(self.signature,
-                                                      args.fine_interval,
-                                                      args.medium_interval,
-                                                      args.coarse_interval)
-
+        self.signature = self.make_signature(args)
+        processor = SourmashSketch.Processor.build(self.signature,
+                                                   args.fine_interval,
+                                                   args.medium_interval,
+                                                   args.coarse_interval)
+        
         # get the sample iter
-        sample_iter = iter_fastx_inputs(args.inputs, args.pairing_mode)
+        sample_iter = iter_fastx_inputs(args.inputs, args.pairing_mode, names=args.names)
 
         # build and save the async sequence processor
         self.processor = AsyncSequenceProcessor(processor, sample_iter, args.echo)
@@ -68,25 +102,66 @@ class SourmashRunner(CommandRunner):
         # set up the saturation tracker
         def dfunc(sig_a, sig_b):
             return sig_a.similarity(sig_b)
-        self.tracker = SaturationTracker(args.window_size, args.stdev_cutoff, dfunc)
+        self.tracker = SaturationPolicies[args.saturation_policy](args.tick_length,
+                                                                  args.window_size,
+                                                                  args.cutoff,
+                                                                  dfunc)
+        self.sigs = []
 
         # set up a callback from Interval events on the sequence processor
-        def on_interval(msg, events_q):
+        def on_interval(msg, events_q, args, sigs):
+
+            kmer_time = self.processor.processor.n_kmers()
             sig = self.signature.to_sourmash()
-            distance, delta, stdev = self.tracker.push(sig, msg.t)
+            distance, delta, stat = self.tracker.push(sig, msg.t, kmer_time)
+
             if distance is not None:
                 out_msg = DistanceCalc(sample_name=msg.sample_name,
                                        t=msg.t,
                                        delta=delta,
                                        distance=distance,
-                                       stdev=stdev)
-                # note events_q is a UniversalQueue so doesn't need to be awaited
+                                       stat=stat,
+                                       stat_type=args.saturation_policy,
+                                       file_names=msg.file_names)
                 events_q.put(out_msg)
+
+            if args.save_stream:
+                sigs.append(SourmashSignature(sig,
+                                              name=f'{msg.sample_name}:{msg.t}',
+                                              filename=format_filenames(msg.file_names)))
+
+            if self.tracker.saturated and args.saturate:
+                events_q.put(SampleSaturated(t=msg.t,
+                                             sample_name=msg.sample_name,
+                                             file_names=msg.file_names))
+                self.processor.saturate()
+
+
+        def on_saturated(msg, events_q, sigs):
+            sigs.append(SourmashSignature(self.signature.to_sourmash(),
+                                          name=f'{msg.sample_name}:{msg.t}:saturated',
+                                          filename=format_filenames(msg.file_names)))
+
+        def on_stop(msg, events_q, sigs):
+            sigs.append(SourmashSignature(self.signature.to_sourmash(),
+                                          name=f'{msg.sample_name}:{msg.t}:unsaturated',
+                                          filename=format_filenames(msg.file_names)))
         
         # set up the listener and add the callback
-        self.interval_listener = self.processor.add_listener('worker_q', 'distances')
-        self.interval_listener.on_message(Interval, on_interval,
-                                          self.processor.events_q)
+        self.worker_listener = self.processor.add_listener('worker_q', 'sourmash.consumer')
+        self.worker_listener.on_message(Interval, on_interval,
+                                        self.processor.events_q, args, self.sigs)
+        self.worker_listener.on_message(Error, on_stop,
+                                        self.processor.events_q, self.sigs)
+
+        self.events_listener = self.processor.add_listener('events_q', 'sourmash.producer')
+        self.events_listener.on_message(SampleFinished, on_stop,
+                                        self.processor.events_q, self.sigs)
+
+        self.events_listener.on_message(SampleSaturated, on_saturated,
+                                        self.processor.events_q, self.sigs)
+
+
         
         if args.term_graph:
             self.init_term_graph(args)
@@ -94,9 +169,13 @@ class SourmashRunner(CommandRunner):
     def execute(self, args):
         if args.term_graph:
             with self.term_graph.term.hidden_cursor():
-                curio.run(self.processor.run, with_monitor=True)
+                curio.run(self.processor.start, with_monitor=args.curio_monitor)
         else:
-            curio.run(self.processor.run, with_monitor=True)
+            curio.run(self.processor.start, with_monitor=args.curio_monitor)
+
+        if args.save_sig:
+            with open(args.save_sig, 'w') as fp:
+                save_signatures(self.sigs, fp=fp)
 
     def teardown(self):
         pass
@@ -113,45 +192,15 @@ class SourmashRunner(CommandRunner):
         self.term_graph.ss_listener.on_message(SampleStarted, on_samplestart)
         
         async def on_distancecalc(msg):
-            draw = await curio.spawn(frame.draw, msg.t, msg.distance, msg.stdev)
+            draw = await curio.spawn(frame.draw, msg.t, msg.distance, msg.stat)
             await draw.join()
         self.term_graph.dc_listener = self.processor.add_listener('events_q', 'framedraw.distancecalc')
         self.term_graph.dc_listener.on_message(DistanceCalc, on_distancecalc)
-        
 
-class SaturationTracker:
 
-    def __init__(self, window_size, stdev_cutoff, dfunc):
-        self.window_size = window_size
-        self.stdev_cutoff = stdev_cutoff
+def format_filenames(file_names):
+    return '+'.join([os.path.basename(name) for name in file_names])
 
-        self.saturated  = False
-        self.signatures = []
-        self.distances  = []
-        self.times      = []
-        self.stdevs     = []
-        self.dfunc      = dfunc
-        self.prev_sig   = None
-
-    def push(self, new_sig, new_time):
-        if self.prev_sig:
-            self.distances.append(self.dfunc(self.prev_sig, new_sig))
-            self.times.append(new_time)
-            retval = self.distances[-1], self.times[-1], np.NaN
-        else:
-            retval = None, None, None
-        self.prev_sig = new_sig
-
-        if len(self.distances) >= self.window_size:
-            stdev = np.std(self.distances[-self.window_size:])
-            self.stdevs.append(stdev)
-            retval = self.distances[-1], self.times[-1], self.stdevs[-1]
-
-            if len(self.stdevs) >= self.window_size and \
-                    all((d < self.stdev_cutoff for d in self.stdevs[-self.window_size:])):
-                self.saturated = True                
-
-        return retval
 
 
 class TextBlock:
@@ -183,7 +232,14 @@ class TextBlock:
 class SignatureStreamFrame:
 
     def __init__(self, term, args, component_name='sourmash stream'):
-        import plotille as pt
+        try:
+            import plotille as pt
+        except ImportError:
+            print('plotille is required for terminal plotting: '
+                  'install with `pip install plotille`',
+                  file=sys.stderr)
+            sys.exit(1)
+
         self.term = term
         self.args   = args
 
@@ -210,12 +266,12 @@ class SignatureStreamFrame:
         self.name_block = TextBlock('\n'.join(name_block))
 
         param_block = term.normal + term.underline + (' ' * 40) + term.normal + '\n\n'
-        param_block += '{term.bold}distance window size:  {term.normal}{distance_window}\n'\
-                       '{term.bold}distance metric:       {term.normal}{distance_metric}\n'\
-                       '{term.bold}distance stdev cutoff: {term.normal}{stdev_cutoff}'.format(term = self.term,
-                                                                                              distance_window = args.window_size,
-                                                                                              distance_metric = args.distance_metric,
-                                                                                              stdev_cutoff    = args.stdev_cutoff)
+        param_block += f'{term.bold}window size:       {term.normal}{args.window_size}\n'\
+                       f'{term.bold}tick length:       {term.normal}{args.tick_length}\n'\
+                       f'{term.bold}distance metric:   {term.normal}{args.distance_metric}\n'\
+                       f'{term.bold}saturation policy: {term.normal}{args.saturation_policy}\n'\
+                       f'{term.bold}cutoff:            {term.normal}{args.cutoff}'
+
         self.param_block = TextBlock(param_block)
         metric_text = term.normal + term.underline + (' ' * 40) + term.normal + '\n'
         metric_text += '{term.move_down}{term.bold}'
@@ -223,10 +279,10 @@ class SignatureStreamFrame:
         metric_text += '{term.normal}{n_reads:,}\n'
         metric_text += '{term.bold}'
         metric_text += 'Δdistance:    '.ljust(20)
-        metric_text += '{term.normal}{prev_d:.20f}\n'
+        metric_text += '{term.normal}{prev_d:.6f}\n'
         metric_text += '{term.bold}'
-        metric_text += 'σ(Δdistance): '.ljust(20)
-        metric_text += '{term.normal}{stdev:.20f}\n'
+        metric_text += 'windowed(Δdistance): '.ljust(20)
+        metric_text += '{term.normal}{stat:.6f}\n'
         metric_text += '{term.underline}' + (' ' * 40) + '{term.normal}'
         self.metric_text = metric_text
 
@@ -243,8 +299,8 @@ class SignatureStreamFrame:
     def _print(self, *args, **kwargs):
         self.term.stream.write(*args, **kwargs)
 
-    def metric_block(self, n_reads, prev_d, stdev):
-        return TextBlock(self.metric_text.format(n_reads=n_reads, prev_d=prev_d, stdev=stdev, term=self.term))
+    def metric_block(self, n_reads, prev_d, stat):
+        return TextBlock(self.metric_text.format(n_reads=n_reads, prev_d=prev_d, stat=stat, term=self.term))
 
     def message_block(self, messages):
         text = self.message_text.format(messages='\n'.join(messages))
@@ -263,7 +319,7 @@ class SignatureStreamFrame:
         text = self.hist_figure.show()
         return TextBlock(text)
 
-    async def draw(self, n_reads=0, prev_d=1.0, stdev=1.0,
+    async def draw(self, n_reads=0, prev_d=1.0, stat=1.0,
                    messages=None, draw_dist_plot=True,
                    draw_dist_hist=False):
 
@@ -272,7 +328,7 @@ class SignatureStreamFrame:
         self.distances_t.append(n_reads)
 
         figure_thr = await curio.spawn_thread(self.figure_block, self.distances, self.distances_t)
-        metrics_thr = await curio.spawn_thread(self.metric_block, n_reads, prev_d, stdev)
+        metrics_thr = await curio.spawn_thread(self.metric_block, n_reads, prev_d, stat)
         
         figure = await figure_thr.join()
         metrics = await metrics_thr.join()

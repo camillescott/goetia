@@ -8,7 +8,7 @@
 
 import pytest
 
-from goetia.signatures import SourmashSignature
+from goetia.signatures import SourmashSketch
 
 from .utils import *
 import screed
@@ -18,10 +18,10 @@ def test_sourmash_signature(datadir, ksize):
 
     rfile = datadir('random-20-a.fa')
 
-    goetia_sig = SourmashSignature.Signature.build(10000, 31, False, False, False, 42, 0)
+    goetia_sig = SourmashSketch.Signature.build(10000, 31, False, False, False, 42, 0)
     sourmash_sig = sourmash.MinHash(10000, 31)
 
-    processor = SourmashSignature.Processor.build(goetia_sig)
+    processor = SourmashSketch.Processor.build(goetia_sig)
     processor.process(rfile)
 
     for record in screed.open(rfile):
@@ -36,10 +36,10 @@ def test_sourmash_scaled(datadir, ksize):
     import sourmash
 
     rfile = datadir('random-20-a.fa')
-    goetia_sig = SourmashSignature.Signature.build(0, 31, False, False, False, 42, 1000)
+    goetia_sig = SourmashSketch.Signature.build(0, 31, False, False, False, 42, 1000)
     sourmash_sig = sourmash.MinHash(0, 31, scaled=1000)
 
-    processor = SourmashSignature.Processor.build(goetia_sig)
+    processor = SourmashSketch.Processor.build(goetia_sig)
     processor.process(rfile)
 
     for record in screed.open(rfile):

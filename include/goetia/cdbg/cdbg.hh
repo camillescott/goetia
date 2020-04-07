@@ -31,10 +31,7 @@
 #include "goetia/utils/stringutils.h"
 
 #include "goetia/goetia.hh"
-#include "goetia/events.hh"
-#include "goetia/event_types.hh"
 #include "goetia/metrics.hh"
-#include "goetia/reporting/reporters.hh"
 #include "goetia/traversal.hh"
 #include "goetia/hashing/kmeriterator.hh"
 #include "goetia/hashing/hashextender.hh"
@@ -299,7 +296,7 @@ public:
     typedef DecisionNode * DecisionNodePtr;
     typedef UnitigNode * UnitigNodePtr;
 
-    class Graph : public events::EventNotifier {
+    class Graph {
 
         /* Map of k-mer hash --> DecisionNode. DecisionNodes take
          * their k-mer hash value as their Node ID.
@@ -350,7 +347,6 @@ public:
         Graph(std::shared_ptr<graph_type> dbg,
               uint64_t minimizer_window_size=8)
             : K(dbg->K),
-              EventNotifier(),
               dbg(dbg),
               _n_updates(0),
               _unitig_id_counter(UNITIG_START_ID),
@@ -683,9 +679,6 @@ public:
                                        std::move(std::make_unique<DecisionNode>(hash, kmer)));
                 // the memory location changes after the move; get a fresh address
                 dnode = query_dnode(hash);
-                notify_history_new(dnode->node_id,
-                                   dnode->sequence,
-                                   dnode->meta());
                 metrics->n_dnodes++;
                 pdebug("BUILD_DNODE complete: " << *dnode);
             } else {
@@ -730,7 +723,6 @@ public:
             unode_ptr->set_node_meta(unode_meta);
             metrics->increment_cdbg_node(unode_meta);
 
-            notify_history_new(id, unode_ptr->sequence, unode_ptr->meta());
             pdebug("BUILD_UNODE complete: " << *unode_ptr);
 
             return unode_ptr;
@@ -762,7 +754,6 @@ public:
                     metrics->increment_cdbg_node(meta);
                     unode->set_node_meta(meta);
 
-                    notify_history_clip(unode->node_id, unode->sequence, unode->meta());
                     pdebug("CLIP complete: " << *unode);
                 } else {
                     unode->sequence = unode->sequence.substr(0, unode->sequence.length() - 1);
@@ -773,7 +764,6 @@ public:
                     metrics->increment_cdbg_node(meta);
                     unode->set_node_meta(meta);
 
-                    notify_history_clip(unode->node_id, unode->sequence, unode->meta());
                     pdebug("CLIP complete: " << *unode);
                 }
             }
@@ -819,7 +809,6 @@ public:
             unode->set_node_meta(meta);
             ++_n_updates;
 
-            notify_history_extend(unode->node_id, unode->sequence, unode->meta());
             pdebug("EXTEND complete: " << *unode);
         }
 
@@ -859,7 +848,6 @@ public:
                     metrics->increment_cdbg_node(FULL);
                     ++_n_updates;
 
-                    notify_history_split_circular(unode->node_id, unode->sequence, unode->meta());
                     pdebug("SPLIT complete (CIRCULAR): " << *unode);
                     return;
 
@@ -891,9 +879,6 @@ public:
                                         new_left_end,
                                         right_unode_right_end);
 
-            notify_history_split(unode->node_id, unode->node_id, new_node->node_id,
-                             unode->sequence, new_node->sequence,
-                             unode->meta(), new_node->meta());
             pdebug("SPLIT complete: " << std::endl << *unode << std::endl << *new_node);
 
         }
@@ -973,10 +958,6 @@ public:
 
             }
             
-            notify_history_merge(left_unode->node_id, rid,
-                             left_unode->node_id,
-                             left_unode->sequence,
-                             left_unode->meta());
             pdebug("MERGE complete: " << *left_unode);
         }
 
@@ -1026,74 +1007,6 @@ public:
                 _n_updates++;
             }
         }
-
-        /*
-         * Event notification
-         */
-
-        void notify_history_new(id_t id, std::string& sequence, node_meta_t meta) {
-
-            auto event = std::make_shared<HistoryNewEvent>();
-            event->id = id;
-            event->sequence = sequence;
-            event->meta = meta;
-            this->notify(event);
-        }
-
-        void notify_history_merge(id_t lparent, id_t rparent, id_t child,
-                                  std::string& sequence, node_meta_t meta) {
-
-            auto event = std::make_shared<HistoryMergeEvent>();
-            event->lparent = lparent;
-            event->rparent = rparent;
-            event->child = child;
-            event->meta = meta;
-            event->sequence = sequence;
-            this->notify(event);
-        }
-
-        void notify_history_extend(id_t id, std::string& sequence, node_meta_t meta) {
-
-            auto event = std::make_shared<HistoryExtendEvent>();
-            event->id = id;
-            event->sequence = sequence;
-            event->meta = meta;
-            this->notify(event);
-        }
-
-        void notify_history_clip(id_t id, std::string& sequence, node_meta_t meta) {
-    
-            auto event = std::make_shared<HistoryClipEvent>();
-            event->id = id;
-            event->sequence = sequence;
-            event->meta = meta;
-            this->notify(event);
-        }
-
-        void notify_history_split(id_t parent, id_t lchild, id_t rchild,
-                                  std::string& lsequence, std::string& rsequence,
-                                  node_meta_t lmeta, node_meta_t rmeta) {
-
-            auto event = std::make_shared<HistorySplitEvent>();
-            event->parent = parent;
-            event->lchild = lchild;
-            event->rchild = rchild;
-            event->lsequence = lsequence;
-            event->rsequence = rsequence;
-            event->lmeta = lmeta;
-            event->rmeta = rmeta;
-            this->notify(event);
-        }
-
-        void notify_history_split_circular(id_t id, std::string& sequence, node_meta_t meta) {
-
-            auto event = std::make_shared<HistorySplitCircularEvent>();
-            event->id = id;
-            event->sequence = sequence;
-            event->meta = meta;
-            this->notify(event);
-        }
-
 
         /*
          * File output
@@ -1315,366 +1228,58 @@ public:
         }
     };
 
+    static auto compute_connected_component_metrics(std::shared_ptr<Graph> cdbg,
+                                               size_t                 sample_size = 10000)
+        -> std::tuple<size_t, size_t, size_t, std::vector<size_t>> {
 
-    class ComponentReporter : public goetia::reporting::SingleFileReporter {
-    public:
+        auto time_start = std::chrono::system_clock::now();
 
-        class Metrics {
+        metrics::ReservoirSample<size_t> component_size_sample(sample_size);
+        size_t max_component = 0;
+        size_t min_component = std::numeric_limits<size_t>::max();
+        auto components = cdbg->find_connected_components();
 
-
-            public:
-
-                metrics::Gauge                         n_components;
-                metrics::Gauge                         max_component_size;
-                metrics::Gauge                         min_component_size;
-
-                Metrics()
-                    : 
-                      n_components              {"size", "all_components"},
-                      max_component_size        {"size", "max_component"},
-                      min_component_size        {"size", "min_component"}
-                {
-                }
-        };
-
-    private:
-
-        std::shared_ptr<Graph>            cdbg;
-
-        uint64_t                          min_component;
-        uint64_t                          max_component;
-
-        // how large of a sample to take from the component size distribution
-        size_t                            sample_size;
-        metrics::ReservoirSample<size_t>  component_size_sample;
-
-        std::unique_ptr<ComponentReporter::Metrics> metrics;
-
-    public:
-
-        ComponentReporter(std::shared_ptr<Graph>                 cdbg,
-                          const std::string&                     filename,
-                          size_t                                 sample_size = 10000)
-            : SingleFileReporter       (filename, "cDBG::ComponentReporter"),
-              cdbg                     (cdbg),
-              min_component            (ULLONG_MAX),
-              max_component            (0),
-              sample_size              (sample_size),
-              component_size_sample    (sample_size)
-        {
-            _cerr(this->THREAD_NAME << " reporting at MEDIUM interval.");
-            this->msg_type_whitelist.insert(events::MSG_TIME_INTERVAL);
-            _output_stream << "read_n,n_components,max_component,min_component,sample_size,component_size_sample" << std::endl;
-
-            metrics = std::make_unique<ComponentReporter::Metrics>();
+        for (auto id_comp_pair : components) {
+            size_t component_size = id_comp_pair.second.size();
+            component_size_sample.sample(component_size);
+            max_component = (component_size > max_component) ? component_size : max_component;
+            min_component = (component_size < min_component) ? component_size : min_component;
         }
 
-        static std::shared_ptr<ComponentReporter> build(std::shared_ptr<Graph>                 cdbg,
-                                                        const std::string&                     filename,
-                                                        size_t                                 sample_size = 10000) {
-            return std::make_shared<ComponentReporter>(cdbg,
-                                                       filename,
-                                                       sample_size);
-        
-        }
+        auto time_elapsed = std::chrono::system_clock::now() - time_start;
+        _cerr("Finished recomputing components. Elapsed time: " <<
+              std::chrono::duration<double>(time_elapsed).count());
 
-        virtual void handle_msg(std::shared_ptr<events::Event> event) {
-             if (event->msg_type == events::MSG_TIME_INTERVAL) {
-                auto _event = static_cast<events::TimeIntervalEvent*>(event.get());
-                if (_event->level == events::TimeIntervalEvent::MEDIUM ||
-                    _event->level == events::TimeIntervalEvent::END) {
-                    
-                    this->recompute_components();
-                    _output_stream << _event->t << ","
-                                   << component_size_sample.get_n_sampled() << ","
-                                   << max_component << ","
-                                   << min_component << ","
-                                   << component_size_sample.get_sample_size() << ","
-                                   << "\"" << repr(component_size_sample.get_result()) << "\""
-                                   << std::endl;
-                }
-            }       
-        }
+        return {components.size(), min_component, max_component, component_size_sample.get_result()};
+    }
 
-        void recompute_components() {
-            auto time_start = std::chrono::system_clock::now();
+    static std::vector<size_t> compute_unitig_fragmentation(std::shared_ptr<Graph> cdbg,
+                                                            std::vector<size_t>    bins) {
+        auto time_start = std::chrono::system_clock::now();
+        auto lock       = cdbg->lock_nodes();
+        _cerr("Summing unitig length bins...");
 
-            component_size_sample.clear();
-            auto components = cdbg->find_connected_components();
-            for (auto id_comp_pair : components) {
-                size_t component_size = id_comp_pair.second.size();
-                component_size_sample.sample(component_size);
-                max_component = (component_size > max_component) ? component_size : max_component;
-                min_component = (component_size < min_component) ? component_size : min_component;
-            }
+        std::vector<size_t> bin_sums(bins.size(), 0);
 
-            metrics->n_components.store(components.size());
-            metrics->max_component_size.store(max_component);
-            metrics->min_component_size.store(min_component);
-
-            auto time_elapsed = std::chrono::system_clock::now() - time_start;
-            _cerr("Finished recomputing components. Elapsed time: " <<
-                  std::chrono::duration<double>(time_elapsed).count());
-
-
-        }
-    };
-
-    class HistoryReporter : public reporting::SingleFileReporter {
-        private:
-
-        id_t _edge_id_counter;
-        spp::sparse_hash_map<id_t, std::vector<std::string>> node_history;
-
-        public:
-        HistoryReporter(const std::string& filename)
-            : SingleFileReporter(filename, "cDBG::HistoryReporter"),
-              _edge_id_counter(0)
-        {
-            _cerr(this->THREAD_NAME << " reporting continuously.");
-
-            this->msg_type_whitelist.insert(events::MSG_HISTORY_NEW);
-            this->msg_type_whitelist.insert(events::MSG_HISTORY_SPLIT);
-            this->msg_type_whitelist.insert(events::MSG_HISTORY_SPLIT_CIRCULAR);
-            this->msg_type_whitelist.insert(events::MSG_HISTORY_MERGE);
-            this->msg_type_whitelist.insert(events::MSG_HISTORY_EXTEND);
-            this->msg_type_whitelist.insert(events::MSG_HISTORY_CLIP);
-            this->msg_type_whitelist.insert(events::MSG_HISTORY_DELETE);
-
-            _output_stream << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                              "<graphml xmlns=\"http://graphml.graphdrawing.org/xmlns\" "
-                              "xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
-                              "xsi:schemaLocation=\"http://graphml.graphdrawing.org/xmlns "
-                              "http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd\">"
-                           << std::endl // the header, open <graphml>
-                           << "<graph id=\"cDBG_History_DAG\" edgedefault=\"directed\">" << std::endl
-                           << "<key id=\"op\" for=\"edge\" attr.name=\"op\" attr.type=\"string\"/>" << std::endl
-                           << "<key id=\"seq\" for=\"node\" attr.name=\"seq\" attr.type=\"string\"/>" << std::endl
-                           << "<key id=\"meta\" for=\"node\" attr.name=\"meta\" attr.type=\"string\"/>" << std::endl
-                           << "<key id=\"node_id\" for=\"node\" attr.name=\"node_id\" attr.type=\"long\"/>"
-                           << std::endl; // open <graph>
-        }
-
-        static std::shared_ptr<HistoryReporter> build(const std::string& filename) {
-            return std::make_shared<HistoryReporter>(filename);
-        }
-
-        virtual void handle_exit() {
-            _output_stream << "</graph>" << std::endl;
-            _output_stream << "</graphml>" << std::endl;
-        }
-
-        void write_node(std::string id, id_t goetia_id, std::string node_meta, std::string sequence) {
-            _output_stream << "<node id=\"" << id << "\">" << std::endl
-                           << "    <data key=\"seq\">" << sequence << "</data>" << std::endl
-                           << "    <data key=\"meta\">" << node_meta << "</data>" << std::endl
-                           << "    <data key=\"node_id\">" << goetia_id << "</data>" << std::endl
-                           << "</node>" << std::endl;
-        }
-
-        void write_edge(std::string src, std::string dst, std::string op) {
-            auto id = _edge_id_counter++;
-            _output_stream << "<edge id=\"" << id << "\" source=\"" 
-                           << src << "\" target=\"" << dst << "\">" << std::endl
-                           << "    <data key=\"op\">" << op << "</data>" << std::endl
-                           << "</edge>" << std::endl;
-        }
-
-        std::string add_node_edit(id_t node_id, cdbg::node_meta_t meta, std::string sequence) {
-            auto change_num = node_history[node_id].size();
-            std::string id = std::to_string(node_id) + "_" + std::to_string(change_num);
-            node_history[node_id].push_back(id);
-            write_node(id, node_id, std::string(node_meta_repr(meta)), sequence);
-            return id;
-        }
-
-        std::string add_new_node(id_t node_id, cdbg::node_meta_t meta, std::string sequence) {
-            std::string id = std::to_string(node_id) + "_0";
-            if (node_history.count(node_id) == 0) {
-                node_history[node_id] = std::vector<std::string>{id};
-                write_node(id, node_id, std::string(node_meta_repr(meta)), sequence);
-            }
-            return id;
-        }
-
-        virtual void handle_msg(std::shared_ptr<events::Event> event) {
-            if (event->msg_type == events::MSG_HISTORY_NEW) {
-                auto _event = static_cast<HistoryNewEvent*>(event.get());
-                add_new_node(_event->id, _event->meta, _event->sequence);
-
-            } else if (event->msg_type == events::MSG_HISTORY_SPLIT) {
-                auto _event = static_cast<HistorySplitEvent*>(event.get());
-                
-                std::string parent_id = node_history[_event->parent].back();
-                std::string lid, rid;
-                if (_event->lchild == _event->parent) {
-                    lid = add_node_edit(_event->lchild, _event->lmeta, _event->lsequence);
-                    rid = add_new_node(_event->rchild, _event->rmeta, _event->rsequence);
-                } else {
-                    lid = add_new_node(_event->lchild, _event->lmeta, _event->lsequence);
-                    rid = add_node_edit(_event->rchild, _event->rmeta, _event->rsequence);
-                }
-                write_edge(parent_id, lid, std::string("SPLIT"));
-                write_edge(parent_id, rid, std::string("SPLIT"));
-
-            } else if (event->msg_type == events::MSG_HISTORY_MERGE) {
-                auto _event = static_cast<HistoryMergeEvent*>(event.get());
-
-                std::string l_parent_id = node_history[_event->lparent].back();
-                std::string r_parent_id = node_history[_event->rparent].back();
-                std::string child_id = add_node_edit(_event->child, _event->meta, _event->sequence);
-                
-                write_edge(l_parent_id, child_id, std::string("MERGE"));
-                write_edge(r_parent_id, child_id, std::string("MERGE"));
-
-            } else if (event->msg_type == events::MSG_HISTORY_EXTEND) {
-                auto _event = static_cast<HistoryExtendEvent*>(event.get());
-
-                std::string src = node_history[_event->id].back();
-                std::string dst = add_node_edit(_event->id, _event->meta, _event->sequence);
-                write_edge(src, dst, std::string("EXTEND"));
-
-            } else if (event->msg_type == events::MSG_HISTORY_CLIP) {
-                auto _event = static_cast<HistoryClipEvent*>(event.get());
-
-                std::string src = node_history[_event->id].back();
-                std::string dst = add_node_edit(_event->id, _event->meta, _event->sequence);
-                write_edge(src, dst, std::string("CLIP"));
-
-            } else if (event->msg_type == events::MSG_HISTORY_SPLIT_CIRCULAR) {
-                auto _event = static_cast<HistorySplitCircularEvent*>(event.get());
-
-                std::string src = node_history[_event->id].back();
-                std::string dst = add_node_edit(_event->id, _event->meta, _event->sequence);
-                write_edge(src, dst, std::string("SPLIT_CIRCULAR"));
-            }
-        }
-    };
-
-
-    class UnitigReporter : public reporting::SingleFileReporter {
-    private:
-
-        std::shared_ptr<Graph>        cdbg;
-        std::vector<size_t>           bins;
-
-    public:
-
-        UnitigReporter(std::shared_ptr<Graph> cdbg,
-                       const std::string&     filename,
-                       std::vector<size_t>    bins)
-            : SingleFileReporter       (filename, "cDBG::UnitigReporter"),
-              cdbg                     (cdbg),
-              bins                     (bins)
-        {
-            _cerr(this->THREAD_NAME << " reporting at MEDIUM interval.");
-            this->msg_type_whitelist.insert(events::MSG_TIME_INTERVAL);
-            
-            _output_stream << "read_n";
-
-            for (size_t bin = 0; bin < bins.size() - 1; bin++) {
-                _output_stream << ", " << bins[bin] << "-" << bins[bin+1];
-            }
-            _output_stream << ", " << bins.back() << "-Inf";
-
-            _output_stream << std::endl;
-        }
-
-        static std::shared_ptr<UnitigReporter> build(std::shared_ptr<Graph> cdbg,
-                                                     const std::string&     filename,
-                                                     std::vector<size_t>    bins) {
-            return std::make_shared<UnitigReporter>(cdbg, filename, bins);
-        }
-
-        virtual void handle_msg(std::shared_ptr<events::Event> event)  {
-            if (event->msg_type == events::MSG_TIME_INTERVAL) {
-                auto _event = static_cast<events::TimeIntervalEvent*>(event.get());
-                if (_event->level == events::TimeIntervalEvent::MEDIUM ||
-                    _event->level == events::TimeIntervalEvent::END) {
-                    
-                    auto bin_sums = this->compute_bins();
-                    auto row      = utils::StringUtils::join(bin_sums, ", ");
-                    _output_stream << _event->t << ","
-                                   << row 
-                                   << std::endl;
-                }
-            }       
-        }
-
-        std::vector<size_t> compute_bins() {
-            auto time_start = std::chrono::system_clock::now();
-            auto lock       = cdbg->lock_nodes();
-            _cerr("Summing unitig length bins...");
-
-            std::vector<size_t> bin_sums(bins.size(), 0);
-
-            for (auto it = cdbg->unodes_begin(); it != cdbg->unodes_end(); ++it) {
-                auto seq_len = it->second->sequence.length();
-                for (size_t bin_num = 0; bin_num < bins.size() - 1; bin_num++) {
-                    if (seq_len >= bins[bin_num] && seq_len < bins[bin_num+1]) {
-                        bin_sums[bin_num] += seq_len;
-                        break;
-                    }
-                }
-                if (seq_len > bins.back()) {
-                    bins[bins.size() - 1] += seq_len;
+        for (auto it = cdbg->unodes_begin(); it != cdbg->unodes_end(); ++it) {
+            auto seq_len = it->second->sequence.length();
+            for (size_t bin_num = 0; bin_num < bins.size() - 1; bin_num++) {
+                if (seq_len >= bins[bin_num] && seq_len < bins[bin_num+1]) {
+                    bin_sums[bin_num] += (seq_len - cdbg->K + 1);
+                    break;
                 }
             }
-
-            auto time_elapsed = std::chrono::system_clock::now() - time_start;
-            _cerr("Finished summing unitig length bins. Elapsed time: " <<
-                  std::chrono::duration<double>(time_elapsed).count());
-
-            return bin_sums;
-        }
-    };
-
-
-    class Writer : public reporting::MultiFileReporter {
-    protected:
-
-        std::shared_ptr<Graph> cdbg;
-        cdbg::cDBGFormat format;
-
-    public:
-
-        Writer(std::shared_ptr<Graph> cdbg,
-                   cdbg::cDBGFormat format,
-                   const std::string& output_prefix)
-            : MultiFileReporter(output_prefix,
-                                "cDBGWriter[" + cdbg_format_repr(format) + "]"),
-              cdbg(cdbg),
-              format(format)
-        {
-            _cerr(this->THREAD_NAME << " reporting at COARSE interval.");
-
-            this->msg_type_whitelist.insert(events::MSG_TIME_INTERVAL);
-        }
-
-        static std::shared_ptr<Writer> build(std::shared_ptr<Graph> cdbg,
-                                             cdbg::cDBGFormat format,
-                                             const std::string& output_prefix) {
-            return std::make_shared<Writer>(cdbg, format, output_prefix);
-        }
-
-        virtual void handle_msg(std::shared_ptr<events::Event> event) {
-            if (event->msg_type == events::MSG_TIME_INTERVAL) {
-                auto _event = static_cast<events::TimeIntervalEvent*>(event.get());
-                if (_event->level == events::TimeIntervalEvent::COARSE ||
-                    _event->level == events::TimeIntervalEvent::END) {
-
-                    std::ofstream& stream = this->next_stream(_event->t,
-                                                              cdbg_format_repr(format));
-                    std::string&   filename = this->current_filename();
-
-                    _cerr(this->THREAD_NAME << ", t=" << _event->t <<
-                          ": write cDBG to " << filename);
-                    cdbg->write(stream, format);
-                }
+            if (seq_len > bins.back()) {
+                bins[bins.size() - 1] += seq_len;
             }
         }
-    };
 
+        auto time_elapsed = std::chrono::system_clock::now() - time_start;
+        _cerr("Finished summing unitig length bins. Elapsed time: " <<
+              std::chrono::duration<double>(time_elapsed).count());
+
+        return bin_sums;
+    }
 
 };
 

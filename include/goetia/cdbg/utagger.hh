@@ -43,7 +43,7 @@ struct UTagger {
         link_type  link;
     };
 
-    class StreamingTagger :public events::EventNotifier {
+    class StreamingTagger {
 
     public:
 
@@ -66,8 +66,7 @@ struct UTagger {
 
         StreamingTagger(std::shared_ptr<graph_type>& dbg,
                         std::shared_ptr<ukhs_type>&  ukhs)
-            : EventNotifier(),
-              dbg(dbg),
+            : dbg(dbg),
               ukhs(ukhs),
               W(dbg->K),
               K(ukhs->K)
