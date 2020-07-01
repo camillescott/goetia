@@ -99,7 +99,8 @@ struct UnikmerSignature {
         }
 
         inline size_t insert_sequence(const std::string& sequence) {
-            return signature->insert_sequence(sequence);
+            signature->insert_sequence(sequence);
+            return sequence.length() - K + 1;
         }
 
         size_t get_size() const {

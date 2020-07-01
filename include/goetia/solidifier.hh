@@ -27,7 +27,7 @@ struct StreamingSolidFilter<GraphType<StorageType, ShifterType>> {
 
     typedef typename shifter_type::alphabet     alphabet;
     typedef typename shifter_type::hash_type    hash_type;
-	typedef typename hash_type::value_type      value_type;
+   	typedef typename hash_type::value_type      value_type;
     typedef typename shifter_type::kmer_type    kmer_type;
 
     class Filter {
@@ -51,14 +51,14 @@ struct StreamingSolidFilter<GraphType<StorageType, ShifterType>> {
             return std::make_shared<Filter>(dbg, min_prop_solid);
         }
 
-        bool filter_sequence(const std::string& sequence) {
+        std::tuple<bool, uint64_t> filter_sequence(const std::string& sequence) {
             uint64_t n_not_solid = dbg->insert_sequence(sequence);
             uint64_t n_kmers = sequence.length() - K + 1;
             
             if (((float)n_not_solid / (float)n_kmers) > (1.0 - min_prop_solid)) {
-                return false;
+                return {false, n_kmers};
             }
-            return true;
+            return {true, n_kmers};
         }
 
     };

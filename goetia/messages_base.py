@@ -52,13 +52,10 @@ class Messages(SchemaBase):
                                                  'msg_type': {'const': 'Interval',
                                                               'default': 'Interval',
                                                               'type': 'string'},
-                                                 'state': {'type': 'array',
-                                                           'uniqueItems': True},
                                                  't': {'minimum': 0,
                                                        'type': 'integer'}},
                                   'required': ['msg_type',
                                                't',
-                                               'state',
                                                'sample_name',
                                                'file_names'],
                                   'type': 'object'},
@@ -109,7 +106,7 @@ class Messages(SchemaBase):
 class Interval(SchemaBase):
     """Interval schema wrapper
 
-    Mapping(required=[msg_type, t, state, sample_name, file_names])
+    Mapping(required=[msg_type, t, sample_name, file_names])
 
     Attributes
     ----------
@@ -118,18 +115,16 @@ class Interval(SchemaBase):
 
     msg_type : string
 
-    state : List(Mapping(required=[]))
-
     t : integer
 
     """
     _schema = {'$ref': '#/definitions/Interval'}
     _rootschema = Messages._schema
 
-    def __init__(self, file_names=Undefined, msg_type=Undefined, sample_name=Undefined, state=Undefined,
-                 t=Undefined, **kwds):
+    def __init__(self, file_names=Undefined, msg_type=Undefined, sample_name=Undefined, t=Undefined,
+                 **kwds):
         super(Interval, self).__init__(file_names=file_names, msg_type=msg_type,
-                                       sample_name=sample_name, state=state, t=t, **kwds)
+                                       sample_name=sample_name, t=t, **kwds)
 
 
 

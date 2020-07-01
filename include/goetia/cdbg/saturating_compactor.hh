@@ -43,17 +43,15 @@ struct SaturatingCompactor {
 
         Processor(std::shared_ptr<compactor_type> compactor,
                   std::shared_ptr<signature_type> signature,
-                  uint64_t fine_interval   = DEFAULT_INTERVALS::FINE,
-                  uint64_t medium_interval = DEFAULT_INTERVALS::MEDIUM,
-                  uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE)
-            : BaseType(fine_interval, medium_interval, coarse_interval),
+                  uint64_t interval = metrics::IntervalCounter::DEFAULT_INTERVAL)
+            : BaseType(interval),
               compactor(compactor),
               signature(signature)
         {
 
         }
 
-        void process_sequence(const parsing::Record& read) {
+        uint64_t process_sequence(const parsing::Record& read) {
             try {
                 compactor->insert_sequence(read.sequence);
                 signature->insert_sequence(read.sequence);
@@ -62,19 +60,21 @@ struct SaturatingCompactor {
                           << this->_n_reads << ": "
                           << read.sequence << ", exception was "
                           << e.what() << std::endl;
-                                              return;
+                return 0;
             } catch (SequenceLengthException &e) {
                 std::cerr << "NOTE: Skipped sequence that was too short: read "
                           << this->_n_reads << " with sequence "
                           << read.sequence 
                           << std::endl;
-                return;
+                return 0;
             } catch (std::exception &e) {
                 std::cerr << "ERROR: Exception thrown at " << this->_n_reads 
                           << " with msg: " << e.what()
                           <<  std::endl;
                 throw e;
             }
+
+            return read.sequence.length() - compactor->K + 1;
         }
 
         void report() {
@@ -83,14 +83,10 @@ struct SaturatingCompactor {
 
         static std::shared_ptr<Processor> build(std::shared_ptr<compactor_type> compactor,
                                                 std::shared_ptr<signature_type> signature,
-                                                uint64_t fine_interval   = DEFAULT_INTERVALS::FINE,
-                                                uint64_t medium_interval = DEFAULT_INTERVALS::MEDIUM,
-                                                uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE) {
+                                                uint64_t interval = metrics::IntervalCounter::DEFAULT_INTERVAL) {
             return std::make_shared<Processor>(compactor,
                                                signature,
-                                               fine_interval,
-                                               medium_interval,
-                                               coarse_interval);
+                                               interval);
         }
 
     };

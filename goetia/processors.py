@@ -17,7 +17,7 @@ from goetia import libgoetia
 
 
 DEFAULT_SOCKET = '/tmp/goetia.sock'
-DEFAULT_INTERVALS = libgoetia.DEFAULT_INTERVALS
+DEFAULT_INTERVAL = libgoetia.metrics.IntervalCounter.DEFAULT_INTERVAL
 
 
 class QueueManager:
@@ -157,7 +157,7 @@ class AsyncSequenceProcessor(UnixBroadcasterMixin):
                        echo = True,
                        broadcast_socket = None):
         """Manages advancing through a concrete FileProcessor
-        CRTP subblass asynchronously. The processor pushes Interval
+        subblass asynchronously. The processor pushes Interval
         updates on to the `worker_q`, which are also forwarded
         to an `events_q`. Additional async tasks can subscribe to 
         either queue; the `events_q` is considered the outward-facing
@@ -248,7 +248,7 @@ class AsyncSequenceProcessor(UnixBroadcasterMixin):
         for sample, name in self.sample_iter:
             self.worker_q.put(SampleStarted(sample_name=name, file_names=sample))
             try:
-                for n_seqs, n_skipped, state in self.processor.chunked_process(*sample):
+                for n_seqs, time, n_skipped in self.processor.chunked_process(*sample):
 
                     if self.state is RunState.STOP_SATURATED:
                         # Saturation is tripped externally: just return immediately.
@@ -262,11 +262,9 @@ class AsyncSequenceProcessor(UnixBroadcasterMixin):
                                                 error='Process terminated (SIGINT).'))
                         return
 
-                    if not state.end:
-                        self.worker_q.put(Interval(t=n_seqs,
-                                                   sample_name=name, 
-                                                   state=state.get(),
-                                                   file_names=sample))
+                    self.worker_q.put(Interval(t=n_seqs,
+                                               sample_name=name, 
+                                               file_names=sample))
 
                 self.worker_q.put(SampleFinished(t=n_seqs,
                                                  sample_name=name,

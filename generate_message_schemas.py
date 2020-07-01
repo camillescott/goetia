@@ -4,15 +4,13 @@ msg_schema = {
     'definitions': {
         'Interval': {
             'type': 'object',
-            'required': ['msg_type', 't', 'state', 'sample_name', 'file_names'],
+            'required': ['msg_type', 't', 'sample_name', 'file_names'],
             'properties': {
                 'msg_type': {'type': 'string',
                              'const': 'Interval',
                              'default': 'Interval'},
                 't': {'type': 'integer',
-                       'minimum': 0},
-                'state': {'type': 'array',
-                          'uniqueItems': True},
+                      'minimum': 0},
                 'file_names': {'type': 'array'}
             }
         },

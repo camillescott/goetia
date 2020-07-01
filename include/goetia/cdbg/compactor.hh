@@ -1154,7 +1154,7 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
         bool median_count_at_least(const std::string&          sequence,
                                    unsigned int                cutoff,
                                    dBG<storage::ByteStorage,
-                                       ShifterType>            * counts) {
+                                       ShifterType> *          counts) {
 
             auto kmers = counts->get_hash_iter(sequence);
             unsigned int min_req = 0.5 + float(sequence.size() - counts->K + 1) / 2;
@@ -1204,10 +1204,8 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
         
         NormalizingCompactor(std::shared_ptr<Compactor> compactor,
                              unsigned int               cutoff,
-                             uint64_t fine_interval   = DEFAULT_INTERVALS::FINE,
-                             uint64_t medium_interval = DEFAULT_INTERVALS::MEDIUM,
-                             uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE)
-            : Base(fine_interval, medium_interval, coarse_interval),
+                             uint64_t interval = metrics::IntervalCounter::DEFAULT_INTERVAL)
+            : Base(interval),
               compactor(compactor),
               graph(compactor->dbg),
               cutoff(cutoff),
@@ -1221,17 +1219,17 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
 
         static std::shared_ptr<NormalizingCompactor> build(std::shared_ptr<Compactor> compactor,
                                                            unsigned int cutoff,
-                                                           uint64_t fine_interval   = DEFAULT_INTERVALS::FINE,
-                                                           uint64_t medium_interval = DEFAULT_INTERVALS::MEDIUM,
-                                                           uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE) {
-            return std::make_shared<NormalizingCompactor>(compactor, cutoff, fine_interval, medium_interval, coarse_interval);
+                                                           uint64_t interval = metrics::IntervalCounter::DEFAULT_INTERVAL) {
+            return std::make_shared<NormalizingCompactor>(compactor, cutoff, interval);
 
         }
 
-        void process_sequence(const parsing::Record& read) {
+        uint64_t process_sequence(const parsing::Record& read) {
+
+            uint64_t sequence_n_kmers = read.sequence.length() - compactor->K + 1;
 
             if (median_count_at_least(read.sequence, cutoff, counts.get())) {
-                return;
+                return sequence_n_kmers;
             }
 
             counts->insert_sequence(read.sequence);
@@ -1243,13 +1241,13 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
                           << this->_n_reads << ": "
                           << read.sequence << ", exception was "
                           << e.what() << std::endl;
-                return;
+                return 0;
             } catch (SequenceLengthException &e) {
                 std::cerr << "NOTE: Skipped sequence that was too short: read "
                           << this->_n_reads << " with sequence "
                           << read.sequence
                           << std::endl;
-                return;
+                return 0;
             } catch (std::exception &e) {
                 std::cerr << "ERROR: Exception thrown at " << this->_n_reads 
                           << " with msg: " << e.what()
@@ -1258,6 +1256,8 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
             }
 
             ++n_seq_updates;
+            
+            return sequence_n_kmers;
         }
 
         void report() {

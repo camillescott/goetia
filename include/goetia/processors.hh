@@ -22,79 +22,14 @@
 #include <string>
 
 #include "goetia/goetia.hh"
+#include "goetia/timing.hh"
+#include "goetia/metrics.hh"
 #include "goetia/parsing/parsing.hh"
 #include "goetia/parsing/readers.hh"
 #include "goetia/sequences/exceptions.hh"
 
 
 namespace goetia {
-
-struct DEFAULT_INTERVALS {
-
-    constexpr static unsigned long FINE = 10000;
-    constexpr static unsigned long MEDIUM = 100000;
-    constexpr static unsigned long COARSE = 1000000;
-
-};
-
-
-
-/**
- * @Synopsis  Bounded counter. Returns True when interval is
- *            reached and resets to zero.
- */
-class IntervalCounter {
-
-public:
-
-    uint64_t interval;
-    uint64_t counter;
-
-    IntervalCounter(uint64_t interval)
-        : interval(interval),
-          counter(0)
-    {
-    }
-
-    bool poll(uint64_t incr=1) {
-        counter += incr;
-        if (counter >= interval) {
-            counter = 0;
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    friend inline std::ostream& operator<< (std::ostream& os, const IntervalCounter& counter) {
-       os  << "IntervalCounter<interval=" << counter.interval 
-           << ", counter=" << counter.counter << ">";
-       return os;
-    }
-};
-
-
-/**
- * @Synopsis  Reports the current sequence-processing interval.
- *            The intervals themselves are defined by the user
- *            and given to the processor.
- */
-struct interval_state {
-	bool fine;
-	bool medium;
-	bool coarse;
-	bool end;
-
-	interval_state()
-		: fine(false), medium(false), coarse(false), end(false)
-	{
-	}
-
-	interval_state(bool fine, bool medium, bool coarse, bool end)
-		: fine(fine), medium(medium), coarse(coarse), end(end)
-	{
-	}
-};
 
 
 /**
@@ -114,54 +49,18 @@ class FileProcessor {
 
 protected:
 
-    std::array<IntervalCounter, 3> counters;
-    uint64_t                       _n_reads;
-    uint64_t                       _n_skipped;
-    bool                           _verbose;
-
-    bool _ticked(interval_state tick) {
-        return tick.fine || tick.medium || tick.coarse || tick.end;
-    }
-
-    /**
-     * @Synopsis  Increment all interval counters by n_ticks and notify
-     *            listeners of interval reached.
-     *
-     * @Param     n_ticks Number of sequences to increment.
-     * 
-     * @Returns   An interval_state reporting whether an interval is reached.
-     */
-    interval_state _notify_tick(uint64_t n_ticks) {
-        interval_state result;
-
-        if (counters[0].poll(n_ticks)) {
-             //std::cerr << "processed " << _n_reads << " sequences." << std::endl;               
-             derived().report();
-             result.fine = true;
-        }
-        if (counters[1].poll(n_ticks)) {
-             result.medium = true;
-        }
-        if (counters[2].poll(n_ticks)) {
-             result.coarse = true;
-        }
-
-        result.end = false;
-        return result;
-    }
+    metrics::IntervalCounter timer;
+    metrics::Gauge           _n_sequences;
+    bool                     _verbose;
 
 public:
 
     typedef typename ParserType::alphabet alphabet;
 
-    FileProcessor(uint64_t fine_interval   = DEFAULT_INTERVALS::FINE,
-                  uint64_t medium_interval = DEFAULT_INTERVALS::MEDIUM,
-                  uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE,
-                  bool     verbose         = false)
-        : counters { fine_interval, 
-                     medium_interval,
-                     coarse_interval },
-          _n_reads(0),
+    FileProcessor(uint64_t interval = metrics::IntervalCounter::DEFAULT_INTERVAL,
+                  bool     verbose  = false)
+        : timer(interval),
+          _n_sequences{"timing", "n_sequences"},
           _verbose(verbose)
     {
         
@@ -178,9 +77,9 @@ public:
      * @Param force_name_match Force left and right sequence names to follow
      *                         standard naming conventions.
      *
-     * @Returns                Number of sequences processed.
+     * @Returns                Number of sequences processed, time passed.
      */
-    uint64_t process(const std::string& left_filename,
+    std::tuple<uint64_t, uint64_t> process(const std::string& left_filename,
                      const std::string& right_filename,
                      bool strict = false,
                      uint32_t min_length=0,
@@ -193,15 +92,14 @@ public:
         return process(reader);
     }
 
-    uint64_t process(std::shared_ptr<parsing::SplitPairedReader<ParserType>>& reader) {
+    std::tuple<uint64_t, uint64_t> process(std::shared_ptr<parsing::SplitPairedReader<ParserType>>& reader) {
+        uint64_t n_sequences, time_total;
+        bool remaining = true;
         while(1) {
-            auto state = advance(reader);
-            if (state.end) {
-                break;
-            }
+            std::tie(n_sequences, time_total, remaining) = advance(reader);
         }
 
-        return _n_reads;
+        return {n_sequences, time_total};
     }
 
     /**
@@ -210,24 +108,23 @@ public:
      *
      * @Param filename File to process.
      *
-     * @Returns   Number of sequences consumed.
+     * @Returns   Number of sequences processed, time passed.
      */
-    uint64_t process(std::string const &filename,
+    std::tuple<uint64_t, uint64_t> process(std::string const &filename,
                      bool strict = false,
                      uint32_t min_length = 0) {
         auto reader  = ParserType::build(filename, strict, min_length);
         return process(reader);
     }
 
-    uint64_t process(std::shared_ptr<ParserType>& reader) {
-        while(1) {
-            auto state = advance(reader);
-            if (state.end) {
-                break;
-            }
+    std::tuple<uint64_t, uint64_t> process(std::shared_ptr<ParserType>& reader) {
+        uint64_t n_sequences = 0, time_total = 0;
+        bool remaining = true;
+        while(remaining) {
+            std::tie(n_sequences, time_total, remaining) = advance(reader);
         }
 
-        return _n_reads;
+        return {n_sequences, time_total};
     }
 
     /**
@@ -236,13 +133,17 @@ public:
      *
      * @Param bundle ReadBundle containing the two sequences.
      */
-    void process_sequence(parsing::RecordPair& pair) {
+    uint64_t process_sequence(parsing::RecordPair& pair) {
+        uint64_t time_passed = 0;
+
         if (pair.first) {
-            derived().process_sequence(pair.first.value());
+            time_passed += derived().process_sequence(pair.first.value());
         }
         if (pair.second) {
-            derived().process_sequence(pair.second.value());
+            time_passed += derived().process_sequence(pair.second.value());
         }
+
+        return time_passed;
     }
 
     template<typename ReaderType>
@@ -254,15 +155,15 @@ public:
         } catch (InvalidCharacterException &e) {
             if (_verbose) {
                 std::cerr << "WARNING: Bad sequence encountered at "
-                          << this->_n_reads
+                          << this->n_sequences()
                           << ", exception was "
                           << e.what() << std::endl;
             }
             return {};
         }  catch (parsing::InvalidRead& e) {
             if (_verbose) {
-                std::cerr << "WARNING: Bad invalid read encountered at "
-                          << this->_n_reads
+                std::cerr << "WARNING: Invalid sequence encountered at "
+                          << this->n_sequences()
                           << ", exception was "
                           << e.what() << std::endl;
             }
@@ -271,69 +172,61 @@ public:
     }
 
     /**
-     * @Synopsis  Consume the next FINE_INTERVAL sequences and return the
-     *            current interval state when completed.
+     * @Synopsis  Consume sequences for the next [INTERVAL].
      *
      * @Param reader The reader to consume from.
      *
-     * @Returns   interval_state with current interval.
+     * @Returns   Tuple containing <total seqs processed, total time passed, whether sequences remain>
      */
-    interval_state advance(std::shared_ptr<parsing::SplitPairedReader<ParserType>>& reader) {
+    std::tuple<uint64_t, uint64_t, bool> advance(std::shared_ptr<parsing::SplitPairedReader<ParserType>>& reader) {
         std::optional<parsing::RecordPair> bundle;
-        while(!reader->is_complete()) {
+        while (!reader->is_complete()) {
             bundle = handle_next(*reader);
             
             if (!bundle) {
                 continue;
             }
 
-            derived().process_sequence(bundle.value());
+            uint64_t time_passed = derived().process_sequence(bundle.value());
             int _bundle_count = (bool)bundle.value().first + (bool)bundle.value().second;
-            _n_reads += _bundle_count;
+            _n_sequences += _bundle_count;
 
-            auto tick_result = _notify_tick(_bundle_count);
-            if (_ticked(tick_result)) {
-                return tick_result;
+            if (timer.poll(time_passed)) {
+                return {_n_sequences, timer.total(), true};
             }
         }
-        return interval_state(false, false, false, true);
+
+        return {_n_sequences, timer.total(), false};
     }
 
     /**
-     * @Synopsis  Consume the next FINE_INTERVAL sequences and return the
-     *            current interval state when completed.
+     * @Synopsis  Consume sequences for the next [INTERVAL].
      *
      * @Param parser The reader to consume from.
      *
-     * @Returns   interval_state with current interval.
+     * @Returns   Tuple containing <total seqs processed, total time passed, whether sequences remain>
      */
-    interval_state advance(std::shared_ptr<ParserType>& parser) {
+    std::tuple<uint64_t, uint64_t, bool> advance(std::shared_ptr<ParserType>& parser) {
 
         std::optional<parsing::Record> record;
         // Iterate through the reads and consume their k-mers.
-        int i = 0;
         while (!parser->is_complete()) {
             record = handle_next(*parser);
             
-            if(!record) {
+            if (!record) {
                 continue;
+            }
+
+            uint64_t time_passed = derived().process_sequence(record.value());
+            ++_n_sequences;
+
+            if (timer.poll(time_passed)) {
+                return {_n_sequences, timer.total(), true};
             }
             
-            if(!record) {
-                continue;
-            }
-
-            derived().process_sequence(record.value());
- 
-            __sync_add_and_fetch( &_n_reads, 1 );
-            auto tick_result = _notify_tick(1);
-
-            if (_ticked(tick_result)) {
-                return tick_result;
-            }
-
         }
-        return interval_state(false, false, false, true);
+
+        return {_n_sequences, timer.total(), false};
     }
 
     /**
@@ -341,26 +234,20 @@ public:
      *
      * @Returns   
      */
-    uint64_t n_reads() const {
-        return _n_reads;
+    uint64_t n_sequences() const {
+        return _n_sequences;
     }
 
     template<typename... Args>
     static std::shared_ptr<Derived> build(Args&&... args,
-                                          uint64_t fine_interval,
-                                          uint64_t medium_interval,
-                                          uint64_t coarse_interval,
+                                          uint64_t interval,
                                           bool     verbose) {
         return Derived::build(std::forward<Args>(args)...,
-                              fine_interval,
-                              medium_interval,
-                              coarse_interval,
+                              interval,
                               verbose);
     }
 
 private:
-
-    FileProcessor() : _n_reads(0) {}
 
     friend Derived;
 
@@ -390,7 +277,6 @@ class InserterProcessor : public FileProcessor<InserterProcessor<InserterType, P
 protected:
 
     std::shared_ptr<InserterType> inserter;
-    uint64_t _n_kmers;
 
     typedef FileProcessor<InserterProcessor<InserterType, ParserType>,
                           ParserType> Base;
@@ -401,51 +287,43 @@ public:
     typedef typename Base::alphabet alphabet;
     
     InserterProcessor(std::shared_ptr<InserterType> inserter,
-                      uint64_t fine_interval   = DEFAULT_INTERVALS::FINE,
-                      uint64_t medium_interval = DEFAULT_INTERVALS::MEDIUM,
-                      uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE,
-                      bool     verbose         = false)
-        : Base(fine_interval, medium_interval, coarse_interval, verbose),
-          inserter(inserter),
-          _n_kmers(0)
+                      uint64_t interval = metrics::IntervalCounter::DEFAULT_INTERVAL,
+                      bool     verbose  = false)
+        : Base(interval, verbose),
+          inserter(inserter)
     {
     }
 
-    void process_sequence(const parsing::Record& read) {
+    uint64_t process_sequence(const parsing::Record& sequence) {
         try {
-            inserter->insert_sequence(read.sequence);
+            return inserter->insert_sequence(sequence.sequence);
         } catch (SequenceLengthException &e) {
             if (this->_verbose) {
-                std::cerr << "WARNING: Skipped sequence that was too short: read "
-                          << this->_n_reads << " with sequence "
-                          << read.sequence 
+                std::cerr << "WARNING: Skipped sequence that was too short: sequence number "
+                          << this->n_sequences() << " with sequence "
+                          << sequence.sequence 
                           << std::endl;
             }
-            return;
+            return 0;
         } catch (InvalidCharacterException& e) {
-            return;
+            return 0;
         } catch (std::exception &e) {
-            std::cerr << "ERROR: Exception thrown at " << this->_n_reads 
+            std::cerr << "ERROR: Exception thrown at " << this->n_sequences()
                       << " with msg: " << e.what()
                       <<  std::endl;
             throw e;
         }
-        __sync_add_and_fetch(&_n_kmers, read.sequence.length() - inserter->K + 1);
     }
 
     void report() {
 
     }
 
-    uint64_t n_kmers() const {
-       return _n_kmers;
-    }
-
-    static std::shared_ptr<InserterProcessor<InserterType, ParserType>> build(std::shared_ptr<InserterType> inserter,
-                                                                              uint64_t fine_interval   = DEFAULT_INTERVALS::FINE,
-                                                                              uint64_t medium_interval = DEFAULT_INTERVALS::MEDIUM,
-                                                                              uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE) {
-        return std::make_shared<InserterProcessor<InserterType, ParserType>>(inserter, fine_interval, medium_interval, coarse_interval);
+    
+    static auto build(std::shared_ptr<InserterType> inserter,
+               uint64_t interval = metrics::IntervalCounter::DEFAULT_INTERVAL)
+    -> std::shared_ptr<InserterProcessor<InserterType, ParserType>> {
+        return std::make_shared<InserterProcessor<InserterType, ParserType>>(inserter, interval);
     }
 
 };
@@ -466,9 +344,8 @@ class FilterProcessor : public FileProcessor<FilterProcessor<FilterType, ParserT
 protected:
 
     std::shared_ptr<FilterType> filter;
-    std::ofstream _output_stream; 
-    uint64_t _n_kmers;
-    uint64_t _n_passed;
+    std::ofstream               _output_stream; 
+    metrics::Gauge              _n_passed;
 
     typedef FileProcessor<FilterProcessor<FilterType, ParserType>,
                           ParserType> Base;
@@ -480,15 +357,12 @@ public:
     
     FilterProcessor(std::shared_ptr<FilterType> filter,
                     const std::string           output_filename,
-                    uint64_t fine_interval   = DEFAULT_INTERVALS::FINE,
-                    uint64_t medium_interval = DEFAULT_INTERVALS::MEDIUM,
-                    uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE,
-                    bool     verbose         = false)
-        : Base(fine_interval, medium_interval, coarse_interval, verbose),
+                    uint64_t interval = metrics::IntervalCounter::DEFAULT_INTERVAL,
+                    bool     verbose  = false)
+        : Base(interval, verbose),
           filter(filter),
           _output_stream(output_filename.c_str()),
-          _n_kmers(0),
-          _n_passed(0)
+          _n_passed{"timing", "n_passed"}
     {
     }
 
@@ -496,40 +370,38 @@ public:
         _output_stream.close();
     }
 
-    void process_sequence(const parsing::Record& read) {
+    uint64_t process_sequence(const parsing::Record& sequence) {
         bool passed = false;
+        uint64_t time_taken = 0;
         try {
-            passed = filter->filter_sequence(read.sequence);
+            std::tie(passed, time_taken) = filter->filter_sequence(sequence.sequence);
         } catch (SequenceLengthException &e) {
             if (this->_verbose) {
                 std::cerr << "WARNING: Skipped sequence that was too short: read "
-                          << this->_n_reads << " with sequence "
-                          << read.sequence 
+                          << this->n_sequences() << " with sequence "
+                          << sequence.sequence 
                           << std::endl;
             }
-            return;
+            return 0;
         } catch (InvalidCharacterException& e) {
-            return;
+            return 0;
         } catch (std::exception &e) {
-            std::cerr << "ERROR: Exception thrown at " << this->_n_reads 
+            std::cerr << "ERROR: Exception thrown at " << this->n_sequences()
                       << " with msg: " << e.what()
                       <<  std::endl;
             throw e;
         }
-        __sync_add_and_fetch(&_n_kmers, read.sequence.length() - filter->K + 1);
 
         if (passed) {
-            __sync_add_and_fetch(&_n_passed, 1);
-            read.write_fastx(_output_stream);
+            ++_n_passed;
+            sequence.write_fastx(_output_stream);
         }
+
+        return time_taken;
     }
 
     void report() {
 
-    }
-
-    uint64_t n_kmers() const {
-       return _n_kmers;
     }
 
     uint64_t n_passed() const {
@@ -538,18 +410,14 @@ public:
 
     static auto build(std::shared_ptr<FilterType> filter,
                       const std::string&          output_filename,
-                      uint64_t fine_interval   = DEFAULT_INTERVALS::FINE,
-                      uint64_t medium_interval = DEFAULT_INTERVALS::MEDIUM,
-                      uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE,
-                      bool verbose             = false)
+                      uint64_t interval = metrics::IntervalCounter::DEFAULT_INTERVAL,
+                      bool verbose      = false)
     -> std::shared_ptr<FilterProcessor<FilterType, ParserType>> {
 
         return std::make_shared<FilterProcessor<FilterType,
                                                 ParserType>>(filter,
                                                              output_filename,
-                                                             fine_interval,
-                                                             medium_interval, 
-                                                             coarse_interval,
+                                                             interval,
                                                              verbose);
     }
 
