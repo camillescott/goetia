@@ -53,11 +53,30 @@ class SlidingWindow:
 class SlidingCutoff:
 
     def __init__(self, window_size, window_func, cutoff_func):
-        self.value_window = SlidingWindow(window_size, window_func)
+        if isinstance(window_func, SlidingWindow):
+            self.value_window = window_func
+        else:
+            self.value_window = SlidingWindow(window_size, window_func)
         self.window_value = np.NaN
-        self.cutoff_window = SlidingCutoff(window_size, cutoff_func)
+
+        if isinstance(cutoff_func, SlidingWindow):
+            self.cutoff_window = cutoff_func
+        else:
+            self.cutoff_window = SlidingWindow(window_size, cutoff_func)
         self.cutoff_reached = False
+
         self.time = 0
+    
+    @property
+    def cutoff_reached(self):
+        return self._cutoff_reached
+    
+    @cutoff_reached.setter
+    def cutoff_reached(self, reached):
+        if np.isnan(reached):
+            self._cutoff_reached = False
+        else:
+            self._cutoff_reached = bool(reached)
 
     def push(self, value):
         self.window_value, self.time = self.value_window.push(value)
@@ -77,6 +96,7 @@ def all_cutoff(cutoff):
 def median_cutoff(cutoff):
     def func(values):
         return median(values) > cutoff
+    return func
 
 
 def normalized_mean(values):
