@@ -5,12 +5,14 @@
 # This software may be modified and distributed under the terms
 # of the MIT license.  See the LICENSE file for details.
 
+from pprint import pprint
 from statistics import mean
 
 import numpy as np
 import pytest
 
-from goetia.saturation import SlidingWindow, SlidingCutoff, normalized_mean
+from goetia.saturation import (SlidingWindow, SlidingCutoff, normalized_mean,
+                               all_cutoff, median_cutoff)
 
 
 class TestSlidingWindow:
@@ -86,4 +88,25 @@ class TestSlidingWindow:
         with pytest.raises(TypeError):
             window = SlidingWindow(1)
     
-    
+
+class TestSlidingCutoff:
+
+    @pytest.mark.parametrize("cutoff_func", [all_cutoff, median_cutoff])
+    def test_window_size_transition(self, cutoff_func):
+        ''' Test that saturation is not reached until
+        window_size *sliding windows* have been observed.
+        '''
+        vals = [5, 5, 5, 5]
+        cutoff = 2
+        window = SlidingCutoff(3, mean, cutoff_func(cutoff))
+
+        results = [window.push(v) for v in vals]
+        pprint(results)
+        assert results[-1][0] is False
+        assert results[-1][1] == 5
+        assert results[-1][2] == 3
+
+        reached, smoothed, time = window.push(5)
+        assert reached is True
+        assert smoothed == 5
+        assert time == 4
