@@ -22,7 +22,6 @@
 #include <string>
 
 #include "goetia/goetia.hh"
-#include "goetia/timing.hh"
 #include "goetia/metrics.hh"
 #include "goetia/parsing/parsing.hh"
 #include "goetia/parsing/readers.hh"
