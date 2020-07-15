@@ -9,9 +9,7 @@ class Messages(SchemaBase):
     oneOf(:class:`Interval`, :class:`SampleStarted`, :class:`SampleFinished`,
     :class:`SampleSaturated`, :class:`Error`, :class:`DistanceCalc`, :class:`EndStream`)
     """
-    _schema = {'definitions': {'DistanceCalc': {'properties': {'delta': {'minimum': 0,
-                                                               'type': 'integer'},
-                                                     'distance': {'maximum': 1.0,
+    _schema = {'definitions': {'DistanceCalc': {'properties': {'distance': {'maximum': 1.0,
                                                                   'minimum': 0.0,
                                                                   'type': 'number'},
                                                      'file_names': {'type': 'array'},
@@ -25,7 +23,6 @@ class Messages(SchemaBase):
                                       'required': ['msg_type',
                                                    't',
                                                    'sample_name',
-                                                   'delta',
                                                    'distance',
                                                    'stat',
                                                    'stat_type',
@@ -238,12 +235,10 @@ class Error(SchemaBase):
 class DistanceCalc(SchemaBase):
     """DistanceCalc schema wrapper
 
-    Mapping(required=[msg_type, t, sample_name, delta, distance, stat, stat_type, file_names])
+    Mapping(required=[msg_type, t, sample_name, distance, stat, stat_type, file_names])
 
     Attributes
     ----------
-
-    delta : integer
 
     distance : float
 
@@ -263,11 +258,11 @@ class DistanceCalc(SchemaBase):
     _schema = {'$ref': '#/definitions/DistanceCalc'}
     _rootschema = Messages._schema
 
-    def __init__(self, delta=Undefined, distance=Undefined, file_names=Undefined, msg_type=Undefined,
+    def __init__(self, distance=Undefined, file_names=Undefined, msg_type=Undefined,
                  sample_name=Undefined, stat=Undefined, stat_type=Undefined, t=Undefined, **kwds):
-        super(DistanceCalc, self).__init__(delta=delta, distance=distance, file_names=file_names,
-                                           msg_type=msg_type, sample_name=sample_name, stat=stat,
-                                           stat_type=stat_type, t=t, **kwds)
+        super(DistanceCalc, self).__init__(distance=distance, file_names=file_names, msg_type=msg_type,
+                                           sample_name=sample_name, stat=stat, stat_type=stat_type, t=t,
+                                           **kwds)
 
 
 

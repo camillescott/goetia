@@ -40,16 +40,13 @@ class SolidFilterRunner(CommandRunner):
 
         self.processor = self.filter_t.Processor.build(self.solid_filter.__smartptr__(),
                                                        args.output_filename,
-                                                       args.fine_interval,
-                                                       args.medium_interval,
-                                                       args.coarse_interval)
+                                                       args.interval)
 
     def execute(self, args):
         for sample, name in iter_fastx_inputs(args.inputs, args.pairing_mode, names=args.names):
-            for n_seqs, n_skipped, state in self.processor.chunked_process(*sample):
-                pass
-            print(f'{sample}, {name}: {n_seqs} reads, {self.processor.n_passed()} passed filter.',
-                  file=sys.stderr)
+            for n_seqs, time, n_skipped in self.processor.chunked_process(*sample):
+                print(f'{sample}, {name}: {n_seqs} reads, {self.processor.n_passed()} passed filter.',
+                      file=sys.stderr)
 
     def teardown(self):
         pass

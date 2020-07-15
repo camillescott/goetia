@@ -9,7 +9,7 @@
 from goetia.cli.runner import GoetiaRunner
 from goetia.cli.cdbg_stream import cDBGRunner
 from goetia.cli.solid_filter import SolidFilterRunner
-from goetia.signatures import SourmashRunner
+from goetia.cli.sourmash_stream import SourmashRunner
 
 
 def main():

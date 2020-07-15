@@ -14,29 +14,48 @@ import numpy as np
 
 class SlidingWindow:
 
-    def __init__(self, window_size, func, uses_time=False):
+    def __init__(self, window_size, func, uses_time=False, history=0):
         if window_size < 2:
             raise TypeError('window_size must be at least 2')
         self.window_size = window_size
         self.func = func
-        self.values = []
+        self.items = []
         self.uses_time = uses_time
+
+        if history > 0 and history < window_size:
+            history = window_size
+        self.history = history
+    
+    @property
+    def name(self):
+        return f'SlidingWindow({self.func.__name__}, L={self.window_size})'
     
     def reset(self):
-        self.values = []
+        self.items = []
+    
+    def times(self):
+        for _, time in self.items:
+            yield time
+    
+    def values(self):
+        for value, _ in self.items:
+            yield value
     
     def push(self, value):
-        self.values.append(self._unpack(value))
+        self.items.append(self._unpack(value))
         
-        if len(self.values) >= self.window_size:
-            stat = self.func([v for v, t in self.values[-self.window_size:]]) if not self.uses_time else \
-                   self.func(self.values[-self.window_size:])
+        if len(self.items) >= self.window_size:
+            stat = self.func([v for v, t in self.items[-self.window_size:]]) if not self.uses_time else \
+                   self.func(self.items[-self.window_size:])
         else:
             stat = np.NaN
         
-        _, back_time = self.values[-1]
+        _, back_time = self.items[-1]
         if np.isnan(back_time):
-            back_time = len(self.values) - 1
+            back_time = len(self.items) - 1
+
+        if self.history > 0:
+            self.items = self.items[-history:]
 
         return stat, back_time
     
@@ -48,6 +67,12 @@ class SlidingWindow:
             return item, np.NaN
         else:
             return value, time
+
+
+class RollingPairwise(SlidingWindow):
+
+    def __init__(self, dfunc, **kwargs):
+        super().__init__(2, dfunc, **kwargs)
 
 
 class SlidingCutoff:
@@ -66,6 +91,10 @@ class SlidingCutoff:
         self.cutoff_reached = False
 
         self.time = 0
+    
+    @property
+    def name(self):
+        return f'SlidingCutoff(smoothing={self.value_window.name}, cutoff={self.cutoff_window.name})'
     
     @property
     def cutoff_reached(self):
@@ -99,9 +128,9 @@ def median_cutoff(cutoff):
     return func
 
 
-def normalized_mean(values):
-    m = mean((v for v, t in values))
-    n = values[-1][-1] - values[0][-1]
+def normalized_mean(items):
+    m = mean((v for v, t in items))
+    n = items[-1][-1] - items[0][-1]
 
     return m / n
 

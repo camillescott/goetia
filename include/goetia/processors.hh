@@ -35,9 +35,9 @@ namespace goetia {
  * @Synopsis  CRTP base class for generic sequence processing. Uses
  *            the given sequence parsing type to parse sequences and
  *            pass them to a process_sequence method that is implemented
- *            by the derived class. Notifies registered listeners when
- *            the given FINE, MEDIUM, and COARSE intervals of number
- *            of parsed sequences are reached.
+ *            by the derived class. Sequences are processed in chunks
+ *            corresponding to interval: the interval timing is incremented
+ *            based on the return value of process_sequence.
  *
  * @tparam Derived    CRTP derived class.
  * @tparam ParserType Sequencing parsing type.
