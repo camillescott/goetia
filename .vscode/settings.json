@@ -1,5 +1,5 @@
 {
-    "python.pythonPath": "/home/camille/miniconda/envs/boink-sourmash/bin/python",
+    "python.pythonPath": "/home/camille/miniconda/envs/goetia/bin/python",
     "python.linting.pylintPath": "/home/camille/miniconda/envs/boink/bin/pylint",
     "cmake.configureOnOpen": false,
     "files.watcherExclude": {
