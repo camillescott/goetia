@@ -52,8 +52,8 @@ struct StreamingSolidFilter<GraphType<StorageType, ShifterType>> {
         }
 
         std::tuple<bool, uint64_t> filter_sequence(const std::string& sequence) {
-            uint64_t n_not_solid = dbg->insert_sequence(sequence);
-            uint64_t n_kmers = sequence.length() - K + 1;
+            uint64_t n_not_solid;
+            uint64_t n_kmers = dbg->insert_sequence(sequence, n_not_solid);
             
             if (((float)n_not_solid / (float)n_kmers) > (1.0 - min_prop_solid)) {
                 return {false, n_kmers};

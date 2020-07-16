@@ -295,6 +295,19 @@ public:
         return sequence.size() - K + 1;
     }
 
+    uint64_t insert_sequence(const std::string& sequence,
+                             size_t&            n_new) {
+    
+        hashing::KmerIterator<ShifterType> iter(sequence, this);
+        
+        n_new = 0;
+        while(!iter.done()) {
+            n_new += insert(iter.next());
+        }
+
+        return sequence.size() - K + 1;
+    }
+
     /**
      * @Synopsis  Insert the sequence and return the post-insertion k-mer counts.
      *
