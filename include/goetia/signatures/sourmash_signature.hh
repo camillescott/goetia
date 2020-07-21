@@ -45,8 +45,8 @@ namespace goetia::signatures {
                                                     bool         dayhoff,
                                                     bool         hp,
                                                     uint32_t     seed,
-                                                    uint64_t     max_hash) {
-                return std::make_shared<Signature>(n, K, is_protein, dayhoff, hp, seed, max_hash);
+                                                    uint64_t     scaled) {
+                return std::make_shared<Signature>(n, K, is_protein, dayhoff, hp, seed, scaled);
             }
 
             static uint64_t max_hash_from_scaled(uint64_t scaled) {

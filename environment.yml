@@ -7,7 +7,7 @@ dependencies:
     - pandas
     - seaborn
     - ficus
-    - sourmash
+    - sourmash=3.4.0
     - screed
-    - graph-goetia
+    - goetia
     - numpy
