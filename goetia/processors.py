@@ -257,25 +257,29 @@ class AsyncSequenceProcessor(UnixBroadcasterMixin):
                     if self.state is RunState.SIGINT:
                         # If we're interrupted, inform our listeners that something went wrong.
                         self.worker_q.put(Error(t=time,
+                                                sequence=n_seqs,
                                                 sample_name=name,
                                                 file_names=sample,
                                                 error='Process terminated (SIGINT).'))
                         return
 
                     self.worker_q.put(Interval(t=time,
+                                               sequence=n_seqs,
                                                sample_name=name, 
                                                file_names=sample))
 
                 self.worker_q.put(SampleFinished(t=time,
+                                                 sequence=n_seqs,
                                                  sample_name=name,
                                                  file_names=sample))
             except Exception as e:
-                self.worker_q.put(Error(t=time,
+                self.worker_q.put(Error(t=self.processor.time_elapsed(),
+                                        sequence=n_seqs,
                                         sample_name=name,
-                                        error=str(e),
+                                        error=f'At sequence {self.processor.n_sequences()}: {str(e)}',
                                         file_names=sample))
                 self.state = RunState.STOP_ERROR
-                raise
+                return
 
     async def start(self, extra_tasks = None) -> None:
         async with curio.TaskGroup() as g:

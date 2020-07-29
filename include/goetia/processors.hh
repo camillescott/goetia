@@ -237,6 +237,10 @@ public:
         return _n_sequences;
     }
 
+    uint64_t time_elapsed() const {
+        return timer.total();
+    }
+
     template<typename... Args>
     static std::shared_ptr<Derived> build(Args&&... args,
                                           uint64_t interval,
@@ -309,8 +313,9 @@ public:
         } catch (std::exception &e) {
             std::cerr << "ERROR: Exception thrown at " << this->n_sequences()
                       << " with msg: " << e.what()
+                      << ". Sequence was: " << sequence.sequence
                       <<  std::endl;
-            throw e;
+            throw;
         }
     }
 
