@@ -69,7 +69,14 @@ namespace goetia::signatures {
             }
 
             size_t insert_sequence(const std::string& sequence) {
-                this->add_sequence(sequence.c_str());
+                //
+                // We call add_sequence with force=true: when force=True is passed to
+                // kmerminhash_add_sequence, and then on to SigsTrait<KmerMinHash>::add_sequence
+                // in sourmash.rs, k-mers with N's are skipped; this allows us to use the more
+                // permissive DNAN_SIMPLE in SourmashSignature's InserterProcessor and still get 
+                // as many k-mers as possible.
+                //
+                this->add_sequence(sequence.c_str(), true);
                 return sequence.length() - K + 1;
             }
         };

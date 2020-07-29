@@ -22,12 +22,12 @@ namespace sourmash {
 
     typedef uint64_t HashIntoType;
 
-    class minhash_exception : public std::exception {
+    class sourmash_exception : public std::exception {
       public:
-        explicit minhash_exception(const std::string& msg = "Generic minhash exception") : _msg(msg) {
+        explicit sourmash_exception(const std::string& msg = "Generic sourmash.rs exception") : _msg(msg) {
         }
 
-        virtual ~minhash_exception() throw() {
+        virtual ~sourmash_exception() throw() {
         }
         virtual const char* what() const throw() {
             return _msg.c_str();
@@ -45,19 +45,21 @@ namespace sourmash {
             case SOURMASH_ERROR_CODE_NO_ERROR:
                 break;
             case SOURMASH_ERROR_CODE_MISMATCH_K_SIZES:
-                throw minhash_exception("different ksizes cannot be compared");
+                throw sourmash_exception("sourmash.rs: different ksizes cannot be compared");
                 break;
             case SOURMASH_ERROR_CODE_MISMATCH_DNA_PROT:
-                throw minhash_exception("DNA/prot minhashes cannot be compared");
+                throw sourmash_exception("sourmash.rs: DNA/prot minhashes cannot be compared");
                 break;
             case SOURMASH_ERROR_CODE_MISMATCH_SCALED:
-                throw minhash_exception("mismatch in scaled param; comparison fail");
+                throw sourmash_exception("sourmash.rs: mismatch in scaled param; comparison fail");
                 break;
             case SOURMASH_ERROR_CODE_MISMATCH_SEED:
-                throw minhash_exception("mismatch in seed; comparison fail");
+                throw sourmash_exception("sourmash.rs: mismatch in seed; comparison fail");
                 break;
+            case SOURMASH_ERROR_CODE_INVALID_DNA:
+                throw sourmash_exception("sourmash.rs: invalid DNA given to kmerminhash_add_sequence");
             default:
-                throw minhash_exception(std::string("sourmash error: code ") + std::to_string(err_code));
+                throw sourmash_exception(std::string("sourmash.rs error: code ") + std::to_string(err_code));
                 break;
         }
     }
