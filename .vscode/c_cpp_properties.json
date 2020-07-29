@@ -5,7 +5,8 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/include/**",
-                "${workspaceFolder}/include"
+                "${workspaceFolder}/include",
+                "${workspaceFolder}/envs/goetia-dev/lib/python3.7/site-packages/cppyy_backend/include"
             ],
             "defines": [],
             "compilerPath": "/usr/lib/ccache/g++-7",
