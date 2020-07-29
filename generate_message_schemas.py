@@ -11,6 +11,8 @@ msg_schema = {
                              'default': 'Interval'},
                 't': {'type': 'integer',
                       'minimum': 0},
+                'sequence': {'type': 'integer',
+                             'minimum': 0},
                 'file_names': {'type': 'array'}
             }
         },
@@ -32,6 +34,8 @@ msg_schema = {
                              'enum': ['SampleFinished']},
                 't': {'type': 'integer',
                       'minimum': 0},
+                'sequence': {'type': 'integer',
+                             'minimum': 0},
                 'sample_name': {'type': 'string'},
                 'file_names': {'type': 'array'}
             }
@@ -44,6 +48,8 @@ msg_schema = {
                              'enum': ['SampleSaturated']},
                 't': {'type': 'integer',
                       'minimum': 0},
+                'sequence': {'type': 'integer',
+                             'minimum': 0},
                 'sample_name': {'type': 'string'},
                 'file_names': {'type': 'array'}
             }
@@ -56,6 +62,8 @@ msg_schema = {
                               'enum': ['Error']},
                 't': {'type': 'integer',
                       'minimum': 0},
+                'sequence': {'type': 'integer',
+                             'minimum': 0},
                 'sample_name': {'type': 'string'},
                 'error': {'type': 'string'},
                 'file_names': {'type': 'array'}
@@ -69,6 +77,8 @@ msg_schema = {
                              'enum': ['DistanceCalc']},
                 't': {'type': 'integer',
                       'minimum': 0},
+                'sequence': {'type': 'integer',
+                             'minimum': 0},
                 'sample_name': {'type': 'string'},
                 'stat_type': {'type': 'string'},
                 'distance': {'type': 'number',

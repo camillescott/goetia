@@ -16,6 +16,8 @@ class Messages(SchemaBase):
                                                      'msg_type': {'enum': ['DistanceCalc'],
                                                                   'type': 'string'},
                                                      'sample_name': {'type': 'string'},
+                                                     'sequence': {'minimum': 0,
+                                                                  'type': 'integer'},
                                                      'stat': {'type': 'number'},
                                                      'stat_type': {'type': 'string'},
                                                      't': {'minimum': 0,
@@ -37,6 +39,8 @@ class Messages(SchemaBase):
                                               'msg_type': {'enum': ['Error'],
                                                            'type': 'string'},
                                               'sample_name': {'type': 'string'},
+                                              'sequence': {'minimum': 0,
+                                                           'type': 'integer'},
                                               't': {'minimum': 0,
                                                     'type': 'integer'}},
                                'required': ['msg_type',
@@ -49,6 +53,8 @@ class Messages(SchemaBase):
                                                  'msg_type': {'const': 'Interval',
                                                               'default': 'Interval',
                                                               'type': 'string'},
+                                                 'sequence': {'minimum': 0,
+                                                              'type': 'integer'},
                                                  't': {'minimum': 0,
                                                        'type': 'integer'}},
                                   'required': ['msg_type',
@@ -60,6 +66,8 @@ class Messages(SchemaBase):
                                                        'msg_type': {'enum': ['SampleFinished'],
                                                                     'type': 'string'},
                                                        'sample_name': {'type': 'string'},
+                                                       'sequence': {'minimum': 0,
+                                                                    'type': 'integer'},
                                                        't': {'minimum': 0,
                                                              'type': 'integer'}},
                                         'required': ['msg_type',
@@ -71,6 +79,8 @@ class Messages(SchemaBase):
                                                         'msg_type': {'enum': ['SampleSaturated'],
                                                                      'type': 'string'},
                                                         'sample_name': {'type': 'string'},
+                                                        'sequence': {'minimum': 0,
+                                                                     'type': 'integer'},
                                                         't': {'minimum': 0,
                                                               'type': 'integer'}},
                                          'required': ['msg_type',
@@ -114,14 +124,16 @@ class Interval(SchemaBase):
 
     t : integer
 
+    sequence : integer
+
     """
     _schema = {'$ref': '#/definitions/Interval'}
     _rootschema = Messages._schema
 
     def __init__(self, file_names=Undefined, msg_type=Undefined, sample_name=Undefined, t=Undefined,
-                 **kwds):
+                 sequence=Undefined, **kwds):
         super(Interval, self).__init__(file_names=file_names, msg_type=msg_type,
-                                       sample_name=sample_name, t=t, **kwds)
+                                       sample_name=sample_name, t=t, sequence=sequence, **kwds)
 
 
 
@@ -165,14 +177,16 @@ class SampleFinished(SchemaBase):
 
     t : integer
 
+    sequence : integer
+
     """
     _schema = {'$ref': '#/definitions/SampleFinished'}
     _rootschema = Messages._schema
 
     def __init__(self, file_names=Undefined, msg_type=Undefined, sample_name=Undefined, t=Undefined,
-                 **kwds):
+                 sequence=Undefined, **kwds):
         super(SampleFinished, self).__init__(file_names=file_names, msg_type=msg_type,
-                                             sample_name=sample_name, t=t, **kwds)
+                                             sample_name=sample_name, t=t, sequence=sequence, **kwds)
 
 
 
@@ -192,14 +206,16 @@ class SampleSaturated(SchemaBase):
 
     t : integer
 
+    sequence : integer
+
     """
     _schema = {'$ref': '#/definitions/SampleSaturated'}
     _rootschema = Messages._schema
 
     def __init__(self, file_names=Undefined, msg_type=Undefined, sample_name=Undefined, t=Undefined,
-                 **kwds):
+                 sequence=Undefined, **kwds):
         super(SampleSaturated, self).__init__(file_names=file_names, msg_type=msg_type,
-                                              sample_name=sample_name, t=t, **kwds)
+                                              sample_name=sample_name, t=t, sequence=sequence, **kwds)
 
 
 
@@ -221,14 +237,16 @@ class Error(SchemaBase):
 
     t : integer
 
+    sequence : integer
+
     """
     _schema = {'$ref': '#/definitions/Error'}
     _rootschema = Messages._schema
 
     def __init__(self, error=Undefined, file_names=Undefined, msg_type=Undefined, sample_name=Undefined,
-                 t=Undefined, **kwds):
+                 t=Undefined, sequence=Undefined, **kwds):
         super(Error, self).__init__(error=error, file_names=file_names, msg_type=msg_type,
-                                    sample_name=sample_name, t=t, **kwds)
+                                    sample_name=sample_name, t=t, sequence=sequence, **kwds)
 
 
 
@@ -254,15 +272,18 @@ class DistanceCalc(SchemaBase):
 
     t : integer
 
+    sequence : integer
+
     """
     _schema = {'$ref': '#/definitions/DistanceCalc'}
     _rootschema = Messages._schema
 
     def __init__(self, distance=Undefined, file_names=Undefined, msg_type=Undefined,
-                 sample_name=Undefined, stat=Undefined, stat_type=Undefined, t=Undefined, **kwds):
+                 sample_name=Undefined, stat=Undefined, stat_type=Undefined, t=Undefined,
+                 sequence=Undefined, **kwds):
         super(DistanceCalc, self).__init__(distance=distance, file_names=file_names, msg_type=msg_type,
                                            sample_name=sample_name, stat=stat, stat_type=stat_type, t=t,
-                                           **kwds)
+                                           sequence=sequence, **kwds)
 
 
 
