@@ -111,6 +111,10 @@ struct UnikmerSignature {
             return signature->get_partition_counts();
         }
 
+        void * get_sketch_as_buffer() {
+            return signature->get_partition_counts_as_buffer();
+        }
+
         uint64_t get_n_kmers() const {
             size_t n_kmers = 0;
             for (const auto& c : signature->get_partition_counts()) {

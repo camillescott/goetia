@@ -35,12 +35,13 @@ def pythonize_goetia_hashing(klass, name):
         klass.parse_unikmers = staticmethod(parse_unikmers)
 
         def load(W, K):
-            if (W, K, klass.__name__) in UKHS_CACHE:
-                return UKHS_CACHE[(W, K, klass.__name__)]
+            key = (W, K, klass.__name__)
+            if key in UKHS_CACHE:
+                return UKHS_CACHE[key]
             else:
                 unikmers = parse_unikmers(W, K)
                 ukhs = klass.build(W, K, unikmers)
-                UKHS_CACHE[(W, K, klass.__name__)] = ukhs
+                UKHS_CACHE[key] = ukhs
                 return ukhs
 
         klass.load = staticmethod(load)

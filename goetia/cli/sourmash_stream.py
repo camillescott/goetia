@@ -6,14 +6,6 @@
 # Author : Camille Scott <camille.scott.w@gmail.com>
 # Date   : 04.06.2020
 
-import os
-import sys
-
-import blessings
-import curio
-import numpy as np
-from pyfiglet import Figlet
-
 from sourmash import SourmashSignature, save_signatures
 
 from goetia.signatures import SourmashSketch
@@ -43,8 +35,7 @@ class SourmashRunner(SignatureRunner):
         return SourmashSketch.Processor.build(signature,
                                               args.interval)
 
-    @staticmethod
-    def _distance_func(sigs):
+    def _distance_func(self, sigs):
         sig_a, sig_b = sigs
         sim = sig_a.similarity(sig_b)
         return sim

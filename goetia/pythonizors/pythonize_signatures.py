@@ -6,13 +6,13 @@
 # Author : Camille Scott <camille.scott.w@gmail.com>
 # Date   : 16.10.2019
 
-from numpy import zeros
-import numpy
+import sys
 
-import json
-import typing
+import cppyy
+import numpy as np
 
 from goetia.pythonizors import utils
+
 
 def pythonize_goetia_signatures(klass, name):
     if name == 'SourmashSignature':
@@ -41,49 +41,30 @@ def pythonize_goetia_signatures(klass, name):
 
     is_inst, template =  utils.is_template_inst(name, 'UnikmerSignature')
     if is_inst:
-        def signature(self) -> numpy.ndarray:
+        print('pythonize', name, 'for UnikmerSignature')
+        def to_numpy(self) -> np.ndarray:
             """signature
 
             Returns:
                 numpy.ndarray: Numpy array with the signature vector.
             """
-            sig = zeros(len(self))
-            raw = self.get_signature()
-            for i, count in enumerate(raw):
-                sig[i] = count
-            return sig
-
+            buffer = self.get_sketch_as_buffer()
+            assert isinstance(buffer, cppyy.LowLevelView)
+            buffer.reshape((len(self),))
+            return np.frombuffer(buffer, dtype=np.uint64, count=len(self))
+        
         def __len__(self) -> int:
             return self.get_size()
 
-        def to_dict(self, name: str) -> dict:
-            """to_dict
-
-            Args:
-                name (str): Convert the signature metadata and signature to a dictionary.
-
-            Returns:
-                dict: Signature metadata.
-            """
-            data = {'signature': self.signature.tolist(),
-                    'W'        : self.K,
-                    'K'        : self.bucket_K,
-                    'size'     : len(self),
-                    'name'     : name}
-            return data
-
-        def save(self, stream: typing.TextIO, name: str) -> None:
-            """Save the signature to disk.
-
-            Args:
-                stream (file): File handle to save to.
-                name (str): Name of the signature.
-            """
-            data = [self.to_dict(name)]
-
-            json.dump(data, stream)
-
-        klass.Signature.signature = property(signature)
+        klass.Signature.to_numpy = to_numpy
         klass.Signature.__len__   = __len__
-        klass.Signature.to_dict   = to_dict
-        klass.Signature.save      = save
+
+        def wrap_build(build_func):
+            def wrapped(W, K, ukhs=None):
+                if ukhs is None:
+                    ukhs = klass.ukhs_type.load(W, K)
+                sig = build_func(W, K, ukhs.__smartptr__())
+                return sig
+            return wrapped
+        
+        klass.Signature.build = wrap_build(klass.Signature.build)

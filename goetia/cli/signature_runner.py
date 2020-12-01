@@ -81,16 +81,23 @@ class SignatureRunner(CommandRunner):
         args.smoothing_function_func = smoothing_functions[args.smoothing_function]
         args.cutoff_function_func = cutoff_functions[args.cutoff_function](args.cutoff)
 
+    def _distance_func(self, sigs):
+        """ Compute the distance between two signatures in sigs.
+
+        Args:
+            sigs (list): The signatures.
+        
+        Returns:
+            float: Distance between the signatures.
+        """
+        raise NotImplementedError()
+
     @staticmethod
     def _make_signature(args):
         raise NotImplementedError()
 
     @staticmethod
     def _make_processor(signature, args):
-        raise NotImplementedError()
-
-    @staticmethod
-    def _distance_func(sigs):
         raise NotImplementedError()
 
     @staticmethod

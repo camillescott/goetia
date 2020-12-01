@@ -413,6 +413,10 @@ public:
     std::vector<size_t> get_partition_counts() {
         return S->get_partition_counts();
     }
+
+    void * get_partition_counts_as_buffer() {
+        return S->get_partition_counts_as_buffer();
+    }
 };
 
 

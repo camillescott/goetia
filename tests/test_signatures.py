@@ -8,10 +8,13 @@
 
 import pytest
 
-from goetia.signatures import SourmashSketch
+from goetia.hashing import Canonical, StrandAware
+from goetia.sketches import SourmashSketch, UnikmerSketch
+from goetia.storage import SparseppSetStorage
 
 from .utils import *
 import screed
+
 
 def test_sourmash_signature(datadir, ksize):
     import sourmash
@@ -50,3 +53,13 @@ def test_sourmash_scaled(datadir, ksize):
     assert goetia_mh.similarity(sourmash_sig) == 1.0
 
 
+def test_draff_to_numpy(datadir):
+    rfile = datadir('random-20.fa')
+
+    sketch_t = UnikmerSketch[SparseppSetStorage, StrandAware]
+    sketch = sketch_t.Signature.build(31, 7)
+    processor = sketch_t.Processor.build(sketch)
+    processor.process(rfile)
+
+    np_sig = sketch.to_numpy()
+    py_sig = list(sketch.get_signature())
