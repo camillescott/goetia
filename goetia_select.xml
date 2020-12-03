@@ -33,5 +33,6 @@
         <class name="std::condition_variable" />
         <class pattern="std::vector<goetia::dBGWalker<*>>"/>
         <class name="std::vector<std::basic_ofstream<char>>"/>
+        <function pattern="*make_shared_from_tuple*"/>
     </exclusion>
 </lcgdict>

@@ -61,6 +61,18 @@ namespace goetia {
 namespace storage {
 
 
+class NibbleStorage;
+
+template<>
+struct StorageTraits<NibbleStorage> {
+    static constexpr bool is_probabilistic = true;
+    static constexpr bool is_counting      = true;
+
+    typedef std::tuple<uint64_t, uint16_t> params_type;
+    static constexpr params_type default_params = std::make_tuple(1'000'000, 4);
+};
+
+
 /*
  * \class NibbleStorage
  *
@@ -80,6 +92,7 @@ class NibbleStorage : public Storage<uint64_t>,
 public:
 
     using Storage<uint64_t>::value_type;
+    using Traits = StorageTraits<NibbleStorage>;
 
 protected:
     // table size is measured in number of entries in the table, not in bytes
@@ -140,6 +153,10 @@ public:
 
     static std::shared_ptr<NibbleStorage> build(uint64_t max_table, uint16_t N) {
         return std::make_shared<NibbleStorage>(max_table, N);
+    }
+
+    static std::shared_ptr<NibbleStorage> build(typename Traits::params_type params) {
+        return make_shared_from_tuple<NibbleStorage>(std::move(params));
     }
 
     std::shared_ptr<NibbleStorage> clone() const {

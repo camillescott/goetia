@@ -37,6 +37,7 @@
 namespace goetia {
 
 using storage::PartitionedStorage;
+using storage::StorageTraits;
 
 template <class BaseStorageType,
           class ShifterType = hashing::FwdUnikmerShifter>
@@ -63,6 +64,19 @@ public:
 
     const uint16_t K;
     const uint16_t partition_K;
+
+    explicit PdBG(uint16_t K,
+                  uint16_t partition_K,
+                  std::shared_ptr<ukhs_type>& ukhs,
+                  const typename StorageTraits<BaseStorageType>::params_type& storage_params)
+        : K           (K),
+          ukhs        (ukhs),
+          partitioner (K, partition_K, ukhs),
+          partition_K (partition_K)
+    {
+        S = std::make_shared<PartitionedStorage<BaseStorageType>>(ukhs->n_hashes(),
+                                                                  storage_params);
+    }
  
     template <typename... Args>
     explicit PdBG(uint16_t  K,

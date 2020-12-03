@@ -70,6 +70,21 @@ typedef quotient_filter QF;
 namespace goetia {
 namespace storage {
 
+
+class QFStorage;
+
+
+template<>
+struct StorageTraits<QFStorage> {
+    static constexpr bool is_probabilistic = true;
+    static constexpr bool is_counting      = true;
+    
+    typedef std::tuple<int> params_type;
+    static constexpr params_type default_params = std::make_tuple(20);
+};
+
+
+
 /*
  * \class QFStorage
  *
@@ -82,8 +97,9 @@ protected:
     int _size;
 
 public:
-  
+
   using Storage<uint64_t>::value_type;
+  using Traits = StorageTraits<QFStorage>;
 
   QFStorage(int size);
 
@@ -92,6 +108,11 @@ public:
   static std::shared_ptr<QFStorage> build(int size) {
       return std::make_shared<QFStorage>(size);
   }
+
+  static std::shared_ptr<QFStorage> build(typename Traits::params_type params) {
+      return make_shared_from_tuple<QFStorage>(std::move(params));
+  }
+
   std::shared_ptr<QFStorage> clone() const;
 
   const bool insert(value_type khash);
@@ -142,6 +163,7 @@ template<>
 struct is_counting<QFStorage> {
     static const bool value = true;
 };
+
 
 }
 }

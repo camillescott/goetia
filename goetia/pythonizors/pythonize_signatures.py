@@ -8,7 +8,7 @@
 
 import sys
 
-import cppyy
+import cppyy.ll
 import numpy as np
 
 from goetia.pythonizors import utils
@@ -41,7 +41,6 @@ def pythonize_goetia_signatures(klass, name):
 
     is_inst, template =  utils.is_template_inst(name, 'UnikmerSignature')
     if is_inst:
-        print('pythonize', name, 'for UnikmerSignature')
         def to_numpy(self) -> np.ndarray:
             """signature
 
@@ -49,7 +48,6 @@ def pythonize_goetia_signatures(klass, name):
                 numpy.ndarray: Numpy array with the signature vector.
             """
             buffer = self.get_sketch_as_buffer()
-            assert isinstance(buffer, cppyy.LowLevelView)
             buffer.reshape((len(self),))
             return np.frombuffer(buffer, dtype=np.uint64, count=len(self))
         
@@ -60,10 +58,13 @@ def pythonize_goetia_signatures(klass, name):
         klass.Signature.__len__   = __len__
 
         def wrap_build(build_func):
-            def wrapped(W, K, ukhs=None):
+            def wrapped(W, K, ukhs=None, storage_args=None):
                 if ukhs is None:
                     ukhs = klass.ukhs_type.load(W, K)
-                sig = build_func(W, K, ukhs.__smartptr__())
+                if storage_args is None:
+                    sig = build_func(W, K, ukhs.__smartptr__())
+                else:
+                    sig = build_func(W, K, ukhs.__smartptr__(), storage_args)
                 return sig
             return wrapped
         

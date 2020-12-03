@@ -39,6 +39,17 @@ public:
     typedef uint64_t        value_type;
     typedef BaseStorageType base_storage_type;
     
+    PartitionedStorage (const uint64_t n_partitions,
+                        const typename StorageTraits<BaseStorageType>::params_type& params)
+        : n_partitions(n_partitions)
+    {
+        for (size_t i = 0; i < n_partitions; ++i) {
+            partitions.push_back(
+                base_storage_type::build(params)
+            );
+        }
+    }
+    
     template <typename... Args>
     PartitionedStorage(const uint64_t  n_partitions,
                        Args&&...       args)
@@ -158,6 +169,14 @@ public:
         std::vector<size_t> counts;
         for (auto& partition : partitions) {
             counts.push_back(partition->n_unique_kmers());
+        }
+        return counts;
+    }
+
+    void * get_partition_counts_as_buffer() {
+        size_t * counts = (size_t *) malloc(sizeof(size_t) * n_partitions);
+        for (size_t pidx = 0; pidx < n_partitions; ++pidx) {
+            counts[pidx] = partitions[pidx]->n_unique_kmers();
         }
         return counts;
     }

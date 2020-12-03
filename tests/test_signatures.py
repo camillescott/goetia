@@ -54,7 +54,7 @@ def test_sourmash_scaled(datadir, ksize):
 
 
 def test_draff_to_numpy(datadir):
-    rfile = datadir('random-20.fa')
+    rfile = datadir('random-20-a.fa')
 
     sketch_t = UnikmerSketch[SparseppSetStorage, StrandAware]
     sketch = sketch_t.Signature.build(31, 7)
@@ -63,3 +63,6 @@ def test_draff_to_numpy(datadir):
 
     np_sig = sketch.to_numpy()
     py_sig = list(sketch.get_signature())
+
+    assert len(np_sig) == len(py_sig)
+    assert list(np_sig) == list(py_sig)

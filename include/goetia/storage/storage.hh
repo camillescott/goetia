@@ -90,6 +90,12 @@ struct is_counting {
     static const bool value = false;
 };
 
+template<class Storage>
+struct StorageTraits {
+    static const bool is_counting = false;
+    static const bool is_probabilistic = false;
+};
+
 //
 // base Storage class for hashtable-related storage of information in memory.
 //
