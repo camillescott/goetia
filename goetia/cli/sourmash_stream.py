@@ -8,7 +8,7 @@
 
 from sourmash import SourmashSignature, save_signatures
 
-from goetia.signatures import SourmashSketch
+from goetia.sketches import SourmashSketch
 from goetia.cli.cli import format_filenames
 from goetia.cli.signature_runner import SignatureRunner
 

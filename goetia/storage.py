@@ -1,31 +1,20 @@
 from goetia import libgoetia
 from goetia.utils import check_trait
 
-import argparse
-import sys
+typenames = [(t, t.__name__.replace(' ', '')) for t in [libgoetia.storage.SparseppSetStorage,
+                                                        libgoetia.storage.BitStorage,
+                                                        libgoetia.storage.ByteStorage,
+                                                        libgoetia.storage.NibbleStorage]]
 
-_types = [(libgoetia.storage.SparseppSetStorage, tuple()),
-          (libgoetia.storage.BitStorage, (100000, 4)),
-          (libgoetia.storage.ByteStorage, (100000, 4)),
-          (libgoetia.storage.NibbleStorage, (100000, 4))]
+types = [_type for _type, _name in typenames]
 
-types = {storage_t.__name__.replace(' ', '') : defaults for storage_t, defaults in _types}
-
-
-SparseppSetStorage = libgoetia.storage.SparseppSetStorage
-BitStorage         = libgoetia.storage.BitStorage
-ByteStorage        = libgoetia.storage.ByteStorage
-NibbleStorage      = libgoetia.storage.NibbleStorage
-
-count_t            = libgoetia.storage.count_t
+for hasher_t, name in typenames:
+    globals()[name] = hasher_t
 
 
-def is_counting(klass):
-    return check_trait(libgoetia.storage.is_counting, klass)
+count_t = libgoetia.storage.count_t
+StorageTraits = libgoetia.storage.StorageTraits
 
-
-def is_probabilistic(klass):
-    return check_trait(libgoetia.storage.is_probabilistic, klass)
 
 
 def get_storage_args(parser, default='SparseppSetStorage'):
@@ -34,7 +23,7 @@ def get_storage_args(parser, default='SparseppSetStorage'):
 
     group = parser.add_argument_group('storage')
 
-    group.add_argument('--storage', choices=list(types.keys()), 
+    group.add_argument('--storage', choices=[name for _, name in typenames], 
                        default=default)
     group.add_argument('-N', '--n_tables', default=4, type=int)
     group.add_argument('-x', '--max-tablesize', default=1e8, type=float)

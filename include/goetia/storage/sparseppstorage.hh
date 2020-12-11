@@ -31,7 +31,7 @@ struct StorageTraits<SparseppSetStorage> {
     static constexpr bool is_counting      = false;
 
     typedef std::tuple<bool> params_type;
-    static constexpr params_type default_params = std::make_tuple(false);
+    static constexpr params_type default_params = std::make_tuple(0);
 };
 
 
@@ -41,6 +41,7 @@ class SparseppSetStorage : public Storage<uint64_t>,
 public:
     
     using Storage<uint64_t>::value_type;
+    using Traits = StorageTraits<SparseppSetStorage>;
     typedef spp::sparse_hash_set<value_type> store_type;
 
 protected:

@@ -51,6 +51,7 @@
 #include <array>
 #include <memory>
 #include <mutex>
+#include <tuple>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -92,8 +93,11 @@ struct is_counting {
 
 template<class Storage>
 struct StorageTraits {
-    static const bool is_counting = false;
-    static const bool is_probabilistic = false;
+    static constexpr bool is_counting = false;
+    static constexpr bool is_probabilistic = false;
+
+    typedef std::tuple<bool> params_type;
+    static constexpr params_type default_params = std::make_tuple(false);
 };
 
 //

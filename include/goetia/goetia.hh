@@ -99,6 +99,12 @@ std::shared_ptr<T> make_shared_from_tuple( Tuple&& t )
 }
 
 
+template <typename... Args>
+auto make_tuple_from_tuple(std::tuple<Args...> model_tuple, Args&&... args) {
+    return std::make_tuple(std::forward<Args>(args)...);
+}
+
+
 class GoetiaException : public std::exception {
 public:
     explicit GoetiaException(const std::string& msg = "Generic goetia exception.")

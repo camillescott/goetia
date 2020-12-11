@@ -77,6 +77,13 @@ public:
         S = std::make_shared<PartitionedStorage<BaseStorageType>>(ukhs->n_hashes(),
                                                                   storage_params);
     }
+
+    explicit PdBG(uint16_t K,
+                  uint16_t partition_K,
+                  std::shared_ptr<ukhs_type>& ukhs)
+        : PdBG(K, partition_K, ukhs, StorageTraits<BaseStorageType>::default_params)
+    {
+    }
  
     template <typename... Args>
     explicit PdBG(uint16_t  K,
@@ -103,6 +110,19 @@ public:
           S(S->clone())
     {
 
+    }
+
+    static std::shared_ptr<PdBG> build(uint16_t K,
+                                       uint16_t partition_K,
+                                       std::shared_ptr<ukhs_type>& ukhs) {
+        return build(K, partition_K, ukhs, StorageTraits<BaseStorageType>::default_params);                                   
+    }
+
+    static std::shared_ptr<PdBG> build(uint16_t K,
+                                       uint16_t partition_K,
+                                       std::shared_ptr<ukhs_type>& ukhs,
+                                       const typename StorageTraits<BaseStorageType>::params_type& storage_params) {
+        return std::make_shared<PdBG>(K, partition_K, ukhs, storage_params);
     }
 
     inline hash_type hash(const std::string& kmer) const {

@@ -38,6 +38,11 @@ public:
 
     typedef uint64_t        value_type;
     typedef BaseStorageType base_storage_type;
+
+    PartitionedStorage (const uint64_t n_partitions)
+        : PartitionedStorage(n_partitions, StorageTraits<BaseStorageType>::default_params)
+    {
+    }
     
     PartitionedStorage (const uint64_t n_partitions,
                         const typename StorageTraits<BaseStorageType>::params_type& params)
