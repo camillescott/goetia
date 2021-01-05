@@ -43,6 +43,7 @@ def hasher_type(request, ksize):
     else:
         return _hasher_type, (ksize,)
 
+
 @pytest.fixture
 def hasher(request, hasher_type, ksize):
     _hasher_type, params = hasher_type
@@ -61,7 +62,14 @@ def store(storage_type):
 
 
 @pytest.fixture
-def partitioned_graph(store, ksize):
+def partitioned_graph(storage_type, ksize):
+
+    if storage_type is libgoetia.storage.SparseppSetStorage:
+        params = tuple()
+    else:
+        params = (1000, 4)
+
+    store = storage_type.build(*params)
     ukhs = UKHS[FwdLemireShifter].load(ksize, 7)
     pstore = std.make_shared[libgoetia.storage.PartitionedStorage[type(store)]](ukhs.n_hashes(),
                                                                                store)
