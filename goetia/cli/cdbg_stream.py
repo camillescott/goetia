@@ -179,33 +179,53 @@ def get_cdbg_args(parser):
     group.add_argument('--save-cdbg',
                         metavar='PREFIX.<format>',
                         nargs='?',
-                        const='goetia.cdbg.graph')
+                        const='goetia.cdbg.graph',
+                        help='Save a copy of the cDBG.')
     group.add_argument('--save-cdbg-format',
                         nargs='+',
                         choices=cDBGSerialization.FORMATS,
                         default=['gfa1'])
+    group.add_argument('--cdbg-tick',
+                       type=int,
+                       default=10,
+                       help='Save every N interval ticks.')
 
-    group.add_argument('--track-cdbg-stats',
+    group.add_argument('--track-cdbg-metrics',
                         metavar='FILE_NAME.json',
                         nargs='?',
-                        const='goetia.cdbg.stats.json')
+                        const='goetia.cdbg.stats.json',
+                        help='Output basic cDBG metrics.')
+    group.add_argument('--cdbg-metrics-tick',
+                       type=int,
+                       default=5,
+                       help='Output every N interval ticks.')
 
     group.add_argument('--track-cdbg-components',
                         metavar='FILE_NAME.json',
                         nargs='?',
-                        const='goetia.cdbg.components.json')
+                        const='goetia.cdbg.components.json',
+                        help='Save the distribution of component sizes.')
     group.add_argument('--component-sample-size',
                         type=int,
-                        default=10000)
+                        default=10000,
+                        help='Number of components to sample for size.')
+    group.add_argument('--cdbg-components-tick',
+                       type=int,
+                       default=5,
+                       help='Sample and save distribution every N interval ticks.')
 
-    group.add_argument('--track-cdbg-unitig-bp',
+    group.add_argument('--track-unitig-bp',
                         metavar='FILENAME.json',
                         nargs='?',
-                        const='goetia.cdbg.unitigs.bp.json')
-
+                        const='goetia.cdbg.unitigs.bp.json',
+                        help='Track the distribution of unitig sizes.')
     group.add_argument('--unitig-bp-bins',
                         nargs='+',
-                        type=int)
+                        type=int,
+                        help='Bin sizes of distribution.')
+    group.add_argument('--unitig-bp-tick',
+                       type=int,
+                       default=10)
 
     group.add_argument('--validate',
                         metavar='FILENAME.csv',
