@@ -4,6 +4,7 @@ from curio.socket import *
 
 from collections import defaultdict, OrderedDict
 from enum import Enum, unique as unique_enum
+import functools
 import inspect
 import json
 import os
@@ -327,3 +328,12 @@ class AsyncSequenceProcessor(UnixBroadcasterMixin):
 
     def saturate(self) -> None:
         self.state = RunState.STOP_SATURATED
+
+
+def at_modulo_interval(func, modulus=1):
+    @functools.wraps(func)
+    async def wrapped(msg, *args, **kwargs):
+        assert isinstance(msg, Interval):
+        if msg.t % modulus == 0:
+            await func(*args, *kwargs)
+    return wrapped
