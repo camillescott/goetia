@@ -11,6 +11,8 @@ msg_schema = {
                              'default': 'Interval'},
                 't': {'type': 'integer',
                       'minimum': 0},
+                'modulus': {'type': 'integer',
+                            'minimum': 0},
                 'sequence': {'type': 'integer',
                              'minimum': 0},
                 'file_names': {'type': 'array'}
