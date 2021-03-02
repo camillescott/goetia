@@ -14,7 +14,7 @@ from goetia.cdbg import (compute_connected_component_callback,
                          write_cdbg_callback)
 from goetia.dbg import get_graph_args, process_graph_args
 from goetia.parsing import get_fastx_args, iter_fastx_inputs
-from goetia.processors import AsyncSequenceProcessor
+from goetia.processors import AsyncSequenceProcessor, at_modulo_interval
 from goetia.messages import (Interval, SampleStarted, SampleFinished, Error, AllMessages)
 from goetia.metadata import CUR_TIME
 from goetia.serialization import cDBGSerialization
@@ -43,6 +43,7 @@ class cDBGRunner(CommandRunner):
                             help='echo all events to the given file.')
         parser.add_argument('--curio-monitor', default=False, action='store_true',
                             help='Run curio kernel monitor for async debugging.')
+        parser.add_argument('--verbose', default=False, action='store_true')
 
         super().__init__(parser)
 
@@ -67,14 +68,10 @@ class cDBGRunner(CommandRunner):
         if args.normalize:
             self.file_processor = self.compactor_t.NormalizingCompactor[FastxReader].build(self.compactor,
                                                                                            args.normalize,
-                                                                                           args.fine_interval,
-                                                                                           args.medium_interval,
-                                                                                           args.coarse_interval)
+                                                                                           args.interval)
         else:
             self.file_processor = self.compactor_t.Processor.build(self.compactor,
-                                                                   args.fine_interval,
-                                                                   args.medium_interval,
-                                                                   args.coarse_interval)
+                                                                   args.interval)
         
         # Iterator over samples (pairs or singles, depending on pairing-mode)
         sample_iter = iter_fastx_inputs(args.inputs, args.pairing_mode, names=args.names)
@@ -90,48 +87,56 @@ class cDBGRunner(CommandRunner):
         # 
         self.to_close = []
 
-        if args.track_cdbg_stats:
+        if args.track_cdbg_metrics:
             self.worker_listener.on_message(Interval,
                                             write_cdbg_metrics_callback,
                                             self.compactor,
-                                            args.track_cdbg_stats)
-            self.to_close.append(args.track_cdbg_stats)
+                                            args.track_cdbg_metrics,
+                                            args.verbose)
+            self.to_close.append(args.track_cdbg_metrics)
 
 
-        if args.track_cdbg_unitig_bp:
+        if args.track_unitig_bp:
             if args.unitig_bp_bins is None:
                 bins = [args.ksize, 100, 200, 500, 1000]
             else:
                 bins = args.unitig_bp_bins
             
             self.worker_listener.on_message(Interval,
-                                            compute_unitig_fragmentation_callback,
+                                            at_modulo_interval(compute_unitig_fragmentation_callback,
+                                                               modulus=args.unitig_bp_tick),
                                             self.cdbg_t,
                                             self.compactor.cdbg,
-                                            args.track_cdbg_unitig_bp,
-                                            bins)
-            self.to_close.append(args.track_cdbg_unitig_bp)
+                                            args.track_unitig_bp,
+                                            bins,
+                                            verbose=args.verbose)
+            self.to_close.append(args.track_unitig_bp)
 
 
         if args.track_cdbg_components:
             self.worker_listener.on_message(Interval,
-                                            compute_connected_component_callback,
+                                            at_modulo_interval(compute_connected_component_callback,
+                                                               modulus=args.cdbg_components_tick),
                                             self.cdbg_t,
                                             self.compactor.cdbg,
                                             args.track_cdbg_components,
-                                            args.component_sample_size)
+                                            args.component_sample_size,
+                                            verbose=args.verbose)
             self.to_close.append(args.track_cdbg_components)
 
         if args.save_cdbg:
             for cdbg_format in args.save_cdbg_format:
                 self.worker_listener.on_message(Interval,
-                                                write_cdbg_callback,
+                                                at_modulo_interval(write_cdbg_callback,
+                                                                   modulus=args.cdbg_tick),
                                                 args.save_cdbg,
-                                                cdbg_format)
+                                                cdbg_format,
+                                                verbose=args.verbose)
                 self.worker_listener.on_message(SampleFinished,
                                                 write_cdbg_callback,
                                                 args.save_cdbg,
-                                                cdbg_format)
+                                                cdbg_format,
+                                                verbose=args.verbose)
 
         # Close all files when done
         async def close_files(msg, files):
@@ -148,7 +153,8 @@ class cDBGRunner(CommandRunner):
         def info_output(msg):
             info = f'{msg.msg_type}: {getattr(msg, "state", "")}'\
                    f'\n\tSample:    {msg.sample_name}'\
-                   f'\n\tSequences: {msg.t}'
+                   f'\n\tSequences: {msg.sequence}'\
+                   f'\n\tk-mers:    {msg.t}'
             if msg.msg_type == 'Error':
                 info += f'\n\tError: {msg.error}'
 
@@ -240,10 +246,10 @@ def process_cdbg_args(args):
     def join(p):
         return p if p is None else os.path.join(args.results_dir, p)
 
-    args.track_cdbg_stats =      join(args.track_cdbg_stats)
+    args.track_cdbg_stats =      join(args.track_cdbg_metrics)
     args.track_cdbg_components = join(args.track_cdbg_components)
     args.save_cdbg =             join(args.save_cdbg)
-    args.track_cdbg_unitig_bp =  join(args.track_cdbg_unitig_bp)
+    args.track_cdbg_unitig_bp =  join(args.track_unitig_bp)
 
 
 def print_cdbg_args(args):

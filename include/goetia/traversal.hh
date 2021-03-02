@@ -366,6 +366,14 @@ public:
         return result;
     }
 
+    /**
+     * @Synopsis  Return only the shifts from nodes that exist in the graph.
+     *
+     * @Param graph
+     * @Param nodes
+     *
+     * @Returns   The valid shifts.
+     */
     template<bool Dir>
     auto filter_nodes(const std::vector<shift_type<Dir>>& extensions,
                       std::vector<storage::count_t>& counts)

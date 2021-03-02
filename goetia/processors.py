@@ -63,7 +63,7 @@ class MessageHandler:
         self.name = name
         self.handlers = defaultdict(list)
     
-    async def task(self):
+    async def task(self, error_handler = None):
         try:
             msg_q = curio.Queue()
             self.subscription.subscribe(msg_q, self.name)
@@ -73,27 +73,32 @@ class MessageHandler:
                     await msg_q.task_done()
                     break
                 
-                for callback, args in self.handlers[type(msg)]:
+                for callback, args, kwargs in self.handlers[type(msg)]:
                     if inspect.iscoroutinefunction(callback):
-                        await callback(msg, *args)
+                        await callback(msg, *args, **kwargs)
                     else:
-                        callback(msg, *args)
+                        callback(msg, *args, **kwargs)
 
-                for callback, args in self.handlers[AllMessages]:
+                for callback, args, kwargs in self.handlers[AllMessages]:
                     if inspect.iscoroutinefunction(callback):
-                        await callback(msg, *args)
+                        await callback(msg, *args, **kwargs)
                     else:
-                        callback(msg, *args)
+                        callback(msg, *args, **kwargs)
 
                 await msg_q.task_done()
         except curio.CancelledError:
             raise
+        except Exception as e:
+            if error_handler is not None:
+                error_handler(e)
+            else:
+                raise
         finally:
             self.subscription.unsubscribe(msg_q)
     
-    def on_message(self, msg_class, callback, *args):
+    def on_message(self, msg_class, callback, *args, **kwargs):
         assert type(msg_class) is type
-        self.handlers[msg_class].append((callback, args))
+        self.handlers[msg_class].append((callback, args, kwargs))
 
 
 class UnixBroadcasterMixin:
@@ -219,7 +224,7 @@ class AsyncSequenceProcessor(UnixBroadcasterMixin):
     def subscribe(self, channel_name: str, 
                         collection_q: curio.Queue,
                         subscriber_name: str) -> None:
-        """Subscribe to a queue of the given name to a channel.
+        """Subscribe a queue of the given name to a channel.
         
         Args:
             channel_name (str): Name of the channel.
@@ -274,51 +279,57 @@ class AsyncSequenceProcessor(UnixBroadcasterMixin):
                                                  sample_name=name,
                                                  file_names=sample))
             except Exception as e:
-                self.worker_q.put(Error(t=self.processor.time_elapsed(),
-                                        sequence=n_seqs,
-                                        sample_name=name,
-                                        error=f'At sequence {self.processor.n_sequences()}: {str(e)}',
-                                        file_names=sample))
-                self.state = RunState.STOP_ERROR
+
                 return
+    
+    def on_error(self, exception):
+        self.worker_q.put(Error(t=self.processor.time_elapsed(),
+                                sequence=n_seqs,
+                                sample_name=name,
+                                error=f'At sequence {self.processor.n_sequences()}: {str(e)}',
+                                file_names=sample))
+        self.state = RunState.STOP_ERROR
 
     async def start(self, extra_tasks = None) -> None:
-        async with curio.TaskGroup() as g:
+        try:
+            async with curio.TaskGroup() as g:
 
-            # each channel has its own dispatch task
-            # to send data to its subscribers
-            for channel_name, channel in self.channels.items():
-                await g.spawn(channel.dispatch)
+                # each channel has its own dispatch task
+                # to send data to its subscribers
+                for channel_name, channel in self.channels.items():
+                    await g.spawn(channel.dispatch)
 
-            # start up AF_UNIX broadcaster if desired
-            if self.broadcast_socket is not None:
-                await g.spawn(self.broadcaster)
+                # start up AF_UNIX broadcaster if desired
+                if self.broadcast_socket is not None:
+                    await g.spawn(self.broadcaster)
 
-            if self.run_echo:
-                listener = self.add_listener('events_q', 'echo')
-                async def echo(msg):
-                    async with curio.aopen(self.echo_file, 'a') as fp:
-                        await fp.write(f'{msg.to_json()}\n')
+                if self.run_echo:
+                    listener = self.add_listener('events_q', 'echo')
+                    async def echo(msg):
+                        async with curio.aopen(self.echo_file, 'a') as fp:
+                            await fp.write(f'{msg.to_json()}\n')
 
-                listener.on_message(AllMessages,
-                                    echo)
-            
-            # spawn tasks from listener callbacks
-            for task in self.listener_tasks:
-                await g.spawn(task)
-
-            # spawn extra tasks to run
-            if extra_tasks is not None:
-                for task in extra_tasks:
+                    listener.on_message(AllMessages,
+                                        echo)
+                
+                # spawn tasks from listener callbacks
+                for task in self.listener_tasks:
                     await g.spawn(task)
 
-            # and now we spawn the worker to iterate through
-            # the processor and wait for it to finish
-            self.state = RunState.RUNNING
-            signal.signal(signal.SIGINT, lambda signo, frame: self.interrupt())
-            w = await g.spawn_thread(self.worker)
-            await w.join()
-            await self.worker_subs.kill()
+                # spawn extra tasks to run
+                if extra_tasks is not None:
+                    for task in extra_tasks:
+                        await g.spawn(task)
+
+                # and now we spawn the worker to iterate through
+                # the processor and wait for it to finish
+                self.state = RunState.RUNNING
+                signal.signal(signal.SIGINT, lambda signo, frame: self.interrupt())
+                w = await g.spawn_thread(self.worker)
+                await w.join()
+                await self.worker_subs.kill()
+        except Exception as e:
+            print(e, file=sys.stderr)
 
     def stop(self) -> None:
         self.state = RunState.STOP
@@ -333,7 +344,7 @@ class AsyncSequenceProcessor(UnixBroadcasterMixin):
 def at_modulo_interval(func, modulus=1):
     @functools.wraps(func)
     async def wrapped(msg, *args, **kwargs):
-        assert isinstance(msg, Interval):
+        assert isinstance(msg, Interval)
         if msg.t % modulus == 0:
-            await func(*args, *kwargs)
+            await func(msg, *args, **kwargs)
     return wrapped
