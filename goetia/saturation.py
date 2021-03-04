@@ -55,7 +55,7 @@ class SlidingWindow:
             back_time = len(self.items) - 1
 
         if self.history > 0:
-            self.items = self.items[-history:]
+            self.items = self.items[-self.history:]
 
         return stat, back_time
     
