@@ -63,3 +63,15 @@ def test_empty_file(alphabet):
     with pytest.raises(Exception):
         parser = FastxParser[alphabet].build('bad_path.fa')
         list(parser)
+
+
+def test_split_paired_read(datadir):
+    left = datadir('left.fq')
+    right = datadir('right.fq')
+
+    seqs = []
+    for left, right in SplitPairedReader[FastxParser[DNA_SIMPLE]].build(left, right):
+        seqs.append((left, right))
+
+    print(seqs)
+    assert len(seqs) == 25
