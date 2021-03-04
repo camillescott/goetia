@@ -221,10 +221,8 @@ struct WKMinimizer {
         Processor(int32_t window_size,
                   uint16_t K,
                   const std::string& output_filename,
-                  uint64_t fine_interval   = DEFAULT_INTERVALS::FINE,
-                  uint64_t medium_interval = DEFAULT_INTERVALS::MEDIUM,
-                  uint64_t coarse_interval = DEFAULT_INTERVALS::COARSE)
-            : Base(fine_interval, medium_interval, coarse_interval),
+                  uint64_t interval = metrics::IntervalCounter::DEFAULT_INTERVAL)
+            : Base(interval),
               M(window_size, K),
               _output_filename(output_filename),
               _output_stream(_output_filename.c_str()) {
@@ -235,16 +233,18 @@ struct WKMinimizer {
             _output_stream.close();
         }
 
-        void process_sequence(const parsing::Record& read) {
+        uint64_t process_sequence(const parsing::Record& read) {
             auto minimizers = M.get_minimizers(read.sequence);
 
             for (const auto& min : minimizers) {
-                _output_stream << this->n_reads() << ","
+                _output_stream << this->n_sequences() << ","
                                << min.second << ","
                                << min.first << ","
                                << read.sequence.substr(min.second, M.K)
                                << std::endl;
             }
+
+            return minimizers.size();
         }
 
         void report() {}

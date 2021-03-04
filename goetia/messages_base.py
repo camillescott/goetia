@@ -9,15 +9,15 @@ class Messages(SchemaBase):
     oneOf(:class:`Interval`, :class:`SampleStarted`, :class:`SampleFinished`,
     :class:`SampleSaturated`, :class:`Error`, :class:`DistanceCalc`, :class:`EndStream`)
     """
-    _schema = {'definitions': {'DistanceCalc': {'properties': {'delta': {'minimum': 0,
-                                                               'type': 'integer'},
-                                                     'distance': {'maximum': 1.0,
+    _schema = {'definitions': {'DistanceCalc': {'properties': {'distance': {'maximum': 1.0,
                                                                   'minimum': 0.0,
                                                                   'type': 'number'},
                                                      'file_names': {'type': 'array'},
                                                      'msg_type': {'enum': ['DistanceCalc'],
                                                                   'type': 'string'},
                                                      'sample_name': {'type': 'string'},
+                                                     'sequence': {'minimum': 0,
+                                                                  'type': 'integer'},
                                                      'stat': {'type': 'number'},
                                                      'stat_type': {'type': 'string'},
                                                      't': {'minimum': 0,
@@ -25,7 +25,6 @@ class Messages(SchemaBase):
                                       'required': ['msg_type',
                                                    't',
                                                    'sample_name',
-                                                   'delta',
                                                    'distance',
                                                    'stat',
                                                    'stat_type',
@@ -40,6 +39,8 @@ class Messages(SchemaBase):
                                               'msg_type': {'enum': ['Error'],
                                                            'type': 'string'},
                                               'sample_name': {'type': 'string'},
+                                              'sequence': {'minimum': 0,
+                                                           'type': 'integer'},
                                               't': {'minimum': 0,
                                                     'type': 'integer'}},
                                'required': ['msg_type',
@@ -49,16 +50,17 @@ class Messages(SchemaBase):
                                             'file_names'],
                                'type': 'object'},
                      'Interval': {'properties': {'file_names': {'type': 'array'},
+                                                 'modulus': {'minimum': 0,
+                                                             'type': 'integer'},
                                                  'msg_type': {'const': 'Interval',
                                                               'default': 'Interval',
                                                               'type': 'string'},
-                                                 'state': {'type': 'array',
-                                                           'uniqueItems': True},
+                                                 'sequence': {'minimum': 0,
+                                                              'type': 'integer'},
                                                  't': {'minimum': 0,
                                                        'type': 'integer'}},
                                   'required': ['msg_type',
                                                't',
-                                               'state',
                                                'sample_name',
                                                'file_names'],
                                   'type': 'object'},
@@ -66,6 +68,8 @@ class Messages(SchemaBase):
                                                        'msg_type': {'enum': ['SampleFinished'],
                                                                     'type': 'string'},
                                                        'sample_name': {'type': 'string'},
+                                                       'sequence': {'minimum': 0,
+                                                                    'type': 'integer'},
                                                        't': {'minimum': 0,
                                                              'type': 'integer'}},
                                         'required': ['msg_type',
@@ -77,6 +81,8 @@ class Messages(SchemaBase):
                                                         'msg_type': {'enum': ['SampleSaturated'],
                                                                      'type': 'string'},
                                                         'sample_name': {'type': 'string'},
+                                                        'sequence': {'minimum': 0,
+                                                                     'type': 'integer'},
                                                         't': {'minimum': 0,
                                                               'type': 'integer'}},
                                          'required': ['msg_type',
@@ -109,7 +115,7 @@ class Messages(SchemaBase):
 class Interval(SchemaBase):
     """Interval schema wrapper
 
-    Mapping(required=[msg_type, t, state, sample_name, file_names])
+    Mapping(required=[msg_type, t, sample_name, file_names])
 
     Attributes
     ----------
@@ -118,18 +124,21 @@ class Interval(SchemaBase):
 
     msg_type : string
 
-    state : List(Mapping(required=[]))
-
     t : integer
+
+    modulus : integer
+
+    sequence : integer
 
     """
     _schema = {'$ref': '#/definitions/Interval'}
     _rootschema = Messages._schema
 
-    def __init__(self, file_names=Undefined, msg_type=Undefined, sample_name=Undefined, state=Undefined,
-                 t=Undefined, **kwds):
+    def __init__(self, file_names=Undefined, msg_type=Undefined, sample_name=Undefined, t=Undefined,
+                 modulus=Undefined, sequence=Undefined, **kwds):
         super(Interval, self).__init__(file_names=file_names, msg_type=msg_type,
-                                       sample_name=sample_name, state=state, t=t, **kwds)
+                                       sample_name=sample_name, t=t, modulus=modulus, sequence=sequence,
+                                       **kwds)
 
 
 
@@ -173,14 +182,16 @@ class SampleFinished(SchemaBase):
 
     t : integer
 
+    sequence : integer
+
     """
     _schema = {'$ref': '#/definitions/SampleFinished'}
     _rootschema = Messages._schema
 
     def __init__(self, file_names=Undefined, msg_type=Undefined, sample_name=Undefined, t=Undefined,
-                 **kwds):
+                 sequence=Undefined, **kwds):
         super(SampleFinished, self).__init__(file_names=file_names, msg_type=msg_type,
-                                             sample_name=sample_name, t=t, **kwds)
+                                             sample_name=sample_name, t=t, sequence=sequence, **kwds)
 
 
 
@@ -200,14 +211,16 @@ class SampleSaturated(SchemaBase):
 
     t : integer
 
+    sequence : integer
+
     """
     _schema = {'$ref': '#/definitions/SampleSaturated'}
     _rootschema = Messages._schema
 
     def __init__(self, file_names=Undefined, msg_type=Undefined, sample_name=Undefined, t=Undefined,
-                 **kwds):
+                 sequence=Undefined, **kwds):
         super(SampleSaturated, self).__init__(file_names=file_names, msg_type=msg_type,
-                                              sample_name=sample_name, t=t, **kwds)
+                                              sample_name=sample_name, t=t, sequence=sequence, **kwds)
 
 
 
@@ -229,26 +242,26 @@ class Error(SchemaBase):
 
     t : integer
 
+    sequence : integer
+
     """
     _schema = {'$ref': '#/definitions/Error'}
     _rootschema = Messages._schema
 
     def __init__(self, error=Undefined, file_names=Undefined, msg_type=Undefined, sample_name=Undefined,
-                 t=Undefined, **kwds):
+                 t=Undefined, sequence=Undefined, **kwds):
         super(Error, self).__init__(error=error, file_names=file_names, msg_type=msg_type,
-                                    sample_name=sample_name, t=t, **kwds)
+                                    sample_name=sample_name, t=t, sequence=sequence, **kwds)
 
 
 
 class DistanceCalc(SchemaBase):
     """DistanceCalc schema wrapper
 
-    Mapping(required=[msg_type, t, sample_name, delta, distance, stat, stat_type, file_names])
+    Mapping(required=[msg_type, t, sample_name, distance, stat, stat_type, file_names])
 
     Attributes
     ----------
-
-    delta : integer
 
     distance : float
 
@@ -264,15 +277,18 @@ class DistanceCalc(SchemaBase):
 
     t : integer
 
+    sequence : integer
+
     """
     _schema = {'$ref': '#/definitions/DistanceCalc'}
     _rootschema = Messages._schema
 
-    def __init__(self, delta=Undefined, distance=Undefined, file_names=Undefined, msg_type=Undefined,
-                 sample_name=Undefined, stat=Undefined, stat_type=Undefined, t=Undefined, **kwds):
-        super(DistanceCalc, self).__init__(delta=delta, distance=distance, file_names=file_names,
-                                           msg_type=msg_type, sample_name=sample_name, stat=stat,
-                                           stat_type=stat_type, t=t, **kwds)
+    def __init__(self, distance=Undefined, file_names=Undefined, msg_type=Undefined,
+                 sample_name=Undefined, stat=Undefined, stat_type=Undefined, t=Undefined,
+                 sequence=Undefined, **kwds):
+        super(DistanceCalc, self).__init__(distance=distance, file_names=file_names, msg_type=msg_type,
+                                           sample_name=sample_name, stat=stat, stat_type=stat_type, t=t,
+                                           sequence=sequence, **kwds)
 
 
 

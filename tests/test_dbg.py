@@ -14,7 +14,7 @@ from goetia.storage import count_t
 import pytest
 
 
-@using(ksize=[21, 51, 101])
+@using(ksize=[21, 101])
 @presence_backends()
 def test_presence_insert(graph, ksize, random_sequence):
     # basic get/add test
@@ -34,7 +34,7 @@ def test_presence_insert(graph, ksize, random_sequence):
         assert graph.query(hashval) == 1
 
 
-@using(ksize=[21, 51, 101])
+@using(ksize=[21, 101])
 @counting_backends()
 def test_counting_insert(graph, ksize, random_sequence):
     # basic get/add test
@@ -54,7 +54,7 @@ def test_counting_insert(graph, ksize, random_sequence):
         assert graph.query(hashval) == 2
 
 
-@using(ksize=[21, 51, 101])
+@using(ksize=[21, 101])
 @counting_backends()
 def test_counting_insert_and_query(graph, ksize, random_sequence):
     # basic get/add test
@@ -65,7 +65,7 @@ def test_counting_insert_and_query(graph, ksize, random_sequence):
         assert graph.insert_and_query(hashval) == 2
 
 
-@using(ksize=[21, 51, 101])
+@using(ksize=[21, 101])
 @presence_backends()
 def test_presence_insert_and_query(graph, ksize, random_sequence):
     # basic get/add test
@@ -76,7 +76,7 @@ def test_presence_insert_and_query(graph, ksize, random_sequence):
         assert graph.insert_and_query(hashval) == 1
 
 
-@using(ksize=[21, 51, 101])
+@using(ksize=[21, 101])
 @counting_backends()
 def test_counting_query(graph, ksize, random_sequence):
     seq_kmers = list(kmers(random_sequence(), ksize))
@@ -88,7 +88,7 @@ def test_counting_query(graph, ksize, random_sequence):
             graph.insert(hashval)
 
 
-@using(ksize=[21, 51, 101])
+@using(ksize=[21, 101])
 @counting_backends()
 def test_counting_count_add_sequence(graph, ksize, random_sequence):
     seq = random_sequence()
@@ -101,7 +101,7 @@ def test_counting_count_add_sequence(graph, ksize, random_sequence):
         graph.insert_sequence(seq)
 
 
-@using(ksize=[21, 51, 101])
+@using(ksize=[21, 101])
 def test_get_ksize(graph, ksize):
     assert graph.K == ksize
 
@@ -260,7 +260,7 @@ def test_get_kmer_hashes(graph, ksize, length, linear_path):
     assert hashes[2] == graph.hash(s[2:2+ksize])
 
 
-@using(ksize=[21, 31, 41], length=1000)
+@using(ksize=[21], length=1000)
 def test_hashing_2(graph, linear_path, ksize):
     ''' Graph.hash uses a stand alone hasher for LemireShifterPolicys,
     Graph.hashes uses a KmerIterator; check that they give the same
@@ -273,7 +273,7 @@ def test_hashing_2(graph, linear_path, ksize):
         assert u == v
 
 
-@using(ksize=[21, 31, 41], length=[50000, 500000])
+@using(ksize=[21], length=[50000])
 @pytest.mark.benchmark(group='dbg-sequence')
 @exact_backends()
 def test_n_unique(graph, random_sequence, ksize, benchmark):
@@ -284,7 +284,7 @@ def test_n_unique(graph, random_sequence, ksize, benchmark):
     assert len(kmer_set) == graph.n_unique()
 
 
-@using(ksize=[21, 31, 41], length=[50000, 500000])
+@using(ksize=[21], length=[50000])
 @pytest.mark.benchmark(group='dbg-sequence')
 def test_get_counts(graph, random_sequence, ksize, benchmark):
     sequence = random_sequence()
@@ -294,7 +294,7 @@ def test_get_counts(graph, random_sequence, ksize, benchmark):
     assert all((count > 0 for count in counts))
 
 
-@using(ksize=[21, 51, 101])
+@using(ksize=[21, 101])
 def test_clone(graph, ksize, random_sequence):
     # basic get/add test
     seq = random_sequence()
@@ -305,7 +305,7 @@ def test_clone(graph, ksize, random_sequence):
     assert graph2.n_unique() == 0
 
 
-@using(ksize=[21, 31, 41], length=[50000, 500000])
+@using(ksize=[21], length=[50000])
 @pytest.mark.benchmark(group='dbg-sequence')
 def test_pdbg_n_unique(random_sequence, ksize, length, benchmark, partitioned_graph, store):
     from goetia.utils import check_trait
@@ -325,7 +325,7 @@ def test_pdbg_n_unique(random_sequence, ksize, length, benchmark, partitioned_gr
         
 
 
-@using(ksize=[21, 31, 41], length=[50000, 500000])
+@using(ksize=[21], length=[50000])
 @pytest.mark.benchmark(group='dbg-sequence')
 def test_pdbg_get_counts(random_sequence, ksize, benchmark, partitioned_graph):
     sequence = random_sequence()

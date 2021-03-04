@@ -70,6 +70,13 @@ BitStorage::build(uint64_t max_table, uint16_t N) {
     return std::make_shared<BitStorage>(max_table, N);
 }
 
+
+std::shared_ptr<BitStorage>
+BitStorage::build(const typename StorageTraits<BitStorage>::params_type& params) {
+    return make_shared_from_tuple<BitStorage>(params);
+}
+
+
 const bool
 BitStorage::insert( value_type khash ) {
     bool is_new_kmer = false;

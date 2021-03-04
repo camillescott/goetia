@@ -64,6 +64,7 @@
 #include "goetia/minimizers.hh"
 #include "goetia/signatures/ukhs_signature.hh"
 #include "goetia/signatures/sourmash_signature.hh"
+#include "goetia/signatures/sourmash/sourmash.hpp"
 
 #include "goetia/benchmarks/bench_storage.hh"
 

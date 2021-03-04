@@ -12,11 +12,11 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cstdint>
 #include <iterator>
 #include <random>
 
-namespace goetia {
-namespace metrics {
+namespace goetia::metrics {
 
 /**
  * @Synopsis  Streaming reservoir sampling: continuously calling
@@ -94,7 +94,56 @@ struct Gauge : public std::atomic_int64_t {
 };
 
 
-}
+/**
+ * @Synopsis  Bounded counter. Returns True when interval is
+ *            reached and resets to zero.
+ */
+class IntervalCounter {
+
+private:
+
+    uint64_t _counter;
+    uint64_t _total;
+
+public:
+
+    const uint64_t interval;
+
+    static constexpr uint64_t DEFAULT_INTERVAL = 500000;
+
+    IntervalCounter(uint64_t interval = DEFAULT_INTERVAL)
+        : interval(interval),
+          _counter(0),
+          _total(0)
+    {
+    }
+
+    const uint64_t counter() const {
+        return _counter;
+    }
+
+    const uint64_t total() const {
+        return _total;
+    }
+
+    bool poll(uint64_t incr=1) {
+        _counter += incr;
+        _total += incr;
+        if (_counter >= interval) {
+            _counter = 0;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    friend inline std::ostream& operator<< (std::ostream& os, const IntervalCounter& counter) {
+       os  << "IntervalCounter<interval=" << counter.interval 
+           << ", counter=" << counter.counter() << ">";
+       return os;
+    }
+};
+
 }
 
 #endif

@@ -17,10 +17,22 @@
 #include <cstdint>
 #include <fstream>
 #include <memory>
+#include <tuple>
 #include <vector>
 
-namespace goetia {
-namespace storage {
+namespace goetia::storage {
+
+class SparseppSetStorage;
+
+
+template<>
+struct StorageTraits<SparseppSetStorage> {
+    static constexpr bool is_probabilistic = false;
+    static constexpr bool is_counting      = false;
+
+    typedef std::tuple<bool> params_type;
+    static constexpr params_type default_params = std::make_tuple(0);
+};
 
 
 class SparseppSetStorage : public Storage<uint64_t>,
@@ -29,6 +41,7 @@ class SparseppSetStorage : public Storage<uint64_t>,
 public:
     
     using Storage<uint64_t>::value_type;
+    using Traits = StorageTraits<SparseppSetStorage>;
     typedef spp::sparse_hash_set<value_type> store_type;
 
 protected:
@@ -37,13 +50,14 @@ protected:
 
 public:
     
-    template<typename... Args>
-    SparseppSetStorage(Args&&... args)
+    SparseppSetStorage()
     {
         _store = std::make_unique<store_type>();
     }
 
     static std::shared_ptr<SparseppSetStorage> build();
+
+    static std::shared_ptr<SparseppSetStorage> build(const typename StorageTraits<SparseppSetStorage>::params_type&);
 
     static std::shared_ptr<SparseppSetStorage> deserialize(std::ifstream& in);
 
@@ -98,8 +112,6 @@ template<>
 struct is_counting<SparseppSetStorage> {
     static const bool value = false;
 };
-
-}
 
 }
 #endif

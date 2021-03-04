@@ -16,9 +16,8 @@ def pythonize_goetia_parsing(klass, name):
     if is_split:
         def __iter__(self):
             while not self.is_complete():
-                pair = self.next()
-                left = pair.left if pair.has_left else None
-                right = pair.right if pair.has_right else None 
+                left, right = self.next()
+                left, right = left.value() if left else None, right.value() if right else None
                 if left is not None or right is not None:
                     yield left, right
         klass.__iter__ = __iter__

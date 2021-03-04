@@ -9,10 +9,11 @@
 #include <set>
 #include <string>
 
+
 namespace sourmash {
 
     extern "C" {
-      #include "sourmash.h"
+      #include "goetia/signatures/sourmash/sourmash.h"
     }
 
     uint64_t _hash_murmur(const std::string& kmer, const uint32_t seed) {
@@ -21,12 +22,12 @@ namespace sourmash {
 
     typedef uint64_t HashIntoType;
 
-    class minhash_exception : public std::exception {
+    class sourmash_exception : public std::exception {
       public:
-        explicit minhash_exception(const std::string& msg = "Generic minhash exception") : _msg(msg) {
+        explicit sourmash_exception(const std::string& msg = "Generic sourmash.rs exception") : _msg(msg) {
         }
 
-        virtual ~minhash_exception() throw() {
+        virtual ~sourmash_exception() throw() {
         }
         virtual const char* what() const throw() {
             return _msg.c_str();
@@ -40,33 +41,39 @@ namespace sourmash {
         auto err_code = sourmash_err_get_last_code();
 
         switch (err_code) {
-            case SOURMASH_ERROR_CODE_MISMATCH_KSIZES:
-                throw minhash_exception("different ksizes cannot be compared");
+
+            case SOURMASH_ERROR_CODE_NO_ERROR:
                 break;
-            case SOURMASH_ERROR_CODE_MISMATCH_DNAPROT:
-                throw minhash_exception("DNA/prot minhashes cannot be compared");
+            case SOURMASH_ERROR_CODE_MISMATCH_K_SIZES:
+                throw sourmash_exception("sourmash.rs: different ksizes cannot be compared");
                 break;
-            case SOURMASH_ERROR_CODE_MISMATCH_MAX_HASH:
-                throw minhash_exception("mismatch in max_hash; comparison fail");
+            case SOURMASH_ERROR_CODE_MISMATCH_DNA_PROT:
+                throw sourmash_exception("sourmash.rs: DNA/prot minhashes cannot be compared");
+                break;
+            case SOURMASH_ERROR_CODE_MISMATCH_SCALED:
+                throw sourmash_exception("sourmash.rs: mismatch in scaled param; comparison fail");
                 break;
             case SOURMASH_ERROR_CODE_MISMATCH_SEED:
-                throw minhash_exception("mismatch in seed; comparison fail");
+                throw sourmash_exception("sourmash.rs: mismatch in seed; comparison fail");
                 break;
+            case SOURMASH_ERROR_CODE_INVALID_DNA:
+                throw sourmash_exception("sourmash.rs: invalid DNA given to kmerminhash_add_sequence");
             default:
+                throw sourmash_exception(std::string("sourmash.rs error: code ") + std::to_string(err_code));
                 break;
         }
     }
 
     class MinHash {
       protected:
-        KmerMinHash* _this;
+        SourmashKmerMinHash* _this;
 
       public:
         MinHash(unsigned int n, unsigned int k, bool prot, bool dayhoff, bool hp, uint32_t s, HashIntoType mx) {
             _this = kmerminhash_new(n, k, prot, dayhoff, hp, s, mx, false);
         };
 
-        MinHash(KmerMinHash* _this) : _this(_this) {
+        MinHash(SourmashKmerMinHash* _this) : _this(_this) {
         }
 
         void add_hash(const HashIntoType h) {
@@ -142,8 +149,10 @@ namespace sourmash {
         }
 
         std::vector<HashIntoType> mins() {
-            auto                      ptr = kmerminhash_get_mins(_this);
-            std::vector<HashIntoType> m(ptr, ptr + kmerminhash_get_mins_size(_this));
+            uintptr_t * size = new uintptr_t;
+            auto        ptr = kmerminhash_get_mins(_this, size);
+            std::vector<HashIntoType> m(ptr, ptr + *size);
+            delete size;
             return m;
         }
 
@@ -151,7 +160,7 @@ namespace sourmash {
             kmerminhash_free(_this);
         }
 
-        KmerMinHash* _get_ptr() {
+        SourmashKmerMinHash* _get_ptr() {
             return _this;
         }
     };
@@ -165,14 +174,16 @@ namespace sourmash {
         };
 
         std::vector<HashIntoType> abunds() {
-            auto                      ptr = kmerminhash_get_abunds(_this);
-            std::vector<HashIntoType> m(ptr, ptr + kmerminhash_get_abunds_size(_this));
+            uintptr_t * size = new uintptr_t;
+            auto        ptr = kmerminhash_get_abunds(_this, size);
+            std::vector<HashIntoType> m(ptr, ptr + *size);
+            delete size;
             return m;
         }
 
-        void set_abundances(std::vector<HashIntoType> mins, std::vector<HashIntoType> abunds) {
+        void set_abundances(std::vector<HashIntoType> mins, std::vector<HashIntoType> abunds, bool clear = false) {
             // TODO: assert mins and abunds are the same size?
-            kmerminhash_set_abundances(_this, mins.data(), abunds.data(), mins.size());
+            kmerminhash_set_abundances(_this, mins.data(), abunds.data(), mins.size(), clear);
         }
 
         ~MinAbundance() throw() {

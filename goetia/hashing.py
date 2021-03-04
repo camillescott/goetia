@@ -15,3 +15,6 @@ extender_selector_t = libgoetia.hashing.extender_selector_t
 for hasher_t, name in typenames:
     globals()[name] = hasher_t
 
+
+Canonical = libgoetia.hashing.Canonical['uint64_t']
+StrandAware  = libgoetia.hashing.Hash['uint64_t']

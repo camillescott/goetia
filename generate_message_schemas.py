@@ -4,15 +4,17 @@ msg_schema = {
     'definitions': {
         'Interval': {
             'type': 'object',
-            'required': ['msg_type', 't', 'state', 'sample_name', 'file_names'],
+            'required': ['msg_type', 't', 'sample_name', 'file_names'],
             'properties': {
                 'msg_type': {'type': 'string',
                              'const': 'Interval',
                              'default': 'Interval'},
                 't': {'type': 'integer',
-                       'minimum': 0},
-                'state': {'type': 'array',
-                          'uniqueItems': True},
+                      'minimum': 0},
+                'modulus': {'type': 'integer',
+                            'minimum': 0},
+                'sequence': {'type': 'integer',
+                             'minimum': 0},
                 'file_names': {'type': 'array'}
             }
         },
@@ -34,6 +36,8 @@ msg_schema = {
                              'enum': ['SampleFinished']},
                 't': {'type': 'integer',
                       'minimum': 0},
+                'sequence': {'type': 'integer',
+                             'minimum': 0},
                 'sample_name': {'type': 'string'},
                 'file_names': {'type': 'array'}
             }
@@ -46,6 +50,8 @@ msg_schema = {
                              'enum': ['SampleSaturated']},
                 't': {'type': 'integer',
                       'minimum': 0},
+                'sequence': {'type': 'integer',
+                             'minimum': 0},
                 'sample_name': {'type': 'string'},
                 'file_names': {'type': 'array'}
             }
@@ -58,6 +64,8 @@ msg_schema = {
                               'enum': ['Error']},
                 't': {'type': 'integer',
                       'minimum': 0},
+                'sequence': {'type': 'integer',
+                             'minimum': 0},
                 'sample_name': {'type': 'string'},
                 'error': {'type': 'string'},
                 'file_names': {'type': 'array'}
@@ -65,16 +73,16 @@ msg_schema = {
         },
         'DistanceCalc': {
             'type': 'object',
-            'required': ['msg_type', 't', 'sample_name', 'delta', 'distance', 'stat', 'stat_type', 'file_names'],
+            'required': ['msg_type', 't', 'sample_name', 'distance', 'stat', 'stat_type', 'file_names'],
             'properties': {
                 'msg_type': {'type': 'string',
                              'enum': ['DistanceCalc']},
                 't': {'type': 'integer',
                       'minimum': 0},
+                'sequence': {'type': 'integer',
+                             'minimum': 0},
                 'sample_name': {'type': 'string'},
                 'stat_type': {'type': 'string'},
-                'delta': {'type': 'integer',
-                          'minimum': 0},
                 'distance': {'type': 'number',
                              'minimum': 0.0,
                              'maximum': 1.0},

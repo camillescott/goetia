@@ -75,11 +75,23 @@ namespace storage {
  *
  */
 
+class ByteStorage;
 class ByteStorageFile;
 class ByteStorageFileReader;
 class ByteStorageFileWriter;
 class ByteStorageGzFileReader;
 class ByteStorageGzFileWriter;
+
+
+template<>
+struct StorageTraits<ByteStorage> {
+    static constexpr bool is_probabilistic = true;
+    static constexpr bool is_counting      = true;
+ 
+    typedef std::tuple<uint64_t, uint16_t> params_type;
+    static constexpr params_type default_params = std::make_tuple(1'000'000, 4);
+};
+
 
 class ByteStorage: public Storage<uint64_t>,
                    public Tagged<ByteStorage> {
@@ -94,6 +106,7 @@ public:
 
     typedef uint64_t value_type;
     using Storage<uint64_t>::CountMap;
+    using Traits = StorageTraits<ByteStorage>;
 
 protected:
 
@@ -172,6 +185,10 @@ public:
 
     static std::shared_ptr<ByteStorage> build(uint64_t max_table, uint16_t N) {
         return std::make_shared<ByteStorage>(max_table, N);
+    }
+
+    static std::shared_ptr<ByteStorage> build(typename Traits::params_type params) {
+        return make_shared_from_tuple<ByteStorage>(std::move(params));
     }
 
     std::vector<uint64_t> get_tablesizes() const
@@ -282,7 +299,6 @@ public:
                             const uint16_t ksize,
                             const ByteStorage &store);
 };
-
 
 }
 }

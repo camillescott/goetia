@@ -45,8 +45,8 @@ namespace goetia::signatures {
                                                     bool         dayhoff,
                                                     bool         hp,
                                                     uint32_t     seed,
-                                                    uint64_t     max_hash) {
-                return std::make_shared<Signature>(n, K, is_protein, dayhoff, hp, seed, max_hash);
+                                                    uint64_t     scaled) {
+                return std::make_shared<Signature>(n, K, is_protein, dayhoff, hp, seed, scaled);
             }
 
             static uint64_t max_hash_from_scaled(uint64_t scaled) {
@@ -69,7 +69,14 @@ namespace goetia::signatures {
             }
 
             size_t insert_sequence(const std::string& sequence) {
-                this->add_sequence(sequence.c_str());
+                //
+                // We call add_sequence with force=true: when force=True is passed to
+                // kmerminhash_add_sequence, and then on to SigsTrait<KmerMinHash>::add_sequence
+                // in sourmash.rs, k-mers with N's are skipped; this allows us to use the more
+                // permissive DNAN_SIMPLE in SourmashSignature's InserterProcessor and still get 
+                // as many k-mers as possible.
+                //
+                this->add_sequence(sequence.c_str(), true);
                 return sequence.length() - K + 1;
             }
         };

@@ -53,6 +53,7 @@
 #include <memory>
 #include <mutex>
 #include <unordered_map>
+#include <utility>
 
 #include "goetia/meta.hh"
 #include "goetia/storage/storage.hh"
@@ -60,6 +61,20 @@
 
 namespace goetia {
 namespace storage {
+
+
+class BitStorage;
+
+
+template<>
+struct StorageTraits<BitStorage> {
+    static constexpr bool is_probabilistic = true;
+    static constexpr bool is_counting      = false;
+
+    typedef std::tuple<uint64_t, uint16_t> params_type;
+    static constexpr params_type default_params = std::make_tuple(1'000'000, 4);
+};
+
 
 /*
  * \class BitStorage
@@ -88,6 +103,7 @@ protected:
 public:
 
     using Storage<uint64_t>::value_type;
+    using Traits = StorageTraits<BitStorage>;
 
     BitStorage(uint64_t max_table, uint16_t N)
         : BitStorage(get_n_primes_near_x(N, max_table))
@@ -122,6 +138,7 @@ public:
     }
 
     static std::shared_ptr<BitStorage> build(uint64_t max_table, uint16_t N);
+    static std::shared_ptr<BitStorage> build(const typename Traits::params_type& params);
 
     void _allocate_counters()
     {
@@ -209,6 +226,7 @@ template<>
 struct is_counting<BitStorage> {
     static const bool value = false;
 };
+
 
 }
 }

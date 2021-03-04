@@ -169,4 +169,4 @@ install(FILES ${CMAKE_BINARY_DIR}/goetia.pc
         DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig
 )
 
-install(CODE "execute_process(COMMAND python -m pip install --no-deps -U ${PY_WHEEL_FILE})")
+install(CODE "execute_process(COMMAND python -m pip install --force-reinstall --no-deps -U ${PY_WHEEL_FILE})")

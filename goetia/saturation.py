@@ -6,75 +6,139 @@
 # Author : Camille Scott <camille.scott.w@gmail.com>
 # Date   : 03.03.2020
 
-from abc import ABC, abstractmethod
 from collections import deque
-from statistics import median
+from statistics import median, mean
 
 import numpy as np
 
 
-class SaturationTracker(ABC):
+class SlidingWindow:
 
-    def __init__(self, norm_tick_length, window_size, dfunc):
-        self.window_size      = window_size
-        self.norm_tick_length = norm_tick_length
-        self.saturated        = False
-        self.distances        = [0.0]
-        self.read_times       = [0]
-        self.norm_times       = [0]
-        self.dfunc            = dfunc
-        self.prev_sig         = None
+    def __init__(self, window_size, func, uses_time=False, history=0):
+        if window_size < 2:
+            raise TypeError('window_size must be at least 2')
+        self.window_size = window_size
+        self.func = func
+        self.items = []
+        self.uses_time = uses_time
 
-    @abstractmethod
-    def push(self, new_sig, new_read_time, new_norm_time):
-        pass
-
-    def find_norm_index(self):
-        if len(self.norm_times) < 2:
-            print('len norm times < 2')
-            return None, None
-
-        i = 2
-        norm_sum = 0
-        try:
-            while True:
-                norm_sum = norm_sum + (self.norm_times[-i + 1] - self.norm_times[-i])
-                if norm_sum > self.norm_tick_length:
-                    return -i, norm_sum
-                i += 1
-        except IndexError as e:
-            print(e, i)
-            return None, None
-
-
-class MedianDistanceSaturation(SaturationTracker):
-
-    def __init__(self, norm_tick_length, window_size, distance_cutoff, dfunc):
-        self.distance_cutoff = distance_cutoff
-        self.medians         = []
-
-        super().__init__(norm_tick_length, window_size, dfunc)
-
-    def push(self, new_sig, new_read_time, new_norm_time):
-        if self.prev_sig:
-            self.distances.append(self.dfunc(self.prev_sig, new_sig))
-            self.read_times.append(new_read_time)
-            self.norm_times.append(new_norm_time)
-            retval = self.distances[-1], self.read_times[-1], np.NaN
+        if history > 0 and history < window_size:
+            history = window_size
+        self.history = history
+    
+    @property
+    def name(self):
+        return f'SlidingWindow({self.func.__name__}, L={self.window_size})'
+    
+    def reset(self):
+        self.items = []
+    
+    def times(self):
+        for _, time in self.items:
+            yield time
+    
+    def values(self):
+        for value, _ in self.items:
+            yield value
+    
+    def push(self, value):
+        self.items.append(self._unpack(value))
+        
+        if len(self.items) >= self.window_size:
+            stat = self.func([v for v, t in self.items[-self.window_size:]]) if not self.uses_time else \
+                   self.func(self.items[-self.window_size:])
         else:
-            retval = None, None, None
-        self.prev_sig = new_sig
+            stat = np.NaN
+        
+        _, back_time = self.items[-1]
+        if np.isnan(back_time):
+            back_time = len(self.items) - 1
 
-        window_index, norm_sum = self.find_norm_index()
-        if window_index is not None:
-            med = median(self.distances[window_index:])
-            self.medians.append(med)
-            retval = self.distances[-1], self.read_times[-1], med
-            if len(self.medians) >= self.window_size and \
-                    all((d > self.distance_cutoff for d in self.medians[-self.window_size:])):
-                self.saturated = True
+        if self.history > 0:
+            self.items = self.items[-self.history:]
 
-        return retval
+        return stat, back_time
+    
+    @staticmethod
+    def _unpack(item):
+        try:
+            value, time = item
+        except TypeError:
+            return item, np.NaN
+        else:
+            return value, time
 
 
-SaturationPolicies = {'median.distance': MedianDistanceSaturation}
+class RollingPairwise(SlidingWindow):
+
+    def __init__(self, dfunc, **kwargs):
+        super().__init__(2, dfunc, **kwargs)
+
+
+class SlidingCutoff:
+
+    def __init__(self, window_size, window_func, cutoff_func):
+        if isinstance(window_func, SlidingWindow):
+            self.value_window = window_func
+        else:
+            self.value_window = SlidingWindow(window_size, window_func)
+        self.window_value = np.NaN
+
+        if isinstance(cutoff_func, SlidingWindow):
+            self.cutoff_window = cutoff_func
+        else:
+            self.cutoff_window = SlidingWindow(window_size, cutoff_func)
+        self.cutoff_reached = False
+
+        self.time = 0
+    
+    @property
+    def name(self):
+        return f'SlidingCutoff(smoothing={self.value_window.name}, cutoff={self.cutoff_window.name})'
+    
+    @property
+    def cutoff_reached(self):
+        return self._cutoff_reached
+    
+    @cutoff_reached.setter
+    def cutoff_reached(self, reached):
+        if np.isnan(reached):
+            self._cutoff_reached = False
+        else:
+            self._cutoff_reached = bool(reached)
+
+    def push(self, value):
+        self.window_value, self.time = self.value_window.push(value)
+        if not np.isnan(self.window_value):
+            self.cutoff_reached, _ = self.cutoff_window.push((self.window_value, self.time))
+            return self.cutoff_reached, self.window_value, self.time
+        else:
+            return False, self.window_value, self.time
+
+
+def all_cutoff(cutoff):
+    def func(values):
+        return all((v > cutoff for v in values))
+    return func
+
+
+def median_cutoff(cutoff):
+    def func(values):
+        return median(values) > cutoff
+    return func
+
+
+def normalized_mean(items):
+    m = mean((v for v, t in items))
+    n = items[-1][-1] - items[0][-1]
+
+    return m / n
+
+
+cutoff_functions = { 'all': all_cutoff,
+                     'median': median_cutoff }
+
+
+smoothing_functions = { 'mean': np.mean,
+                        'median': median,
+                        'stddev': np.std }

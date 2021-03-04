@@ -17,6 +17,7 @@
 #include <iterator>
 #include <iostream>
 #include <fstream>
+#include <memory>
 #include <sstream>
 #include <string>
 #include <type_traits>
@@ -77,6 +78,30 @@ bool contains(std::vector<T> collection,
         }
     }
     return false;
+}
+
+/*
+ * Adapted from make_from_tuple: https://en.cppreference.com/w/cpp/utility/make_from_tuple
+ */
+namespace detail {
+template <class T, class Tuple, std::size_t... I>
+std::shared_ptr<T> make_shared_from_tuple_impl( Tuple&& t, std::index_sequence<I...> )
+{
+  return std::make_shared<T>(std::get<I>(std::forward<Tuple>(t))...);
+}
+} // namespace detail
+ 
+template <class T, class Tuple>
+std::shared_ptr<T> make_shared_from_tuple( Tuple&& t )
+{
+    return detail::make_shared_from_tuple_impl<T>(std::forward<Tuple>(t),
+        std::make_index_sequence<std::tuple_size_v<std::remove_reference_t<Tuple>>>{});
+}
+
+
+template <typename... Args>
+auto make_tuple_from_tuple(std::tuple<Args...> model_tuple, Args&&... args) {
+    return std::make_tuple(std::forward<Args>(args)...);
 }
 
 

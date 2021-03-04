@@ -111,6 +111,7 @@ work/
 data/
 cython_debug/
 Debug/
+envs
 
 *.o
 **goetia.pc
@@ -120,11 +121,6 @@ _libbuild/
 src/goetia/test_assembly
 src/goetia/benchmark_goetia_consume
 src/goetia/benchmark_oxli_consume
-*.pyx.pxi
-*.pxd.pxi
-
-
-.doit.db.*
 
 *.stats.csv
 *.history.graphml

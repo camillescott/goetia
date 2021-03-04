@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # (c) Camille Scott, 2019
-# File   : cli.py
+# File   : args.py
 # License: MIT
 # Author : Camille Scott <camille.scott.w@gmail.com>
 # Date   : 14.10.2019
@@ -52,66 +52,14 @@ class GoetiaArgumentParser(argparse.ArgumentParser):
         sys.exit(2)
 
 
-
-def print_goetia_intro():
-    print('*' * 20, '*', sep='\n', file=sys.stderr)
-    print('*    GOETIA v{0}'.format(__version__), file=sys.stderr)
-    print('*' * 20, '*', sep='\n', file=sys.stderr)
-
-
-
 def get_output_interval_args(parser):
     group = parser.add_argument_group('reporting')
-    group.add_argument('--fine-interval', type=int, default=libgoetia.DEFAULT_INTERVALS.FINE)
-    group.add_argument('--medium-interval', type=int, default=libgoetia.DEFAULT_INTERVALS.MEDIUM)
-    group.add_argument('--coarse-interval', type=int, default=libgoetia.DEFAULT_INTERVALS.COARSE)
+    group.add_argument('--interval', type=int, default=libgoetia.metrics.IntervalCounter.DEFAULT_INTERVAL)
     return group
 
 
 def print_interval_settings(args):
-    print('* FINE output interval:', args.fine_interval, file=sys.stderr)
-    print('* MEDIUM output interval:', args.medium_interval, file=sys.stderr)
-    print('* COARSE output interval:', args.coarse_interval, file=sys.stderr)
+    print('* Sequence parser interval:', args.interval, file=sys.stderr)
     print('*', '*' * 10, '*', sep='\n', file=sys.stderr)
 
 
-class GoetiaRunner:
-
-    def __init__(self):
-        self.parser = GoetiaArgumentParser()
-        self.parser.set_defaults(func = lambda _: self.parser.print_help())
-        self.commands = self.parser.add_subparsers()
-
-    def add_command(self, name, runner_type):
-        cmd_parser = self.commands.add_parser(name)
-        cmd_runner = runner_type(cmd_parser)
-        cmd_parser.set_defaults(func=cmd_runner.run)
-        return cmd_parser
-
-    def run(self):
-        args = self.parser.parse_args()
-        return args.func(args)
-
-
-class CommandRunner:
-
-    def __init__(self, parser, *args, **kwargs):
-        self.parser = parser
-
-    def postprocess_args(self, args):
-        pass
-
-    def setup(self, args):
-        pass
-
-    def execute(self, args):
-        raise NotImplementedError
-
-    def teardown(self):
-        pass
-
-    def run(self, args):
-        self.postprocess_args(args)
-        self.setup(args)
-        self.execute(args)
-        self.teardown()

@@ -44,6 +44,7 @@ template <class StorageType, class HashType>
 struct UnikmerSignature {
 
     typedef StorageType                                 storage_type;
+    typedef StorageTraits<StorageType>                  storage_traits;
     typedef hashing::UnikmerLemirePolicy<HashType>      shift_policy;
     typedef hashing::HashShifter<shift_policy>          shifter_type;
     typedef typename shifter_type::ukhs_type            ukhs_type;
@@ -63,6 +64,28 @@ struct UnikmerSignature {
         const uint16_t W;
         const uint16_t K;
 
+        explicit Signature(uint16_t W,
+                           uint16_t K,
+                           std::shared_ptr<ukhs_type> ukhs_map)
+            : Signature(W, K, ukhs_map, storage_traits::default_params)
+        {
+        }
+
+        explicit Signature(uint16_t W,
+                           uint16_t K,
+                           std::shared_ptr<ukhs_type> ukhs_map,
+                           const typename storage_traits::params_type& storage_params)
+            : W         (W),
+              K         (K),
+              ukhs_map  (ukhs_map)
+        {
+            signature = std::make_shared<pdbg_type>(W,
+                                                    K,
+                                                    ukhs_map,
+                                                    storage_params);
+        }
+
+/*
         template <typename... Args>
         explicit Signature(uint16_t W,
                            uint16_t K,
@@ -77,7 +100,22 @@ struct UnikmerSignature {
                                                     ukhs_map,
                                                     std::forward<Args>(args)...);
         }
+*/
 
+        static std::shared_ptr<Signature> build(uint16_t W,
+                                                uint16_t K,
+                                                std::shared_ptr<ukhs_type> ukhs_map) {
+            return std::make_shared<Signature>(W, K, ukhs_map, storage_traits::default_params);
+        }
+
+        static std::shared_ptr<Signature> build(uint16_t W,
+                                                uint16_t K,
+                                                std::shared_ptr<ukhs_type> ukhs_map,
+                                                const typename storage_traits::params_type& storage_params) {
+            return std::make_shared<Signature>(W, K, ukhs_map, storage_params);
+        }
+
+/*
         template<typename...Args>
         static std::shared_ptr<Signature> build(uint16_t W,
                                                 uint16_t K,
@@ -86,6 +124,7 @@ struct UnikmerSignature {
             return std::make_shared<Signature>(W, K, ukhs_map, std::forward<Args>(args)...);
         }
 
+
         template<typename U = StorageType>
         static std::shared_ptr<Signature> build(uint16_t W,
                                                 uint16_t K,
@@ -93,13 +132,14 @@ struct UnikmerSignature {
                                                 typename std::enable_if_t<std::is_same<U, goetia::storage::SparseppSetStorage>::value, U*> = 0) {
             return std::make_shared<Signature>(W, K, ukhs_map);
         }
-
+*/
         inline void insert(const std::string& kmer) {
             signature->insert(kmer);
         }
 
         inline size_t insert_sequence(const std::string& sequence) {
-            return signature->insert_sequence(sequence);
+            signature->insert_sequence(sequence);
+            return sequence.length() - K + 1;
         }
 
         size_t get_size() const {
@@ -108,6 +148,10 @@ struct UnikmerSignature {
 
         std::vector<size_t> get_signature() {
             return signature->get_partition_counts();
+        }
+
+        void * get_sketch_as_buffer() {
+            return signature->get_partition_counts_as_buffer();
         }
 
         uint64_t get_n_kmers() const {

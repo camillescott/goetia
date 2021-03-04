@@ -1,5 +1,5 @@
 {
-    "python.pythonPath": "/home/camille/miniconda/envs/boink-sourmash/bin/python",
+    "python.pythonPath": "envs/goetia-dev-10/bin/python",
     "python.linting.pylintPath": "/home/camille/miniconda/envs/boink/bin/pylint",
     "cmake.configureOnOpen": false,
     "files.watcherExclude": {
@@ -8,7 +8,8 @@
         "**/node_modules/*/**": true,
         "**/tox_build/*/**": true,
         "**/.tox/*/**": true
-    }
+    },
+    "git.ignoreLimitWarning": true
 
 
 }

@@ -79,6 +79,7 @@ set(_sources
     src/goetia/solidifier.cc
     src/goetia/goetia.cc
     src/goetia/meta.cc
+    src/goetia/processors.cc
     src/goetia/cdbg/metrics.cc
     src/goetia/cdbg/cdbg.cc
     src/goetia/cdbg/compactor.cc

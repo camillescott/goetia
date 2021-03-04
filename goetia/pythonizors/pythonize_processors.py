@@ -23,35 +23,22 @@ def pythonize_goetia(klass, name):
             else:
                 parser = file
             
-            while True:
-                state = self.advance(parser)
-                yield self.n_reads(), parser.n_skipped(), state
-                if state.end:
-                    break
+            advancing = True
+            prev_n_sequences = 0
+            while advancing:
+                n_sequences, time_elapsed, advancing = self.advance(parser)
+                if n_sequences > prev_n_sequences:
+                    yield n_sequences, time_elapsed, parser.n_skipped()
+                prev_n_sequences = n_sequences
 
 
         def wrap_build(build_func):
-            def wrapped(*args, fine_interval=10000,
-                               medium_interval=100000,
-                               coarse_interval=1000000,
+            def wrapped(*args, interval=10000,
                                verbose=False):
-                return build_func(*args, fine_interval,
-                                         medium_interval,
-                                         coarse_interval,
+                return build_func(*args, interval,
                                          verbose)
             return wrapped
 
         
         klass.build = wrap_build(klass.build)
         klass.chunked_process = chunked_process
-
-    if 'interval_state' in name:
-        klass.__str__ = lambda self: '<interval_state fine={0} medium={1} coarse={2} end={3}'.format(self.fine, self.medium, self.coarse, self.end)
-        def get(self):
-            result = []
-            for state in ['end', 'coarse', 'medium', 'fine']:
-                if getattr(self, state):
-                    result.append(state)
-            return result
-        klass.get = get
-

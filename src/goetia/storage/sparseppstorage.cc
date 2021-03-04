@@ -48,6 +48,12 @@ SparseppSetStorage::build() {
 
 
 std::shared_ptr<SparseppSetStorage>
+SparseppSetStorage::build(const typename StorageTraits<SparseppSetStorage>::params_type&) {
+    return std::make_shared<SparseppSetStorage>();
+}
+
+
+std::shared_ptr<SparseppSetStorage>
 SparseppSetStorage::clone() const {
     return std::make_shared<SparseppSetStorage>();
 }

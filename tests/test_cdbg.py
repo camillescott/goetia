@@ -13,6 +13,7 @@ import pytest
 from tests.utils import *
 
 from goetia import libgoetia, nullptr
+from goetia.cdbg import cDBG, StreamingCompactor
 from goetia.hashing import FwdLemireShifter
 
 import cppyy.ll
@@ -22,7 +23,7 @@ cppyy.ll.set_signals_as_exception(True)
 
 @pytest.fixture
 def compactor_type(ksize, graph):
-    return libgoetia.cdbg.StreamingCompactor[type(graph)]
+    return StreamingCompactor[type(graph)]
 
 
 @pytest.fixture

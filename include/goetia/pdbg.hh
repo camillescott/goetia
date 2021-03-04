@@ -37,6 +37,7 @@
 namespace goetia {
 
 using storage::PartitionedStorage;
+using storage::StorageTraits;
 
 template <class BaseStorageType,
           class ShifterType = hashing::FwdUnikmerShifter>
@@ -63,6 +64,26 @@ public:
 
     const uint16_t K;
     const uint16_t partition_K;
+
+    explicit PdBG(uint16_t K,
+                  uint16_t partition_K,
+                  std::shared_ptr<ukhs_type>& ukhs,
+                  const typename StorageTraits<BaseStorageType>::params_type& storage_params)
+        : K           (K),
+          ukhs        (ukhs),
+          partitioner (K, partition_K, ukhs),
+          partition_K (partition_K)
+    {
+        S = std::make_shared<PartitionedStorage<BaseStorageType>>(ukhs->n_hashes(),
+                                                                  storage_params);
+    }
+
+    explicit PdBG(uint16_t K,
+                  uint16_t partition_K,
+                  std::shared_ptr<ukhs_type>& ukhs)
+        : PdBG(K, partition_K, ukhs, StorageTraits<BaseStorageType>::default_params)
+    {
+    }
  
     template <typename... Args>
     explicit PdBG(uint16_t  K,
@@ -89,6 +110,19 @@ public:
           S(S->clone())
     {
 
+    }
+
+    static std::shared_ptr<PdBG> build(uint16_t K,
+                                       uint16_t partition_K,
+                                       std::shared_ptr<ukhs_type>& ukhs) {
+        return build(K, partition_K, ukhs, StorageTraits<BaseStorageType>::default_params);                                   
+    }
+
+    static std::shared_ptr<PdBG> build(uint16_t K,
+                                       uint16_t partition_K,
+                                       std::shared_ptr<ukhs_type>& ukhs,
+                                       const typename StorageTraits<BaseStorageType>::params_type& storage_params) {
+        return std::make_shared<PdBG>(K, partition_K, ukhs, storage_params);
     }
 
     inline hash_type hash(const std::string& kmer) const {
@@ -158,7 +192,6 @@ public:
 
         hashing::KmerIterator<extender_type> iter(sequence, &partitioner);
 
-        uint64_t         n_consumed = 0;
         size_t           pos = 0;
         storage::count_t count;
         while(!iter.done()) {
@@ -168,11 +201,10 @@ public:
             kmer_hashes.push_back(h);
             counts.push_back(count);
 
-            n_consumed += (count == 1);
             ++pos;
         }
 
-        return n_consumed;
+        return sequence.size() - K + 1;
     }
 
     inline const uint64_t insert_sequence(const std::string&   sequence,
@@ -180,19 +212,17 @@ public:
 
         hashing::KmerIterator<extender_type> iter(sequence, &partitioner);
 
-        uint64_t n_consumed = 0;
         size_t pos = 0;
         bool is_new;
         while(!iter.done()) {
             auto h = iter.next();
             if(insert(h)) {
                 new_kmers.insert(h);
-                n_consumed += is_new;
             }
             ++pos;
         }
 
-        return n_consumed;
+        return sequence.size() - K + 1;
     }
 
     inline const uint64_t insert_sequence(const std::string& sequence) {
@@ -200,17 +230,15 @@ public:
 
         uint64_t n_consumed = 0;
         while(!iter.done()) {
-            hash_type h = iter.next();
-            n_consumed += insert(h);
+            insert(iter.next());
         }
 
-        return n_consumed;
+        return sequence.size() - K + 1;
     }
 
     inline const uint64_t insert_sequence_rolling(const std::string& sequence) {
         hashing::KmerIterator<extender_type> iter(sequence, &partitioner);
 
-        uint64_t          n_consumed    = 0;
         auto              h             = iter.next();
         uint64_t          cur_pid       = h.minimizer.partition;
         BaseStorageType * cur_partition = S->query_partition(cur_pid);
@@ -222,10 +250,10 @@ public:
                 cur_pid = h.minimizer.partition;
                 cur_partition = S->query_partition(cur_pid);
             }
-            n_consumed += cur_partition->insert(h.value());
+            cur_partition->insert(h.value());
         }
 
-        return n_consumed;
+        return sequence.size() - K + 1;
     }
 
 
@@ -418,6 +446,10 @@ public:
 
     std::vector<size_t> get_partition_counts() {
         return S->get_partition_counts();
+    }
+
+    void * get_partition_counts_as_buffer() {
+        return S->get_partition_counts_as_buffer();
     }
 };
 

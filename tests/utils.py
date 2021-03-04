@@ -20,18 +20,17 @@ from cppyy.gbl import std
 import goetia
 from goetia import goetia as libgoetia
 from goetia.hashing import types as hashing_types
-from goetia.utils import check_trait, pretty_repr
-from goetia.storage import _types as storage_types
+from goetia.utils import pretty_repr
+from goetia.storage import types as storage_types
 
 from goetia.hashing import (FwdLemireShifter, CanLemireShifter,
                            FwdUnikmerShifter, CanUnikmerShifter,
                            UKHS)
 
 
-@pytest.fixture(params=storage_types, ids=lambda t: pretty_repr(t[0]))
+@pytest.fixture(params=storage_types, ids=lambda t: pretty_repr(t))
 def storage_type(request):
-    _storage_type, params = request.param
-    return _storage_type, params
+    return request.param
 
 
 @pytest.fixture(params=[FwdLemireShifter, CanLemireShifter,
@@ -43,6 +42,7 @@ def hasher_type(request, ksize):
         return _hasher_type, (ksize, 7)
     else:
         return _hasher_type, (ksize,)
+
 
 @pytest.fixture
 def hasher(request, hasher_type, ksize):
@@ -57,13 +57,19 @@ def hasher(request, hasher_type, ksize):
 
 @pytest.fixture
 def store(storage_type):
-    _storage_type, params = storage_type
-    storage = _storage_type.build(*params)
+    storage = storage_type.build()
     return storage
 
 
 @pytest.fixture
-def partitioned_graph(store, ksize):
+def partitioned_graph(storage_type, ksize):
+
+    if storage_type is libgoetia.storage.SparseppSetStorage:
+        params = tuple()
+    else:
+        params = (1000, 4)
+
+    store = storage_type.build(*params)
     ukhs = UKHS[FwdLemireShifter].load(ksize, 7)
     pstore = std.make_shared[libgoetia.storage.PartitionedStorage[type(store)]](ukhs.n_hashes(),
                                                                                store)
@@ -87,10 +93,9 @@ def counting_backends(*args):
     '''
     def wrapped(fixture_func):
         return pytest.mark.parametrize('storage_type', 
-                                       [(type, args) for type, args in storage_types \
-                                        if check_trait(libgoetia.storage.is_counting, type)],
+                                       [type for type in storage_types if type.is_counting],
                                        indirect=['storage_type'],
-                                       ids=lambda t: pretty_repr(t[0]))(fixture_func)
+                                       ids=lambda t: pretty_repr(t))(fixture_func)
     return wrapped
 
 
@@ -100,10 +105,9 @@ def presence_backends(*args):
     '''
     def wrapped(fixture_func):
         return pytest.mark.parametrize('storage_type', 
-                                       [(type, args) for type, args in storage_types \
-                                        if not check_trait(libgoetia.storage.is_counting, type)],
+                                       [type for type in storage_types if not type.is_counting],
                                        indirect=['storage_type'],
-                                       ids=lambda t: pretty_repr(t[0]))(fixture_func)
+                                       ids=lambda t: pretty_repr(t))(fixture_func)
     return wrapped
 
 
@@ -113,10 +117,9 @@ def exact_backends(*args):
     '''
     def wrapped(fixture_func):
         return pytest.mark.parametrize('storage_type', 
-                                       [(type, args) for type, args in storage_types \
-                                        if not check_trait(libgoetia.storage.is_probabilistic, type)],
+                                       [type for type in storage_types if not type.is_probabilistic],
                                        indirect=['storage_type'],
-                                       ids=lambda t: pretty_repr(t[0]))(fixture_func)
+                                       ids=lambda t: pretty_repr(t))(fixture_func)
     return wrapped
 
 

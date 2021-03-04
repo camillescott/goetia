@@ -40,6 +40,13 @@ def pythonize_goetia_cdbg(klass, name):
 
     compactor_inst, template = is_template_inst(name, 'StreamingCompactor')
     if compactor_inst:
+        from goetia import libgoetia
+
+        _ = libgoetia.cdbg.cDBG[klass.graph_type].CompactNode
+        _ = libgoetia.cdbg.cDBG[klass.graph_type].UnitigNode
+        _ = libgoetia.cdbg.cDBG[klass.graph_type].DecisionNode
+        _ = libgoetia.cdbg.cDBG[klass.graph_type].Graph
+
         klass.Compactor.Graph = property(lambda self: self.cdbg)
 
         #
