@@ -12,7 +12,11 @@ import sys
 from boltons.iterutils import pairwise
 import curio
 
+from goetia import libgoetia
 from goetia.serialization import cDBGSerialization
+
+cDBG = libgoetia.cdbg.cDBG
+StreamingCompactor = libgoetia.cdbg.StreamingCompactor
 
 
 async def compute_connected_component_callback(msg,

@@ -11,5 +11,4 @@ del initialize
 @NAMESPACE_INJECTIONS@
 
 from goetia import goetia as libgoetia
-from goetia.pythonizors.declarations import *
 from cppyy import nullptr
