@@ -160,7 +160,7 @@ class AsyncSequenceProcessor(UnixBroadcasterMixin):
 
     def __init__(self, processor,
                        sample_iter,
-                       echo = True,
+                       echo = None,
                        broadcast_socket = None):
         """Manages advancing through a concrete FileProcessor
         subblass asynchronously. The processor pushes Interval
@@ -306,7 +306,8 @@ class AsyncSequenceProcessor(UnixBroadcasterMixin):
                 if self.run_echo:
                     listener = self.add_listener('events_q', 'echo')
                     async def echo(msg):
-                        async with curio.aopen(self.echo_file, 'a') as fp:
+                        mode = 'w' if self.echo_file in ['/dev/stdout', '/dev/stderr'] else 'a'
+                        async with curio.aopen(self.echo_file, mode) as fp:
                             await fp.write(f'{msg.to_json()}\n')
 
                     listener.on_message(AllMessages,

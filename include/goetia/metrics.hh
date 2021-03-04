@@ -109,7 +109,7 @@ public:
 
     const uint64_t interval;
 
-    static constexpr uint64_t DEFAULT_INTERVAL = 10000;
+    static constexpr uint64_t DEFAULT_INTERVAL = 500000;
 
     IntervalCounter(uint64_t interval = DEFAULT_INTERVAL)
         : interval(interval),

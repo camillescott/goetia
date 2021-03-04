@@ -45,6 +45,10 @@ class SignatureRunner(CommandRunner):
                             default=False,
                             help='Save the entire stream of signatures to '
                                  'the filename given in save-sig.')
+        parser.add_argument('--save-stream-tick',
+                           type=int,
+                           default=10,
+                           help='Save a copy of the signature every N intervals.')
 
         parser.add_argument('--distance-output', nargs='?')
 
@@ -141,7 +145,7 @@ class SignatureRunner(CommandRunner):
         # Pass the libgoetia processor over the async handler
         self.processor = AsyncSequenceProcessor(signature_processor,
                                                 iter_fastx_inputs(args.inputs, args.pairing_mode, names=args.names),
-                                                args.echo)
+                                                echo=args.echo)
         
         # Signatures: held in a RollingPairwise, stores the signatures themselves (if desired)
         # and calls the distance function
