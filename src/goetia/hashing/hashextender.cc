@@ -6,13 +6,14 @@
  * Date   : 09.01.2020
  */
 
+#include "goetia/hashing/hashshifter.hh"
 #include "goetia/hashing/hashextender.hh"
 #include "goetia/hashing/shifter_types.hh"
 
 namespace goetia::hashing {
 
-    template class DefaultExtensionPolicy<FwdLemireShifter>;
-    template class DefaultExtensionPolicy<CanLemireShifter>;
+    template class DefaultExtensionPolicy<goetia::hashing::FwdLemireShifter>;
+    template class DefaultExtensionPolicy<goetia::hashing::CanLemireShifter>;
 
     template class HashExtender<DefaultExtensionPolicy<FwdLemireShifter>>;
     template HashExtender<DefaultExtensionPolicy<FwdLemireShifter>>::HashExtender(uint16_t);

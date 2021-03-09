@@ -24,8 +24,7 @@
 #   define pdebug(x) do {} while (0)
 # endif
 
-namespace goetia {
-namespace cdbg {
+namespace goetia::cdbg {
 
 
 template <template <class, class> class GraphType,
@@ -745,8 +744,6 @@ cDBG<GraphType<StorageType, ShifterType>>
     return bin_sums;
 }
 
-}
-
 template class cdbg::cDBG<dBG<storage::BitStorage, hashing::FwdLemireShifter>>;
 template class cdbg::cDBG<dBG<storage::BitStorage, hashing::CanLemireShifter>>;
 
@@ -761,4 +758,5 @@ template class cdbg::cDBG<dBG<storage::NibbleStorage, hashing::CanLemireShifter>
 
 template class cdbg::cDBG<dBG<storage::QFStorage, hashing::FwdLemireShifter>>;
 template class cdbg::cDBG<dBG<storage::QFStorage, hashing::CanLemireShifter>>;
+
 }

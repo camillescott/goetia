@@ -454,20 +454,20 @@ public:
 };
 
 
-extern template class PdBG<storage::BitStorage, hashing::FwdUnikmerShifter>;
-extern template class PdBG<storage::BitStorage, hashing::CanUnikmerShifter>;
-
-extern template class PdBG<storage::SparseppSetStorage, hashing::FwdUnikmerShifter>;
-extern template class PdBG<storage::SparseppSetStorage, hashing::CanUnikmerShifter>;
-
-extern template class PdBG<storage::ByteStorage, hashing::FwdUnikmerShifter>;
-extern template class PdBG<storage::ByteStorage, hashing::CanUnikmerShifter>;
-
-extern template class PdBG<storage::NibbleStorage, hashing::FwdUnikmerShifter>;
-extern template class PdBG<storage::NibbleStorage, hashing::CanUnikmerShifter>;
-
-extern template class PdBG<storage::QFStorage, hashing::FwdUnikmerShifter>;
-extern template class PdBG<storage::QFStorage, hashing::CanUnikmerShifter>;
-
 }
+
+extern template class goetia::PdBG<goetia::storage::BitStorage, goetia::hashing::FwdUnikmerShifter>;
+extern template class goetia::PdBG<goetia::storage::BitStorage, goetia::hashing::CanUnikmerShifter>;
+
+extern template class goetia::PdBG<goetia::storage::SparseppSetStorage, goetia::hashing::FwdUnikmerShifter>;
+extern template class goetia::PdBG<goetia::storage::SparseppSetStorage, goetia::hashing::CanUnikmerShifter>;
+
+extern template class goetia::PdBG<goetia::storage::ByteStorage, goetia::hashing::FwdUnikmerShifter>;
+extern template class goetia::PdBG<goetia::storage::ByteStorage, goetia::hashing::CanUnikmerShifter>;
+
+extern template class goetia::PdBG<goetia::storage::NibbleStorage, goetia::hashing::FwdUnikmerShifter>;
+extern template class goetia::PdBG<goetia::storage::NibbleStorage, goetia::hashing::CanUnikmerShifter>;
+
+extern template class goetia::PdBG<goetia::storage::QFStorage, goetia::hashing::FwdUnikmerShifter>;
+extern template class goetia::PdBG<goetia::storage::QFStorage, goetia::hashing::CanUnikmerShifter>;
 #endif

@@ -438,12 +438,6 @@ template<typename ShifterType>
     using extender_selector_t = typename extender_selector<ShifterType>::type;
 
 
-extern template class DefaultExtensionPolicy<FwdLemireShifter>;
-extern template class DefaultExtensionPolicy<CanLemireShifter>;
-
-extern template class HashExtender<DefaultExtensionPolicy<FwdLemireShifter>>;
-extern template class HashExtender<DefaultExtensionPolicy<CanLemireShifter>>;
-
 extern template class HashExtender<FwdUnikmerShifter>;
 extern template class HashExtender<CanUnikmerShifter>;
 
@@ -456,5 +450,13 @@ extern template class KmerIterator<CanUnikmerExtender>;
 
 
 }
+
+extern template class goetia::hashing::DefaultExtensionPolicy<goetia::hashing::FwdLemireShifter>;
+extern template class goetia::hashing::DefaultExtensionPolicy<goetia::hashing::CanLemireShifter>;
+
+extern template class goetia::hashing::HashExtender<goetia::hashing::DefaultExtensionPolicy<goetia::hashing::HashShifter<goetia::hashing::FwdLemirePolicy>>>;
+extern template class goetia::hashing::HashExtender<goetia::hashing::DefaultExtensionPolicy<goetia::hashing::HashShifter<goetia::hashing::CanLemirePolicy>>>;
+
+
 
 #endif

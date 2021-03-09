@@ -67,8 +67,10 @@ struct StreamingSolidFilter<GraphType<StorageType, ShifterType>> {
 
 };
 
-extern template class StreamingSolidFilter<dBG<storage::BitStorage, hashing::FwdLemireShifter>>;
-extern template class StreamingSolidFilter<dBG<storage::QFStorage, hashing::FwdLemireShifter>>;
-
 }
+
+extern template class goetia::StreamingSolidFilter<goetia::dBG<goetia::storage::BitStorage, goetia::hashing::FwdLemireShifter>>;
+extern template class goetia::StreamingSolidFilter<goetia::dBG<goetia::storage::QFStorage, goetia::hashing::FwdLemireShifter>>;
+
+
 #endif
