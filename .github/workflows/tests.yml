@@ -1,0 +1,58 @@
+name: Tests
+
+on:
+  push:
+    branches: [latest, master, main, actions_migration]
+  pull_request:
+    branches: [latest, master, main, actions_migration]
+  schedule:
+    - cron: "0 0 * * 0" # weekly
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-18.04]
+        py: [3.6, 3.7, 3.8]
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: cache conda
+        uses: actions/cache@v1
+        env:
+          CACHE_NUMBER: 0
+        with:
+          path: ~/conda_pkgs_dir
+          key:
+            ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{
+            hashFiles('environment_dev.yml') }}
+
+      - name: setup conda
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-update-conda: true
+          python-version: ${{ matrix.py }}
+          mamba-version: "*"
+          channels: conda-forge,bioconda,defaults
+          activate-environment: goetia-dev
+          environment-file: environment_dev.yml
+          auto-activate-base: false
+          use-only-tar-bz2: true
+      
+      - name: cmake build
+        run: |
+          mkdir build
+          cd build
+          cmake ..
+          make -j 2 install
+
+      - name: run pytest
+        run: |
+          cd build
+          pytest -v --benchmark-disable ./tests
