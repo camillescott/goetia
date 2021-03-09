@@ -45,7 +45,7 @@ jobs:
           auto-activate-base: false
           use-only-tar-bz2: true
       
-      - name: make build
+      - name: cmake build
         run: |
           mkdir build
           cd build
