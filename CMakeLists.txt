@@ -146,6 +146,7 @@ cppyy_add_bindings(
    PKG_SRC_DIR    ${CMAKE_SOURCE_DIR}/goetia
    TESTS_DIR      ${CMAKE_SOURCE_DIR}/tests
    HEADERS        ${LIB_HEADERS}
+   INTERFACE_HEADERS ${API_HEADERS}
    INCLUDE_DIRS   ${GOETIA_INCLUDE_ROOT}/include
                   ${CMAKE_CURRENT_SOURCE_DIR}/third-party
                   ${ZLIB_INCLUDE_DIRS}

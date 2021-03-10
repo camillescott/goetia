@@ -23,6 +23,7 @@ dependencies:
     - clang-tools
     - clangdev
     - clangxx
+    - libcxx
     - libclang
     - libclang-cpp
     - python-clang
