@@ -4,7 +4,7 @@ channels:
     - conda-forge
 dependencies:
     - boltons
-    - cppyy
+    - cppyy=1.6.2
     - cmake
     - pytest
     - numpy
