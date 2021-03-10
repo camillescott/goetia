@@ -232,14 +232,15 @@ endfunction(cppyy_generate_init)
 function(cppyy_add_bindings pkg pkg_version author author_email)
     set(simple_args URL LICENSE LICENSE_FILE LANGUAGE_STANDARD INTERFACE_FILE
         SELECTION_XML README_FILE PKG_SRC_DIR TESTS_DIR)
-    set(list_args HEADERS  COMPILE_OPTIONS INCLUDE_DIRS LINK_LIBRARIES 
+    set(list_args HEADERS INTERFACE_HEADERS COMPILE_OPTIONS INCLUDE_DIRS LINK_LIBRARIES 
         GENERATE_OPTIONS NAMESPACES EXTRA_PKG_FILES)
     cmake_parse_arguments(
         ARG
         ""
         "${simple_args}"
         "${list_args}"
-        ${ARGN})
+        ${ARGN}
+    )
     if(NOT "${ARG_UNPARSED_ARGUMENTS}" STREQUAL "")
         message(SEND_ERROR "Unexpected arguments specified '${ARG_UNPARSED_ARGUMENTS}'")
     endif()
@@ -314,7 +315,6 @@ function(cppyy_add_bindings pkg pkg_version author author_email)
     list(APPEND genreflex_args "--rootmap=${rootmap_file}")
     list(APPEND genreflex_args "--rootmap-lib=${lib_file}")
     list(APPEND genreflex_args "-l" "${lib_file}")
-    list(APPEND genreflex_args "--interpreteronly")
     foreach(dir ${includes})
         list(APPEND genreflex_args "${dir}")
     endforeach(dir)
@@ -337,9 +337,17 @@ function(cppyy_add_bindings pkg pkg_version author author_email)
     #
     list(APPEND ARG_GENERATE_OPTIONS "-std=c++${ARG_LANGUAGE_STANDARD}")
     if(${CONDA_ACTIVE})
+        # get the libcxx headers installed by conda
+        execute_process(COMMAND bash -c "cat `find $CONDA_PREFIX -iname 'libcxx-*.json' -type f` | python -c \"import sys, json; print(json.load(sys.stdin)['extracted_package_dir'], end='')\""
+                        OUTPUT_VARIABLE conda_libcxx_header_base)
+        message(STATUS "adding conda libcxx includes to cppyy-generator options (${conda_libcxx_header_base})")
+        list(APPEND ARG_GENERATE_OPTIONS "-I${conda_libcxx_header_base}/include/c++/v1")
+
+        # now the headers from libclang...
         set(CLANGDEV_INCLUDE $ENV{CONDA_PREFIX}/lib/clang/${CLANG_VERSION_STRING}/include)
         message(STATUS "adding conda clangdev includes to cppyy-generator options (${CLANGDEV_INCLUDE})")
         list(APPEND ARG_GENERATE_OPTIONS "-I${CLANGDEV_INCLUDE}")
+
     endif()
     foreach(dir ${includes})
         list(APPEND ARG_GENERATE_OPTIONS "${dir}")
@@ -359,9 +367,9 @@ function(cppyy_add_bindings pkg pkg_version author author_email)
 
     add_custom_command(OUTPUT ${extra_map_file}
                        COMMAND python ${Cppyygen_EXECUTABLE} 
-                               --libclang ${LibClang_LIBRARY} --flags "\"${generator_args}\""
-                               ${extra_map_file} ${ARG_HEADERS}
-                       DEPENDS ${ARG_HEADERS} 
+                               --flags "\"${generator_args}\""
+                               ${extra_map_file} ${ARG_INTERFACE_HEADERS}
+                       DEPENDS ${ARG_INTERFACE_HEADERS} 
                        WORKING_DIRECTORY ${pkg_dir}
     )
     #

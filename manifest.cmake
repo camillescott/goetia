@@ -93,6 +93,53 @@ set(_sources
     src/goetia/storage/cqf/gqf.c
 )
 
+set(_interface_headers
+    include/goetia/goetia.hh
+    include/goetia/cdbg/cdbg.hh
+    include/goetia/cdbg/cdbg_types.hh
+    include/goetia/cdbg/compactor.hh
+    include/goetia/cdbg/metrics.hh
+    include/goetia/cdbg/saturating_compactor.hh
+    include/goetia/cdbg/ucompactor.hh
+    include/goetia/cdbg/udbg.hh
+    include/goetia/cdbg/utagger.hh
+    include/goetia/dbg.hh
+    include/goetia/sequences/alphabets.hh
+    include/goetia/hashing/hash_combine.hh
+    include/goetia/hashing/canonical.hh
+    include/goetia/hashing/hashshifter.hh
+    include/goetia/hashing/hashextender.hh
+    include/goetia/hashing/kmeriterator.hh
+    include/goetia/hashing/shifter_types.hh
+    include/goetia/hashing/rollinghash/characterhash.h
+    include/goetia/hashing/rollinghash/cyclichash.h
+    include/goetia/hashing/rollinghashshifter.hh
+    include/goetia/hashing/smhasher/MurmurHash3.h
+    include/goetia/hashing/unikmershifter.hh
+    include/goetia/hashing/ukhs.hh
+    include/goetia/meta.hh
+    include/goetia/metrics.hh
+    include/goetia/minimizers.hh
+    include/goetia/parsing/parsing.hh
+    include/goetia/parsing/readers.hh
+    include/goetia/pdbg.hh
+    include/goetia/processors.hh
+    include/goetia/solidifier.hh
+    include/goetia/signatures/sourmash/sourmash.hpp
+    include/goetia/signatures/sourmash_signature.hh
+    include/goetia/signatures/ukhs_signature.hh
+    include/goetia/storage/bitstorage.hh
+    include/goetia/storage/bytestorage.hh
+    include/goetia/storage/nibblestorage.hh
+    include/goetia/storage/partitioned_storage.hh
+    include/goetia/storage/qfstorage.hh
+    include/goetia/storage/sparsepp/serialize.hh
+    include/goetia/storage/sparseppstorage.hh
+    include/goetia/storage/storage.hh
+    include/goetia/storage/storage_types.hh
+    include/goetia/traversal.hh
+)
+
 set(_data
     res_10_100_4_0.txt.gz res_10_110_4_0.txt.gz res_10_120_4_0.txt.gz
     res_10_130_4_0.txt.gz res_10_140_4_0.txt.gz res_10_150_4_0.txt.gz
@@ -131,6 +178,10 @@ endif()
 
 foreach (path ${_headers})
     list(APPEND LIB_HEADERS ${GOETIA_INCLUDE_ROOT}/${path})
+endforeach(path)
+
+foreach (path ${_interface_headers})
+    list(APPEND API_HEADERS ${GOETIA_INCLUDE_ROOT}/${path})
 endforeach(path)
 
 foreach (path ${_sources})

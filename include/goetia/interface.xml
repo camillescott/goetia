@@ -1,10 +1,11 @@
 <lcgdict>
     <selection>
-        <!-- <namespace pattern="goetia::*"/> -->
         <namespace pattern="goetia::storage::*"/>
         <namespace pattern="goetia::signatures::*"/>
         <namespace pattern="goetia::cdbg::*"/>
+
         <namespace pattern="goetia::hashing::*"/>
+        <class pattern="goetia::hashing::LemireShifterPolicy<*>" />
         <namespace pattern="goetia::metrics::*"/>
 
         <class name="goetia::hashing::Direction_t"/>
@@ -12,19 +13,20 @@
         <class pattern="goetia::cdbg::StreamingCompactor<*>::compact_segment"/>
 
         <class pattern="goetia::dBGWalker<*>"/>
+        <class pattern="goetia::dBGWalker<*>::Walk<*>"/>
 
-        <class pattern="goetia::dBG<*, *>"/>
-        <class pattern="goetia::dBG*" />
+        <class pattern="goetia::dBG<*>"/>
         <class pattern="goetia::PdBG<*>"/>
+
         <class pattern="goetia::*Processor"/>
         <class pattern="goetia::*Processor<*>"/>
+
 		<class pattern="goetia::parsing::*"/>
         <class pattern="goetia::InteriorMinimizer<*>"/>
 
         <namespace pattern="sourmash::*"/>
 
         <class pattern="std::pair<*,*>"/>
-        <class pattern="std::vector<*>"/>
         <function name="__gnu_cxx::operator=="/>
         <function name="__gnu_cxx::operator!="/>
     </selection>        
@@ -32,6 +34,7 @@
         <namespace pattern="Catch::*" />
         <class name="std::condition_variable" />
         <class pattern="std::vector<goetia::dBGWalker<*>>"/>
+        <class pattern="std::vector<std::*::basic_string<char>, std::allocator<std::*::basic_string<char> > >" />        
         <class name="std::vector<std::basic_ofstream<char>>"/>
     </exclusion>
 </lcgdict>

@@ -4,7 +4,7 @@ channels:
     - conda-forge
 dependencies:
     - boltons
-    - cppyy
+    - cppyy=1.6.2
     - cmake
     - pytest
     - numpy
@@ -23,6 +23,7 @@ dependencies:
     - clang-tools
     - clangdev
     - clangxx
+    - libcxx
     - libclang
     - libclang-cpp
     - python-clang

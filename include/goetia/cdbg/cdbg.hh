@@ -28,7 +28,7 @@
 #include "goetia/storage/sparsepp/spp.h"
 #include "goetia/parsing/gfakluge/gfakluge.hpp"
 #pragma GCC diagnostic pop
-#include "goetia/utils/stringutils.h"
+//#include "goetia/utils/stringutils.h"
 
 #include "goetia/goetia.hh"
 #include "goetia/metrics.hh"

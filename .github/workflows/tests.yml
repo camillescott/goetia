@@ -2,9 +2,9 @@ name: Tests
 
 on:
   push:
-    branches: [latest, master, main, actions_migration]
+    branches: [latest, master, main]
   pull_request:
-    branches: [latest, master, main, actions_migration]
+    branches: [latest, master, main]
   schedule:
     - cron: "0 0 * * 0" # weekly
 
