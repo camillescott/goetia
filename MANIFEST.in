@@ -1,0 +1,6 @@
+recursive-include goetia *.pcm *.so *.rootmap *.map
+recursive-include goetia/data *.txt.gz
+
+include goetia/schemapi/*.json
+include goetia/libgoetia.so
+

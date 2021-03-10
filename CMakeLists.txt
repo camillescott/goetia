@@ -138,13 +138,10 @@ target_link_libraries(test_hashing goetia)
 # more modern way anyhow? Code was modified from the versions cppyy distributes.
 #
 cppyy_add_bindings(
-    "goetia" ${python_pkg_version} "Camille Scott" "cswel@ucdavis.edu"
-   LICENSE "MIT"
+    "goetia" ${python_pkg_version}
    LANGUAGE_STANDARD "17"
    SELECTION_XML  ${GOETIA_INCLUDE_ROOT}/include/goetia/interface.xml
    INTERFACE_FILE ${GOETIA_INCLUDE_ROOT}/include/goetia/interface.hh
-   PKG_SRC_DIR    ${CMAKE_SOURCE_DIR}/goetia
-   TESTS_DIR      ${CMAKE_SOURCE_DIR}/tests
    HEADERS        ${LIB_HEADERS}
    INTERFACE_HEADERS ${API_HEADERS}
    INCLUDE_DIRS   ${GOETIA_INCLUDE_ROOT}/include
@@ -170,4 +167,4 @@ install(FILES ${CMAKE_BINARY_DIR}/goetia.pc
         DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig
 )
 
-install(CODE "execute_process(COMMAND python -m pip install --force-reinstall --no-deps -U ${PY_WHEEL_FILE})")
+#install(CODE "execute_process(COMMAND python -m pip install --force-reinstall --no-deps -U ${PY_WHEEL_FILE})")

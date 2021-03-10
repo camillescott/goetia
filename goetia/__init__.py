@@ -1,14 +1,10 @@
-import os
 import cppyy
 from .initializor import initialize
 
-__version__ = '@PROJECT_VERSION@'
+__version__ = '0.15.4.1'
 
-
-initialize('@CPPYY_PKG@', '@CPPYY_LIB_SO@', '@CPPYY_MAP@')
+initialize('goetia', 'libgoetiaCppyy.so', 'goetia.map')
 del initialize
-
-@NAMESPACE_INJECTIONS@
 
 from goetia import goetia as libgoetia
 from cppyy import nullptr

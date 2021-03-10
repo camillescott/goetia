@@ -166,19 +166,6 @@ endfunction(cppyy_generate_init)
 #
 #   pkg_version         The version of the package.
 #
-#   author              The name of the bindings author.
-#
-#   author_email        The email address of the bindings author.
-#
-#   URL url             The home page for the library or bindings. Default is
-#                       "https://pypi.python.org/pypi/<pkg>".
-#
-#   LICENSE license     The license, default is "MIT".
-#
-#   LICENSE_FILE        Path to license file to include in package. Default is LICENSE.
-#
-#   README              Path to README file to include in package and use as
-#                       text for long_description. Default is README.rst.
 #
 #   LANGUAGE_STANDARD std
 #                       The version of C++ in use, "14" by default.
@@ -191,10 +178,6 @@ endfunction(cppyy_generate_init)
 #
 #   SELECTION_XML       selection XML file passed to genreflex.
 #
-#   PKG_SRC_DIR         Top-level directory containing any package files you want. This tree
-#                       will be entirely copied in the resulting package directory.
-#
-#   TESTS_DIR           Directory containing tests.
 #
 #   
 #
@@ -219,9 +202,6 @@ endfunction(cppyy_generate_init)
 #                       bindings' __init__.py. This avoids having to write imports
 #                       of the form `from PKG import NAMESPACE`.
 #
-#   EXTRA_PKG_FILES     Extra files to copy into the package. Note that non-python
-#                       files will need to be added to the MANIFEST.in.in template.
-#
 #
 # Returns via PARENT_SCOPE variables:
 #
@@ -229,11 +209,10 @@ endfunction(cppyy_generate_init)
 #
 #   SETUP_PY_FILE       The generated setup.py.
 #
-function(cppyy_add_bindings pkg pkg_version author author_email)
-    set(simple_args URL LICENSE LICENSE_FILE LANGUAGE_STANDARD INTERFACE_FILE
-        SELECTION_XML README_FILE PKG_SRC_DIR TESTS_DIR)
+function(cppyy_add_bindings pkg pkg_version)
+    set(simple_args LANGUAGE_STANDARD INTERFACE_FILE SELECTION_XML )
     set(list_args HEADERS INTERFACE_HEADERS COMPILE_OPTIONS INCLUDE_DIRS LINK_LIBRARIES 
-        GENERATE_OPTIONS NAMESPACES EXTRA_PKG_FILES)
+        GENERATE_OPTIONS NAMESPACES)
     cmake_parse_arguments(
         ARG
         ""
@@ -246,42 +225,12 @@ function(cppyy_add_bindings pkg pkg_version author author_email)
     endif()
     string(REGEX MATCH "[^\.]+$" pkg_simplename ${pkg})
     string(REGEX REPLACE "\.?${pkg_simplename}" "" pkg_namespace ${pkg})
-    set(pkg_dir ${CMAKE_CURRENT_BINARY_DIR})
-    string(REPLACE "." "/" tmp ${pkg})
-    set(pkg_dir "${pkg_dir}/${tmp}")
     set(lib_name "${pkg_namespace}${pkg_simplename}Cppyy")
     set(lib_file ${CMAKE_SHARED_LIBRARY_PREFIX}${lib_name}${CMAKE_SHARED_LIBRARY_SUFFIX})
     set(cpp_file ${CMAKE_CURRENT_BINARY_DIR}/${pkg_simplename}.cpp)
-    set(pcm_file ${pkg_dir}/${CMAKE_SHARED_LIBRARY_PREFIX}${lib_name}_rdict.pcm)
-    set(rootmap_file ${pkg_dir}/${CMAKE_SHARED_LIBRARY_PREFIX}${lib_name}.rootmap)
-    set(extra_map_file ${pkg_dir}/${pkg_simplename}.map)
-
-    #
-    # Package metadata.
-    #
-    if("${ARG_URL}" STREQUAL "")
-        string(REPLACE "." "-" tmp ${pkg})
-        set(ARG_URL "https://pypi.python.org/pypi/${tmp}")
-    endif()
-    if("${ARG_LICENSE}" STREQUAL "")
-        set(ARG_LICENSE "MIT")
-    endif()
-    set(BINDINGS_LICENSE ${ARG_LICENSE})
-
-    if("${ARG_LICENSE_FILE}" STREQUAL "")
-        set(ARG_LICENSE_FILE ${CMAKE_SOURCE_DIR}/LICENSE)
-    endif()
-    set(LICENSE_FILE ${ARG_LICENSE_FILE})
-
-    if("${ARG_README_FILE}" STREQUAL "")
-        set(ARG_README_FILE ${CMAKE_SOURCE_DIR}/README.rst)
-    endif()
-    set(README_FILE ${ARG_README_FILE})
-
-    if("${ARG_PKG_SRC_DIR}" STREQUAL "")
-        set(ARG_PKG_SRC_DIR ${CMAKE_SOURCE_DIR}/py)
-    endif()
-    set(PKG_SRC_DIR ${ARG_PKG_SRC_DIR})
+    set(pcm_file ${CMAKE_SHARED_LIBRARY_PREFIX}${lib_name}_rdict.pcm)
+    set(rootmap_file ${CMAKE_SHARED_LIBRARY_PREFIX}${lib_name}.rootmap)
+    set(extra_map_file ${pkg_simplename}.map)
 
     #
     # Language standard.
@@ -325,11 +274,9 @@ function(cppyy_add_bindings pkg pkg_version author author_email)
     #
     # run genreflex
     #
-    file(MAKE_DIRECTORY ${pkg_dir})
     add_custom_command(OUTPUT ${cpp_file} ${rootmap_file} ${pcm_file}
                        COMMAND ${ROOT_genreflex_CMD} ${genreflex_args} ${genreflex_cxxflags}
                        DEPENDS ${ARG_INTERFACE_FILE} ${ARG_HEADERS}
-                       WORKING_DIRECTORY ${pkg_dir}
     )
 
     #
@@ -390,113 +337,11 @@ function(cppyy_add_bindings pkg pkg_version author author_email)
     target_link_libraries(${lib_name} PUBLIC ${LibCling_LIBRARY} 
                           -Wl,--whole-archive ${ARG_LINK_LIBRARIES} -Wl,--no-whole-archive)
 
-    #
-    # Generate __init__.py
-    #
-    cppyy_generate_init(PKG        ${pkg}
-                        LIB_FILE   ${lib_file}
-                        MAP_FILE   ${extra_map_file}
-                        NAMESPACES ${ARG_NAMESPACES}
-    )
-    set(INIT_PY_FILE ${INIT_PY_FILE} PARENT_SCOPE)
-
-    #
-    # Generate setup.py
-    #
-    message(STATUS "${pkg_version}")
-    cppyy_generate_setup("${pkg}"
-                         "${pkg_version}"
-                         "${author}"
-                         "${author_email}"
-                         "${lib_file}"
-                         "${rootmap_file}"
-                         "${pcm_file}"
-                         "${extra_map_file}"
-    )
-
-    #
-    # Generate setup.cfg
-    #
-    set(setup_cfg ${CMAKE_CURRENT_BINARY_DIR}/setup.cfg)
-    configure_file(${CMAKE_SOURCE_DIR}/pkg_templates/setup.cfg.in ${setup_cfg})
-
-    #
-    # Copy README and LICENSE
-    #
-    file(COPY ${README_FILE}  DESTINATION . USE_SOURCE_PERMISSIONS)
-    file(COPY ${LICENSE_FILE} DESTINATION . USE_SOURCE_PERMISSIONS)
-
-    set(PKG ${pkg})
-    #
-    # Generate MANIFEST.in 
-    #
-    configure_file(${CMAKE_SOURCE_DIR}/pkg_templates/MANIFEST.in.in ${CMAKE_CURRENT_BINARY_DIR}/MANIFEST.in)
-
-    #
-    # Copy all package files
-    #
-    file(COPY ${PKG_SRC_DIR}/
-         DESTINATION ${pkg_dir} USE_SOURCE_PERMISSIONS
-         PATTERN "__pycache__" EXCLUDE
-    )
-
-    #
-    # Copy tests
-    # 
-
-    if(NOT "${ARG_TESTS_DIR}" STREQUAL "")
-        file(COPY ${ARG_TESTS_DIR}
-            DESTINATION ${CMAKE_BINARY_DIR}/ USE_SOURCE_PERMISSIONS
-            PATTERN "__pycache__" EXCLUDE
-        )
-    endif()
-
-    #
-    # Kinda ugly: you'e not really supposed to glob like this. Oh well. Using this to set
-    # dependencies for the python wheel building command; the file copy above is done on every
-    # cmake invocation anyhow.
-    #
-    # Then, get the system architecture and build the wheel string based on PEP 427.
-    #
-    #file(GLOB_RECURSE PY_PKG_FILES
-    #     LIST_DIRECTORIES FALSE
-    #     CONFIGURE_DEPENDS
-    #     "${PKG_SRC_DIR}/*.py")
-    string(TOLOWER ${CMAKE_SYSTEM_NAME} SYSTEM_STR)
-    string(REGEX REPLACE "^v" "" fixed_pkg_version ${pkg_version})
-    set(pkg_whl "${CMAKE_BINARY_DIR}/dist/${pkg}-${fixed_pkg_version}-py3-none-any.whl")
-    add_custom_command(OUTPUT  ${pkg_whl}
-                       COMMAND python setup.py bdist_wheel
-                       DEPENDS ${SETUP_PY_FILE} ${lib_name} ${setup_cfg}
-                       WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-    )
-    add_custom_target(wheel ALL
-                      DEPENDS ${pkg_whl}
-    )
-    add_dependencies(wheel ${lib_name})
-
-    #
-    # Return results.
-    #
     set(LIBCLING         ${LibCling_LIBRARY} PARENT_SCOPE)
     set(CPPYY_LIB_TARGET ${lib_name} PARENT_SCOPE)
-    set(SETUP_PY_FILE    ${SETUP_PY_FILE} PARENT_SCOPE)
-    set(PY_WHEEL_FILE    ${pkg_whl}  PARENT_SCOPE)
+    #set(SETUP_PY_FILE    ${SETUP_PY_FILE} PARENT_SCOPE)
+    #set(PY_WHEEL_FILE    ${pkg_whl}  PARENT_SCOPE)
 endfunction(cppyy_add_bindings)
 
 
-#
-# Return a list of available pip programs.
-#
-function(cppyy_find_pips)
-    execute_process(
-        COMMAND python -c "from cppyy_backend import bindings_utils; print(\";\".join(bindings_utils.find_pips()))"
-        OUTPUT_VARIABLE _stdout
-        ERROR_VARIABLE _stderr
-        RESULT_VARIABLE _rc
-        OUTPUT_STRIP_TRAILING_WHITESPACE)
-    if(NOT "${_rc}" STREQUAL "0")
-        message(FATAL_ERROR "Error finding pips: (${_rc}) ${_stderr}")
-    endif()
-    set(PIP_EXECUTABLES ${_stdout} PARENT_SCOPE)
-endfunction(cppyy_find_pips)
+

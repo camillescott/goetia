@@ -75,8 +75,7 @@ def get_version(cmake=False):
                 version.append('1')
 
     else:
-        print('Not a git repo!')
-        exit(1)
+        raise ValueError('Not a git repo!')
 
     return '.'.join(version)
 
