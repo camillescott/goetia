@@ -141,7 +141,7 @@ cppyy_add_bindings(
     "goetia" ${python_pkg_version} "Camille Scott" "cswel@ucdavis.edu"
    LICENSE "MIT"
    LANGUAGE_STANDARD "17"
-   SELECTION_XML  ${CMAKE_SOURCE_DIR}/goetia_select.xml
+   SELECTION_XML  ${GOETIA_INCLUDE_ROOT}/include/goetia/interface.xml
    INTERFACE_FILE ${GOETIA_INCLUDE_ROOT}/include/goetia/interface.hh
    PKG_SRC_DIR    ${CMAKE_SOURCE_DIR}/goetia
    TESTS_DIR      ${CMAKE_SOURCE_DIR}/tests
@@ -154,7 +154,7 @@ cppyy_add_bindings(
 
 #
 # libgoetia's install commands. Installs the libgoetia shared so,
-# its headers, the prometheus headers, and any other public includes.
+# its headers, and any other public includes.
 #
 install(TARGETS goetia
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
