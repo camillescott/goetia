@@ -81,7 +81,8 @@ def test_sourmash_stream(tmpdir, datadir):
         sourmash_sig = 'sourmash.sig'
         comp_file = 'comp.csv'
 
-        goetia_cmd = ['goetia', 'sourmash', '--interval', '50000', 
+        goetia_cmd = ['goetia', 'sketch', 'sourmash',
+                      '--interval', '50000', 
                       '-K', '31', '-N', '100000', '--save-sig', goetia_sig,
                       '-i', rfile]
         sourmash_cmd = ['sourmash', 'compute', '-k', '31', '-n', '100000',
