@@ -234,12 +234,20 @@ function(cppyy_add_bindings pkg)
         list(APPEND generator_args ${arg})
     endforeach()
 
+    foreach(interface_header ${ARG_INTERFACE_HEADERS})
+        string(REPLACE "${GOETIA_INCLUDE_ROOT}" "" header_basename "${interface_header}")
+        set(header_map "${CMAKE_CURRENT_BINARY_DIR}/maps/${header_basename}.map")
+        list(APPEND header_maps ${header_map})
+        add_custom_command(OUTPUT ${header_map}
+                           COMMAND python ${Cppyygen_EXECUTABLE} 
+                                   --flags "\"${generator_args}\""
+                                   ${header_map} ${interface_header}
+                           DEPENDS ${interface_header} 
+        )
+    endforeach()
     add_custom_command(OUTPUT ${extra_map_file}
-                       COMMAND python ${Cppyygen_EXECUTABLE} 
-                               --flags "\"${generator_args}\""
-                               ${extra_map_file} ${ARG_INTERFACE_HEADERS}
-                       DEPENDS ${ARG_INTERFACE_HEADERS} 
-                       WORKING_DIRECTORY ${pkg_dir}
+                       COMMAND python ${CMAKE_SOURCE_DIR}/build-utils/merge-cppyy-maps.py ${header_maps} -o ${extra_map_file}
+                       DEPENDS ${header_maps}
     )
     #
     # Compile/link.
