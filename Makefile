@@ -8,6 +8,10 @@ clean: FORCE
 	rm -rf build dist
 	rm -rf goetia.egg-info
 	rm -rf $(LIB_BUILD_DIR)
+	rm -f goetia/libgoetiaCppyy.rootmap
+	rm -f goetia/libgoetiaCppyy.so
+	rm -f goetia/libgoetiaCppyy_rdict.pcm
+	rm -f goetia/goetia.map
 	@find ./ -type d -name __pycache__ -exec rm -rf {} +
 
 version: CMAKE_VERSION:= $(shell python version.py --cmake)
@@ -20,8 +24,10 @@ create-dev-env: environment_dev.yml
 	mamba create -n goetia-dev python=3.8
 	mamba env update -f environment_dev.yml
 
-build-lib: FORCE
+configure: FORCE
 	cmake -H. -B$(LIB_BUILD_DIR) -G Ninja
+
+build-lib: configure
 	cmake --build $(LIB_BUILD_DIR) -- -v
 
 install-lib: build-lib
