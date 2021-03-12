@@ -61,9 +61,9 @@ def get_version(cmake=False):
             subprocess.call(['git', 'status'],
                             stdout=fd_devnull, stderr=fd_devnull)
 
-        cmd = 'git diff-index --name-only HEAD'.split()
+        cmd = 'git diff-index --name-only HEAD | grep -v VERSION'
         try:
-            dirty = subprocess.check_output(cmd).decode().strip()
+            dirty = subprocess.check_output(cmd, shell=True).decode().strip()
         except subprocess.CalledProcessError:
             print('Unable to get git index status')
             exit(1)
