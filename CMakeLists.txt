@@ -1,31 +1,21 @@
-cmake_minimum_required(VERSION 3.9)
+cmake_minimum_required(VERSION 3.13)
 cmake_policy(SET CMP0063 NEW)
 
 #
 # libgoetia
 #
 
-if(DEFINED ENV{GOETIA_VERSION})
-    set(sharedlib_version "$ENV{GOETIA_VERSION}")
-    set(python_pkg_version "$ENV{GOETIA_VERSION}")
-else()
-    execute_process(COMMAND python ../version.py --cmake
-                    OUTPUT_VARIABLE sharedlib_version
-                    OUTPUT_STRIP_TRAILING_WHITESPACE
-                    )
-    execute_process(COMMAND python ../version.py
-                    OUTPUT_VARIABLE python_pkg_version
-                    OUTPUT_STRIP_TRAILING_WHITESPACE
-                    )
-endif()
-message(STATUS "version: ${python_pkg_version}")
+file(STRINGS "${CMAKE_SOURCE_DIR}/include/goetia/VERSION" sharedlib_version)
+
+message(STATUS "version: ${sharedlib_version}")
 
 project(goetia
         LANGUAGES CXX  C
         VERSION ${sharedlib_version}
         DESCRIPTION "streaming cDBG and dBG sketching algorithms"
         HOMEPAGE_URL "https://github.com/camillescott/goetia"
-        )
+)
+
 
 if(DEFINED ENV{CONDA_PREFIX})
     message(STATUS "Building in a conda environment.")
@@ -138,7 +128,7 @@ target_link_libraries(test_hashing goetia)
 # more modern way anyhow? Code was modified from the versions cppyy distributes.
 #
 cppyy_add_bindings(
-    "goetia" ${python_pkg_version}
+   "goetia" 
    LANGUAGE_STANDARD "17"
    SELECTION_XML  ${GOETIA_INCLUDE_ROOT}/include/goetia/interface.xml
    INTERFACE_FILE ${GOETIA_INCLUDE_ROOT}/include/goetia/interface.hh
@@ -153,11 +143,17 @@ cppyy_add_bindings(
 #
 # libgoetia's install commands. Installs the libgoetia shared so,
 # its headers, and any other public includes.
-#
+
 install(TARGETS goetia
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
+
+install(TARGETS ${CPPYY_LIB_TARGET}
+        LIBRARY DESTINATION ${CMAKE_SOURCE_DIR}/goetia)
+
+install(FILES  ${CPPYY_ROOTMAP} ${CPPYY_EXTRA_MAP} ${CPPYY_PCM}
+        DESTINATION ${CMAKE_SOURCE_DIR}/goetia)
 
 #install(DIRECTORY include/goetia/
 #        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/goetia
@@ -167,4 +163,3 @@ install(FILES ${CMAKE_BINARY_DIR}/goetia.pc
         DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig
 )
 
-#install(CODE "execute_process(COMMAND python -m pip install --force-reinstall --no-deps -U ${PY_WHEEL_FILE})")

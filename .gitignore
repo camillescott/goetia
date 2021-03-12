@@ -7,6 +7,10 @@ __pycache__/
 *.so
 *.cpp
 
+goetia/goetia.map
+goetia/libgoetiaCppyy.rootmap
+goetia/libgoetiaCppyy_rdict.pcm
+
 # Distribution / packaging
 .Python
 env/

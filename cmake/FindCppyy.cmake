@@ -56,56 +56,6 @@ find_library(LibCling_LIBRARY libCling.so PATHS ${Cppyy_DIR}/lib)
 
 
 #
-# Generate setup.py from the setup.py.in template.
-#
-function(cppyy_generate_setup pkg version author author_email lib_so_file rootmap_file pcm_file map_file)
-    set(SETUP_PY_FILE ${CMAKE_CURRENT_BINARY_DIR}/setup.py)
-    set(CPPYY_PKG ${pkg})
-    set(PKG_VERSION ${version})
-    set(AUTHOR ${author})
-    set(EMAIL ${author_email})
-    get_filename_component(CPPYY_LIB_SO ${lib_so_file} NAME)
-    get_filename_component(CPPYY_ROOTMAP ${rootmap_file} NAME)
-    get_filename_component(CPPYY_PCM ${pcm_file} NAME)
-    get_filename_component(CPPYY_MAP ${map_file} NAME)
-    configure_file(${CMAKE_SOURCE_DIR}/pkg_templates/setup.py.in ${SETUP_PY_FILE})
-
-    set(SETUP_PY_FILE ${SETUP_PY_FILE} PARENT_SCOPE)
-endfunction(cppyy_generate_setup)
-
-#
-# Generate a packages __init__.py using the __init__.py.in template.
-#
-function(cppyy_generate_init)
-    set(simple_args PKG LIB_FILE MAP_FILE)
-    set(list_args NAMESPACES)
-    cmake_parse_arguments(ARG
-                          ""
-                          "${simple_args}"
-                          "${list_args}"
-                          ${ARGN}
-    )
-
-    set(INIT_PY_FILE ${CMAKE_CURRENT_BINARY_DIR}/${ARG_PKG}/__init__.py)
-    set(CPPYY_PKG ${ARG_PKG})
-    get_filename_component(CPPYY_LIB_SO ${ARG_LIB_FILE} NAME)
-    get_filename_component(CPPYY_MAP ${ARG_MAP_FILE} NAME)
-
-    list(JOIN ARG_NAMESPACES ", " _namespaces)
-
-    if(NOT "${ARG_NAMESPACES}" STREQUAL "")
-        list(JOIN ARG_NAMESPACES ", " _namespaces)
-        set(NAMESPACE_INJECTIONS "from cppyy.gbl import ${_namespaces}")
-    else()
-        set(NAMESPACE_INJECTIONS "")
-    endif()
-
-    configure_file(${CMAKE_SOURCE_DIR}/pkg_templates/__init__.py.in ${INIT_PY_FILE})
-
-    set(INIT_PY_FILE ${INIT_PY_FILE} PARENT_SCOPE)
-endfunction(cppyy_generate_init)
-
-#
 # Generate a set of bindings from a set of header files. Somewhat like CMake's
 # add_library(), the output is a compiler target. In addition ancilliary files
 # are also generated to allow a complete set of bindings to be compiled,
@@ -113,9 +63,6 @@ endfunction(cppyy_generate_init)
 #
 #   cppyy_add_bindings(
 #       pkg
-#       pkg_version
-#       author
-#       author_email
 #       [URL url]
 #       [LICENSE license]
 #       [LANGUAGE_STANDARD std]
@@ -133,30 +80,6 @@ endfunction(cppyy_generate_init)
 # "discovery" of the available C++ entities using, for example Python 3's command
 # line completion support.
 #
-# This function creates setup.py, setup.cfg, and MANIFEST.in appropriate
-# for the package in the build directory. It also creates the package directory PKG,
-# and within it a tests subdmodule PKG/tests/test_bindings.py to sanity test the bindings.
-# Further, it creates PKG/pythonizors/, which can contain files of the form
-# pythonize_*.py, with functions of the form pythonize_<NAMESPACE>_*.py, which will
-# be consumed by the initialization routine and added as pythonizors for their associated
-# namespace on import.
-# 
-# The setup.py and setup.cfg are prepared to create a Wheel. They can be customized
-# for the particular package by modifying the templates in pkg_templates/.
-#
-# The bindings are generated/built/packaged using 3 environments:
-#
-#   - One compatible with the header files being bound. This is used to
-#     generate the generic C++ binding code (and some ancilliary files) using
-#     a modified C++ compiler. The needed options must be compatible with the
-#     normal build environment of the header files.
-#
-#   - One to compile the generated, generic C++ binding code using a standard
-#     C++ compiler. The resulting library code is "universal" in that it is
-#     compatible with both Python2 and Python3.
-#
-#   - One to package the library and ancilliary files into standard Python2/3
-#     wheel format. The packaging is done using native Python tooling.
 #
 # Arguments and options:
 #
@@ -164,7 +87,6 @@ endfunction(cppyy_generate_init)
 #                       of the form "simplename" (e.g. "Akonadi"), or of the
 #                       form "namespace.simplename" (e.g. "KF5.Akonadi").
 #
-#   pkg_version         The version of the package.
 #
 #
 #   LANGUAGE_STANDARD std
@@ -172,6 +94,8 @@ endfunction(cppyy_generate_init)
 #
 #   INTERFACE_FILE      Header to be passed to genreflex. Should contain template
 #                       specialization declarations if required.
+#
+#   INTERFACE_HEADERS   List of headers to run cppyy-generator on.
 #
 #   HEADERS             Library headers from which to generate the map. Should match up with
 #                       interface file includes.
@@ -198,18 +122,15 @@ endfunction(cppyy_generate_init)
 #   LINK_LIBRARIES library
 #                       Libraries to link against.
 #
-#   NAMESPACES          List of C++ namespaces which should be imported into the
-#                       bindings' __init__.py. This avoids having to write imports
-#                       of the form `from PKG import NAMESPACE`.
+
 #
 #
 # Returns via PARENT_SCOPE variables:
 #
 #   CPPYY_LIB_TARGET    The target cppyy bindings shared library.
 #
-#   SETUP_PY_FILE       The generated setup.py.
 #
-function(cppyy_add_bindings pkg pkg_version)
+function(cppyy_add_bindings pkg)
     set(simple_args LANGUAGE_STANDARD INTERFACE_FILE SELECTION_XML )
     set(list_args HEADERS INTERFACE_HEADERS COMPILE_OPTIONS INCLUDE_DIRS LINK_LIBRARIES 
         GENERATE_OPTIONS NAMESPACES)
@@ -228,9 +149,9 @@ function(cppyy_add_bindings pkg pkg_version)
     set(lib_name "${pkg_namespace}${pkg_simplename}Cppyy")
     set(lib_file ${CMAKE_SHARED_LIBRARY_PREFIX}${lib_name}${CMAKE_SHARED_LIBRARY_SUFFIX})
     set(cpp_file ${CMAKE_CURRENT_BINARY_DIR}/${pkg_simplename}.cpp)
-    set(pcm_file ${CMAKE_SHARED_LIBRARY_PREFIX}${lib_name}_rdict.pcm)
-    set(rootmap_file ${CMAKE_SHARED_LIBRARY_PREFIX}${lib_name}.rootmap)
-    set(extra_map_file ${pkg_simplename}.map)
+    set(pcm_file ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}${lib_name}_rdict.pcm)
+    set(rootmap_file ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}${lib_name}.rootmap)
+    set(extra_map_file ${CMAKE_CURRENT_BINARY_DIR}/${pkg_simplename}.map)
 
     #
     # Language standard.
@@ -339,8 +260,10 @@ function(cppyy_add_bindings pkg pkg_version)
 
     set(LIBCLING         ${LibCling_LIBRARY} PARENT_SCOPE)
     set(CPPYY_LIB_TARGET ${lib_name} PARENT_SCOPE)
-    #set(SETUP_PY_FILE    ${SETUP_PY_FILE} PARENT_SCOPE)
-    #set(PY_WHEEL_FILE    ${pkg_whl}  PARENT_SCOPE)
+    set(CPPYY_ROOTMAP    ${rootmap_file} PARENT_SCOPE)
+    set(CPPYY_PCM        ${pcm_file} PARENT_SCOPE)
+    set(CPPYY_EXTRA_MAP  ${extra_map_file} PARENT_SCOPE)
+
 endfunction(cppyy_add_bindings)
 
 
