@@ -4,7 +4,7 @@ import cppyy
 from .initializor import initialize
 
 with open(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'VERSION')) as fp:
-    version = fp.read().strip()
+    __version__ = fp.read().strip()
 
 initialize('goetia', 'libgoetiaCppyy.so', 'goetia.map')
 del initialize
