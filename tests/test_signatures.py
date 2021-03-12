@@ -69,6 +69,9 @@ def test_draff_to_numpy(datadir):
     assert len(np_sig) == len(py_sig)
     assert list(np_sig) == list(py_sig)
 
+    for np_val, py_val in zip(list(np_sig), list(py_sig)):
+        assert np_val == py_val
+
 
 def test_sourmash_stream(tmpdir, datadir):
     with tmpdir.as_cwd():

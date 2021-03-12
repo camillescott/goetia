@@ -64,7 +64,7 @@ def pythonize_goetia_signatures(klass, name):
                 if storage_args is None:
                     sig = build_func(W, K, ukhs.__smartptr__())
                 else:
-                    sig = build_func(W, K, ukhs.__smartptr__(), klass.storage_type.make_params(storage_args))
+                    sig = build_func(W, K, ukhs.__smartptr__(), klass.storage_type.make_params(*storage_args))
                 return sig
             return wrapped
         
