@@ -1,4 +1,4 @@
-name: goetia
+name: goetia-env
 channels:
     - bioconda
     - conda-forge

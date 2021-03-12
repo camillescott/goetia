@@ -1,6 +1,0 @@
-recursive-include @PKG@ *.pcm *.so *.rootmap *.map
-recursive-include @PKG@/data *.txt.gz
-
-include @PKG@/schemapi/*.json
-include lib@PKG@.so
-

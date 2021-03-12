@@ -7,6 +7,10 @@ __pycache__/
 *.so
 *.cpp
 
+goetia/goetia.map
+goetia/libgoetiaCppyy.rootmap
+goetia/libgoetiaCppyy_rdict.pcm
+
 # Distribution / packaging
 .Python
 env/
@@ -109,8 +113,8 @@ tox_build/
 
 work/
 data/
-cython_debug/
-Debug/
+cmake_build/
+cmake_debug/
 envs
 
 *.o
