@@ -113,8 +113,8 @@ tox_build/
 
 work/
 data/
-cython_debug/
-Debug/
+cmake_build/
+cmake_debug/
 envs
 
 *.o
