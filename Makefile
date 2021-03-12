@@ -10,11 +10,11 @@ clean: FORCE
 	rm -rf $(LIB_BUILD_DIR)
 	@find ./ -type d -name __pycache__ -exec rm -rf {} +
 
+version: export CMAKE_VERSION=`python version.py --cmake`
+version: export VERSION=`python version.py`
 version: FORCE
-	VERSION=`python version.py`
-	CMAKE_VERSION=`python version.py --cmake`
-	echo $(VERSION) > goeta/VERSION
-	echo $(CMAKE_VERSION) > include/goetia/VERSION
+	echo ${CMAKE_VERSION} > include/goetia/VERSION
+	echo ${VERSION} > goeta/VERSION 
 
 create-dev-env: environment_dev.yml
 	mamba create -n goetia-dev python=3.8
