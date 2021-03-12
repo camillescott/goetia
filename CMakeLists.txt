@@ -143,7 +143,7 @@ cppyy_add_bindings(
 #
 # libgoetia's install commands. Installs the libgoetia shared so,
 # its headers, and any other public includes.
-
+#
 install(TARGETS goetia
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}

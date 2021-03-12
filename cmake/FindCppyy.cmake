@@ -134,6 +134,7 @@ function(cppyy_add_bindings pkg)
     set(simple_args LANGUAGE_STANDARD INTERFACE_FILE SELECTION_XML )
     set(list_args HEADERS INTERFACE_HEADERS COMPILE_OPTIONS INCLUDE_DIRS LINK_LIBRARIES 
         GENERATE_OPTIONS NAMESPACES)
+
     cmake_parse_arguments(
         ARG
         ""
