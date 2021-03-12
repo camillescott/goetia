@@ -10,7 +10,7 @@ from goetia.cli.args import GoetiaArgumentParser
 from goetia.cli.cdbg_stream import cDBGRunner
 from goetia.cli.solid_filter import SolidFilterRunner
 from goetia.cli.sourmash_stream import SourmashRunner
-from goetia.draff import DraffRunner
+from goetia.cli.draff_stream import DraffRunner
 
 
 def main():

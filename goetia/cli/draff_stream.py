@@ -108,13 +108,3 @@ class DraffRunner(SignatureRunner):
             for t, distance in zip(distances_t, distances):
                 print(t, ',', distance, file=fp)
 
-
-def run_draff():
-    term   = blessings.Terminal()
-    with term.hidden_cursor():
-        runner = DraffRunner()
-        stream = DraffStream(runner, term)
-
-        runner.run()
-
-    return 0
