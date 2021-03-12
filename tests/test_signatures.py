@@ -13,6 +13,8 @@ from goetia.sketches import SourmashSketch, UnikmerSketch
 from goetia.storage import SparseppSetStorage
 
 from .utils import *
+
+import pandas as pd
 import screed
 
 
@@ -66,3 +68,27 @@ def test_draff_to_numpy(datadir):
 
     assert len(np_sig) == len(py_sig)
     assert list(np_sig) == list(py_sig)
+
+
+def test_sourmash_stream(tmpdir, datadir):
+    with tmpdir.as_cwd():
+        rfile = datadir('sacPom.pombase.fa.gz')
+
+        goetia_sig = 'goetia.sig'
+        sourmash_sig = 'sourmash.sig'
+        comp_file = 'comp.csv'
+
+        goetia_cmd = ['goetia', 'sourmash', '--interval', '50000', 
+                      '-K', '31', '-N', '100000', '--save-sig', goetia_sig,
+                      '-i', rfile]
+        sourmash_cmd = ['sourmash', 'compute', '-k', '31', '-n', '100000',
+                        '-o', sourmash_sig, rfile]
+        compare_cmd = ['sourmash', 'compare', goetia_sig, sourmash_sig, '--csv', comp_file]
+
+        run_shell_cmd(goetia_cmd)
+        run_shell_cmd(sourmash_cmd)
+        run_shell_cmd(compare_cmd)
+
+        comp = pd.read_csv(comp_file)
+        assert comp.all().all()
+

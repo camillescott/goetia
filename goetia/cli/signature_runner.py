@@ -182,7 +182,10 @@ class SignatureRunner(CommandRunner):
             curio.run(self.processor.start, with_monitor=args.curio_monitor)
 
         if args.save_sig:
-            self._save_signatures(self.sigs.values(), args)
+            if args.save_stream:
+                self._save_signatures(self.sigs.values(), args)
+            else:
+                self._save_signatures([self.sigs.tail()], args)
 
     def teardown(self):
         pass
