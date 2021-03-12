@@ -10,6 +10,7 @@ dependencies:
     - pytest
     - numpy
     - scipy
+    - pandas
     - openmp
     - screed
     - blessings
