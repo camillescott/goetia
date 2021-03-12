@@ -4,3 +4,4 @@
 #include "goetia/storage/qfstorage.hh"
 #include "goetia/storage/bytestorage.hh"
 #include "goetia/storage/sparseppstorage.hh"
+#include "goetia/storage/phmapstorage.hh"

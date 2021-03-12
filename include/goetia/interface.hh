@@ -23,6 +23,7 @@
 #include "goetia/storage/bytestorage.hh"
 #include "goetia/storage/partitioned_storage.hh"
 #include "goetia/storage/sparseppstorage.hh"
+#include "goetia/storage/phmapstorage.hh"
 #include "goetia/storage/sparsepp/spp.h"
 
 #include "goetia/hashing/kmeriterator.hh"

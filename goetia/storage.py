@@ -2,6 +2,7 @@ from goetia import libgoetia
 from goetia.utils import check_trait
 
 typenames = [(t, t.__name__.replace(' ', '')) for t in [libgoetia.storage.SparseppSetStorage,
+                                                        libgoetia.storage.PHMapStorage,
                                                         libgoetia.storage.BitStorage,
                                                         libgoetia.storage.ByteStorage,
                                                         libgoetia.storage.NibbleStorage]]
@@ -38,7 +39,10 @@ def process_storage_args(args):
     args.storage = getattr(libgoetia.storage, args.storage)
 
     args.storage_args = ()
-    if args.storage is not libgoetia.storage.SparseppSetStorage:
+    if args.storage not in (libgoetia.storage.SparseppSetStorage,
+                            libgoetia.storage.PHMapStorage):
         args.max_tablesize = int(args.max_tablesize)
         args.storage_args = (args.max_tablesize, args.n_tables)
+    else:
+        args.storage_args = None
 

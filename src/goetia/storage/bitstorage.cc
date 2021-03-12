@@ -76,35 +76,6 @@ BitStorage::build(const typename StorageTraits<BitStorage>::params_type& params)
     return make_shared_from_tuple<BitStorage>(params);
 }
 
-
-const bool
-BitStorage::insert( value_type khash ) {
-    bool is_new_kmer = false;
-
-    for (size_t i = 0; i < _n_tables; i++) {
-        uint64_t bin = khash % _tablesizes[i];
-        uint64_t byte = bin / 8;
-        unsigned char bit = (unsigned char)(1 << (bin % 8));
-
-        unsigned char bits_orig = __sync_fetch_and_or( *(_counts + i) +
-                                  byte, bit );
-        if (!(bits_orig & bit)) {
-            if (i == 0) {
-                __sync_add_and_fetch( &_occupied_bins, 1 );
-            }
-            is_new_kmer = true;
-        }
-    } // iteration over hashtables
-
-    if (is_new_kmer) {
-        __sync_add_and_fetch( &_n_unique_kmers, 1 );
-        return 1; // kmer not seen before
-    }
-
-    return 0; // kmer already seen
-} // test_and_set_bits
-
-
 const count_t
 BitStorage::insert_and_query(value_type khash)
 {

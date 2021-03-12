@@ -4,6 +4,7 @@
 #include "goetia/storage/bytestorage.hh"
 #include "goetia/storage/nibblestorage.hh"
 #include "goetia/storage/sparseppstorage.hh"
+#include "goetia/storage/phmapstorage.hh"
 
 #include <iostream>
 #include <memory>
@@ -35,6 +36,7 @@ void run_storage_bench() {
     std::unique_ptr<storage::NibbleStorage> nibblestorage;
     std::unique_ptr<storage::ByteStorage> bytestorage;
     std::unique_ptr<storage::SparseppSetStorage> sparseppstorage;
+    std::unique_ptr<storage::PHMapStorage> phmapstorage;
     
     std::cout << "storage_type, n_hashes, bench, time" << std::endl;
     for (auto n_hashes : hashes_sizes) {
@@ -42,6 +44,7 @@ void run_storage_bench() {
         nibblestorage = std::make_unique<storage::NibbleStorage>(n_hashes / 4, 4);
         bytestorage = std::make_unique<storage::ByteStorage>(n_hashes / 4, 4);
         sparseppstorage  = std::make_unique<storage::SparseppSetStorage>();
+        phmapstorage = std::make_unique<storage::PHMapStorage>();
 
         auto hashes = generate_hashes(n_hashes);
 
@@ -49,6 +52,7 @@ void run_storage_bench() {
             _run_storage_bench(bitstorage, hashes, "BitStorage");
             _run_storage_bench(nibblestorage, hashes, "NibbleStorage");
             _run_storage_bench(bytestorage, hashes, "ByteStorage");
+            _run_storage_bench(phmapstorage, hashes, "PHMapStorage");
             _run_storage_bench(sparseppstorage, hashes, "SparseppSetStorage");
         }
     }

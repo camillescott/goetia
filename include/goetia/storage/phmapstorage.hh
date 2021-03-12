@@ -1,18 +1,17 @@
 /**
- * (c) Camille Scott, 2019
- * File   : sparseppstorage.hh
+ * (c) Camille Scott, 2021
+ * File   : phmapstorage.hh
  * License: MIT
  * Author : Camille Scott <camille.scott.w@gmail.com>
- * Date   : 30.08.2019
+ * Date   : 12.03.2021
  */
 
-
-#ifndef GOETIA_SPARSEPPSETSTORAGE_HH
-#define GOETIA_SPARSEPPSETSTORAGE_HH
+#ifndef GOETIA_PHMAPSTORAGE_HH
+#define GOETIA_PHMAPSTORAGE_HH
 
 #include "goetia/meta.hh"
 #include "goetia/storage/storage.hh"
-#include "goetia/storage/sparsepp/spp.h"
+#include "goetia/storage/phmap/phmap.h"
 
 #include <cstdint>
 #include <fstream>
@@ -22,11 +21,10 @@
 
 namespace goetia::storage {
 
-class SparseppSetStorage;
-
+class PHMapStorage;
 
 template<>
-struct StorageTraits<SparseppSetStorage> {
+struct StorageTraits<PHMapStorage> {
     static constexpr bool is_probabilistic = false;
     static constexpr bool is_counting      = false;
 
@@ -35,14 +33,14 @@ struct StorageTraits<SparseppSetStorage> {
 };
 
 
-class SparseppSetStorage : public Storage<uint64_t>,
-                           public Tagged<SparseppSetStorage> {
+class PHMapStorage : public Storage<uint64_t>,
+                           public Tagged<PHMapStorage> {
 
 public:
     
     using Storage<uint64_t>::value_type;
-    using Traits = StorageTraits<SparseppSetStorage>;
-    typedef spp::sparse_hash_set<value_type> store_type;
+    using Traits = StorageTraits<PHMapStorage>;
+    typedef phmap::parallel_flat_hash_set<value_type> store_type;
 
 protected:
 
@@ -50,20 +48,20 @@ protected:
 
 public:
     
-    SparseppSetStorage()
+    PHMapStorage()
     {
         _store = std::make_unique<store_type>();
     }
 
-    static std::shared_ptr<SparseppSetStorage> build();
+    static std::shared_ptr<PHMapStorage> build();
 
-    static std::shared_ptr<SparseppSetStorage> build(const typename StorageTraits<SparseppSetStorage>::params_type&);
+    static std::shared_ptr<PHMapStorage> build(const typename StorageTraits<PHMapStorage>::params_type&);
 
-    static std::shared_ptr<SparseppSetStorage> deserialize(std::ifstream& in);
+    static std::shared_ptr<PHMapStorage> deserialize(std::ifstream& in);
 
     void serialize(std::ofstream& out);
 
-    std::shared_ptr<SparseppSetStorage> clone() const;
+    std::shared_ptr<PHMapStorage> clone() const;
 
     void reset() {
         _store->clear();
@@ -109,14 +107,15 @@ public:
 
 
 template<>
-struct is_probabilistic<SparseppSetStorage> { 
+struct is_probabilistic<PHMapStorage> { 
     static const bool value = false;
 };
 
 template<>
-struct is_counting<SparseppSetStorage> {
+struct is_counting<PHMapStorage> {
     static const bool value = false;
 };
+
 
 }
 #endif
