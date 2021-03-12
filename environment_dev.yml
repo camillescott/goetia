@@ -6,6 +6,7 @@ dependencies:
     - boltons
     - cppyy=1.6.2
     - cmake
+    - ninja
     - pytest
     - numpy
     - scipy

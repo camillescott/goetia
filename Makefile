@@ -1,0 +1,38 @@
+LIB_BUILD_DIR = cmake_build
+
+# $(LIB_BUILD_DIR)/libgoetiaCppyy.so $(LIB_BUILD_DIR)/libgoetia.so
+
+all: install-lib
+
+clean: FORCE
+	rm -rf build dist
+	rm -rf goetia.egg-info
+	rm -rf $(LIB_BUILD_DIR)
+	@find ./ -type d -name __pycache__ -exec rm -rf {} +
+
+version: FORCE
+	python version.py > goetia/VERSION
+	python version.py --cmake > include/goetia/VERSION
+
+create-dev-env: environment_dev.yml
+	mamba create -n goetia-dev python=3.8
+	mamba env update -f environment_dev.yml
+
+build-lib: version FORCE
+	cmake -H. -B$(LIB_BUILD_DIR) -G Ninja
+	cmake --build $(LIB_BUILD_DIR) -- -v
+
+install-lib: build-lib
+	cmake --install $(LIB_BUILD_DIR)
+
+bdist_wheel: install-lib
+	python setup.py bdist_wheel
+
+install: bdist_wheel
+	python -m pip install --no-deps 
+
+compile-commands: FORCE
+	cmake -H. -Bcmake_debug -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=YES
+	ln -fs cmake_debug/compile_commands.json .
+
+FORCE:
