@@ -9,6 +9,28 @@ file(STRINGS "${CMAKE_SOURCE_DIR}/include/goetia/VERSION" sharedlib_version)
 
 message(STATUS "version: ${sharedlib_version}")
 
+include(CheckCXXCompilerFlag)
+#
+# Make the default build use c++17 and "RELEASE" (-O3)
+#
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_CXX_VISIBILITY_PRESET default)
+set(CMAKE_VISIBILITY_INLINES_HIDDEN 0)
+set(CMAKE_LINK_WHAT_YOU_USE TRUE)
+
+if(NOT CMAKE_BUILD_TYPE) 
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING
+        "Choose the type of build, options are: Debug Release"
+        FORCE
+    )
+endif(NOT CMAKE_BUILD_TYPE)
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native")
+set(CMAKE_CXX_FLAGS_DEBUG "-O0")
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+
 project(goetia
         LANGUAGES CXX  C
         VERSION ${sharedlib_version}
@@ -50,25 +72,6 @@ find_library(LIBSOURMASH sourmash)
 message(STATUS ${LIBSOURMASH})
 
 #
-# Make the default build use c++17 and "RELEASE" (-O3)
-#
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-set(CMAKE_CXX_VISIBILITY_PRESET default)
-set(CMAKE_VISIBILITY_INLINES_HIDDEN 0)
-set(CMAKE_LINK_WHAT_YOU_USE TRUE)
-if(NOT CMAKE_BUILD_TYPE) 
-    set(CMAKE_BUILD_TYPE "Release" CACHE STRING
-        "Choose the type of build, options are: Debug Release"
-        FORCE
-    )
-endif(NOT CMAKE_BUILD_TYPE)
-set(CMAKE_CXX_FLAGS_RELEASE "-O3")
-set(CMAKE_CXX_FLAGS_DEBUG "-O0")
-
-#
 # The goetia shared library needs all the source files, the direct object
 # targets, and the gfakluge static library.
 #
@@ -79,6 +82,7 @@ set_target_properties(goetia PROPERTIES LINKER_LANGUAGE CXX)
 set_target_properties(goetia PROPERTIES CXX_VISIBILITY_PRESET default)
 set_property(TARGET goetia PROPERTY LINK_WHAT_YOU_USE TRUE)
 set_property(TARGET goetia PROPERTY VISIBILITY_INLINES_HIDDEN 0)
+set_property(TARGET goetia PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 set_target_properties(goetia PROPERTIES
                       VERSION ${PROJECT_VERSION}
                       SOVERSION 1
