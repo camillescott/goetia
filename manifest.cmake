@@ -39,6 +39,7 @@ set(_headers
     include/goetia/sketches/sourmash/sourmash.hpp
     include/goetia/sketches/sourmash/sourmash.h
     include/goetia/sketches/sourmash_sketch.hh
+    include/goetia/sketches/hllcounter.hh
     include/goetia/sketches/unikmer_sketch.hh
     include/goetia/storage/bitstorage.hh
     include/goetia/storage/bytestorage.hh
@@ -68,6 +69,7 @@ set(_sources
     src/goetia/storage/partitioned_storage.cc
     src/goetia/sketches/unikmer_sketch.cc
     src/goetia/sketches/sourmash_sketch.cc
+    src/goetia/sketches/hllcounter.cc
     src/goetia/benchmarks/bench_storage.cc
     src/goetia/hashing/hashshifter.cc
     src/goetia/hashing/hashextender.cc
@@ -132,6 +134,7 @@ set(_interface_headers
     include/goetia/solidifier.hh
     include/goetia/sketches/sourmash/sourmash.hpp
     include/goetia/sketches/sourmash_sketch.hh
+    include/goetia/sketches/hllcounter.hh
     include/goetia/sketches/unikmer_sketch.hh
     include/goetia/storage/bitstorage.hh
     include/goetia/storage/bytestorage.hh

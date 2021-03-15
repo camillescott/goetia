@@ -6,15 +6,18 @@
 # Author : Camille Scott <camille.scott.w@gmail.com>
 # Date   : 16.10.2019
 
-import pytest
+import random
 
 from goetia.hashing import Canonical, StrandAware
-from goetia.sketches import SourmashSketch, UnikmerSketch
+from goetia.sketches import SourmashSketch, UnikmerSketch, HLLCounter
 from goetia.storage import SparseppSetStorage
 
 from .utils import *
 
+import cppyy
+import numpy as np
 import pandas as pd
+import pytest
 import screed
 
 
@@ -71,6 +74,29 @@ def test_draff_to_numpy(datadir):
 
     for np_val, py_val in zip(list(np_sig), list(py_sig)):
         assert np_val == py_val
+
+
+def test_hllcounter():
+    ints = set(np.random.randint(0, 100000, 100000))
+    e = 0.01
+    hll = HLLCounter(e)
+
+    for i in ints:
+        hll.insert(cppyy.gbl.uint64_t(i))
+
+    est = hll.estimate_cardinality()
+    act = len(ints)
+    
+    margin = (2 * e) * act
+
+    print(act)
+    print(est)
+    print(hll.get_ncounters())
+    print(hll.get_error_rate())
+    print(hll.get_alpha())
+    print(hll.get_erate())
+
+    assert (act - margin) < est < (act + margin)
 
 
 def test_sourmash_stream(tmpdir, datadir):

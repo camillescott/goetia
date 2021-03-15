@@ -1,7 +1,7 @@
 <lcgdict>
     <selection>
         <namespace pattern="goetia::storage::*"/>
-        <namespace pattern="goetia::signatures::*"/>
+        <namespace pattern="goetia::sketches::*"/>
         <namespace pattern="goetia::cdbg::*"/>
 
         <namespace pattern="goetia::hashing::*"/>

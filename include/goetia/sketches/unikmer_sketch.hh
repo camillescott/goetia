@@ -25,6 +25,7 @@
 #include "goetia/hashing/ukhs.hh"
 #include "goetia/hashing/unikmershifter.hh"
 #include "goetia/hashing/canonical.hh"
+#include "goetia/sketches/hllcounter.hh"
 #include "goetia/storage/storage_types.hh"
 
 #include "goetia/pdbg.hh"
@@ -85,23 +86,6 @@ struct UnikmerSketch {
                                                     storage_params);
         }
 
-/*
-        template <typename... Args>
-        explicit Sketch(uint16_t W,
-                           uint16_t K,
-                           std::shared_ptr<ukhs_type> ukhs_map,
-                           Args&&... args)
-            : W        (W),
-              K        (K),
-              ukhs_map (ukhs_map)
-        {
-            sketch = std::make_shared<pdbg_type>(W,
-                                                    K,
-                                                    ukhs_map,
-                                                    std::forward<Args>(args)...);
-        }
-*/
-
         static std::shared_ptr<Sketch> build(uint16_t W,
                                                 uint16_t K,
                                                 std::shared_ptr<ukhs_type> ukhs_map) {
@@ -115,24 +99,6 @@ struct UnikmerSketch {
             return std::make_shared<Sketch>(W, K, ukhs_map, storage_params);
         }
 
-/*
-        template<typename...Args>
-        static std::shared_ptr<Sketch> build(uint16_t W,
-                                                uint16_t K,
-                                                std::shared_ptr<ukhs_type> ukhs_map,
-                                                Args&&... args) {
-            return std::make_shared<Sketch>(W, K, ukhs_map, std::forward<Args>(args)...);
-        }
-
-
-        template<typename U = StorageType>
-        static std::shared_ptr<Sketch> build(uint16_t W,
-                                                uint16_t K,
-                                                std::shared_ptr<ukhs_type> ukhs_map,
-                                                typename std::enable_if_t<std::is_same<U, goetia::storage::SparseppSetStorage>::value, U*> = 0) {
-            return std::make_shared<Sketch>(W, K, ukhs_map);
-        }
-*/
         inline void insert(const std::string& kmer) {
             sketch->insert(kmer);
         }
@@ -199,6 +165,9 @@ extern template class sketches::UnikmerSketch<storage::NibbleStorage, hashing::C
 
 extern template class sketches::UnikmerSketch<storage::QFStorage, hashing::Hash<uint64_t>>;
 extern template class sketches::UnikmerSketch<storage::QFStorage, hashing::Canonical<uint64_t>>;
+
+extern template class sketches::UnikmerSketch<storage::HLLStorage, hashing::Hash<uint64_t>>;
+extern template class sketches::UnikmerSketch<storage::HLLStorage, hashing::Canonical<uint64_t>>;
 
 }
 }
