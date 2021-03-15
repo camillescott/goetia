@@ -23,7 +23,7 @@ def test_sourmash_signature(datadir, ksize):
 
     rfile = datadir('random-20-a.fa')
 
-    goetia_sig = SourmashSketch.Signature.build(10000, 31, False, False, False, 42, 0)
+    goetia_sig = SourmashSketch.Sketch.build(10000, 31, False, False, False, 42, 0)
     sourmash_sig = sourmash.MinHash(10000, 31)
 
     processor = SourmashSketch.Processor.build(goetia_sig)
@@ -41,7 +41,7 @@ def test_sourmash_scaled(datadir, ksize):
     import sourmash
 
     rfile = datadir('random-20-a.fa')
-    goetia_sig = SourmashSketch.Signature.build(0, 31, False, False, False, 42, 1000)
+    goetia_sig = SourmashSketch.Sketch.build(0, 31, False, False, False, 42, 1000)
     sourmash_sig = sourmash.MinHash(0, 31, scaled=1000)
 
     processor = SourmashSketch.Processor.build(goetia_sig)
@@ -59,12 +59,12 @@ def test_draff_to_numpy(datadir):
     rfile = datadir('random-20-a.fa')
 
     sketch_t = UnikmerSketch[SparseppSetStorage, StrandAware]
-    sketch = sketch_t.Signature.build(31, 7)
+    sketch = sketch_t.Sketch.build(31, 7)
     processor = sketch_t.Processor.build(sketch)
     processor.process(rfile)
 
     np_sig = sketch.to_numpy()
-    py_sig = list(sketch.get_signature())
+    py_sig = list(sketch.get_sketch_as_vector())
 
     assert len(np_sig) == len(py_sig)
     assert list(np_sig) == list(py_sig)

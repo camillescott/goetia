@@ -146,7 +146,7 @@ struct UnikmerSketch {
             return sketch->n_partitions();
         }
 
-        std::vector<size_t> get_sketch() {
+        std::vector<size_t> get_sketch_as_vector() {
             return sketch->get_partition_counts();
         }
 

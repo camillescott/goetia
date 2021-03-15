@@ -19,6 +19,7 @@ from cppyy.gbl import std
 
 from goetia import libgoetia
 from goetia.hashing import Canonical, StrandAware
+from goetia.sketches import UnikmerSketch
 from goetia.signatures import DraffSignature
 from goetia.storage import get_storage_args, process_storage_args
 from goetia.cli.signature_runner import SignatureRunner
@@ -75,7 +76,7 @@ class DraffRunner(SignatureRunner):
     
     def postprocess_args(self, args):
         process_storage_args(args)
-        args.signature_t = libgoetia.signatures.UnikmerSignature[args.storage, StrandAware]
+        args.sketch_t = UnikmerSketch[args.storage, StrandAware]
         super().postprocess_args(args)
         self._distance_metric = getattr(dmetrics, args.distance_metric)
     
@@ -85,11 +86,11 @@ class DraffRunner(SignatureRunner):
 
     @staticmethod
     def _make_signature(args):
-        return args.signature_t.Signature.build(args.W, args.K, storage_args=args.storage_args)
+        return args.sketch_t.Sketch.build(args.W, args.K, storage_args=args.storage_args)
     
     @staticmethod
     def _make_processor(signature, args):
-        return args.signature_t.Processor.build(signature,
+        return args.sketch_t.Processor.build(signature,
                                                 args.interval)
     
     @staticmethod

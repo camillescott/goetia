@@ -68,4 +68,4 @@ def pythonize_goetia_sketches(klass, name):
                 return sig
             return wrapped
         
-        klass.Sketch.build = wrap_build(klass.Signature.build)
+        klass.Sketch.build = wrap_build(klass.Sketch.build)
