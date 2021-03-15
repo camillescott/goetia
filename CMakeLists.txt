@@ -9,6 +9,28 @@ file(STRINGS "${CMAKE_SOURCE_DIR}/include/goetia/VERSION" sharedlib_version)
 
 message(STATUS "version: ${sharedlib_version}")
 
+include(CheckCXXCompilerFlag)
+#
+# Make the default build use c++17 and "RELEASE" (-O3)
+#
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_CXX_VISIBILITY_PRESET default)
+set(CMAKE_VISIBILITY_INLINES_HIDDEN 0)
+set(CMAKE_LINK_WHAT_YOU_USE TRUE)
+
+if(NOT CMAKE_BUILD_TYPE) 
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING
+        "Choose the type of build, options are: Debug Release"
+        FORCE
+    )
+endif(NOT CMAKE_BUILD_TYPE)
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native")
+set(CMAKE_CXX_FLAGS_DEBUG "-O0")
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+
 project(goetia
         LANGUAGES CXX  C
         VERSION ${sharedlib_version}
@@ -50,25 +72,6 @@ find_library(LIBSOURMASH sourmash)
 message(STATUS ${LIBSOURMASH})
 
 #
-# Make the default build use c++17 and "RELEASE" (-O3)
-#
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-set(CMAKE_CXX_VISIBILITY_PRESET default)
-set(CMAKE_VISIBILITY_INLINES_HIDDEN 0)
-set(CMAKE_LINK_WHAT_YOU_USE TRUE)
-if(NOT CMAKE_BUILD_TYPE) 
-    set(CMAKE_BUILD_TYPE "Release" CACHE STRING
-        "Choose the type of build, options are: Debug Release"
-        FORCE
-    )
-endif(NOT CMAKE_BUILD_TYPE)
-set(CMAKE_CXX_FLAGS_RELEASE "-O3")
-set(CMAKE_CXX_FLAGS_DEBUG "-O0")
-
-#
 # The goetia shared library needs all the source files, the direct object
 # targets, and the gfakluge static library.
 #
@@ -79,6 +82,7 @@ set_target_properties(goetia PROPERTIES LINKER_LANGUAGE CXX)
 set_target_properties(goetia PROPERTIES CXX_VISIBILITY_PRESET default)
 set_property(TARGET goetia PROPERTY LINK_WHAT_YOU_USE TRUE)
 set_property(TARGET goetia PROPERTY VISIBILITY_INLINES_HIDDEN 0)
+set_property(TARGET goetia PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 set_target_properties(goetia PROPERTIES
                       VERSION ${PROJECT_VERSION}
                       SOVERSION 1
@@ -113,7 +117,7 @@ configure_file(src/goetia/goetia.pc.in goetia.pc @ONLY)
 #
 # Benchmark exes
 #
-add_executable(do_bench_storage EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/src/goetia/benchmarks/do_bench_storage.cc)
+add_executable(do_bench_storage ${CMAKE_SOURCE_DIR}/src/goetia/benchmarks/do_bench_storage.cc)
 target_link_libraries(do_bench_storage goetia)
 
 add_executable(test_hashing EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/src/goetia/benchmarks/benchmark_hashing.cc)
@@ -155,6 +159,8 @@ install(TARGETS ${CPPYY_LIB_TARGET}
 install(FILES  ${CPPYY_ROOTMAP} ${CPPYY_EXTRA_MAP} ${CPPYY_PCM}
         DESTINATION ${CMAKE_SOURCE_DIR}/goetia)
 
+install(TARGETS do_bench_storage
+        RUNTIME DESTINATION ${CMAKE_SOURCE_DIR/benchmarks})
 #install(DIRECTORY include/goetia/
 #        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/goetia
 #)

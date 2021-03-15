@@ -748,6 +748,12 @@ public:
 extern template class cdbg::cDBG<dBG<storage::BitStorage, hashing::FwdLemireShifter>>;
 extern template class cdbg::cDBG<dBG<storage::BitStorage, hashing::CanLemireShifter>>;
 
+extern template class cdbg::cDBG<dBG<storage::PHMapStorage, hashing::FwdLemireShifter>>;
+extern template class cdbg::cDBG<dBG<storage::PHMapStorage, hashing::CanLemireShifter>>;
+
+extern template class cdbg::cDBG<dBG<storage::BTreeStorage, hashing::FwdLemireShifter>>;
+extern template class cdbg::cDBG<dBG<storage::BTreeStorage, hashing::CanLemireShifter>>;
+
 extern template class cdbg::cDBG<dBG<storage::SparseppSetStorage, hashing::FwdLemireShifter>>;
 extern template class cdbg::cDBG<dBG<storage::SparseppSetStorage, hashing::CanLemireShifter>>;
 

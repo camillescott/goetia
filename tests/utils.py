@@ -28,6 +28,10 @@ from goetia.hashing import (FwdLemireShifter, CanLemireShifter,
                            UKHS)
 
 
+# don't use HLLStorage for the dBG tests, it isn't meant to work
+storage_types = [t for t in storage_types if 'HLLStorage' not in t.__name__]
+
+
 @pytest.fixture(params=storage_types, ids=lambda t: pretty_repr(t))
 def storage_type(request):
     return request.param
@@ -64,8 +68,12 @@ def store(storage_type):
 @pytest.fixture
 def partitioned_graph(storage_type, ksize):
 
-    if storage_type is libgoetia.storage.SparseppSetStorage:
+    if storage_type in [libgoetia.storage.SparseppSetStorage,
+                        libgoetia.storage.BTreeStorage,
+                        libgoetia.storage.PHMapStorage]:
         params = tuple()
+    elif storage_type is libgoetia.storage.QFStorage:
+        params = (10, )
     else:
         params = (1000, 4)
 

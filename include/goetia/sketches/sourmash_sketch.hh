@@ -14,39 +14,39 @@
 #include "goetia/parsing/readers.hh"
 #include "goetia/processors.hh"
 #include "goetia/sequences/alphabets.hh"
-#include "goetia/signatures/sourmash/sourmash.hpp"
+#include "goetia/sketches/sourmash/sourmash.hpp"
 
 
-namespace goetia::signatures {
+namespace goetia::sketches {
 
-    struct SourmashSignature {
+    struct SourmashSketch {
 
-        class Signature : public sourmash::MinHash {
+        class Sketch : public sourmash::MinHash {
 
           public:
             const uint16_t K;
 
-            Signature(unsigned int n,  // n hashes
+            Sketch(unsigned int n,  // n hashes
                       unsigned int K,  // k-mer size
                       bool         is_protein,
                       bool         dayhoff,
                       bool         hp,
                       uint32_t     seed,
                       uint64_t     scaled)
-                : sourmash::MinHash(n, K, is_protein, dayhoff, hp, seed, Signature::max_hash_from_scaled(scaled)), K(K) {
+                : sourmash::MinHash(n, K, is_protein, dayhoff, hp, seed, Sketch::max_hash_from_scaled(scaled)), K(K) {
             }
 
-            Signature(MinHash* minhash) : sourmash::MinHash(minhash->_get_ptr()), K(minhash->ksize()) {
+            Sketch(MinHash* minhash) : sourmash::MinHash(minhash->_get_ptr()), K(minhash->ksize()) {
             }
 
-            static std::shared_ptr<Signature> build(unsigned int n,  // n hashes
+            static std::shared_ptr<Sketch> build(unsigned int n,  // n hashes
                                                     unsigned int K,  // k-mer size
                                                     bool         is_protein,
                                                     bool         dayhoff,
                                                     bool         hp,
                                                     uint32_t     seed,
                                                     uint64_t     scaled) {
-                return std::make_shared<Signature>(n, K, is_protein, dayhoff, hp, seed, scaled);
+                return std::make_shared<Sketch>(n, K, is_protein, dayhoff, hp, seed, scaled);
             }
 
             static uint64_t max_hash_from_scaled(uint64_t scaled) {
@@ -81,8 +81,8 @@ namespace goetia::signatures {
             }
         };
 
-        using Processor = InserterProcessor<Signature, parsing::FastxParser<DNAN_SIMPLE>>;
+        using Processor = InserterProcessor<Sketch, parsing::FastxParser<DNAN_SIMPLE>>;
     };
-}  // namespace goetia::signatures
+}  // namespace goetia::sketches
 
 #endif

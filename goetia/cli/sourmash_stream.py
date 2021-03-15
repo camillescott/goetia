@@ -26,9 +26,9 @@ class SourmashRunner(SignatureRunner):
     @staticmethod
     def _make_signature(args):
         if args.scaled:
-            return SourmashSketch.Signature.build(0, args.K, False, False, False, 42, args.scaled)
+            return SourmashSketch.Sketch.build(0, args.K, False, False, False, 42, args.scaled)
         else:
-            return SourmashSketch.Signature.build(args.N, args.K, False, False, False, 42, 0)
+            return SourmashSketch.Sketch.build(args.N, args.K, False, False, False, 42, 0)
 
     @staticmethod
     def _make_processor(signature, args):

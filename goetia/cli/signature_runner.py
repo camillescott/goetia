@@ -182,7 +182,10 @@ class SignatureRunner(CommandRunner):
             curio.run(self.processor.start, with_monitor=args.curio_monitor)
 
         if args.save_sig:
-            self._save_signatures(self.sigs.values(), args)
+            if args.save_stream:
+                self._save_signatures(self.sigs.values(), args)
+            else:
+                self._save_signatures([self.sigs.tail()], args)
 
     def teardown(self):
         pass
@@ -195,11 +198,11 @@ class SignatureRunner(CommandRunner):
 
         # set up frame drawing callbacks
         async def on_samplestart(msg):
-            draw = await curio.spawn(frame.draw, messages=[f'Started processing on {msg.sample_name}'], draw_dist_plot=False)
+            draw = await curio.spawn(frame.draw, 0, 0, 1.0, 1.0, [f'Started processing on {msg.sample_name}'], False)
             await draw.join()
 
         async def on_distancecalc(msg):
-            draw = await curio.spawn(frame.draw, msg.t, msg.distance, msg.stat)
+            draw = await curio.spawn(frame.draw, msg.t, msg.sequence, msg.distance, msg.stat)
             await draw.join()
 
         self.term_graph.listener.on_message(SampleStarted, on_samplestart)

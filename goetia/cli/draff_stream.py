@@ -18,9 +18,10 @@ from scipy.spatial import distance as dmetrics
 from cppyy.gbl import std
 
 from goetia import libgoetia
-from goetia.data import load_unikmer_map
+from goetia.hashing import Canonical, StrandAware
+from goetia.sketches import UnikmerSketch
+from goetia.signatures import DraffSignature
 from goetia.storage import get_storage_args, process_storage_args
-from goetia.utils import find_common_basename, remove_fx_suffix, grouper
 from goetia.cli.signature_runner import SignatureRunner
 
 
@@ -56,14 +57,11 @@ class DraffStreamFrame:
                        '{term.bold}distance metric:       {term.normal}{distance_metric}\n'\
                        '{term.bold}distance stdev cutoff: {term.normal}{stdev_cutoff}'.format(term = self.term,
                                                                                               distance_window = args.distance_window,
-                                                                                              distance_metric = args.distance_metric,
                                                                                               stdev_cutoff    = args.stdev_cutoff)
-        
 class DraffRunner(SignatureRunner):
 
     def __init__(self, parser):
         get_storage_args(parser)
-        parser.add_argument('--version', action='version', version='draff-0.1')
         parser.add_argument('-W', type=int, default=31)
         parser.add_argument('-K', type=int, default=9)
         parser.add_argument('--prefix', nargs='*')
@@ -78,7 +76,7 @@ class DraffRunner(SignatureRunner):
     
     def postprocess_args(self, args):
         process_storage_args(args)
-        args.signature_t = libgoetia.signatures.UnikmerSignature[args.storage]
+        args.sketch_t = UnikmerSketch[args.storage, StrandAware]
         super().postprocess_args(args)
         self._distance_metric = getattr(dmetrics, args.distance_metric)
     
@@ -88,18 +86,16 @@ class DraffRunner(SignatureRunner):
 
     @staticmethod
     def _make_signature(args):
-        ukhs = load_unikmer_map(args.W, args.K)
-        return self.signature_t.Signature.build(args.W, args.K, ukhs, *args.storage_args)
+        return args.sketch_t.Sketch.build(args.W, args.K, storage_args=args.storage_args)
     
     @staticmethod
-    def _make_processor(args, signature):
-        return signature_t.Processor.build(signature,
-                                           args.interval)
+    def _make_processor(signature, args):
+        return args.sketch_t.Processor.build(signature,
+                                                args.interval)
     
     @staticmethod
     def _convert_signature(sig, msg):
-        converted = sig.signature
-        converted.name = msg.sample_name
+        return DraffSignature(sig, name=msg.sample_name)
 
     @staticmethod
     def _save_signatures(sigs, args):
@@ -113,13 +109,3 @@ class DraffRunner(SignatureRunner):
             for t, distance in zip(distances_t, distances):
                 print(t, ',', distance, file=fp)
 
-
-def run_draff():
-    term   = blessings.Terminal()
-    with term.hidden_cursor():
-        runner = DraffRunner()
-        stream = DraffStream(runner, term)
-
-        runner.run()
-
-    return 0

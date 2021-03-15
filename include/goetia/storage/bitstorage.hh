@@ -70,6 +70,7 @@ template<>
 struct StorageTraits<BitStorage> {
     static constexpr bool is_probabilistic = true;
     static constexpr bool is_counting      = false;
+    static constexpr int  bits_per_slot    = 1;
 
     typedef std::tuple<uint64_t, uint16_t> params_type;
     static constexpr params_type default_params = std::make_tuple(1'000'000, 4);
@@ -191,7 +192,31 @@ public:
     // but, in the interests of efficiency and thread safety,
     // tests and mutations are being blended here against conventional
     // software engineering wisdom.
-    const bool insert( value_type khash );
+    const inline bool insert( value_type khash ) {
+        bool is_new_kmer = false;
+
+        for (size_t i = 0; i < _n_tables; i++) {
+            uint64_t bin = khash % _tablesizes[i];
+            uint64_t byte = bin / 8;
+            unsigned char bit = (unsigned char)(1 << (bin % 8));
+
+            unsigned char bits_orig = __sync_fetch_and_or( *(_counts + i) +
+                                      byte, bit );
+            if (!(bits_orig & bit)) {
+                if (i == 0) {
+                    __sync_add_and_fetch( &_occupied_bins, 1 );
+                }
+                is_new_kmer = true;
+            }
+        } // iteration over hashtables
+
+        if (is_new_kmer) {
+            __sync_add_and_fetch( &_n_unique_kmers, 1 );
+            return 1; // kmer not seen before
+        }
+
+    return 0; // kmer already seen
+} // test_and_set_bits
 
     const count_t insert_and_query(value_type khash);
 

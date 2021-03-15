@@ -36,18 +36,21 @@ set(_headers
     include/goetia/processors.hh
     include/goetia/ring_span.hpp
     include/goetia/solidifier.hh
-    include/goetia/signatures/sourmash/sourmash.hpp
-    include/goetia/signatures/sourmash/sourmash.h
-    include/goetia/signatures/sourmash_signature.hh
-    include/goetia/signatures/ukhs_signature.hh
+    include/goetia/sketches/sourmash/sourmash.hpp
+    include/goetia/sketches/sourmash/sourmash.h
+    include/goetia/sketches/sourmash_sketch.hh
+    include/goetia/sketches/hllcounter.hh
+    include/goetia/sketches/unikmer_sketch.hh
     include/goetia/storage/bitstorage.hh
     include/goetia/storage/bytestorage.hh
+    include/goetia/storage/btreestorage.hh
     include/goetia/storage/cqf/gqf.h
     include/goetia/storage/nibblestorage.hh
     include/goetia/storage/partitioned_storage.hh
     include/goetia/storage/qfstorage.hh
     include/goetia/storage/sparsepp/serialize.hh
     include/goetia/storage/sparseppstorage.hh
+    include/goetia/storage/phmapstorage.hh
     include/goetia/storage/storage.hh
     include/goetia/storage/storage_types.hh
     include/goetia/traversal.hh
@@ -60,9 +63,13 @@ set(_sources
     src/goetia/storage/bytestorage.cc
     src/goetia/storage/bitstorage.cc
     src/goetia/storage/sparseppstorage.cc
+    src/goetia/storage/phmapstorage.cc
     src/goetia/storage/nibblestorage.cc
-    src/goetia/signatures/ukhs_signature.cc
-    src/goetia/signatures/sourmash_signature.cc
+    src/goetia/storage/btreestorage.cc
+    src/goetia/storage/partitioned_storage.cc
+    src/goetia/sketches/unikmer_sketch.cc
+    src/goetia/sketches/sourmash_sketch.cc
+    src/goetia/sketches/hllcounter.cc
     src/goetia/benchmarks/bench_storage.cc
     src/goetia/hashing/hashshifter.cc
     src/goetia/hashing/hashextender.cc
@@ -125,16 +132,19 @@ set(_interface_headers
     include/goetia/pdbg.hh
     include/goetia/processors.hh
     include/goetia/solidifier.hh
-    include/goetia/signatures/sourmash/sourmash.hpp
-    include/goetia/signatures/sourmash_signature.hh
-    include/goetia/signatures/ukhs_signature.hh
+    include/goetia/sketches/sourmash/sourmash.hpp
+    include/goetia/sketches/sourmash_sketch.hh
+    include/goetia/sketches/hllcounter.hh
+    include/goetia/sketches/unikmer_sketch.hh
     include/goetia/storage/bitstorage.hh
     include/goetia/storage/bytestorage.hh
     include/goetia/storage/nibblestorage.hh
     include/goetia/storage/partitioned_storage.hh
     include/goetia/storage/qfstorage.hh
+    include/goetia/storage/btreestorage.hh
     include/goetia/storage/sparsepp/serialize.hh
     include/goetia/storage/sparseppstorage.hh
+    include/goetia/storage/phmapstorage.hh
     include/goetia/storage/storage.hh
     include/goetia/storage/storage_types.hh
     include/goetia/traversal.hh

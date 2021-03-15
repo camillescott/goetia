@@ -58,6 +58,12 @@ class SlidingWindow:
             self.items = self.items[-self.history:]
 
         return stat, back_time
+
+    def head(self):
+        return self.items[0][0]
+
+    def tail(self):
+        return self.items[-1][0]
     
     @staticmethod
     def _unpack(item):

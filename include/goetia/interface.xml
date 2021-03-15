@@ -1,7 +1,7 @@
 <lcgdict>
     <selection>
         <namespace pattern="goetia::storage::*"/>
-        <namespace pattern="goetia::signatures::*"/>
+        <namespace pattern="goetia::sketches::*"/>
         <namespace pattern="goetia::cdbg::*"/>
 
         <namespace pattern="goetia::hashing::*"/>
@@ -9,7 +9,7 @@
         <namespace pattern="goetia::metrics::*"/>
 
         <class name="goetia::hashing::Direction_t"/>
-        <class pattern="goetia::signatures::UnikmerSignature<*>::Signature"/>
+        <class pattern="goetia::sketches::UnikmerSketch<*>::Sketch"/>
         <class pattern="goetia::cdbg::StreamingCompactor<*>::compact_segment"/>
 
         <class pattern="goetia::dBGWalker<*>"/>

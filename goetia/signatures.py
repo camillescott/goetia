@@ -10,6 +10,8 @@ import hashlib
 import json
 import typing
 
+from sourmash import SourmashSignature
+
 from goetia import __version__
 
 class DraffSignature:
@@ -34,6 +36,10 @@ class DraffSignature:
             return self._filename
         else:
             return self.md5sum()[:8]
+
+    @property
+    def sketch(self):
+        return self._sketch.to_numpy()
     
     @property
     def W(self):

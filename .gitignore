@@ -116,6 +116,7 @@ data/
 cmake_build/
 cmake_debug/
 envs
+scratch
 
 *.o
 **goetia.pc

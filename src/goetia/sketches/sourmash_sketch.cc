@@ -6,4 +6,4 @@
  * Date   : 14.10.2019
  */
 
-#include "goetia/signatures/sourmash_signature.hh"
+#include "goetia/sketches/sourmash_sketch.hh"

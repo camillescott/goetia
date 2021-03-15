@@ -89,7 +89,12 @@ public:
 
     void load(std::string, uint16_t &);
 
-    const bool insert(value_type h);
+    const inline bool insert(value_type h) {
+        auto result = _store->insert(h);
+        // the second in the returned pair reports that the insert
+        // took place ie the hash was new
+        return result.second;
+    }
 
     const count_t insert_and_query(value_type h);
 

@@ -23,6 +23,8 @@
 #include "goetia/storage/bytestorage.hh"
 #include "goetia/storage/partitioned_storage.hh"
 #include "goetia/storage/sparseppstorage.hh"
+#include "goetia/storage/btreestorage.hh"
+#include "goetia/storage/phmapstorage.hh"
 #include "goetia/storage/sparsepp/spp.h"
 
 #include "goetia/hashing/kmeriterator.hh"
@@ -38,9 +40,6 @@
 
 #include "goetia/parsing/parsing.hh"
 #include "goetia/parsing/readers.hh"
-
-//#include "goetia/events.hh"
-//#include "goetia/event_types.hh"
 
 #include "goetia/metrics.hh"
 
@@ -62,9 +61,10 @@
 //#include "goetia/cdbg/ucompactor.hh"
 
 #include "goetia/minimizers.hh"
-#include "goetia/signatures/ukhs_signature.hh"
-#include "goetia/signatures/sourmash_signature.hh"
-#include "goetia/signatures/sourmash/sourmash.hpp"
+#include "goetia/sketches/unikmer_sketch.hh"
+#include "goetia/sketches/sourmash_sketch.hh"
+#include "goetia/sketches/sourmash/sourmash.hpp"
+#include "goetia/sketches/hllcounter.hh"
 
 #include "goetia/benchmarks/bench_storage.hh"
 

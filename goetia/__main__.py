@@ -6,16 +6,43 @@
 # Author : Camille Scott <camille.scott.w@gmail.com>
 # Date   : 14.10.2019
 
-from goetia.cli.runner import GoetiaRunner
+from goetia.cli.args import GoetiaArgumentParser
 from goetia.cli.cdbg_stream import cDBGRunner
 from goetia.cli.solid_filter import SolidFilterRunner
 from goetia.cli.sourmash_stream import SourmashRunner
+from goetia.cli.draff_stream import DraffRunner
 
 
 def main():
-    runner = GoetiaRunner()
-    runner.add_command('cdbg', cDBGRunner)
-    runner.add_command('sourmash', SourmashRunner)
-    runner.add_command('solid-filter', SolidFilterRunner)
+    parser = GoetiaArgumentParser()
+    parser.set_defaults(func = lambda _: self.parser.print_help())
+    commands = parser.add_subparsers()
+    
+    # parent for `goetia sketch`
+    sketch = commands.add_parser('sketch')
+    sketch_commands = sketch.add_subparsers()
 
-    return runner.run()
+    # `goetia sketch sourmash`
+    sketch_sourmash_parser = sketch_commands.add_parser('sourmash')
+    sketch_sourmash_command = SourmashRunner(sketch_sourmash_parser)
+    sketch_sourmash_parser.set_defaults(func=sketch_sourmash_command.run)
+
+    # `goetia sketch draff`
+    sketch_draff_parser = sketch_commands.add_parser('draff')
+    sketch_draff_command = DraffRunner(sketch_draff_parser)
+    sketch_draff_parser.set_defaults(func=sketch_draff_command.run)
+
+    # `goetia cdbg`
+    cdbg_parser = commands.add_parser('cdbg')
+    cdbg_command = cDBGRunner(cdbg_parser)
+    cdbg_parser.set_defaults(func=cdbg_command.run)
+
+    # `goetia solid-filter`
+    solid_filter_parser = commands.add_parser('solid-filter')
+    solid_filter_command = SolidFilterRunner(solid_filter_parser)
+    solid_filter_parser.set_defaults(func=solid_filter_command.run)
+
+    # run the command
+    args = parser.parse_args()
+    return args.func(args)
+
