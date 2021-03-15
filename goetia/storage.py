@@ -1,3 +1,13 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# (c) Camille Scott, 2021
+# File   : storage.py
+# License: MIT
+# Author : Camille Scott <camille.scott.w@gmail.com>
+# Date   : 12.03.2021
+
+import math
+
 from goetia import libgoetia
 from goetia.utils import check_trait
 
@@ -5,7 +15,9 @@ typenames = [(t, t.__name__.replace(' ', '')) for t in [libgoetia.storage.Sparse
                                                         libgoetia.storage.PHMapStorage,
                                                         libgoetia.storage.BitStorage,
                                                         libgoetia.storage.ByteStorage,
-                                                        libgoetia.storage.NibbleStorage]]
+                                                        libgoetia.storage.NibbleStorage,
+                                                        libgoetia.storage.QFStorage,
+                                                        libgoetia.storage.BTreeStorage]]
 
 types = [_type for _type, _name in typenames]
 
@@ -39,10 +51,16 @@ def process_storage_args(args):
     args.storage = getattr(libgoetia.storage, args.storage)
 
     args.storage_args = ()
-    if args.storage not in (libgoetia.storage.SparseppSetStorage,
-                            libgoetia.storage.PHMapStorage):
+    if args.storage in (libgoetia.storage.BitStorage,
+                        libgoetia.storage.ByteStorage,
+                        libgoetia.storage.NibbleStorage):
+
         args.max_tablesize = int(args.max_tablesize)
         args.storage_args = (args.max_tablesize, args.n_tables)
+
+    elif args.storage is libgoetia.storage.QFStorage:
+        args.storage_args = (int(math.ceil(math.log2(args.max_tablesize))), )
+
     else:
         args.storage_args = None
 
