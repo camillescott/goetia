@@ -12,6 +12,7 @@
 
 
 template class goetia::cdbg::StreamingCompactor<goetia::dBG<goetia::storage::SparseppSetStorage, goetia::hashing::FwdLemireShifter>>;
+template class goetia::cdbg::StreamingCompactor<goetia::dBG<goetia::storage::PHMapStorage, goetia::hashing::FwdLemireShifter>>;
 // template class goetia::cdbg::StreamingCompactor<goetia::dBG<goetia::storage::BitStorage, goetia::hashing::FwdLemireShifter>>;
 // template class goetia::cdbg::StreamingCompactor<goetia::dBG<goetia::storage::ByteStorage, goetia::hashing::FwdLemireShifter>>;
 // template class goetia::cdbg::StreamingCompactor<goetia::dBG<goetia::storage::NibbleStorage, goetia::hashing::FwdLemireShifter>>;

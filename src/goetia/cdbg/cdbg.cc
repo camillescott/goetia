@@ -750,6 +750,12 @@ template class cdbg::cDBG<dBG<storage::BitStorage, hashing::CanLemireShifter>>;
 template class cdbg::cDBG<dBG<storage::SparseppSetStorage, hashing::FwdLemireShifter>>;
 template class cdbg::cDBG<dBG<storage::SparseppSetStorage, hashing::CanLemireShifter>>;
 
+template class cdbg::cDBG<dBG<storage::PHMapStorage, hashing::FwdLemireShifter>>;
+template class cdbg::cDBG<dBG<storage::PHMapStorage, hashing::CanLemireShifter>>;
+
+template class cdbg::cDBG<dBG<storage::BTreeStorage, hashing::FwdLemireShifter>>;
+template class cdbg::cDBG<dBG<storage::BTreeStorage, hashing::CanLemireShifter>>;
+
 template class cdbg::cDBG<dBG<storage::ByteStorage, hashing::FwdLemireShifter>>;
 template class cdbg::cDBG<dBG<storage::ByteStorage, hashing::CanLemireShifter>>;
 
