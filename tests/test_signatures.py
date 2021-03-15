@@ -9,6 +9,7 @@
 import random
 
 from goetia.hashing import Canonical, StrandAware
+from goetia.parsing import read_fastx
 from goetia.sketches import SourmashSketch, UnikmerSketch, HLLCounter
 from goetia.storage import SparseppSetStorage
 
@@ -18,7 +19,6 @@ import cppyy
 import numpy as np
 import pandas as pd
 import pytest
-import screed
 
 
 def test_sourmash_signature(datadir, ksize):
@@ -32,7 +32,7 @@ def test_sourmash_signature(datadir, ksize):
     processor = SourmashSketch.Processor.build(goetia_sig)
     processor.process(rfile)
 
-    for record in screed.open(rfile):
+    for record in read_fastx(rfile):
         sourmash_sig.add_sequence(record.sequence)
 
     goetia_mh = goetia_sig.to_sourmash()
@@ -50,7 +50,7 @@ def test_sourmash_scaled(datadir, ksize):
     processor = SourmashSketch.Processor.build(goetia_sig)
     processor.process(rfile)
 
-    for record in screed.open(rfile):
+    for record in read_fastx(rfile):
         sourmash_sig.add_sequence(record.sequence)
 
     goetia_mh = goetia_sig.to_sourmash()

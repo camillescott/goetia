@@ -9,6 +9,7 @@
 from goetia.utils import find_common_basename, remove_fx_suffix, grouper
 
 from goetia import libgoetia
+from goetia.alphabets import DNA_SIMPLE
 
 import os
 
@@ -17,6 +18,13 @@ PAIRING_MODES     = ('split', 'interleaved', 'single')
 FastxParser       = libgoetia.parsing.FastxParser
 SplitPairedReader = libgoetia.parsing.SplitPairedReader
 
+
+def read_fastx(filename, alphabet=DNA_SIMPLE, strict=False, min_length=0):
+    reader = FastxParser[alphabet].build(filename, strict, min_length)
+
+    for record in reader:
+        yield record
+    
 
 def get_fastx_args(parser):
     """Common pairing mode argument."""

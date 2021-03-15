@@ -8,6 +8,5 @@ dependencies:
     - seaborn
     - ficus
     - sourmash=3.4.0
-    - screed
     - goetia
     - numpy

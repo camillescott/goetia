@@ -11,7 +11,7 @@ import csv
 
 from .utils import *
 from goetia.dbg import dBG
-import screed
+from goetia.parsing import read_fastx
 
 def test_dbg_inserter(graph, datadir, ksize):
     consumer = type(graph).Processor.build(graph, 10000)
@@ -20,13 +20,13 @@ def test_dbg_inserter(graph, datadir, ksize):
     n_reads = consumer.process(rfile)
 
     graph2 = graph.shallow_clone()
-    for record in screed.open(rfile):
+    for record in read_fastx(rfile):
         for kmer in kmers(record.sequence, ksize):
             assert graph.get(kmer)
             assert not graph2.get(kmer)
             assert graph.get(kmer) != graph2.get(kmer)
 
-    for record in screed.open(rfile):
+    for record in read_fastx(rfile):
         graph2.insert_sequence(record.sequence)
         for kmer in kmers(record.sequence, ksize):
             assert graph.get(kmer) == graph2.get(kmer)
@@ -40,13 +40,13 @@ def test_chunked_dbg_inserter(graph, datadir, ksize):
         pass
 
     graph2 = graph.shallow_clone()
-    for record in screed.open(rfile):
+    for record in read_fastx(rfile):
         for kmer in kmers(record.sequence, ksize):
             assert graph.get(kmer)
             assert not graph2.get(kmer)
             assert graph.get(kmer) != graph2.get(kmer)
 
-    for record in screed.open(rfile):
+    for record in read_fastx(rfile):
         graph2.insert_sequence(record.sequence)
         for kmer in kmers(record.sequence, ksize):
             assert graph.get(kmer) == graph2.get(kmer)
