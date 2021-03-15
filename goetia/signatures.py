@@ -10,6 +10,8 @@ import hashlib
 import json
 import typing
 
+from sourmash import SourmashSignature
+
 from goetia import __version__
 
 class DraffSignature:

@@ -9,5 +9,5 @@
 from goetia import libgoetia
 
 
-SourmashSketch = libgoetia.signatures.SourmashSignature
-UnikmerSketch  = libgoetia.signatures.UnikmerSignature
+SourmashSketch = libgoetia.sketches.SourmashSketch
+UnikmerSketch  = libgoetia.sketches.UnikmerSketch

@@ -1,27 +1,26 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # (c) Camille Scott, 2019
-# File   : pythonize_signatures.py
+# File   : pythonize_sketches.py
 # License: MIT
 # Author : Camille Scott <camille.scott.w@gmail.com>
 # Date   : 16.10.2019
 
 import sys
 
-import cppyy.ll
 import numpy as np
 
 from goetia.pythonizors import utils
 
 
-def pythonize_goetia_signatures(klass, name):
-    if name == 'SourmashSignature':
+def pythonize_goetia_sketches(klass, name):
+    if name == 'SourmashSketch':
 
         def to_sourmash(self):
             try:
                 from sourmash import MinHash
             except ImportError:
-                print('Must install sourmash to convert to sourmash.MinHash',
+                print('Must install python sourmash to convert to sourmash.MinHash',
                       file=sys.stderr)
                 return None
 
@@ -37,13 +36,12 @@ def pythonize_goetia_signatures(klass, name):
 
             return sig
 
-        klass.Signature.to_sourmash = to_sourmash
+        klass.Sketch.to_sourmash = to_sourmash
 
-    is_inst, template =  utils.is_template_inst(name, 'UnikmerSignature')
+    is_inst, template =  utils.is_template_inst(name, 'UnikmerSketch')
     if is_inst:
         def to_numpy(self) -> np.ndarray:
-            """signature
-
+            """
             Returns:
                 numpy.ndarray: Numpy array with the signature vector.
             """
@@ -54,8 +52,8 @@ def pythonize_goetia_signatures(klass, name):
         def __len__(self) -> int:
             return self.get_size()
 
-        klass.Signature.to_numpy = to_numpy
-        klass.Signature.__len__   = __len__
+        klass.Sketch.to_numpy = to_numpy
+        klass.Sketch.__len__   = __len__
 
         def wrap_build(build_func):
             def wrapped(W, K, ukhs=None, storage_args=None):
@@ -70,4 +68,4 @@ def pythonize_goetia_signatures(klass, name):
                 return sig
             return wrapped
         
-        klass.Signature.build = wrap_build(klass.Signature.build)
+        klass.Sketch.build = wrap_build(klass.Signature.build)
