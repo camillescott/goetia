@@ -117,7 +117,7 @@ configure_file(src/goetia/goetia.pc.in goetia.pc @ONLY)
 #
 # Benchmark exes
 #
-add_executable(do_bench_storage EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/src/goetia/benchmarks/do_bench_storage.cc)
+add_executable(do_bench_storage ${CMAKE_SOURCE_DIR}/src/goetia/benchmarks/do_bench_storage.cc)
 target_link_libraries(do_bench_storage goetia)
 
 add_executable(test_hashing EXCLUDE_FROM_ALL ${CMAKE_SOURCE_DIR}/src/goetia/benchmarks/benchmark_hashing.cc)
@@ -159,6 +159,8 @@ install(TARGETS ${CPPYY_LIB_TARGET}
 install(FILES  ${CPPYY_ROOTMAP} ${CPPYY_EXTRA_MAP} ${CPPYY_PCM}
         DESTINATION ${CMAKE_SOURCE_DIR}/goetia)
 
+install(TARGETS do_bench_storage
+        RUNTIME DESTINATION ${CMAKE_SOURCE_DIR/benchmarks})
 #install(DIRECTORY include/goetia/
 #        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/goetia
 #)
