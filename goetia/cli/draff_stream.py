@@ -91,7 +91,7 @@ class DraffRunner(SignatureRunner):
     @staticmethod
     def _make_processor(signature, args):
         return args.sketch_t.Processor.build(signature,
-                                                args.interval)
+                                             args.interval)
     
     @staticmethod
     def _convert_signature(sig, msg):

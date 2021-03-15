@@ -63,9 +63,9 @@ def pythonize_goetia_sketches(klass, name):
                     sig = build_func(W, K, ukhs.__smartptr__())
                 else:
                     params = klass.storage_type.make_params(*storage_args)
-                    print(params)
                     sig = build_func(W, K, ukhs.__smartptr__(), params)
                 return sig
             return wrapped
         
         klass.Sketch.build = wrap_build(klass.Sketch.build)
+
