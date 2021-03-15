@@ -19,6 +19,7 @@
 
 #include "goetia/goetia.hh"
 #include "goetia/storage/storage.hh"
+#include "goetia/storage/storage_types.hh"
 #include "sparsepp/spp.h"
 
 #include <vector>
@@ -88,9 +89,9 @@ public:
         }
     }
 
-    std::vector<uint64_t> get_tablesizes() const {
-        return partitions.front()->get_tablesizes();
-    }
+    //std::vector<uint64_t> get_tablesizes() const {
+    //    return partitions.front()->get_tablesizes();
+    //}
 
     const uint64_t n_unique_kmers() const {
         uint64_t sum = 0;
@@ -100,9 +101,9 @@ public:
         return sum;
     }
 
-    const uint64_t n_tables() const {
-        return partitions.front()->n_tables();
-    }
+    //const uint64_t n_tables() const {
+    //    return partitions.front()->n_tables();
+   // }
 
     const uint64_t n_occupied() const {
         return partitions.front()->n_occupied();
@@ -192,6 +193,15 @@ template<class StorageType>
 struct is_probabilistic<PartitionedStorage<StorageType>> { 
       static const bool value = is_probabilistic<StorageType>::value;
 };
+
+
+extern template class goetia::storage::PartitionedStorage<goetia::storage::BitStorage>;
+extern template class goetia::storage::PartitionedStorage<goetia::storage::ByteStorage>;
+extern template class goetia::storage::PartitionedStorage<goetia::storage::NibbleStorage>;
+extern template class goetia::storage::PartitionedStorage<goetia::storage::QFStorage>;
+extern template class goetia::storage::PartitionedStorage<goetia::storage::SparseppSetStorage>;
+extern template class goetia::storage::PartitionedStorage<goetia::storage::PHMapStorage>;
+extern template class goetia::storage::PartitionedStorage<goetia::storage::BTreeStorage>;
 
 }
 }

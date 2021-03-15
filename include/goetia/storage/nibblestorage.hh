@@ -67,6 +67,7 @@ template<>
 struct StorageTraits<NibbleStorage> {
     static constexpr bool is_probabilistic = true;
     static constexpr bool is_counting      = true;
+    static constexpr int  bits_per_slot    = 4;
 
     typedef std::tuple<uint64_t, uint16_t> params_type;
     static constexpr params_type default_params = std::make_tuple(1'000'000, 4);

@@ -38,4 +38,16 @@ namespace goetia {
     template class dBGWalker<dBG<storage::QFStorage, hashing::FwdUnikmerShifter>>;
     template class dBGWalker<dBG<storage::QFStorage, hashing::CanUnikmerShifter>>;
 
+    template class goetia::dBGWalker<goetia::dBG<goetia::storage::PHMapStorage, goetia::hashing::FwdLemireShifter>>;
+    template class goetia::dBGWalker<goetia::dBG<goetia::storage::PHMapStorage, goetia::hashing::CanLemireShifter>>;
+    template class goetia::dBGWalker<goetia::dBG<goetia::storage::PHMapStorage, goetia::hashing::FwdUnikmerShifter>>;
+    template class goetia::dBGWalker<goetia::dBG<goetia::storage::PHMapStorage, goetia::hashing::CanUnikmerShifter>>;
+
+    template class goetia::dBGWalker<goetia::dBG<goetia::storage::BTreeStorage, goetia::hashing::FwdLemireShifter>>;
+    template class goetia::dBGWalker<goetia::dBG<goetia::storage::BTreeStorage, goetia::hashing::CanLemireShifter>>;
+    template class goetia::dBGWalker<goetia::dBG<goetia::storage::BTreeStorage, goetia::hashing::FwdUnikmerShifter>>;
+    template class goetia::dBGWalker<goetia::dBG<goetia::storage::BTreeStorage, goetia::hashing::CanUnikmerShifter>>;
+
+
+
 };

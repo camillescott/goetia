@@ -95,6 +95,7 @@ template<class Storage>
 struct StorageTraits {
     static constexpr bool is_counting = false;
     static constexpr bool is_probabilistic = false;
+    static constexpr int  bits_per_slot = 1;
 
     typedef std::tuple<bool> params_type;
     static constexpr params_type default_params = std::make_tuple(false);

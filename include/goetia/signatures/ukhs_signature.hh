@@ -188,6 +188,9 @@ extern template class signatures::UnikmerSignature<storage::SparseppSetStorage, 
 extern template class signatures::UnikmerSignature<storage::PHMapStorage, hashing::Hash<uint64_t>>;
 extern template class signatures::UnikmerSignature<storage::PHMapStorage, hashing::Canonical<uint64_t>>;
 
+extern template class signatures::UnikmerSignature<storage::BTreeStorage, hashing::Hash<uint64_t>>;
+extern template class signatures::UnikmerSignature<storage::BTreeStorage, hashing::Canonical<uint64_t>>;
+
 extern template class signatures::UnikmerSignature<storage::ByteStorage, hashing::Hash<uint64_t>>;
 extern template class signatures::UnikmerSignature<storage::ByteStorage, hashing::Canonical<uint64_t>>;
 

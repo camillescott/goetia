@@ -465,6 +465,9 @@ extern template class goetia::PdBG<goetia::storage::SparseppSetStorage, goetia::
 extern template class goetia::PdBG<goetia::storage::PHMapStorage, goetia::hashing::FwdUnikmerShifter>;
 extern template class goetia::PdBG<goetia::storage::PHMapStorage, goetia::hashing::CanUnikmerShifter>;
 
+extern template class goetia::PdBG<goetia::storage::BTreeStorage, goetia::hashing::FwdUnikmerShifter>;
+extern template class goetia::PdBG<goetia::storage::BTreeStorage, goetia::hashing::CanUnikmerShifter>;
+
 extern template class goetia::PdBG<goetia::storage::ByteStorage, goetia::hashing::FwdUnikmerShifter>;
 extern template class goetia::PdBG<goetia::storage::ByteStorage, goetia::hashing::CanUnikmerShifter>;
 

@@ -21,6 +21,9 @@ namespace goetia {
     template class PdBG<storage::PHMapStorage, hashing::FwdUnikmerShifter>;
     template class PdBG<storage::PHMapStorage, hashing::CanUnikmerShifter>;
 
+    template class PdBG<storage::BTreeStorage, hashing::FwdUnikmerShifter>;
+    template class PdBG<storage::BTreeStorage, hashing::CanUnikmerShifter>;
+
     template class PdBG<storage::ByteStorage, hashing::FwdUnikmerShifter>;
     template class PdBG<storage::ByteStorage, hashing::CanUnikmerShifter>;
 
