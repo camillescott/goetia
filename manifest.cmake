@@ -42,6 +42,7 @@ set(_headers
     include/goetia/signatures/ukhs_signature.hh
     include/goetia/storage/bitstorage.hh
     include/goetia/storage/bytestorage.hh
+    include/goetia/storage/btreestorage.hh
     include/goetia/storage/cqf/gqf.h
     include/goetia/storage/nibblestorage.hh
     include/goetia/storage/partitioned_storage.hh
@@ -63,6 +64,8 @@ set(_sources
     src/goetia/storage/sparseppstorage.cc
     src/goetia/storage/phmapstorage.cc
     src/goetia/storage/nibblestorage.cc
+    src/goetia/storage/btreestorage.cc
+    src/goetia/storage/partitioned_storage.cc
     src/goetia/signatures/ukhs_signature.cc
     src/goetia/signatures/sourmash_signature.cc
     src/goetia/benchmarks/bench_storage.cc
@@ -135,6 +138,7 @@ set(_interface_headers
     include/goetia/storage/nibblestorage.hh
     include/goetia/storage/partitioned_storage.hh
     include/goetia/storage/qfstorage.hh
+    include/goetia/storage/btreestorage.hh
     include/goetia/storage/sparsepp/serialize.hh
     include/goetia/storage/sparseppstorage.hh
     include/goetia/storage/phmapstorage.hh
