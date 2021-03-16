@@ -173,6 +173,9 @@ function(cppyy_add_bindings pkg)
     #
     # Set up genreflex args.
     #
+    set(genreflex_cxxflags "--extra-cxxflags")
+    list(APPEND genreflex_cxxflags "-std=c++${ARG_LANGUAGE_STANDARD} -march=native")
+
     set(genreflex_args)
     if("${ARG_INTERFACE_FILE}" STREQUAL "")
         message(SEND_ERROR "No Interface specified")
@@ -190,15 +193,13 @@ function(cppyy_add_bindings pkg)
         list(APPEND genreflex_args "${dir}")
     endforeach(dir)
 
-    set(genreflex_cxxflags "--cxxflags")
-    list(APPEND genreflex_cxxflags "-std=c++${ARG_LANGUAGE_STANDARD}")
-
     #
     # run genreflex
     #
-    add_custom_command(OUTPUT ${cpp_file} ${rootmap_file} ${pcm_file}
-                       COMMAND ${ROOT_genreflex_CMD} ${genreflex_args} ${genreflex_cxxflags}
-                       DEPENDS ${ARG_INTERFACE_FILE} ${ARG_HEADERS}
+    add_custom_command(
+        OUTPUT ${cpp_file} ${rootmap_file} ${pcm_file}
+        COMMAND ${CMAKE_SOURCE_DIR}/build-utils/genreflex-wrapper.py ${genreflex_cxxflags} ${genreflex_args}
+        DEPENDS ${ARG_INTERFACE_FILE} ${ARG_HEADERS} ${ARG_SELECTION_XML}
     )
 
     #

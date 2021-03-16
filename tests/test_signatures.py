@@ -10,8 +10,9 @@ import random
 
 from goetia.hashing import Canonical, StrandAware
 from goetia.parsing import read_fastx
-from goetia.sketches import SourmashSketch, UnikmerSketch, HLLCounter
+from goetia.sketches import SourmashSketch, UnikmerSketch
 from goetia.storage import SparseppSetStorage
+from goetia.storage import HLLStorage
 
 from .utils import *
 
@@ -76,26 +77,21 @@ def test_draff_to_numpy(datadir):
         assert np_val == py_val
 
 
-@pytest.mark.xfail()
 def test_hllcounter():
     ints = set(np.random.randint(0, 100000, 100000))
     e = 0.01
-    hll = HLLCounter(e)
+    hll = HLLStorage(e)
 
     for i in ints:
         hll.insert(cppyy.gbl.uint64_t(i))
 
-    est = hll.estimate_cardinality()
+    est = hll.n_unique_kmers()
     act = len(ints)
     
     margin = (2 * e) * act
 
     print(act)
     print(est)
-    print(hll.get_ncounters())
-    print(hll.get_error_rate())
-    print(hll.get_alpha())
-    print(hll.get_erate())
 
     assert (act - margin) < est < (act + margin)
 

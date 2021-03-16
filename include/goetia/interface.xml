@@ -18,6 +18,7 @@
         <class pattern="goetia::storage::PartitionedStorage<*>"/>
         <class pattern="goetia::storage::StorageTraits<*>"/>
 
+        <class pattern="sourmash::*"/>
         <class pattern="goetia::sketches::*"/>
         <class pattern="goetia::cdbg::*"/>
         <class pattern="goetia::parsing::*"/>

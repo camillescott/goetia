@@ -50,77 +50,7 @@ Contact: khmer-project@idyll.org
 #include "goetia/goetia.hh"
 #include "goetia/meta.hh"
 #include "goetia/storage/storage.hh"
-
-namespace goetia::sketches {
-
-
-class InvalidValue : public GoetiaException {
-public:
-    explicit InvalidValue(const std::string& msg = "Invalid value.")
-        : GoetiaException(msg) { }
-};
-
-
-class ReadOnlyAttribute : public GoetiaException {
-public:
-    explicit ReadOnlyAttribute(const std::string& msg = "")
-        : GoetiaException(msg) { }
-};
-
-
-class HLLCounter
-{
-public:
-
-    HLLCounter(double error_rate);
-
-    void insert(uint64_t);
-    
-    uint64_t estimate_cardinality();
-    void merge(HLLCounter &);
-    virtual ~HLLCounter() {}
-
-    double get_alpha()
-    {
-        return alpha;
-    }
-    int get_p()
-
-    {
-        return ncounters_log2;
-    }
-    int get_ncounters()
-    {
-        return ncounters;
-    }
-    std::vector<uint8_t> get_counters()
-    {
-        return counters;
-    }
-    double get_error_rate() {
-        return _error_rate;
-    }
-    void set_counters(std::vector<uint8_t> new_counters);
-    double get_erate();
-    void set_erate(double new_erate);
-
-    static double estimate_bias(double E, int p);
-    static std::vector<int> get_nearest_neighbors(double E, std::vector<double> estimate);
-    static double calc_alpha(const int m);
-
-private:
-    double _Ep();
-    double alpha;
-    double _error_rate;
-    int ncounters;
-    int ncounters_log2;
-    std::vector<uint8_t> counters;
-
-    void init(int);
-};
-
-}
-
+#include "goetia/sketches/sketch/include/sketch/hll.h"
 
 namespace goetia::storage {
 
@@ -141,23 +71,29 @@ class HLLStorage : public Storage<uint64_t>,
 {
 
 /*
- * This is just a thin wrapper around HLLCounter to make it 
+ * This is just a thin wrapper around sketch::hll_t to make it 
  * compatible with partitioned_storage for use as a backend
  * in UnikmerSketch. It is *not* meant to be used as an
  * actual dBG storage.
  */
+public:
+
+    typedef sketch::hll::shll_t sketch_t;
 
 protected:
 
-    std::shared_ptr<sketches::HLLCounter> counter;
+    std::shared_ptr<sketch_t> counter;
 
 public:
 
     using Storage<uint64_t>::value_type;
     using Traits = StorageTraits<HLLStorage>;
+    const double error_rate;
 
-    HLLStorage(double error_rate) {
-        counter = std::make_shared<sketches::HLLCounter>(error_rate);
+    HLLStorage(double error_rate)
+        : error_rate(error_rate) {
+        int p = ceil(log2(pow(1.04 / error_rate, 2)));
+        counter = std::make_shared<sketch_t>(p);
     }
 
     //HLLStorage(int nc) {
@@ -165,7 +101,7 @@ public:
     //}
 
     std::shared_ptr<HLLStorage> clone() const {
-        return std::make_shared<HLLStorage>(counter->get_error_rate());
+        return std::make_shared<HLLStorage>(error_rate);
     }
 
     static std::shared_ptr<HLLStorage> build(double error_rate) {
@@ -177,7 +113,7 @@ public:
     }
 
     void reset() {
-        counter = std::make_shared<sketches::HLLCounter>(counter->get_error_rate());
+        counter = std::make_shared<sketch_t>(error_rate);
     }
 
     const uint64_t n_occupied() const {
@@ -185,16 +121,16 @@ public:
     }
 
     const uint64_t n_unique_kmers() const {
-        return counter->estimate_cardinality();
+        return counter->report();
     }
 
     const inline bool insert(value_type h) {
-        counter->insert(h);
+        counter->addh(h);
         return true;
     }
 
     const count_t insert_and_query(value_type h) {
-        counter->insert(h);
+        counter->addh(h);
         return 1;
     }
 
@@ -221,27 +157,6 @@ public:
 
 
 }
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-/*
-   For a description of following constants see
-   HyperLogLog in Practice: Algorithmic Engineering of a State of The Art
-      Cardinality Estimation Algorithm
-   Stefan Heule, Marc Nunkesser and Alex Hall
-   dx.doi.org/10.1145/2452376.2452456
-*/
-const int THRESHOLD_DATA[] = {
-    10, 20, 40, 80, 220, 400, 900, 1800, 3100,
-    6500, 11500, 20000, 50000, 120000, 350000
-};
-
-
-#ifdef __cplusplus
-}
-#endif
-
 
 #endif // HLLCOUNTER_HH
 

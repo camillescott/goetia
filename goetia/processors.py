@@ -13,7 +13,8 @@ import sys
 import threading
 from typing import Awaitable, Optional, Callable, Tuple
 
-from goetia.messages import *
+from goetia.messages import (Interval, DistanceCalc, SampleStarted, SampleFinished,
+                             SampleSaturated, Error, AllMessages)
 from goetia import libgoetia
 
 
@@ -255,7 +256,7 @@ class AsyncSequenceProcessor(UnixBroadcasterMixin):
             self.worker_q.put(SampleStarted(sample_name=name, file_names=sample))
             try:
                 for n_seqs, time, n_skipped in self.processor.chunked_process(*sample):
-
+                    
                     if self.state is RunState.STOP_SATURATED:
                         # Saturation is tripped externally: just return immediately.
                         return
@@ -326,6 +327,10 @@ class AsyncSequenceProcessor(UnixBroadcasterMixin):
                 # the processor and wait for it to finish
                 self.state = RunState.RUNNING
                 signal.signal(signal.SIGINT, lambda signo, frame: self.interrupt())
+
+                # give just a bit of time for the listeners to all spin up
+                await curio.sleep(0.05)
+                # then spawn the worker
                 w = await g.spawn_thread(self.worker)
                 await w.join()
                 await self.worker_subs.kill()
