@@ -1,37 +1,37 @@
 <lcgdict>
     <selection>
-        <namespace pattern="goetia::storage::*"/>
-        <namespace pattern="goetia::sketches::*"/>
-        <namespace pattern="goetia::cdbg::*"/>
+        <namespace name="goetia::storage"/>
+        <namespace name="goetia::sketches"/>
+        <namespace name="goetia::cdbg"/>
+        <namespace name="goetia::parsing"/>
+        <namespace name="goetia::hashing"/>
+        <namespace name="goetia::metrics"/>
+        <namespace name="sourmash"/>
 
-        <namespace pattern="goetia::hashing::*"/>
-        <class pattern="goetia::hashing::LemireShifterPolicy<*>" />
-        <namespace pattern="goetia::metrics::*"/>
+        <class name="goetia::storage::SparseppSetStorage"/>
+        <class name="goetia::storage::PHMapStorage"/>
+        <class name="goetia::storage::BTreeStorage"/>
+        <class name="goetia::storage::QFStorage"/>
+        <class name="goetia::storage::BitStorage"/>
+        <class name="goetia::storage::NibbleStorage"/>
+        <class name="goetia::storage::ByteStorage"/>
+        <class pattern="goetia::storage::PartitionedStorage<*>"/>
+        <class pattern="goetia::storage::StorageTraits<*>"/>
 
-        <class name="goetia::hashing::Direction_t"/>
-        <class pattern="goetia::sketches::UnikmerSketch<*>::Sketch"/>
-        <class pattern="goetia::cdbg::StreamingCompactor<*>::compact_segment"/>
+        <class pattern="goetia::sketches::*"/>
+        <class pattern="goetia::cdbg::*"/>
+        <class pattern="goetia::parsing::*"/>
+        <class pattern="goetia::hashing::*"/>
+        <class pattern="goetia::metrics::*"/>
 
-        <class pattern="goetia::dBGWalker<*>"/>
-        <class pattern="goetia::dBGWalker<*>::Walk<*>"/>
-
-        <class pattern="goetia::dBG<*>"/>
-        <class pattern="goetia::PdBG<*>"/>
-
-        <class pattern="goetia::*Processor"/>
-        <class pattern="goetia::*Processor<*>"/>
-
-		<class pattern="goetia::parsing::*"/>
-        <class pattern="goetia::InteriorMinimizer<*>"/>
-
-        <namespace pattern="sourmash::*"/>
-
-        <class pattern="std::pair<*,*>"/>
         <function name="__gnu_cxx::operator=="/>
-        <function name="__gnu_cxx::operator!="/>
+        <function name="__gnu_cxx::operator!="/> 
     </selection>        
     <exclusion>
-        <namespace pattern="Catch::*" />
+        <class pattern="is_probabilistic*"/>
+        <class pattern="is_counting*"/>
+        <namespace name="goetia::bench"/>
+        <namespace name="goetia::detail"/>
         <class name="std::condition_variable" />
         <class pattern="std::vector<goetia::dBGWalker<*>>"/>
         <class pattern="std::vector<std::*::basic_string<char>, std::allocator<std::*::basic_string<char> > >" />        
