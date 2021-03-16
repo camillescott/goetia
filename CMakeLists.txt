@@ -107,6 +107,8 @@ target_link_libraries(goetia
 #
 target_include_directories(goetia PRIVATE third-party/)
 target_include_directories(goetia PRIVATE include/)
+target_include_directories(goetia PRIVATE include/goetia/sketches/sketch/)
+target_include_directories(goetia PRIVATE include/goetia/sketches/sketch/include)
 
 #
 # Configure the goetia pc.
@@ -139,6 +141,8 @@ cppyy_add_bindings(
    HEADERS        ${LIB_HEADERS}
    INTERFACE_HEADERS ${API_HEADERS}
    INCLUDE_DIRS   ${GOETIA_INCLUDE_ROOT}/include
+                  ${GOETIA_INCLUDE_ROOT}/include/goetia/sketches/sketch/
+                  ${GOETIA_INCLUDE_ROOT}/include/goetia/sketches/sketch/include/
                   ${CMAKE_CURRENT_SOURCE_DIR}/third-party
                   ${ZLIB_INCLUDE_DIRS}
    LINK_LIBRARIES goetia

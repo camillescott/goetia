@@ -94,8 +94,8 @@ class DraffRunner(SignatureRunner):
                                              args.interval)
     
     @staticmethod
-    def _convert_signature(sig, msg):
-        return DraffSignature(sig, name=msg.sample_name)
+    def _convert_signature(sketch, msg):
+        return DraffSignature(sketch, name=msg.sample_name)
 
     @staticmethod
     def _save_signatures(sigs, args):

@@ -1,0 +1,64 @@
+# Automated Windows (MSVC++) testing using appveyor.com
+# https://ci.appveyor.com/projects
+
+version: 1.0.{build}
+
+image:
+- Visual Studio 2015
+- Visual Studio 2017
+
+branches:
+  except:
+    - gh-pages
+
+platform:
+  - x86
+  - x64
+
+for:
+  - matrix:
+      only:
+        - image: Visual Studio 2015
+          platform: x86
+    environment:
+      CFLAGS: "/W3 /WX"
+      CXXFLAGS: "/W3 /WX"
+    build_script:
+      - cmake . -G "Visual Studio 14 2015"
+      - cmake --build . --config Release --target install
+
+  - matrix:
+      only:
+        - image: Visual Studio 2015
+          platform: x64
+    environment:
+      CFLAGS: "/W3 /WX"
+      CXXFLAGS: "/W3 /WX"
+    build_script:
+      - cmake . -G "Visual Studio 14 2015 Win64"
+      - cmake --build . --config Release --target install
+
+  - matrix:
+      only:
+        - image: Visual Studio 2017
+          platform: x86
+    environment:
+      CFLAGS: "/W3 /WX"
+      CXXFLAGS: "/W3 /WX"
+    build_script:
+      - cmake . -G "Visual Studio 15 2017"
+      - cmake --build . --config Release --target install
+
+  - matrix:
+      only:
+        - image: Visual Studio 2017
+          platform: x64
+    environment:
+      CFLAGS: "/W3 /WX"
+      CXXFLAGS: "/W3 /WX"
+    build_script:
+      - cmake . -G "Visual Studio 15 2017 Win64"
+      - cmake --build . --config Release --target install
+
+test_script:
+  - ctest -C Release

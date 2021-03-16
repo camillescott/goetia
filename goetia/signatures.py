@@ -17,16 +17,19 @@ from goetia import __version__
 class DraffSignature:
 
     def __init__(self, sketch, name='', filename='', license='CC0'):
-        self._sketch = sketch
+        self._sketch = sketch.to_numpy()
 
         if name:
             self._name = name
         if filename:
             self._filename = filename
+
         self.license = license
+        self.W = sketch.W
+        self.K = sketch.K
     
     def md5sum(self):
-        return hashlib.md5(self._sketch.to_numpy().data).hexdigest()
+        return hashlib.md5(self._sketch.data).hexdigest()
     
     @property
     def name(self):
@@ -39,15 +42,7 @@ class DraffSignature:
 
     @property
     def sketch(self):
-        return self._sketch.to_numpy()
-    
-    @property
-    def W(self):
-        return self._sketch.K
-    
-    @property
-    def K(self):
-        return self._sketch.bucket_K
+        return self._sketch
     
     @property
     def size(self):

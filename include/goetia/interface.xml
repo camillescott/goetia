@@ -18,6 +18,8 @@
         <class pattern="goetia::storage::PartitionedStorage<*>"/>
         <class pattern="goetia::storage::StorageTraits<*>"/>
 
+        <class pattern="sourmash::*"/>
+        <class pattern="goetia::*"/>
         <class pattern="goetia::sketches::*"/>
         <class pattern="goetia::cdbg::*"/>
         <class pattern="goetia::parsing::*"/>
@@ -30,6 +32,7 @@
     <exclusion>
         <class pattern="is_probabilistic*"/>
         <class pattern="is_counting*"/>
+        <class name="goetia::nonesuch"/>
         <namespace name="goetia::bench"/>
         <namespace name="goetia::detail"/>
         <class name="std::condition_variable" />
