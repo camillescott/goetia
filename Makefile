@@ -46,4 +46,7 @@ compile-commands: FORCE
 	cmake -H. -Bcmake-debug -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=YES
 	ln -fs cmake-debug/compile_commands.json .
 
+test: FORCE
+	pytest -v --benchmark-disable tests/
+
 FORCE:
