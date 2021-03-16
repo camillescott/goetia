@@ -49,6 +49,54 @@ jobs:
         run: |
           make install
 
-      - name: run pytest
+      - name: tests: dbg
         run: |
-          pytest -v --benchmark-disable ./tests
+          pytest -v --benchmark-disable tests/test_dbg.py
+
+      - name: tests: cdbg
+        run: |
+          pytest -v --benchmark-disable tests/test_cdbg.py
+
+      - name: tests: filters
+        run: |
+          pytest -v --benchmark-disable tests/test_filters.py
+
+      - name: tests: hashing
+        run: |
+          pytest -v --benchmark-disable tests/test_hashing.py
+
+      - name: tests: metrics
+        run: |
+          pytest -v --benchmark-disable tests/test_metrics.py
+
+      - name: tests: minimizers
+        run: |
+          pytest -v --benchmark-disable tests/test_minimizers.py
+
+      - name: tests: parsing
+        run: |
+          pytest -v --benchmark-disable tests/test_parsing.py
+
+      - name: tests: processors
+        run: |
+          pytest -v --benchmark-disable tests/test_processors.py
+
+      - name: tests: saturation
+        run: |
+          pytest -v --benchmark-disable tests/test_saturation.py
+
+      - name: tests: signatures
+        run: |
+          pytest -v --benchmark-disable tests/test_signatures.py
+
+      - name: tests: solid compactor
+        run: |
+          pytest -v --benchmark-disable tests/test_solid_compactor.py
+
+      - name: tests: traversal
+        run: |
+          pytest -v --benchmark-disable tests/test_traversal.py
+
+      - name: tests: ukhs
+        run: |
+          pytest -v --benchmark-disable tests/test_ukhs.py
