@@ -16,7 +16,7 @@ namespace sourmash {
       #include "goetia/sketches/sourmash/sourmash.h"
     }
 
-    uint64_t _hash_murmur(const std::string& kmer, const uint32_t seed) {
+    inline uint64_t _hash_murmur(const std::string& kmer, const uint32_t seed) {
         return hash_murmur(kmer.c_str(), seed);
     }
 
@@ -37,7 +37,7 @@ namespace sourmash {
         const std::string _msg;
     };
 
-    void process_errors() {
+    inline void process_errors() {
         auto err_code = sourmash_err_get_last_code();
 
         switch (err_code) {

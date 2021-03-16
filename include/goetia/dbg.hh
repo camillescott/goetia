@@ -296,7 +296,7 @@ public:
     }
 
     uint64_t insert_sequence(const std::string& sequence,
-                             size_t&            n_new) {
+                             uint64_t&          n_new) {
     
         hashing::KmerIterator<ShifterType> iter(sequence, this);
         
