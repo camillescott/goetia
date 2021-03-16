@@ -1425,8 +1425,3 @@ class TestFindConnectedComponents:
         components = benchmark(compactor.cdbg.find_connected_components)
         assert len(components) == n_components
 
-
-class TestCLI:
-
-    def test_decisions(self, datadir, ksize):
-        rfile = datadir('random-20-a.fa')

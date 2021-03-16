@@ -144,6 +144,11 @@ public:
     }
 };
 
+extern template class ReservoirSample<uint64_t>;
+extern template class ReservoirSample<double>;
+extern template class ReservoirSample<float>;
+extern template class ReservoirSample<uint32_t>;
+
 }
 
 #endif
