@@ -113,8 +113,8 @@ tox_build/
 
 work/
 data/
-cmake_build/
-cmake_debug/
+cmake-build/
+cmake-debug/
 envs
 scratch
 

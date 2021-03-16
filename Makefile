@@ -1,4 +1,4 @@
-LIB_BUILD_DIR = cmake_build
+LIB_BUILD_DIR = cmake-build
 
 # $(LIB_BUILD_DIR)/libgoetiaCppyy.so $(LIB_BUILD_DIR)/libgoetia.so
 
@@ -28,7 +28,7 @@ configure: FORCE
 	cmake -H. -B$(LIB_BUILD_DIR) -G Ninja
 
 build-lib: configure
-	cmake --build $(LIB_BUILD_DIR) -- -v
+	cd $(LIB_BUILD_DIR) && ninja -v
 
 install-lib: build-lib
 	cmake --install $(LIB_BUILD_DIR)
@@ -43,7 +43,7 @@ dev-install: install-lib
 	python -m pip install --no-deps -e .
 
 compile-commands: FORCE
-	cmake -H. -Bcmake_debug -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=YES
-	ln -fs cmake_debug/compile_commands.json .
+	cmake -H. -Bcmake-debug -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=YES
+	ln -fs cmake-debug/compile_commands.json .
 
 FORCE:
