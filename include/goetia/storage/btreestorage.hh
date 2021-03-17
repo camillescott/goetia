@@ -106,16 +106,5 @@ public:
 };
 
 
-template<>
-struct is_probabilistic<BTreeStorage> { 
-    static const bool value = false;
-};
-
-template<>
-struct is_counting<BTreeStorage> {
-    static const bool value = false;
-};
-
-
 }
 #endif

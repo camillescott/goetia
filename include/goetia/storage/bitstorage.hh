@@ -242,17 +242,6 @@ public:
     void serialize(std::ofstream& out) {}
 };
 
-template<>
-struct is_probabilistic<BitStorage> { 
-      static const bool value = true;
-};
-
-template<>
-struct is_counting<BitStorage> {
-    static const bool value = false;
-};
-
-
 }
 }
 

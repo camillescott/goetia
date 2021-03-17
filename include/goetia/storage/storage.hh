@@ -81,15 +81,6 @@ typedef uint8_t                     byte_t;
 typedef int16_t                     count_t;
 typedef std::pair<count_t, count_t> full_count_t;
 
-template<class Storage> 
-struct is_probabilistic { 
-    static const bool value = false;
-};
-
-template<class Storage>
-struct is_counting {
-    static const bool value = false;
-};
 
 template<class Storage>
 struct StorageTraits {

@@ -30,8 +30,6 @@
         <function name="__gnu_cxx::operator!="/> 
     </selection>        
     <exclusion>
-        <class pattern="is_probabilistic*"/>
-        <class pattern="is_counting*"/>
         <class name="goetia::nonesuch"/>
         <namespace name="goetia::bench"/>
         <namespace name="goetia::detail"/>

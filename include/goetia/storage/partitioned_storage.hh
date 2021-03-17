@@ -37,8 +37,9 @@ protected:
 
 public:
 
-    typedef uint64_t        value_type;
-    typedef BaseStorageType base_storage_type;
+    typedef uint64_t                         value_type;
+    typedef BaseStorageType                  base_storage_type;
+    typedef StorageTraits<base_storage_type> storage_traits;
 
     PartitionedStorage (const uint64_t n_partitions)
         : PartitionedStorage(n_partitions, StorageTraits<BaseStorageType>::default_params)
@@ -115,7 +116,7 @@ public:
 
     template<typename Dummy = double>
     auto estimated_fp() 
-    -> std::enable_if_t<storage::is_probabilistic<BaseStorageType>::value, Dummy>
+    -> std::enable_if_t<storage_traits::is_probabilistic, Dummy>
     {
         double sum = 0;
         for (auto& partition : partitions) {
@@ -186,12 +187,6 @@ public:
         }
         return counts;
     }
-};
-
-
-template<class StorageType>
-struct is_probabilistic<PartitionedStorage<StorageType>> { 
-      static const bool value = is_probabilistic<StorageType>::value;
 };
 
 

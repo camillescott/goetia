@@ -106,16 +106,5 @@ public:
 };
 
 
-template<>
-struct is_probabilistic<PHMapStorage> { 
-    static const bool value = false;
-};
-
-template<>
-struct is_counting<PHMapStorage> {
-    static const bool value = false;
-};
-
-
 }
 #endif

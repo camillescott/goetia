@@ -151,20 +151,6 @@ public:
 
 };
 
-
-template<>
-struct is_probabilistic<QFStorage> { 
-      static const bool value = true;
-};
-
-
-
-template<>
-struct is_counting<QFStorage> {
-    static const bool value = true;
-};
-
-
 }
 }
 

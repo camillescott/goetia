@@ -44,6 +44,7 @@ public:
 
     typedef ShifterType                              shifter_type;
     typedef StorageType                              storage_type;
+    typedef storage::StorageTraits<storage_type>     storage_traits;
 
     typedef dBGWalker<dBG<StorageType, ShifterType>> walker_type;
     typedef typename walker_type::extender_type      extender_type;
@@ -231,7 +232,7 @@ public:
      */
     template<typename Dummy = double>
     auto estimated_fp() 
-    -> std::enable_if_t<storage::is_probabilistic<StorageType>::value, Dummy>
+    -> std::enable_if_t<storage_traits::is_probabilistic, Dummy>
     {
         return S->estimated_fp();
     }
