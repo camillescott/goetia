@@ -13,6 +13,17 @@ from goetia.cli.cli import format_filenames
 from goetia.cli.signature_runner import SignatureRunner
 
 
+desc = '''
+{term.italic}sketch module: {term.normal}sourmash stream
+
+    Build a sourmash minhash sketch in a streaming manner.
+    Between-signature distances normalized by number of 
+    observed {term.italic}k{term.normal}-mers are reported during construction,
+    and optionally, a saturation metric can be supplied to cut the
+    construction off early.
+'''
+
+
 class SourmashRunner(SignatureRunner):
 
     def __init__(self, parser):
@@ -21,7 +32,7 @@ class SourmashRunner(SignatureRunner):
         parser.add_argument('-N', default=2500, type=int)
         parser.add_argument('--scaled', default=0, type=int)
 
-        super().__init__(parser)
+        super().__init__(parser, description=desc)
 
     @staticmethod
     def _make_signature(args):

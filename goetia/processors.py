@@ -204,6 +204,7 @@ class AsyncSequenceProcessor(UnixBroadcasterMixin):
         self.echo_file = '/dev/stderr' if echo is True else echo
 
         self.state = RunState.READY
+        self.processed = set()
 
         super().__init__(broadcast_socket)
     
@@ -275,12 +276,17 @@ class AsyncSequenceProcessor(UnixBroadcasterMixin):
                                                sample_name=name, 
                                                file_names=sample))
 
+                self.processed.add(tuple(sample))
                 self.worker_q.put(SampleFinished(t=time,
                                                  sequence=n_seqs,
                                                  sample_name=name,
                                                  file_names=sample))
             except Exception as e:
-
+                self.worker_q.put(Error(t=time,
+                                        sequence=n_seqs,
+                                        sample_name=name,
+                                        file_names=sample,
+                                        error=str(e)))
                 return
     
     def on_error(self, exception):
@@ -333,6 +339,8 @@ class AsyncSequenceProcessor(UnixBroadcasterMixin):
                 # then spawn the worker
                 w = await g.spawn_thread(self.worker)
                 await w.join()
+                await curio.sleep(0.05)
+
                 await self.worker_subs.kill()
         except Exception as e:
             print(e, file=sys.stderr)

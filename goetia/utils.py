@@ -17,6 +17,24 @@ primitives = {
 }
 
 
+class Counter:
+    def __init__(self, val=0):
+        self.count = val
+
+    def __int__(self):
+        return self.count
+
+    def __add__(self, other):
+        return Counter(self.count + other)
+
+    def __iadd__(self, other):
+        self.count += other
+        return self
+
+    def __eq__(self, other):
+        return self.count == other
+
+
 def grouper(n, iterable):
     iterable = iter(iterable)
     return iter(lambda: list(itertools.islice(iterable, n)), [])
@@ -29,6 +47,7 @@ def find_common_basename(a, b):
     for i in range(len(b), 0, -1):
         if a.find(b[:i]) != -1:
             return a[:i].strip('._-')
+    return ''
 
 
 def remove_fx_suffix(fn):

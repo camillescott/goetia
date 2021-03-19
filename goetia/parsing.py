@@ -49,8 +49,11 @@ def get_fastx_args(parser):
 def iter_fastx_inputs(inputs, pairing_mode, names=None, merge=False):
     if pairing_mode == 'split':
         _samples  = list(grouper(2, inputs))
-        _names = [find_common_basename(remove_fx_suffix(l),
-                                          remove_fx_suffix(r)) for l, r in _samples]
+        _names = []
+        for n, (l, r) in enumerate(_samples):
+            base = find_common_basename(remove_fx_suffix(l),
+                                        remove_fx_suffix(r))
+            _names.append(base or f'Sample {n+1}')
     else:
         _samples  = [(s, ) for s in inputs]
         _names = [os.path.basename(remove_fx_suffix(s)) for s, in _samples]

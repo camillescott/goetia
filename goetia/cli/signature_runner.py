@@ -8,6 +8,7 @@
 
 import os
 import sys
+import time
 
 import blessings
 import curio
@@ -24,18 +25,15 @@ from goetia.messages import (Interval, DistanceCalc, SampleStarted, SampleFinish
                              SampleSaturated, Error)
 from goetia.saturation import (cutoff_functions, smoothing_functions,
                                SlidingCutoff, RollingPairwise)
-from goetia.utils import Namespace
+from goetia.utils import Namespace, Counter
 
 
 class SignatureRunner(CommandRunner):
 
-    def __init__(self, parser):
+    def __init__(self, parser, description=''):
         get_output_interval_args(parser)
         group = get_fastx_args(parser)
         group.add_argument('-i', dest='inputs', nargs='+', required=True)
-        #parser.add_argument('-K', default=31, type=int)
-        #parser.add_argument('-N', default=2500, type=int)
-        #parser.add_argument('--scaled', default=0, type=int)
 
         parser.add_argument('--save-sig',
                             help='Save the final, saturated signature to '
@@ -71,17 +69,53 @@ class SignatureRunner(CommandRunner):
         parser.add_argument('--curio-monitor', default=False, action='store_true',
                             help='Run curio kernel monitor for async debugging.')
 
-        super().__init__(parser)
+        super().__init__(parser, description=description)
+
+
+    class StatusOutput:
+
+        def __init__(self, term=None, file=sys.stderr):
+            self.file = sys.stderr
+            self.term = term or blessings.Terminal()
+
+        def print(self, *args, **kwargs):
+            print(*args, **kwargs, file=self.file)
+
+        def start_sample(self, sample_name, file_names):
+            self.print(f'{self.term.italic}Begin sample: {self.term.normal}{sample_name}')
+            files = '\n'.join(['    ' + f for f in file_names])
+            self.print(f'{files}')
+
+            self.counter = Counter(0)
+            self.start_s = time.perf_counter()
+
+        def finish_sample(self):
+            elapsed_s = time.perf_counter() - self.start_s
+            self.print(f'    {self.term.italic}Finshed: {self.term.normal}{elapsed_s:0.4f}s')
+            del self.counter
+
+        def update(self, t, sequence_t, distance):
+            term = self.term
+            if self.counter != 0:
+                 self.print(term.move_up * 3, term.clear_eos, end='')
+            self.print(f'       {term.bold}distance: {term.normal}{distance}')
+            self.print(f'        {term.bold}sequence: {term.normal}{sequence_t:,}')
+            self.print(f'        {term.bold}k-mers:   {term.normal}{t:,}')
+            self.counter += 1
 
     def postprocess_args(self, args):
         if args.term_graph:
             self.term_graph = Namespace()
-            self.term_graph.term = blessings.Terminal()
+            self.term_graph.term = self.term
             # minhash sigs only use jaccard distance
             args.distance_metric = 'jaccard'
+        else:
+            self.status = self.StatusOutput(term=self.term)
+
         if args.save_stream and not args.save_sig:
             print('--save-stream requires --save-sig', file=sys.stderr)
             sys.exit(1)
+
         args.smoothing_function_func = smoothing_functions[args.smoothing_function]
         args.cutoff_function_func = cutoff_functions[args.cutoff_function](args.cutoff)
 
@@ -119,6 +153,7 @@ class SignatureRunner(CommandRunner):
 
         if not np.isnan(distance):
             cutoff_reached, stat, _ = runner.cutoff.push((distance, msg.t))
+            runner.status.update(msg.t, msg.sequence, distance)
 
             if not np.isnan(stat):
                 out_msg = DistanceCalc(sample_name=msg.sample_name,
@@ -217,18 +252,22 @@ class SignatureRunner(CommandRunner):
         print(f'ERROR: {msg.sample_name}->{msg.file_names} at time={msg.t}, sequence={msg.sequence} '\
               f'\n-- BEGIN EXCEPTION --\n{msg.error}\n-- END EXCEPTION --', file=sys.stderr)
 
-    @staticmethod
-    def _on_sample_finished(msg):
-        print(f'Sample finished: {msg.sample_name}->{msg.file_names} at time={msg.t}, sequence={msg.sequence}', file=sys.stderr)
-    
-    @staticmethod
-    def _on_status_update(msg):
-        print(f'{msg.sample_name}: distance={msg.distance} at sequence={msg.sequence} and time={msg.t}...', file=sys.stderr)
-    
     def init_std_io(self, args):
+
         self.events_listener = self.processor.add_listener('events_q', 'signature.std_io')
 
         self.events_listener.on_message(Error, self._on_error)
-        self.events_listener.on_message(SampleFinished, self._on_sample_finished)
+
         self.events_listener.on_message(SampleSaturated, self._on_saturated)
-        self.events_listener.on_message(DistanceCalc, self._on_status_update)
+
+        self.worker_listener.on_message(
+            SampleStarted,
+            lambda msg, status: status.start_sample(msg.sample_name, msg.file_names),
+            self.status
+        )
+        self.worker_listener.on_message(
+            SampleFinished,
+            lambda msg, status: status.finish_sample(),
+            self.status
+        )
+
