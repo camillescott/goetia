@@ -62,3 +62,21 @@ def pythonize_goetia(klass, name):
         #klass.in_neighbors = wrap_vector_ret(klass.in_neighbors)
         #klass.out_neighbors = wrap_vector_ret(klass.out_neighbors)
 
+    is_pdbg, _ = is_template_inst(name, 'PdBG')
+    if is_pdbg:
+        def wrap_build(build_func):
+            def wrapped(W, K, *storage_args, ukhs=None):
+                if ukhs is None:
+                    ukhs = klass.ukhs_type.load(W, K)
+                if len(storage_args) == 0:
+                    params = klass.base_storage_type.default_params
+                elif len(storage_args) == 1 and \
+                     isinstance(storage_args[0], klass.base_storage_type.params_type):
+                    params = storage_args[0]
+                else:
+                    params = klass.base_storage_type.make_params(*storage_args)
+                return build_func(W, K, ukhs, params)
+            return wrapped
+
+        klass.build = wrap_build(klass.build)
+
