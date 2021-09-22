@@ -34,7 +34,7 @@ class CommandRunner:
         try:
             desc = self.description.format(term=self.term)
         except:
-            desc = desc
+            desc = ''
         finally:
             print(desc, file=sys.stderr)
 

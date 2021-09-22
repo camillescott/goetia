@@ -32,5 +32,6 @@ dependencies:
     - pip:
       - plotille
       - pytest-randomly
+      - mashumaro
       - git+https://github.com/camillescott/debruijnal-enhance-o-tron#egg=debruijnal_enhance_o_tron
 

@@ -286,7 +286,7 @@ class AsyncSequenceProcessor(UnixBroadcasterMixin):
                                         sequence=n_seqs,
                                         sample_name=name,
                                         file_names=sample,
-                                        error=str(e)))
+                                        error=e.__traceback__))
                 return
     
     def on_error(self, exception):

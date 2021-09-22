@@ -241,6 +241,10 @@ public:
         return timer.total();
     }
 
+    uint64_t interval() const {
+        return timer.interval;
+    }
+
     template<typename... Args>
     static std::shared_ptr<Derived> build(Args&&... args,
                                           uint64_t interval,

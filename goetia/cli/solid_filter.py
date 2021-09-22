@@ -19,7 +19,7 @@ from goetia.storage import get_storage_args, process_storage_args
 class SolidFilterRunner(CommandRunner):
 
     def __init__(self, parser):
-        get_storage_args(parser, default='BitStorage')
+        get_storage_args(parser, default='NibbleStorage')
         get_graph_args(parser)
         get_output_interval_args(parser)
         group = get_fastx_args(parser)
