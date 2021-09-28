@@ -37,24 +37,35 @@ struct StreamingSolidFilter<GraphType<StorageType, ShifterType>> {
       public:
         const uint16_t    K;
         const float       min_prop_solid;
+        const uint32_t    solid_threshold;
 
         Filter(std::shared_ptr<graph_type> dbg,
-                   const float             min_prop_solid=0.75)
+               const float                 min_prop_solid=0.75,
+               const uint32_t              solid_threshold=1)
             : dbg(dbg),
               K(dbg->K),
-              min_prop_solid(min_prop_solid)
+              min_prop_solid(min_prop_solid),
+              solid_threshold(solid_threshold)
         {
         }
 
         static std::shared_ptr<Filter> build(std::shared_ptr<graph_type> dbg,
-                                             const float min_prop_solid=0.75) {
-            return std::make_shared<Filter>(dbg, min_prop_solid);
+                                             const float                 min_prop_solid=0.75,
+                                             const uint32_t              solid_threshold=1) {
+            return std::make_shared<Filter>(dbg, min_prop_solid, solid_threshold);
         }
 
         std::tuple<bool, uint64_t> filter_sequence(const std::string& sequence) {
-            uint64_t n_not_solid;
-            uint64_t n_kmers = dbg->insert_sequence(sequence, n_not_solid);
-            
+            auto counts = dbg->insert_and_query_sequence(sequence);
+            uint32_t n_not_solid = 0;
+            uint32_t n_kmers = sequence.length() - K + 1;
+
+            for (const auto& count : counts) {
+                if (count < solid_threshold) {
+                    ++n_not_solid;
+                }
+            }
+
             if (((float)n_not_solid / (float)n_kmers) > (1.0 - min_prop_solid)) {
                 return {false, n_kmers};
             }

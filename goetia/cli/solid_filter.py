@@ -25,7 +25,8 @@ class SolidFilterRunner(CommandRunner):
         group = get_fastx_args(parser)
         group.add_argument('-o', dest='output_filename', default='/dev/stdout')
         group.add_argument('-i', '--inputs', dest='inputs', nargs='+', required=True)
-        parser.add_argument('--solid-threshold', type=float, default=0.75)
+        parser.add_argument('-C', '--solid-min-count', type=int, default=1)
+        parser.add_argument('-P', '--solid-min-proportion', type=float, default=.75)
 
     def postprocess_args(self, args):
         process_graph_args(args)
@@ -36,7 +37,9 @@ class SolidFilterRunner(CommandRunner):
         self.storage     = args.storage.build(*args.storage_args)
         self.dbg         = args.graph_t.build(self.storage, self.hasher)
         self.filter_t    = SolidFilter[self.dbg_t]
-        self.solid_filter = self.filter_t.Filter.build(self.dbg, args.solid_threshold)
+        self.solid_filter = self.filter_t.Filter.build(self.dbg,
+                                                       args.solid_min_proportion,
+                                                       args.solid_min_count)
 
         self.processor = self.filter_t.Processor.build(self.solid_filter.__smartptr__(),
                                                        args.output_filename,

@@ -346,9 +346,6 @@ public:
      *            from HashShifter and does not have a _left_extensions
      *            member function.
      *
-     * @tparam Dummy    SFINAE dummy var. Do not specialize!
-     * @Param symbols   Alphabet to extend with.
-     *
      * @Returns   A list of left extensions.
      */
     std::vector<shift_left_type> left_extensions_impl() {
@@ -382,8 +379,6 @@ public:
     /**
      * @Synopsis  Gather the right extensions from the current position using
      *            the given symbols, the default being those from our alphabet.
-     *
-     * @Param symbols   Alphabet to extend with.
      *
      * @Returns   A vector of right extensions.
      */
