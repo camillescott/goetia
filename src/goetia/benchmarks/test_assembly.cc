@@ -1,4 +1,4 @@
-#include "goetia/traversal.hh"
+#include "goetia/traversal/unitig_walker.hh"
 #include "goetia/goetia.hh"
 #include "goetia/dbg.hh"
 #include "goetia/storage/sparseppstorage.hh"

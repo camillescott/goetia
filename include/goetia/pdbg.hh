@@ -19,7 +19,7 @@
 
 #include "goetia/goetia.hh"
 #include "goetia/meta.hh"
-#include "goetia/traversal.hh"
+#include "goetia/traversal/unitig_walker.hh"
 #include "goetia/hashing/kmeriterator.hh"
 #include "goetia/hashing/hashextender.hh"
 #include "goetia/hashing/canonical.hh"

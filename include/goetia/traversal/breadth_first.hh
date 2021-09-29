@@ -9,7 +9,7 @@
 #ifndef GOETIA_BFS_HH
 #define GOETIA_BFS_HH
 
-#include "goetia/traversal.hh"
+#include "goetia/traversal/unitig_walker.hh"
 
 namespace goetia {
 namespace traversal {

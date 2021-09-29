@@ -46,7 +46,7 @@
 
 #include "goetia/dbg.hh"
 #include "goetia/pdbg.hh"
-#include "goetia/traversal.hh"
+#include "goetia/traversal/unitig_walker.hh"
 #include "goetia/solidifier.hh"
 
 #include "goetia/processors.hh"

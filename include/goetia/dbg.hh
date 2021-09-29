@@ -17,7 +17,7 @@
 #include "goetia/hashing/rollinghashshifter.hh"
 #include "goetia/hashing/ukhs.hh"
 #include "goetia/sequences/exceptions.hh"
-#include "goetia/traversal.hh"
+#include "goetia/traversal/unitig_walker.hh"
 
 #include <algorithm>
 #include <memory>

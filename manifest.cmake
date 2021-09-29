@@ -53,7 +53,7 @@ set(_headers
     include/goetia/storage/phmapstorage.hh
     include/goetia/storage/storage.hh
     include/goetia/storage/storage_types.hh
-    include/goetia/traversal.hh
+    include/goetia/traversal/unitig_walker.hh
     include/goetia/utils/stringutils.h
 )
 
@@ -82,7 +82,7 @@ set(_sources
     src/goetia/hashing/canonical.cc
     src/goetia/sequences/alphabets.cc
     src/goetia/dbg.cc
-    src/goetia/traversal.cc
+    src/goetia/traversal/unitig_walker.cc
     src/goetia/solidifier.cc
     src/goetia/goetia.cc
     src/goetia/meta.cc
@@ -148,7 +148,7 @@ set(_interface_headers
     include/goetia/storage/phmapstorage.hh
     include/goetia/storage/storage.hh
     include/goetia/storage/storage_types.hh
-    include/goetia/traversal.hh
+    include/goetia/traversal/unitig_walker.hh
 )
 
 set(_data

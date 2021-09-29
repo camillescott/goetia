@@ -21,7 +21,7 @@
 #include "goetia/meta.hh"
 
 #include "goetia/dbg.hh"
-#include "goetia/traversal.hh"
+#include "goetia/traversal/unitig_walker.hh"
 #include "goetia/hashing/kmeriterator.hh"
 #include "goetia/hashing/rollinghashshifter.hh"
 #include "goetia/hashing/ukhs.hh"

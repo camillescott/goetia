@@ -21,7 +21,7 @@
 #include <climits>
 #include <cstdint>
 
-#include "goetia/traversal.hh"
+#include "goetia/traversal/unitig_walker.hh"
 #include "goetia/hashing/kmeriterator.hh"
 #include "goetia/hashing/ukhs.hh"
 #include "goetia/dbg.hh"

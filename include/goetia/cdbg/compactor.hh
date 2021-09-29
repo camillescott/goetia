@@ -12,7 +12,7 @@
 #include <assert.h>
 #include <cstdint>
 
-#include "goetia/traversal.hh"
+#include "goetia/traversal/unitig_walker.hh"
 #include "goetia/hashing/kmeriterator.hh"
 #include "goetia/dbg.hh"
 #include "goetia/hashing/rollinghashshifter.hh"
