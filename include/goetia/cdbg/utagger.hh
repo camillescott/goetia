@@ -28,7 +28,7 @@ template <class StorageType>
 struct UTagger {
 
     typedef dBG<StorageType, hashing::CanUnikmerShifter> graph_type;
-    typedef dBGWalker<graph_type>                        walker_type;
+    typedef UnitigWalker<graph_type>                        walker_type;
 
     // inject dependent typename boilerplate: see goetia/meta.hh
     _goetia_model_typedefs_from_graphtype(graph_type);

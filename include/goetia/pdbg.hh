@@ -47,7 +47,7 @@ public:
     
     typedef PdBG<BaseStorageType, ShifterType>                 graph_type;
     typedef ShifterType                                        shifter_type;
-    typedef dBGWalker<PdBG<BaseStorageType, ShifterType>>      walker_type;
+    typedef UnitigWalker<PdBG<BaseStorageType, ShifterType>>      walker_type;
     typedef typename shifter_type::ukhs_type                   ukhs_type;
     _goetia_model_typedefs_from_shiftertype(shifter_type)
     _goetia_walker_typedefs_from_graphtype(walker_type)

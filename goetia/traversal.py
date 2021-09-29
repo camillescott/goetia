@@ -11,5 +11,5 @@ from goetia.utils import copy_attrs
 from cppyy.gbl import std
 from cppyy import gbl
 
-dBGWalker = libgoetia.dBGWalker
+UnitigWalker = libgoetia.UnitigWalker
 STATES = libgoetia.TraversalState

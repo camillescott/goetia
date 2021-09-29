@@ -14,7 +14,7 @@ from goetia.pythonizors.utils import is_template_inst
 
 
 def pythonize_goetia(klass, name):
-    is_walker, _ = is_template_inst(name, 'dBGWalker')
+    is_walker, _ = is_template_inst(name, 'UnitigWalker')
     if is_walker:
 
         # def wrap_walk(wrapped):

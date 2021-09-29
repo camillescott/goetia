@@ -58,7 +58,7 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
     template<bool Dir>
         using shift_type = hashing::Shift<hash_type, Dir>;
 
-    typedef dBGWalker<graph_type>               walker_type;
+    typedef UnitigWalker<graph_type>               walker_type;
     template<bool Dir>
         using walk_type = typename walker_type::template Walk<Dir>;
     

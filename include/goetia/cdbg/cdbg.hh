@@ -75,7 +75,7 @@ public:
 	typedef typename hash_type::value_type      value_type;
     typedef typename shifter_type::kmer_type    kmer_type;
 
-    typedef dBGWalker<GraphType<StorageType, ShifterType>> walker_type;
+    typedef UnitigWalker<GraphType<StorageType, ShifterType>> walker_type;
 
 
     class CompactNode {
