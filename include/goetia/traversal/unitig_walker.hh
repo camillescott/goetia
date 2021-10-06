@@ -773,14 +773,14 @@ public:
                 return std::move(walk);
             }
 
-            step = step_left(f);
+            const auto [state, neighbors] = step_left(f);
 
-            if (step.first != State::STEP) {
-                walk.end_state = step.first;
+            if (state != State::STEP) {
+                walk.end_state = state;
                 
                 return std::move(walk);
             } else {
-                walk.path.push_back(step.second.front());
+                walk.path.push_back(neighbors.front());
             }
         }
     }
@@ -872,13 +872,13 @@ public:
                 return std::move(walk);
             }
 
-            step = step_right(f);
+            const auto [state, neighbors] = step_right(f);
 
-            if (step.first != State::STEP) {
-                walk.end_state = step.first;
+            if (state != State::STEP) {
+                walk.end_state = state;
                 return std::move(walk);
             } else {
-                walk.path.push_back(step.second.front());
+                walk.path.push_back(neighbors.front());
             }
         }
     }
