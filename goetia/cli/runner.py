@@ -18,6 +18,13 @@ class CommandRunner:
         self.description = description
         self.term = blessings.Terminal()
 
+        try:
+            self.description = self.description.format(term=self.term)
+        except:
+            self.description = ''
+
+        self.parser.description = self.description
+
     def postprocess_args(self, args):
         pass
 
@@ -31,12 +38,8 @@ class CommandRunner:
         pass
 
     def run(self, args):
-        try:
-            desc = self.description.format(term=self.term)
-        except:
-            desc = ''
-        finally:
-            print(desc, file=sys.stderr)
+
+        print(self.description, file=sys.stderr)
 
         self.postprocess_args(args)
         self.setup(args)

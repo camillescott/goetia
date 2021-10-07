@@ -44,10 +44,13 @@ def main():
     sketch_draff_command = DraffRunner(sketch_draff_parser)
     sketch_draff_parser.set_defaults(func=about(sketch_draff_command.run))
 
+    cdbg = commands.add_parser('cdbg')
+    cdbg_commands = cdbg.add_subparsers()
+    
     # `goetia cdbg`
-    cdbg_parser = commands.add_parser('cdbg')
-    cdbg_command = cDBGRunner(cdbg_parser)
-    cdbg_parser.set_defaults(func=about(cdbg_command.run))
+    cdbg_build_parser = cdbg_commands.add_parser('build')
+    cdbg_build_command = cDBGRunner(cdbg_build_parser)
+    cdbg_build_parser.set_defaults(func=about(cdbg_build_command.run))
 
     # `goetia solid-filter`
     solid_filter_parser = commands.add_parser('solid-filter')

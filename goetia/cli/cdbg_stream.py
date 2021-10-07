@@ -28,6 +28,15 @@ import os
 import sys
 
 
+desc = '''
+{term.italic}cdbg module: {term.normal}build cdbg
+
+    Build a compact de Bruijn graph in a streaming manner.
+    Optionally, track various graph statistics throughout
+    the build process.
+'''
+
+
 class cDBGRunner(CommandRunner):
 
     def __init__(self, parser):
@@ -45,7 +54,7 @@ class cDBGRunner(CommandRunner):
                             help='Run curio kernel monitor for async debugging.')
         parser.add_argument('--verbose', default=False, action='store_true')
 
-        super().__init__(parser)
+        super().__init__(parser, description=desc)
 
     def postprocess_args(self, args):
         process_graph_args(args)
