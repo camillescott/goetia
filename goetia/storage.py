@@ -70,5 +70,5 @@ def process_storage_args(args):
         args.storage_args = (int(math.ceil(math.log2(args.max_tablesize))), )
 
     else:
-        args.storage_args = None
+        args.storage_args = tuple()
 

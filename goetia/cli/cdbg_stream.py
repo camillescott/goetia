@@ -152,7 +152,7 @@ class cDBGRunner(CommandRunner):
 
         def info_output(msg):
             info = f'{msg.msg_type}: {getattr(msg, "state", "")}'\
-                   f'\n\tSample:    {msg.sample_name}'\
+                   f'\n\tSample:    {getattr(msg, "sample_name", "")}'\
                    f'\n\tSequences: {msg.sequence}'\
                    f'\n\tk-mers:    {msg.t}'
             if msg.msg_type == 'Error':

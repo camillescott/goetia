@@ -43,6 +43,8 @@ class Interval(AllMessages, DataClassYAMLMixin, DataClassMessagePackMixin):
 @require_kwargs
 @dataclass(frozen=True)
 class SampleStarted(AllMessages, DataClassYAMLMixin, DataClassMessagePackMixin):
+    t: int
+    sequence: int
     sample_name: str
     file_names: List[str]
     msg_type: MessageType = MessageType.SampleStarted
@@ -95,4 +97,6 @@ class DistanceCalc(AllMessages, DataClassYAMLMixin, DataClassMessagePackMixin):
 @require_kwargs
 @dataclass(frozen=True)
 class EndStream(AllMessages, DataClassYAMLMixin, DataClassMessagePackMixin):
+    t: int
+    sequence: int
     msg_type: MessageType = MessageType.EndStream

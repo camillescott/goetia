@@ -14,7 +14,7 @@ import threading
 from typing import Awaitable, Optional, Callable, Tuple
 
 from goetia.messages import (Interval, DistanceCalc, SampleStarted, SampleFinished,
-                             SampleSaturated, Error, AllMessages)
+                             SampleSaturated, Error, AllMessages, EndStream)
 from goetia import libgoetia
 
 
@@ -94,7 +94,7 @@ class MessageHandler:
                 error_handler(e)
             else:
                 raise
-        finally:
+        else:
             self.subscription.unsubscribe(msg_q)
     
     def on_message(self, msg_class, callback, *args, **kwargs):
@@ -253,8 +253,12 @@ class AsyncSequenceProcessor(UnixBroadcasterMixin):
         return listener
 
     def worker(self) -> None:
+        time, n_seqs = 0, 0
         for sample, name in self.sample_iter:
-            self.worker_q.put(SampleStarted(sample_name=name, file_names=sample))
+            self.worker_q.put(SampleStarted(sample_name=name,
+                                            file_names=sample,
+                                            t=time,
+                                            sequence=n_seqs))
             try:
                 for n_seqs, time, n_skipped in self.processor.chunked_process(*sample):
                     
@@ -288,6 +292,9 @@ class AsyncSequenceProcessor(UnixBroadcasterMixin):
                                         file_names=sample,
                                         error=e.__traceback__))
                 return
+            finally:
+                self.worker_q.put(EndStream(t=time,
+                                            sequence=n_seqs))
     
     def on_error(self, exception):
         self.worker_q.put(Error(t=self.processor.time_elapsed(),
