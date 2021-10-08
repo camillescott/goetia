@@ -18,14 +18,17 @@ from goetia.processors import AsyncSequenceProcessor, at_modulo_interval
 from goetia.messages import (Interval, SampleStarted, SampleFinished, Error, AllMessages)
 from goetia.metadata import CUR_TIME
 from goetia.serialization import cDBGSerialization
+from goetia.utils import Counter
 
 from goetia.cli.args import get_output_interval_args, print_interval_settings
 from goetia.cli.runner import CommandRunner
 
+import blessings
 import curio
 
 import os
 import sys
+import time
 
 
 desc = '''
@@ -56,9 +59,44 @@ class cDBGRunner(CommandRunner):
 
         super().__init__(parser, description=desc)
 
+    class StatusOutput:
+
+        def __init__(self, term=None, file=sys.stderr):
+            self.file = file
+            self.term = term or blessings.Terminal()
+
+        def print(self, *args, **kwargs):
+            print(*args, **kwargs, file=self.file)
+
+        def start_sample(self, sample_name, file_names):
+            self.print(f'{self.term.italic}Begin sample: {self.term.normal}{sample_name}')
+            files = '\n'.join(['    ' + f for f in file_names])
+            self.print(f'{files}')
+
+            self.counter = Counter(0)
+            self.start_s = time.perf_counter()
+
+        def finish_sample(self):
+            elapsed_s = time.perf_counter() - self.start_s
+            self.print(f'    {self.term.italic}Finshed: {self.term.normal}{elapsed_s:0.4f}s')
+            del self.counter
+
+        def update(self, t, sequence_t, compactor):
+            term = self.term
+            if self.counter != 0:
+                 self.print(term.move_up * 5, term.clear_eos, end='')
+            report = compactor.get_report()
+            self.print(f'       {term.bold}sequence:       {term.normal}{sequence_t:,}')
+            self.print(f'        {term.bold}k-mers:         {term.normal}{t:,}')
+            self.print(f'        {term.bold}unique k-mers:  {term.normal}{report.n_unique:,}')
+            self.print(f'        {term.bold}unitigs:        {term.normal}{report.n_unodes:,}')
+            self.print(f'        {term.bold}decision nodes: {term.normal}{report.n_dnodes:,}')
+            self.counter += 1
+
     def postprocess_args(self, args):
         process_graph_args(args)
         process_cdbg_args(args)
+        self.status = self.StatusOutput(term=self.term)
 
     def setup(self, args):
         os.makedirs(args.results_dir, exist_ok=True)
@@ -159,17 +197,23 @@ class cDBGRunner(CommandRunner):
         # Regular diagnostics output
         # 
 
-        def info_output(msg):
-            info = f'{msg.msg_type}: {getattr(msg, "state", "")}'\
-                   f'\n\tSample:    {getattr(msg, "sample_name", "")}'\
-                   f'\n\tSequences: {msg.sequence}'\
-                   f'\n\tk-mers:    {msg.t}'
-            if msg.msg_type == 'Error':
-                info += f'\n\tError: {msg.error}'
+        self.worker_listener.on_message(
+            Interval,
+            lambda msg, status, compactor: status.update(msg.t, msg.sequence, compactor),
+            self.status,
+            self.compactor
+        )
 
-            print(info, file=sys.stderr)
-
-        self.worker_listener.on_message(AllMessages, info_output)
+        self.worker_listener.on_message(
+            SampleStarted,
+            lambda msg, status: status.start_sample(msg.sample_name, msg.file_names),
+            self.status
+        )
+        self.worker_listener.on_message(
+            SampleFinished,
+            lambda msg, status: status.finish_sample(),
+            self.status
+        )
                            
     def execute(self, args):
         curio.run(self.processor.start, with_monitor=args.curio_monitor)
