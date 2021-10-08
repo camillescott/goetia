@@ -10,3 +10,4 @@
 from goetia import libgoetia
 
 SolidFilter = libgoetia.StreamingSolidFilter
+DiginormFilter = libgoetia.DiginormFilter

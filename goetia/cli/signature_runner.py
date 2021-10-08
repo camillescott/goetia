@@ -75,7 +75,7 @@ class SignatureRunner(CommandRunner):
     class StatusOutput:
 
         def __init__(self, term=None, file=sys.stderr):
-            self.file = sys.stderr
+            self.file = file
             self.term = term or blessings.Terminal()
 
         def print(self, *args, **kwargs):

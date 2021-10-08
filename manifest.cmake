@@ -36,6 +36,7 @@ set(_headers
     include/goetia/processors.hh
     include/goetia/ring_span.hpp
     include/goetia/solidifier.hh
+    include/goetia/diginorm.hh
     include/goetia/sketches/sourmash/sourmash.hpp
     include/goetia/sketches/sourmash/sourmash.h
     include/goetia/sketches/sourmash_sketch.hh
@@ -84,6 +85,7 @@ set(_sources
     src/goetia/dbg.cc
     src/goetia/traversal/unitig_walker.cc
     src/goetia/solidifier.cc
+    src/goetia/diginorm.cc
     src/goetia/goetia.cc
     src/goetia/meta.cc
     src/goetia/metrics.cc
@@ -133,6 +135,7 @@ set(_interface_headers
     include/goetia/pdbg.hh
     include/goetia/processors.hh
     include/goetia/solidifier.hh
+    include/goetia/diginorm.hh
     include/goetia/sketches/sourmash/sourmash.hpp
     include/goetia/sketches/sourmash_sketch.hh
     include/goetia/sketches/hllcounter.hh

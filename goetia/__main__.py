@@ -11,6 +11,7 @@ import sys
 from goetia import splash
 from goetia.cli.args import GoetiaArgumentParser
 from goetia.cli.cdbg_stream import cDBGRunner
+from goetia.cli.diginorm import DiginormFilterRunner
 from goetia.cli.solid_filter import SolidFilterRunner
 from goetia.cli.sourmash_stream import SourmashRunner
 from goetia.cli.draff_stream import DraffRunner
@@ -44,6 +45,8 @@ def main():
     sketch_draff_command = DraffRunner(sketch_draff_parser)
     sketch_draff_parser.set_defaults(func=about(sketch_draff_command.run))
 
+
+    # parent for `goetia cdbg`
     cdbg = commands.add_parser('cdbg')
     cdbg_commands = cdbg.add_subparsers()
     
@@ -52,10 +55,19 @@ def main():
     cdbg_build_command = cDBGRunner(cdbg_build_parser)
     cdbg_build_parser.set_defaults(func=about(cdbg_build_command.run))
 
-    # `goetia solid-filter`
-    solid_filter_parser = commands.add_parser('solid-filter')
+    # parent for `goetia filter`
+    filters = commands.add_parser('filter')
+    filter_commands = filters.add_subparsers()
+
+    # `goetia filter solid`
+    solid_filter_parser = filter_commands.add_parser('solid')
     solid_filter_command = SolidFilterRunner(solid_filter_parser)
     solid_filter_parser.set_defaults(func=about(solid_filter_command.run))
+
+    # `goetia filter diginorm`
+    diginorm_filter_parser = filter_commands.add_parser('diginorm')
+    diginorm_filter_command = DiginormFilterRunner(diginorm_filter_parser)
+    diginorm_filter_parser.set_defaults(func=about(diginorm_filter_command.run))
 
     # run the command
     args = parser.parse_args()
