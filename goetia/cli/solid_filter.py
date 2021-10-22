@@ -36,6 +36,7 @@ class SolidFilterRunner(CommandRunner):
         group = get_fastx_args(parser)
         group.add_argument('-o', dest='output_filename', default='/dev/stdout')
         group.add_argument('-i', '--inputs', dest='inputs', nargs='+', required=True)
+        group.add_argument('--quiet', action='store_true', default=False)
         parser.add_argument('-C', '--solid-min-count', type=int, default=1)
         parser.add_argument('-P', '--solid-min-proportion', type=float, default=.75)
 
@@ -57,16 +58,18 @@ class SolidFilterRunner(CommandRunner):
         self.processor = self.filter_t.Processor.build(self.solid_filter.__smartptr__(),
                                                        args.output_filename,
                                                        args.interval)
-        self.status = SolidFilterRunner.StatusOutput(term=self.term)
+        self.status = SolidFilterRunner.StatusOutput(term=self.term, quiet=args.quiet)
 
     class StatusOutput:
 
-        def __init__(self, term=None, file=sys.stderr):
+        def __init__(self, term=None, file=sys.stderr, quiet=False):
             self.file = file
             self.term = term or blessings.Terminal()
+            self.quiet = quiet
 
         def print(self, *args, **kwargs):
-            print(*args, **kwargs, file=self.file)
+            if not self.quiet:
+                print(*args, **kwargs, file=self.file)
 
         def start_sample(self, sample_name, file_names):
             self.print(f'{self.term.italic}Begin sample: {self.term.normal}{sample_name}')

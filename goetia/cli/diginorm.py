@@ -37,6 +37,7 @@ class DiginormFilterRunner(CommandRunner):
         group = get_fastx_args(parser)
         group.add_argument('-o', dest='output_filename', default='/dev/stdout')
         group.add_argument('-i', '--inputs', dest='inputs', nargs='+', required=True)
+        group.add_argument('--quiet', action='store_true', default=False)
 
         parser.add_argument('-C', '--cutoff', type=int, default=10)
         
@@ -57,16 +58,18 @@ class DiginormFilterRunner(CommandRunner):
         self.processor = self.filter_t.Processor.build(self.filter.__smartptr__(),
                                                        args.output_filename,
                                                        args.interval)
-        self.status = DiginormFilterRunner.StatusOutput(term=self.term)
+        self.status = DiginormFilterRunner.StatusOutput(term=self.term, quiet=args.quiet)
 
     class StatusOutput:
 
-        def __init__(self, term=None, file=sys.stderr):
+        def __init__(self, term=None, file=sys.stderr, quiet=False):
             self.file = file
             self.term = term or blessings.Terminal()
+            self.quiet = quiet
 
         def print(self, *args, **kwargs):
-            print(*args, **kwargs, file=self.file)
+            if not self.quiet:
+                print(*args, **kwargs, file=self.file)
 
         def start_sample(self, sample_name, file_names):
             self.print(f'{self.term.italic}Begin sample: {self.term.normal}{sample_name}')
