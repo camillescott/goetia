@@ -6,6 +6,7 @@
 # Author : Camille Scott <camille.scott.w@gmail.com>
 # Date   : 08.10.2019
 
+import collections
 from dataclasses import is_dataclass
 import itertools
 import os
@@ -18,6 +19,13 @@ primitives = {
     'long': 'uint64_t',
     'unsigned short': 'uint16_t'
 }
+
+
+def is_iterable(obj):
+    return (
+        isinstance(obj, collections.Iterable)
+        and not isinstance(obj, str)
+    )
 
 
 class Counter:

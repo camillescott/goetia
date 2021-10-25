@@ -14,7 +14,7 @@ from goetia.cdbg import (compute_connected_component_callback,
                          write_cdbg_callback)
 from goetia.dbg import get_graph_args, process_graph_args
 from goetia.parsing import get_fastx_args, iter_fastx_inputs
-from goetia.processors import AsyncSequenceProcessor, at_modulo_interval
+from goetia.processors import AsyncSequenceProcessor, every_n_intervals
 from goetia.messages import (Interval, SampleStarted, SampleFinished, Error, AllMessages)
 from goetia.metadata import CUR_TIME
 from goetia.serialization import cDBGSerialization
@@ -150,8 +150,8 @@ class cDBGRunner(CommandRunner):
                 bins = args.unitig_bp_bins
             
             self.worker_listener.on_message(Interval,
-                                            at_modulo_interval(compute_unitig_fragmentation_callback,
-                                                               modulus=args.unitig_bp_tick),
+                                            every_n_intervals(compute_unitig_fragmentation_callback,
+                                                              n=args.unitig_bp_tick),
                                             self.cdbg_t,
                                             self.compactor.cdbg,
                                             args.track_unitig_bp,
@@ -162,8 +162,8 @@ class cDBGRunner(CommandRunner):
 
         if args.track_cdbg_components:
             self.worker_listener.on_message(Interval,
-                                            at_modulo_interval(compute_connected_component_callback,
-                                                               modulus=args.cdbg_components_tick),
+                                            every_n_intervals(compute_connected_component_callback,
+                                                              n=args.cdbg_components_tick),
                                             self.cdbg_t,
                                             self.compactor.cdbg,
                                             args.track_cdbg_components,
@@ -174,8 +174,8 @@ class cDBGRunner(CommandRunner):
         if args.save_cdbg:
             for cdbg_format in args.save_cdbg_format:
                 self.worker_listener.on_message(Interval,
-                                                at_modulo_interval(write_cdbg_callback,
-                                                                   modulus=args.cdbg_tick),
+                                                every_n_intervals(write_cdbg_callback,
+                                                                  n=args.cdbg_tick),
                                                 args.save_cdbg,
                                                 cdbg_format,
                                                 verbose=args.verbose)

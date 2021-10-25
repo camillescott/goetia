@@ -7,6 +7,8 @@
 # Date   : 04.06.2020
 
 from sourmash import SourmashSignature, save_signatures
+from sourmash.utils import rustcall, decode_str
+from sourmash._lowlevel import ffi, lib
 
 from goetia.sketches import SourmashSketch
 from goetia.cli.cli import format_filenames
@@ -58,6 +60,10 @@ class SourmashRunner(SignatureRunner):
                                  filename=format_filenames(msg.file_names))        
     
     @staticmethod
-    def _save_signatures(sigs, args):
+    def _save_signature(sig, args):
         with open(args.save_sig, 'w') as fp:
-            save_signatures(sigs, fp=fp)
+            save_signatures([sig], fp=fp)
+
+    @staticmethod
+    def _serialize_signature(sig, args):
+        return decode_str(rustcall(lib.signature_save_json, sig._objptr))

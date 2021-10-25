@@ -20,7 +20,8 @@ from goetia.cli.args import get_output_interval_args
 from goetia.cli.cli import format_filenames, TextBlock
 from goetia.cli.signature_frame import SignatureStreamFrame
 from goetia.parsing import get_fastx_args, iter_fastx_inputs
-from goetia.processors import AsyncSequenceProcessor
+from goetia.processors import (AsyncSequenceProcessor, AsyncJSONStreamWriter,
+                               every_n_intervals)
 from goetia.messages import (Interval, DistanceCalc, SampleStarted, SampleFinished,
                              SampleSaturated, Error)
 from goetia.saturation import (cutoff_functions, smoothing_functions,
@@ -39,10 +40,8 @@ class SignatureRunner(CommandRunner):
                             help='Save the final, saturated signature to '
                                  'the given filename.')
         parser.add_argument('--save-stream',
-                            action='store_true',
-                            default=False,
                             help='Save the entire stream of signatures to '
-                                 'the filename given in save-sig.')
+                                 'the given filename.')
         parser.add_argument('--save-stream-tick',
                            type=int,
                            default=10,
@@ -143,7 +142,11 @@ class SignatureRunner(CommandRunner):
         return sig
     
     @staticmethod
-    def _save_signatures(sigs, args):
+    def _save_signature(sig, args):
+        raise NotImplementedError()
+
+    @staticmethod
+    def _serialize_signature(sig, args):
         raise NotImplementedError()
 
     @staticmethod
@@ -171,6 +174,10 @@ class SignatureRunner(CommandRunner):
                                              sample_name=msg.sample_name,
                                              file_names=msg.file_names))
                 runner.processor.saturate()
+
+    @staticmethod
+    async def _stream_write(msg, args, runner):
+        await runner.signature_stream.write(runner._serialize_signature(runner.sigs.tail(), args))
     
     def setup(self, args):
         # Create the signature and the libgoetia sequence processor: implemented by subclass
@@ -184,7 +191,7 @@ class SignatureRunner(CommandRunner):
         
         # Signatures: held in a RollingPairwise, stores the signatures themselves (if desired)
         # and calls the distance function
-        self.sigs = RollingPairwise(self._distance_func, history = int(not args.save_stream))
+        self.sigs = RollingPairwise(self._distance_func, history = 1)
         
         # Smooths the distances over a window and checks the smooth values against
         # a cutoff function to trigger saturation
@@ -204,6 +211,14 @@ class SignatureRunner(CommandRunner):
         self.worker_listener.on_message(Interval, self._on_interval,
                                         self.processor.events_q, args, self)
 
+        if args.save_stream:
+            self.signature_stream = AsyncJSONStreamWriter(args.save_stream)
+            self.worker_listener.on_message(Interval,
+                                            every_n_intervals(self._stream_write,
+                                                              n=args.save_stream_tick),
+                                            args,
+                                            self)
+
         if args.term_graph:
             self.init_term_graph_io(args)
         else:
@@ -216,11 +231,12 @@ class SignatureRunner(CommandRunner):
         else:
             curio.run(self.processor.start, with_monitor=args.curio_monitor)
 
+        print(f'n sigs: {len(self.sigs.items)}')
+
         if args.save_sig:
-            if args.save_stream:
-                self._save_signatures(self.sigs.values(), args)
-            else:
-                self._save_signatures([self.sigs.tail()], args)
+            #if args.save_stream:
+            #    self._save_signatures(self.sigs.values(), args)
+            self._save_signature(self.sigs.tail(), args)
 
     def teardown(self):
         pass

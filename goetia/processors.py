@@ -15,6 +15,7 @@ from typing import Awaitable, Optional, Callable, Tuple
 
 from goetia.messages import (Interval, DistanceCalc, SampleStarted, SampleFinished,
                              SampleSaturated, Error, AllMessages, EndStream)
+from goetia.utils import is_iterable, Counter
 from goetia import libgoetia
 
 
@@ -322,7 +323,7 @@ class AsyncSequenceProcessor(UnixBroadcasterMixin):
                     async def echo(msg):
                         mode = 'w' if self.echo_file in ['/dev/stdout', '/dev/stderr'] else 'a'
                         async with curio.aopen(self.echo_file, mode) as fp:
-                            await fp.write(f'{msg.to_json()}\n')
+                            await fp.write(f'{msg.to_yaml()}\n')
 
                     listener.on_message(AllMessages,
                                         echo)
@@ -362,10 +363,47 @@ class AsyncSequenceProcessor(UnixBroadcasterMixin):
         self.state = RunState.STOP_SATURATED
 
 
-def at_modulo_interval(func, modulus=1):
+def every_n_intervals(func, n=1):
+    poller = libgoetia.metrics.IntervalCounter(n)
     @functools.wraps(func)
     async def wrapped(msg, *args, **kwargs):
         assert isinstance(msg, Interval)
-        if msg.t % modulus == 0:
+        if poller.poll():
             await func(msg, *args, **kwargs)
     return wrapped
+
+
+class AsyncJSONStreamWriter:
+
+    def __init__(self, filename):
+        self.filename = filename
+        self.n_writes = 0
+        
+        with open(self.filename, 'w') as fp:
+            fp.write('[')
+
+    def __del__(self):
+
+        with open(self.filename, 'a') as fp:
+            fp.write(']')
+
+    async def write(self, data):
+
+        buf = ''
+
+        async with curio.aopen(self.filename, 'a') as fp:
+            if self.n_writes != 0:
+                await fp.write(',\n')
+            if isinstance(data, str):
+                # assume already valid JSON object
+                buf = data
+            elif is_iterable(data):
+                # extend the top level list rather than
+                # adding the iterable as an item
+                buf = ','.join((str(item) for item in data))
+            else:
+                buf = json.dumps(data)
+            await fp.write(buf)
+
+        self.n_writes += 1
+
