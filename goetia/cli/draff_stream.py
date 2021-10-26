@@ -22,6 +22,7 @@ from goetia.hashing import Canonical, StrandAware
 from goetia.sketches import UnikmerSketch
 from goetia.signatures import DraffSignature
 from goetia.storage import get_storage_args, process_storage_args
+from goetia.cli.cli import format_filenames
 from goetia.cli.signature_runner import SignatureRunner
 
 
@@ -95,13 +96,18 @@ class DraffRunner(SignatureRunner):
     
     @staticmethod
     def _convert_signature(sketch, msg):
-        return DraffSignature(sketch, name=msg.sample_name)
+        return DraffSignature(sketch,
+                              name=f'{msg.sample_name}:{msg.t}',
+                              filename=format_filenames(msg.file_names))
 
     @staticmethod
-    def _save_signatures(sigs, args):
+    def _save_signature(sig, args):
+        with open(args.save_sig, 'w') as fp:
+            sig.save(fp)
 
-        with open(prefix + '.draffsig.json', 'w') as fp:
-            sig_gen.save(fp, prefix)
+    @staticmethod
+    def _serialize_signature(sig, args):
+        return sig.to_dict()
 
     def save_distances(self, prefix, distances, distances_t):
         with open(prefix + '.distances.csv', 'w') as fp:
