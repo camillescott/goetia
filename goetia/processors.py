@@ -397,7 +397,7 @@ class AsyncJSONStreamWriter:
             if isinstance(data, str):
                 # assume already valid JSON object
                 buf = data
-            elif is_iterable(data):
+            elif is_iterable(data) and not isinstance(data, dict):
                 # extend the top level list rather than
                 # adding the iterable as an item
                 buf = ','.join((str(item) for item in data))
