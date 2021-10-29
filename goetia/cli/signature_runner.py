@@ -231,8 +231,6 @@ class SignatureRunner(CommandRunner):
         else:
             curio.run(self.processor.start, with_monitor=args.curio_monitor)
 
-        print(f'n sigs: {len(self.sigs.items)}')
-
         if args.save_sig:
             #if args.save_stream:
             #    self._save_signatures(self.sigs.values(), args)
