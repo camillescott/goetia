@@ -11,8 +11,10 @@ import hashlib
 import json
 import typing
 
+from boltons.iterutils import windowed_iter
 import ijson
 import numpy as np
+from scipy.spatial.distance import cosine
 from sourmash import SourmashSignature
 from sourmash._lowlevel import ffi, lib
 from sourmash.utils import RustObject, rustcall, decode_str
@@ -41,8 +43,10 @@ class DraffSignature:
     
     def md5sum(self):
         return hashlib.md5(self._sketch.data).hexdigest()
+
+    def similarity(self, other, metric=cosine):
+        return metric(self.sketch, other.sketch)
     
-    @property
     def name(self):
         if self._name:
             return self._name
@@ -64,7 +68,7 @@ class DraffSignature:
                 'W': self.W,
                 'K': self.K,
                 'size': self.size,
-                'name': self.name,
+                'name': self.name(),
                 'version': self.version,
                 'license': self.license,
                 'md5sum': self.md5sum()}
@@ -130,3 +134,76 @@ def load_sourmash_stream(fp):
         for i in range(size):
             sigs.append(SourmashSignature._from_objptr(ptr[i]))
         yield sigs[0]
+
+
+def distance(sig_a, sig_b, metric=cosine):
+    if isinstance(sig_a, SourmashSignature):
+        return sig_a.similarity(sig_b)
+    elif isinstance(sig_a, DraffSignature):
+        return sig_a.similarity(sig_b, metric=metric)
+    else:
+        raise TypeError(f'Not a support signature type: {type(sig_a)}.')
+
+
+def find_rolling_distances(sigs, dmetrics=[cosine], window_sizes = [2,4,6,8,10]):
+    '''
+
+    '''
+    max_window = max(window_sizes)
+    window_sizes.sort()
+    times, distances, freqs, metrics = [], [], [], []
+    window_freqs = {}
+
+    for i, window in enumerate(windowed_iter(sigs, max_window)):
+        for sub_window_size in window_sizes:
+            sig_a, sig_b = window[0], window[sub_window_size - 1]
+            t_a = int(sig_a.name().split(':')[1])
+            t_b = int(sig_b.name().split(':')[1])
+            if i == 0:
+                freq = round(t_b - t_a, -4)
+                window_freqs[sub_window_size] = freq
+            else:
+                freq = window_freqs[sub_window_size]
+
+            for metric in dmetrics:
+                times.append(int(t_b))
+                distances.append(distance(sig_a, sig_b, metric=metric))
+                metrics.append(metric.__name__)
+                freqs.append(int(freq))
+
+            #print(window[0], window[sub_window_size - 1])
+
+    for sub_window_size in window_sizes[:-1]:
+        for sub_window in windowed_iter(window[1:], sub_window_size):
+            #print(sub_window[0], sub_window[-1])
+            sig_a, sig_b = sub_window[0], sub_window[-1]
+            t_a = int(sig_a.name().split(':')[1])
+            t_b = int(sig_b.name().split(':')[1])
+            
+            for metric in dmetrics:
+                times.append(int(t_b))
+                distances.append(distance(sig_a, sig_b, metric=metric))
+                metrics.append(metric.__name__)
+                freqs.append(window_freqs[sub_window_size])
+
+    df = pd.DataFrame({'time': times,
+                       'distance': distances,
+                       'freq': freqs,
+                       'metric': metrics})
+    return df
+
+
+def find_distances_from_ref(sigs, ref_sig, dmetrics=[cosine], cutoff=1.0):
+    times, distances, metrics = [], [], []
+    for sig in sigs:
+        sample_t = int(sig.name().split(':')[1])
+
+        for metric in dmetrics:
+            times.append(sample_t)
+            distances.append(distance(sig, ref_sig, metric=metric))
+            metrics.append(metric.__name__)
+        
+    df = pd.DataFrame({'time': times,
+                       'distance': distances,
+                       'metric': metrics})
+    return df
