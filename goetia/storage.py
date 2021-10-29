@@ -30,11 +30,12 @@ count_t = libgoetia.storage.count_t
 StorageTraits = libgoetia.storage.StorageTraits
 
 
-def get_storage_args(parser, default='SparseppSetStorage'):
+def get_storage_args(parser, default='SparseppSetStorage',
+                     group_name='storage'):
     if 'storage' in [g.title for g in parser._action_groups]:
         return None
 
-    group = parser.add_argument_group('storage')
+    group = parser.add_argument_group(group_name)
 
     group.add_argument('-S', '--storage',
                        choices=[name for _, name in typenames], 
@@ -71,4 +72,8 @@ def process_storage_args(args):
 
     else:
         args.storage_args = tuple()
+
+
+def get_partitioned_storage_args(parser):
+    group = get_storage_args(parser, 'partitioned storage')
 
