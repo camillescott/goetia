@@ -10,8 +10,10 @@ import sys
 import time
 
 from goetia import libgoetia
+from goetia.alphabets import DNA_SIMPLE, DNAN_SIMPLE
 from goetia.cli.runner import CommandRunner
-from goetia.parsing import get_fastx_args, iter_fastx_inputs
+from goetia.cli.args import get_output_interval_args
+from goetia.parsing import FastxParser, get_fastx_args, iter_fastx_inputs
 from goetia.utils import Counter
 
 import blessings
@@ -39,8 +41,9 @@ class PairedMergeRunner(CommandRunner):
         pass
 
     def setup(self, args):
-        self.processor = libgoetia.MergeProcessor.build(args.output_filename,
+        self.processor = libgoetia.MergeProcessor[FastxParser[DNAN_SIMPLE]].build(args.output_filename,
                                                         args.interval)
+        self.status = PairedMergeRunner.StatusOutput(term=self.term, quiet=args.quiet)
 
     def execute(self, args):
         for sample, name in iter_fastx_inputs(args.inputs, args.pairing_mode, names=args.names):
