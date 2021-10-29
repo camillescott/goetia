@@ -13,6 +13,7 @@ import typing
 
 from boltons.iterutils import windowed_iter
 import ijson
+import pandas as pd
 import numpy as np
 from scipy.spatial.distance import cosine
 from sourmash import SourmashSignature
@@ -190,6 +191,8 @@ def find_rolling_distances(sigs, dmetrics=[cosine], window_sizes = [2,4,6,8,10])
                        'distance': distances,
                        'freq': freqs,
                        'metric': metrics})
+    df['time_norm'] = df['time'] / df['time'].max()
+
     return df
 
 
@@ -206,4 +209,6 @@ def find_distances_from_ref(sigs, ref_sig, dmetrics=[cosine], cutoff=1.0):
     df = pd.DataFrame({'time': times,
                        'distance': distances,
                        'metric': metrics})
+    df['time_norm'] = df['time'] / df['time'].max()
+
     return df
