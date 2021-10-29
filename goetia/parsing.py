@@ -26,10 +26,10 @@ def read_fastx(filename, alphabet=DNA_SIMPLE, strict=False, min_length=0):
         yield record
     
 
-def get_fastx_args(parser):
+def get_fastx_args(parser, default_mode='single'):
     """Common pairing mode argument."""
     group = parser.add_argument_group('fastx arguments')
-    group.add_argument('--pairing-mode', default='single',
+    group.add_argument('--pairing-mode', default=default_mode,
                         choices=PAIRING_MODES,
                         help='How to interpret read pairing. With `single`, '\
                              'reads will be parsed as singletons, regardless'\

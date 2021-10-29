@@ -432,5 +432,68 @@ public:
 };
 
 
+/**
+ * @Synopsis  Merges split-paired reads to single stream.
+ *
+ * @tparam ParserType Sequence parser type.
+ */
+template <class ParserType = parsing::FastxParser<>>
+class MergeProcessor : public FileProcessor<MergeProcessor<ParserType>,
+                                             ParserType> {
+
+protected:
+
+    std::ofstream               _output_stream; 
+    metrics::Gauge              _n_passed;
+
+    typedef FileProcessor<MergeProcessor<ParserType>,
+                          ParserType> Base;
+
+public:
+
+    using Base::process_sequence;
+    typedef typename Base::alphabet alphabet;
+    
+    MergeProcessor(const std::string           output_filename,
+                   uint64_t interval = metrics::IntervalCounter::DEFAULT_INTERVAL,
+                   bool     verbose  = false)
+        : Base(interval, verbose),
+          _output_stream(output_filename.c_str()),
+          _n_passed{"timing", "n_passed"}
+    {
+    }
+
+    ~MergeProcessor() {
+        _output_stream.close();
+    }
+
+    uint64_t process_sequence(const parsing::Record& sequence) {
+        sequence.write_fastx(_output_stream);
+
+        return sequence.sequence.size();
+    }
+
+    void report() {
+
+    }
+
+    uint64_t n_passed() const {
+        return _n_passed;
+    }
+
+    static auto build(const std::string&          output_filename,
+                      uint64_t interval = metrics::IntervalCounter::DEFAULT_INTERVAL,
+                      bool verbose      = false)
+    -> std::shared_ptr<MergeProcessor<ParserType>> {
+
+        return std::make_shared<MergeProcessor<ParserType>>(output_filename,
+                                                             interval,
+                                                             verbose);
+    }
+
+};
+
+
+
 } //namespace goetia
 #endif

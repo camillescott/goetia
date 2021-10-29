@@ -15,6 +15,7 @@ from goetia.cli.diginorm import DiginormFilterRunner
 from goetia.cli.solid_filter import SolidFilterRunner
 from goetia.cli.sourmash_stream import SourmashRunner
 from goetia.cli.draff_stream import DraffRunner
+from goetia.cli.merge_paired import PairedMergeRunner
 
 
 def about(func):
@@ -68,6 +69,15 @@ def main():
     diginorm_filter_parser = filter_commands.add_parser('diginorm')
     diginorm_filter_command = DiginormFilterRunner(diginorm_filter_parser)
     diginorm_filter_parser.set_defaults(func=about(diginorm_filter_command.run))
+
+    # parent for `goetia utils`
+    utils = commands.add_parser('utils')
+    utils_commands = utils.add_subparsers()
+
+    # `goetia utils merge-paired`
+    merge_split_parser = utils_commands.add_parser('merged-paired')
+    merge_split_command = PairedMergeRunner(merge_split_parser)
+    merge_split_parser.set_defaults(func=about(merge_split_command.run))
 
     # run the command
     args = parser.parse_args()
