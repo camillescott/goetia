@@ -6,6 +6,7 @@ dependencies:
     - boltons
     - cppyy=1.6.2
     - cmake
+    - ijson
     - ninja
     - pytest
     - numpy
@@ -18,7 +19,6 @@ dependencies:
     - py-cpuinfo
     - sourmash-minimal=3.4.0
     - zlib
-    - jsonschema
     - curio
     - clang
     - clang-tools

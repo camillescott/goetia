@@ -18,7 +18,7 @@ pyfiglet
 py-cpuinfo
 sourmash-minimal=3.4.0
 zlib
-jsonschema
+ijson
 curio
 clang=10
 clang-tools=10
@@ -28,4 +28,4 @@ libclang=10
 libclang-cpp
 libclang-cpp10
 python-clang=10
-
+xphyle
