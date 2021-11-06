@@ -203,3 +203,5 @@ def initialize(pkg, lib_file, map_file, noisy=False):
                 continue
             simplenames = child["name"].split('::')
             add_to_pkg(file["name"], child["kind"], simplenames, child)
+    
+    return pkg_module
