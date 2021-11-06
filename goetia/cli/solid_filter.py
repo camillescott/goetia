@@ -14,7 +14,7 @@ from goetia.dbg import get_graph_args, process_graph_args
 from goetia.cli.args import get_output_interval_args
 from goetia.cli.runner import CommandRunner
 from goetia.parsing import get_fastx_args, iter_fastx_inputs
-from goetia.storage import get_storage_args, process_storage_args
+from goetia.storage import get_storage_args
 from goetia.utils import Counter
 
 import blessings
@@ -84,21 +84,22 @@ class SolidFilterRunner(CommandRunner):
             self.print(f'    {self.term.italic}Finshed: {self.term.normal}{elapsed_s:0.4f}s')
             del self.counter
 
-        def update(self, t, sequence_t, n_passed):
+        def update(self, t, sequence_t, n_passed, n_skipped):
             term = self.term
             if self.counter != 0:
-                 self.print(term.move_up * 3, term.clear_eos, term.move_x(0), end='')
+                 self.print(term.move_up * 4, term.clear_eos, term.move_x(0), end='')
             self.print(f'       {term.bold}sequence:          {term.normal}{sequence_t:,}')
             self.print(f'       {term.bold}k-mers:            {term.normal}{t:,}')
             self.print(f'       {term.bold}sequences passed:  {term.normal}{n_passed:,}', end='')
             self.print(f' ({n_passed / sequence_t * 100.0:2f}%)')
+            self.print(f'       {term.bold}sequences skipped: {term.normal}{n_skipped:,}')
             self.counter += 1
 
     def execute(self, args):
         for sample, name in iter_fastx_inputs(args.inputs, args.pairing_mode, names=args.names):
             self.status.start_sample(name, sample)
             for n_seqs, time, n_skipped in self.processor.chunked_process(*sample):
-                self.status.update(time, n_seqs, self.processor.n_passed())
+                self.status.update(time, n_seqs, self.processor.n_passed(), n_skipped)
             self.status.finish_sample()
 
     def teardown(self):
