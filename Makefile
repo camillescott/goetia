@@ -1,4 +1,5 @@
 LIB_BUILD_DIR = cmake-build
+CONDA_FRONTEND = mamba
 
 # $(LIB_BUILD_DIR)/libgoetiaCppyy.so $(LIB_BUILD_DIR)/libgoetia.so
 
@@ -21,8 +22,8 @@ version: FORCE
 	echo ${VERSION} > goetia/VERSION 
 
 create-dev-env: environment_dev.yml
-	mamba create -n goetia-dev python=3.8
-	mamba env update -f environment_dev.yml
+	${CONDA_FRONTEND} create -n goetia-dev python=3.8
+	${CONDA_FRONTEND} env update -f environment_dev.yml
 
 configure: FORCE
 	cmake -H. -B$(LIB_BUILD_DIR) -G Ninja

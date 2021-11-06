@@ -35,22 +35,56 @@ This will install the goetia python package, the `libgoetia` shared library,
 and its headers into `$CONDA_PREFIX`. With the environment activated, you can `import goetia`
 in Python or link against the C++ library with `-lgoetia`.
 
-### Building from Source
+## Development
 
+### Building from Source
 
 To build and install from source, first clone the repo:
 
     git clone https://github.com/camillescott/goetia && cd goetia
 
-Then create a conda environment:
+Create the conda environment. There is a Makefile target to generate the environment; it uses
+`mamba`, but this can be overridden by setting `CONDA_FRONTEND` to `conda`. The result environment
+is called `goetia-dev` and is defined in `environment_dev.yml`.
 
-    conda create -y -n goetia -c conda-forge python=3 cppyy cmake cxx-compiler c-compiler clangdev libcxx libstdcxx-ng libgcc-ng pytest numpy scipy openmp python-clang screed blessings pytest-benchmark pyfiglet py-cpuinfo sourmash curio
-    conda activate goetia
-    pip install -r requirements.txt # there are a few things not updated on conda yet...
+    make create-dev-env
+    conda activate goetia-dev
 
-Then build and install with cmake:
+Then build and install:
 
-    mkdir build; cd build
-    cmake ..
-    make # optionally use -j N for faster/parallel build
     make install
+
+The `install` target will build the C++ library and `cppyy` bindings, install the headers and shared
+library into `$CONDA_PREFIX/lib` and `$CONDA_PREFIX/include`, and install the associated python
+modules into the conda environment.
+
+To install in-place, run:
+
+    make dev-install
+
+This will use `python -m pip install -e .` to allow in-place editing of the python sources. However,
+changes to the C++ source will not be propagated, as the shared library has to be rebuilt. 
+Run `make install` again to recompile and reinstall the headers and shared library.
+
+### Testing
+
+Tests are written in `pytest`; the full suite can be run with:
+
+    pytest tests/
+
+The test suite uses `pytest-benchmark` to gather performance information on some functions. This
+adds significant extra time to a number of tests. This can be bypassed by just running `make test`;
+or, explicitly, by running:
+
+    pytest --benchmark-disable tests/
+
+Much of the de Bruijn graph test data is randomly generated; ie, we fuzz the library. This helps
+find edge cases, but means some tests might not be able to be rerun. To allow reproducibility, we
+use the `pytest-randomly` plugin, which manages random seed state and ordering. When pytest is run,
+the random seed will be reported toward the beginning of the output, in the form:
+
+    Using --randomly-seed=2507050705
+
+To rerun with a specific seed, run pytest with the appropriate flag:
+
+    pytest --randomly-seed=[DESIRED_SEED]
