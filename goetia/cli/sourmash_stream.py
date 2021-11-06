@@ -7,12 +7,12 @@
 # Date   : 04.06.2020
 
 from sourmash import SourmashSignature, save_signatures
-from sourmash.utils import rustcall, decode_str
-from sourmash._lowlevel import ffi, lib
+from sourmash._lowlevel import lib
+from sourmash.utils import decode_str, rustcall
 
-from goetia.sketches import SourmashSketch
 from goetia.cli.cli import format_filenames
 from goetia.cli.signature_runner import SignatureRunner
+from goetia.sketches import SourmashSketch
 
 
 desc = '''
@@ -35,6 +35,10 @@ class SourmashRunner(SignatureRunner):
         parser.add_argument('--scaled', default=0, type=int)
 
         super().__init__(parser, description=desc)
+
+    def postprocess_args(self, args):
+        args.distance_metric = 'jaccard'
+        super().postprocess_args(args)
 
     @staticmethod
     def _make_signature(args):

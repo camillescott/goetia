@@ -6,7 +6,6 @@
 # Author : Camille Scott <camille.scott.w@gmail.com>
 # Date   : 28.07.2020
 
-import os
 import sys
 import time
 
@@ -14,19 +13,31 @@ import blessings
 import curio
 import numpy as np
 
-from goetia import libgoetia, __version__
-from goetia.cli.runner import CommandRunner
+from goetia import __version__
 from goetia.cli.args import get_output_interval_args
-from goetia.cli.cli import format_filenames, TextBlock
+from goetia.cli.runner import CommandRunner
 from goetia.cli.signature_frame import SignatureStreamFrame
+from goetia.messages import (
+    DistanceCalc,
+    Error,
+    Interval,
+    SampleFinished,
+    SampleSaturated,
+    SampleStarted,
+)
 from goetia.parsing import get_fastx_args, iter_fastx_inputs
-from goetia.processors import (AsyncSequenceProcessor, AsyncJSONStreamWriter,
-                               every_n_intervals)
-from goetia.messages import (Interval, DistanceCalc, SampleStarted, SampleFinished,
-                             SampleSaturated, Error)
-from goetia.saturation import (cutoff_functions, smoothing_functions,
-                               SlidingCutoff, RollingPairwise)
-from goetia.utils import Namespace, Counter
+from goetia.processors import (
+    AsyncJSONStreamWriter,
+    AsyncSequenceProcessor,
+    every_n_intervals,
+)
+from goetia.saturation import (
+    RollingPairwise,
+    SlidingCutoff,
+    cutoff_functions,
+    smoothing_functions,
+)
+from goetia.utils import Counter, Namespace
 
 
 class SignatureRunner(CommandRunner):
@@ -105,9 +116,7 @@ class SignatureRunner(CommandRunner):
     def postprocess_args(self, args):
         if args.term_graph:
             self.term_graph = Namespace()
-            self.term_graph.term = self.term
-            # minhash sigs only use jaccard distance
-            args.distance_metric = 'jaccard'
+            self.term_graph.term = self.term  # type: ignore
         else:
             self.status = self.StatusOutput(term=self.term)
 
@@ -156,7 +165,7 @@ class SignatureRunner(CommandRunner):
 
         if not np.isnan(distance):
             cutoff_reached, stat, _ = runner.cutoff.push((distance, msg.t))
-            runner.status.update(msg.t, msg.sequence, distance)
+            #runner.status.update(msg.t, msg.sequence, distance)
 
             if not np.isnan(stat):
                 out_msg = DistanceCalc(sample_name=msg.sample_name,
@@ -226,7 +235,7 @@ class SignatureRunner(CommandRunner):
     
     def execute(self, args):
         if args.term_graph:
-            with self.term_graph.term.hidden_cursor():
+            with self.term_graph.term.hidden_cursor():  # type: ignore
                 curio.run(self.processor.start, with_monitor=args.curio_monitor)
         else:
             curio.run(self.processor.start, with_monitor=args.curio_monitor)
@@ -240,10 +249,10 @@ class SignatureRunner(CommandRunner):
         pass
 
     def init_term_graph_io(self, args):
-        self.term_graph.frame = SignatureStreamFrame(self.term_graph.term, args)
-        frame = self.term_graph.frame
+        self.term_graph.frame = SignatureStreamFrame(self.term_graph.term, args)  # type: ignore
+        frame = self.term_graph.frame  # type: ignore
 
-        self.term_graph.listener = self.processor.add_listener('events_q', 'signature.term_graph')
+        self.term_graph.listener = self.processor.add_listener('events_q', 'signature.term_graph')  # type: ignore
 
         # set up frame drawing callbacks
         async def on_samplestart(msg):
@@ -254,8 +263,8 @@ class SignatureRunner(CommandRunner):
             draw = await curio.spawn(frame.draw, msg.t, msg.sequence, msg.distance, msg.stat)
             await draw.join()
 
-        self.term_graph.listener.on_message(SampleStarted, on_samplestart)
-        self.term_graph.listener.on_message(DistanceCalc, on_distancecalc)
+        self.term_graph.listener.on_message(SampleStarted, on_samplestart)  # type: ignore
+        self.term_graph.listener.on_message(DistanceCalc, on_distancecalc)  # type: ignore
 
     @staticmethod
     def _on_saturated(msg):
@@ -282,6 +291,11 @@ class SignatureRunner(CommandRunner):
         self.worker_listener.on_message(
             SampleFinished,
             lambda msg, status: status.finish_sample(),
+            self.status
+        )
+        self.events_listener.on_message(
+            DistanceCalc,
+            lambda msg, status: status.update(msg.t, msg.sequence, msg.distance),
             self.status
         )
 
