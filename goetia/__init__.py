@@ -1,3 +1,11 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# (c) Camille Scott, 2021
+# File   : __init__.py
+# License: MIT
+# Author : Camille Scott <camille.scott.w@gmail.com>
+# Date   : 05.11.2021
+
 import os
 
 import cppyy
@@ -6,10 +14,11 @@ from .initializor import initialize
 with open(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'VERSION')) as fp:
     __version__ = fp.read().strip()
 
-initialize('goetia', 'libgoetiaCppyy.so', 'goetia.map')
+module = initialize('goetia', 'libgoetiaCppyy.so', 'goetia.map')
+libgoetia = module.goetia  # type: ignore
 del initialize
 
-from goetia import goetia as libgoetia
+#from goetia import goetia as libgoetia
 from cppyy import nullptr
 
 

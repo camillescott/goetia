@@ -1,22 +1,32 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# (c) Camille Scott, 2021
+# File   : processors.py
+# License: MIT
+# Author : Camille Scott <camille.scott.w@gmail.com>
+# Date   : 05.11.2021
 
-import curio
-from curio.socket import *
-
-from collections import defaultdict, OrderedDict
+from collections import OrderedDict, defaultdict
 from enum import Enum, unique as unique_enum
 import functools
 import inspect
 import json
-import os
 import signal
 import sys
-import threading
-from typing import Awaitable, Optional, Callable, Tuple
+from typing import Any
 
-from goetia.messages import (Interval, DistanceCalc, SampleStarted, SampleFinished,
-                             SampleSaturated, Error, AllMessages, EndStream)
-from goetia.utils import is_iterable, Counter
+import curio
+
 from goetia import libgoetia
+from goetia.messages import (
+    AllMessages,
+    EndStream,
+    Error,
+    Interval,
+    SampleFinished,
+    SampleStarted,
+)
+from goetia.utils import is_iterable
 
 
 DEFAULT_SOCKET = '/tmp/goetia.sock'
@@ -32,12 +42,12 @@ class QueueManager:
         self.subscribers = set()
         self.subscriber_names = {}
     
-    def subscribe(self, q: curio.Queue, name: str):
+    def subscribe(self, q: curio.UniversalQueue, name: str):
         if q not in self.subscribers:
             self.subscribers.add(q)
             self.subscriber_names[q] = name
 
-    def unsubscribe(self, q: curio.Queue) -> None:
+    def unsubscribe(self, q: curio.UniversalQueue) -> None:
         try:
             self.subscribers.remove(q)
             del self.subscriber_names[q]
@@ -103,51 +113,6 @@ class MessageHandler:
         self.handlers[msg_class].append((callback, args, kwargs))
 
 
-class UnixBroadcasterMixin:
-
-    def __init__(self, broadcast_socket = DEFAULT_SOCKET):
-        if broadcast_socket is not None:
-            try:
-                os.unlink(broadcast_socket)
-            except OSError:
-                if os.path.exists(broadcast_socket):
-                    raise
-        self.broadcast_socket = broadcast_socket
-
-    async def broadcast_client(self, client: curio.io.Socket, addr: Tuple[str, int]) -> None:
-        client_name = hash(client) # i guess getpeername() doesn't work with AF_UNIX
-        print(f'Unix socket connection: {client_name}', file=sys.stderr)
-
-        stream = client.as_stream()
-        bcast_q = curio.Queue()
-        self.subscribe('events_q', bcast_q, f'broadcast_client:{client_name}')
-        
-        try:
-            while True:
-                block = await bcast_q.get()
-
-                string = json.dumps(block) + '\n'
-                await curio.timeout_after(60, stream.write, string.encode('ascii'))
-        except curio.CancelledError:
-            await stream.write(json.dumps([(0, 'END_STREAM', -1)]).encode('ascii'))
-            raise
-        except (BrokenPipeError, curio.TaskTimeout):
-            print(f'Unix socket closed: {client_name}', file=sys.stderr)
-        finally:
-            self.unsubscribe('events_q', bcast_q)
-
-    async def broadcaster(self) -> None:
-        async with curio.SignalQueue(signal.SIGHUP) as restart:
-            if self.broadcast_socket is not None:
-                while True:
-                    print(f'Starting broadcast server on {self.broadcast_socket}.', file=sys.stderr)
-                    broadcast_task = await curio.spawn(curio.unix_server,
-                                                    self.broadcast_socket,
-                                                    self.broadcast_client)
-                    await restart.get()
-                    await broadcast_task.cancel()
-
-
 @unique_enum
 class RunState(Enum):
     READY = 0
@@ -158,7 +123,7 @@ class RunState(Enum):
     STOP = 5
 
 
-class AsyncSequenceProcessor(UnixBroadcasterMixin):
+class AsyncSequenceProcessor:
 
     def __init__(self, processor,
                        sample_iter,
@@ -207,7 +172,7 @@ class AsyncSequenceProcessor(UnixBroadcasterMixin):
         self.state = RunState.READY
         self.processed = set()
 
-        super().__init__(broadcast_socket)
+        #super().__init__(broadcast_socket)
     
     def get_channel(self, channel: str) -> QueueManager:
         """Query for the given channel name.
@@ -225,7 +190,7 @@ class AsyncSequenceProcessor(UnixBroadcasterMixin):
             raise
     
     def subscribe(self, channel_name: str, 
-                        collection_q: curio.Queue,
+                        collection_q: curio.UniversalQueue,
                         subscriber_name: str) -> None:
         """Subscribe a queue of the given name to a channel.
         
@@ -237,7 +202,7 @@ class AsyncSequenceProcessor(UnixBroadcasterMixin):
         self.get_channel(channel_name).subscribe(collection_q, subscriber_name)
     
     def unsubscribe(self, channel_name: str,
-                          collection_q: curio.Queue) -> None:
+                          collection_q: curio.UniversalQueue) -> None:
         """Stop receving data from the named channel on the given queue.
         
         Args:
@@ -256,7 +221,7 @@ class AsyncSequenceProcessor(UnixBroadcasterMixin):
     def worker(self) -> None:
         time, n_seqs = 0, 0
         for sample, name in self.sample_iter:
-            self.worker_q.put(SampleStarted(sample_name=name,
+            self.worker_q.put(SampleStarted(sample_name=name,  # type: ignore
                                             file_names=sample,
                                             t=time,
                                             sequence=n_seqs))
@@ -269,41 +234,41 @@ class AsyncSequenceProcessor(UnixBroadcasterMixin):
 
                     if self.state is RunState.SIGINT:
                         # If we're interrupted, inform our listeners that something went wrong.
-                        self.worker_q.put(Error(t=time,
+                        self.worker_q.put(Error(t=time,  # type: ignore
                                                 sequence=n_seqs,
                                                 sample_name=name,
                                                 file_names=sample,
                                                 error='Process terminated (SIGINT).'))
                         return
 
-                    self.worker_q.put(Interval(t=time,
+                    self.worker_q.put(Interval(t=time,  # type: ignore
                                                sequence=n_seqs,
                                                sample_name=name, 
                                                file_names=sample))
 
                 self.processed.add(tuple(sample))
-                self.worker_q.put(SampleFinished(t=time,
+                self.worker_q.put(SampleFinished(t=time,  # type: ignore
                                                  sequence=n_seqs,
                                                  sample_name=name,
                                                  file_names=sample))
             except Exception as e:
-                self.worker_q.put(Error(t=time,
+                self.worker_q.put(Error(t=time,  # type: ignore
                                         sequence=n_seqs,
                                         sample_name=name,
                                         file_names=sample,
-                                        error=e.__traceback__))
+                                        error=str(e.__traceback__))) 
                 return
             finally:
-                self.worker_q.put(EndStream(t=time,
+                self.worker_q.put(EndStream(t=time,  # type: ignore
                                             sequence=n_seqs))
     
-    def on_error(self, exception):
-        self.worker_q.put(Error(t=self.processor.time_elapsed(),
-                                sequence=n_seqs,
-                                sample_name=name,
-                                error=f'At sequence {self.processor.n_sequences()}: {str(e)}',
-                                file_names=sample))
-        self.state = RunState.STOP_ERROR
+    #def on_error(self, exception):
+    #    self.worker_q.put(Error(t=self.processor.time_elapsed(),
+    #                            sequence=n_seqs,
+    #                            sample_name=name,
+    #                            error=f'At sequence {self.processor.n_sequences()}: {str(e)}',
+    #                            file_names=sample))
+    #    self.state = RunState.STOP_ERROR
 
     async def start(self, extra_tasks = None) -> None:
         try:
@@ -315,8 +280,8 @@ class AsyncSequenceProcessor(UnixBroadcasterMixin):
                     await g.spawn(channel.dispatch)
 
                 # start up AF_UNIX broadcaster if desired
-                if self.broadcast_socket is not None:
-                    await g.spawn(self.broadcaster)
+                # if self.broadcast_socket is not None:
+                #    await g.spawn(self.broadcaster)
 
                 if self.run_echo:
                     listener = self.add_listener('events_q', 'echo')
@@ -375,7 +340,16 @@ def every_n_intervals(func, n=1):
 
 class AsyncJSONStreamWriter:
 
-    def __init__(self, filename):
+    def __init__(self, filename: str):
+        '''Asynchronously write JSON data to a file.
+
+        Writes a stream of JSON objects to a file. The top-level
+        element is always a list; list items can be any valid JSON
+        type.
+
+        Args:
+            filename: Path of the target file to write to.
+        '''
         self.filename = filename
         self.n_writes = 0
         
@@ -383,11 +357,20 @@ class AsyncJSONStreamWriter:
             fp.write('[')
 
     def __del__(self):
-
         with open(self.filename, 'a') as fp:
             fp.write(']')
 
-    async def write(self, data):
+    async def write(self, data: Any, expand: bool = True):
+        '''Write the given data is a JSON element to the stream.
+        Strings will be written assuming they are already valid JSON;
+        this could result in malformed JSON, so care must be taken.
+        Other data types are passed to json.dumps for serialization.
+
+        Args:
+            data: Data to coerce to JSON.
+            expand: If True, iterables will be expanded into the stream
+                    rather than appended as a single item.
+        '''
 
         buf = ''
 
@@ -397,10 +380,10 @@ class AsyncJSONStreamWriter:
             if isinstance(data, str):
                 # assume already valid JSON object
                 buf = data
-            elif is_iterable(data) and not isinstance(data, dict):
+            elif expand and is_iterable(data) and not isinstance(data, dict):
                 # extend the top level list rather than
                 # adding the iterable as an item
-                buf = ','.join((str(item) for item in data))
+                buf = ','.join((json.dumps(item) for item in data))
             else:
                 buf = json.dumps(data)
             await fp.write(buf)
