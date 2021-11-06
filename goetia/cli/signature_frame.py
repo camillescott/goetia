@@ -6,8 +6,10 @@
 # Author : Camille Scott <camille.scott.w@gmail.com>
 # Date   : 04.06.2020
 
+import sys
+
 import curio
-from pyfiglet import Figlet
+import numpy as np
 
 from goetia import __version__
 from goetia.cli.cli import format_filenames, TextBlock
@@ -43,11 +45,6 @@ class SignatureStreamFrame:
         self.hist_figure.x_label = 'Δdistance'
         self.hist_figure.y_label = 'counts'
         self.hist_figure.color_mode = 'byte'
-
-        name_block = Figlet(font='doom').renderText('goetia').rstrip().split('\n')
-        name_block[-1] = name_block[-1] + f' {__version__}'
-        name_block.append(f'\n{term.bold}{component_name}{term.normal}')
-        self.name_block = TextBlock('\n'.join(name_block))
 
         param_block = term.normal + term.underline + (' ' * 40) + term.normal + '\n\n'
         param_block += f'{term.bold}window size:       {term.normal}{args.window_size}\n'\
@@ -123,27 +120,24 @@ class SignatureStreamFrame:
 
         if draw_dist_plot:
             with term.location():
-                figure.draw(term, max(self.name_block.width, self.param_block.width) + 1, 1)
+                figure.draw(term, self.param_block.width + 1, 1)
 
         with term.location():
-            self.name_block.draw(term, 0, shift_y=1)
-
-        with term.location():
-            self.param_block.draw(term, 0, shift_y=self.name_block.height+4)
+            self.param_block.draw(term, 0, shift_y=+4)
 
         with term.location():
             metrics.draw(term,
                          0,
-                         self.name_block.height + self.param_block.height + 4)
+                         self.param_block.height + 4)
 
         if messages is not None:
             with term.location():
-                ypos = metrics.height + self.name_block.height + self.param_block.height + 9
+                ypos = metrics.height + self.param_block.height + 9
                 self.message_block(messages).draw(term, 0, ypos)
 
         if draw_dist_hist and distances is not None:
             with term.location():
-                xpos = max(self.name_block.width, self.param_block.width) + 2
+                xpos = self.param_block.width + 2
                 if draw_dist_plot:
                     xpos += self.distance_figure.width + 5
                 self.hist_block(distances).draw(term, xpos, 1)
