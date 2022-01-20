@@ -9,8 +9,6 @@
 import filecmp
 import os
 
-import pytest
-
 from .utils import run_shell_cmd
 
 
@@ -20,7 +18,8 @@ def test_solid_filter(datadir, tmpdir):
         outfile = 'out.fa'
 
         solid_cmd = ['goetia',
-                     'solid-filter',
+                     'filter',
+                     'solid',
                      '-i',
                      '/dev/stdin',
                      '--pairing-mode',
@@ -29,12 +28,21 @@ def test_solid_filter(datadir, tmpdir):
                      '31',
                      '-x',
                      '1e7',
+                     '-C',
+                     '2',
+                     '-P',
+                     '.9',
                      '-o',
                      outfile]
 
         ret = run_shell_cmd(['cat', rfile, '|'] + solid_cmd)
+        assert ret.returncode == 0
+        print(ret.stderr)
+        result = open(outfile).read()
+        print(f'Result: {result}')
         assert not os.path.getsize(outfile)
 
         run_shell_cmd(['cat', rfile, rfile, '|'] + solid_cmd)
+        print(f'Result: {open(outfile).read()}')
         assert filecmp.cmp(outfile, rfile)
 

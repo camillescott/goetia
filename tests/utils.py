@@ -10,14 +10,12 @@ import collections
 import six
 
 import os
-import random
 import subprocess
 
 from debruijnal_enhance_o_tron.sequence import *
 
 import cppyy.gbl
 from cppyy.gbl import std
-import goetia
 from goetia import goetia as libgoetia
 from goetia.hashing import types as hashing_types
 from goetia.utils import pretty_repr

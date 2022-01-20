@@ -66,7 +66,7 @@ struct StreamingSolidFilter<GraphType<StorageType, ShifterType>> {
                 }
             }
 
-            if (((float)n_not_solid / (float)n_kmers) > (1.0 - min_prop_solid)) {
+            if (((float)n_not_solid / (float)n_kmers) >= (1.0 - min_prop_solid)) {
                 return {false, n_kmers};
             }
             return {true, n_kmers};

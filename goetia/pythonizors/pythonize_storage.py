@@ -10,6 +10,7 @@ from goetia.pythonizors.utils import make_tuple_from_type
 
 
 def pythonize_goetia_storage(klass, name):
+    from goetia.utils import pretty_repr
 
     if name.strip(' ').endswith('Storage'):
 
@@ -24,10 +25,22 @@ def pythonize_goetia_storage(klass, name):
 
         def wrap_build(build_func):
             def wrapped(*args):
+                built = None
                 if len(args) == 0:
-                    return build_func(klass.default_params)
-                if len(args) == 1 and isinstance(args[0], klass.Traits.params_type):
-                    return build_func(*args)
-                return build_func(klass.make_params(*args))
+                    built = build_func(klass.default_params)
+                elif len(args) == 1 and isinstance(args[0], klass.Traits.params_type):
+                    built = build_func(*args)
+                else:
+                    built = build_func(klass.make_params(*args))
+                built.build_params = args
+                return built
             return wrapped
         klass.build = wrap_build(klass.build)
+
+        def describe(self):
+            desc = f'{klass.__name__}\n'\
+                   f'- Params: {self.build_params}\n'\
+                   f'- Probabilistic: {bool(self.is_probabilistic)}\n'\
+                   f'- Counting:      {bool(self.is_counting)}'
+            return desc
+        klass.describe = describe

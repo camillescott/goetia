@@ -33,7 +33,7 @@ struct DiginormFilter<GraphType<StorageType, ShifterType>> {
     typedef typename shifter_type::kmer_type    kmer_type;
 
     static bool median_count_at_least(const std::string& sequence,
-                                      unsigned int       cutoff,
+                                      const unsigned int cutoff,
                                       graph_type&        graph) {
 
         auto kmers = graph.get_hash_iter(sequence);
@@ -65,6 +65,24 @@ struct DiginormFilter<GraphType<StorageType, ShifterType>> {
             }
         }
         return false;
+    }
+
+    static auto median_in_range(const std::string& sequence,
+                                const unsigned int low,
+                                const unsigned int high,
+                                graph_type&        graph)
+    -> std::pair<bool, std::vector<hash_type>> {
+        
+        std::vector<goetia::storage::count_t> counts;
+        std::vector<hash_type> hashes;
+        graph.query_sequence(sequence, counts, hashes);
+
+        size_t n = counts.size() / 2;
+        std::nth_element(counts.begin(), counts.begin() + n, counts.end());
+        auto median = counts[n];
+        bool in_range = (median > low && median <= high);
+
+        return {in_range, hashes};
     }
 
     class Filter {
