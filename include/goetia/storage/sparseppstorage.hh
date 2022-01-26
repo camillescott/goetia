@@ -20,7 +20,7 @@
 #include <tuple>
 #include <vector>
 
-namespace goetia::storage {
+namespace goetia {
 
 class SparseppSetStorage;
 

@@ -15,8 +15,6 @@
 
 namespace goetia {
 
-namespace storage {
-
 
 const count_t
 PHMapStorage::insert_and_query(value_type h) {
@@ -94,8 +92,6 @@ PHMapStorage::deserialize(std::ifstream& in) {
     storage->_store->unserialize(BaseSppSerializer(), &in);
     return storage;
     */
-}
-
 }
 
 }

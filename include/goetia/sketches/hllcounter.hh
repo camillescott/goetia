@@ -52,7 +52,7 @@ Contact: khmer-project@idyll.org
 #include "goetia/storage/storage.hh"
 #include "goetia/sketches/sketch/include/sketch/hll.h"
 
-namespace goetia::storage {
+namespace goetia {
 
 class HLLStorage;
 

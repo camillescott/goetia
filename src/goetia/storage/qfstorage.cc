@@ -57,7 +57,6 @@
 
 using namespace std;
 using namespace goetia;
-using namespace goetia::storage;
 
 
 QFStorage::QFStorage(int size)

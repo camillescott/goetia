@@ -9,7 +9,7 @@
 #include "goetia/hashing/kmeriterator.hh"
 #include "goetia/hashing/shifter_types.hh"
 
-namespace goetia::hashing {
+namespace goetia {
 
     template class KmerIterator<FwdLemireShifter>;
     template class KmerIterator<CanLemireShifter>;

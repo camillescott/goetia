@@ -22,12 +22,11 @@
 #include "goetia/storage/storage_types.hh"
 
 namespace goetia {
-namespace cdbg {
 
 template <class StorageType>
 struct UTagger {
 
-    typedef dBG<StorageType, hashing::CanUnikmerShifter> graph_type;
+    typedef dBG<StorageType, CanUnikmerShifter> graph_type;
     typedef UnitigWalker<graph_type>                        walker_type;
 
     // inject dependent typename boilerplate: see goetia/meta.hh
@@ -110,7 +109,7 @@ struct UTagger {
 
             // don't confuse dbg.get(), retrieves the raw pointer,
             // with dbg->get(), which reaches through and gets the cursor hash value
-            hashing::KmerIterator<graph_type> kmer_iter(sequence, dbg.get());
+            KmerIterator<graph_type> kmer_iter(sequence, dbg.get());
 
             std::vector<hash_type> hashes;
             std::deque<shift_pair_type> neighbors;
@@ -158,14 +157,14 @@ struct UTagger {
                                       const shift_pair_type& neighbors,
                                       tag_map_t&             tags) {
             // check in-neighbors
-            for (const shift_type<hashing::DIR_LEFT>& in_neighbor : neighbors.first) {
+            for (const shift_type<DIR_LEFT>& in_neighbor : neighbors.first) {
                 auto tag = create_tag(in_neighbor, root);
                 if (tag) {
                     tags[tag.value().link] = std::move(tag.value());
                 }
             }
             // and out neighbors
-            for (const shift_type<hashing::DIR_RIGHT>& out_neighbor : neighbors.second) {
+            for (const shift_type<DIR_RIGHT>& out_neighbor : neighbors.second) {
                 auto tag = create_tag(root, out_neighbor);
                 if (tag) {
                     tags[tag.value().link] = std::move(tag.value());
@@ -241,7 +240,7 @@ struct UTagger {
         std::vector<Tag> query_sequence_tags(const std::string& sequence) {
 
             std::vector<Tag> tags;
-            hashing::KmerIterator<graph_type> kmer_iter(sequence, dbg.get());
+            KmerIterator<graph_type> kmer_iter(sequence, dbg.get());
 
             hash_type u = kmer_iter.next();
             if (kmer_iter.done()) {
@@ -268,20 +267,20 @@ struct UTagger {
          */
         link_set_t query_neighborhood_tags(const std::string& sequence) {
 
-            hashing::KmerIterator<graph_type> kmer_iter(sequence, dbg.get());
+            KmerIterator<graph_type> kmer_iter(sequence, dbg.get());
             link_set_t found;
 
             while(!kmer_iter.done()) {
                 hash_type root = kmer_iter.next();
                 auto neighborhood = dbg->filter_nodes(std::make_pair(dbg->left_extensions(),
                                                                      dbg->right_extensions()));
-                for (const shift_type<hashing::DIR_LEFT>& in_neighbor : neighborhood.first) {
+                for (const shift_type<DIR_LEFT>& in_neighbor : neighborhood.first) {
                     if (auto tag = query_tag(in_neighbor, root)) {
                         found.insert(tag.value().link);
                     }
                 }
                 // and out neighbors
-                for (const shift_type<hashing::DIR_RIGHT>& out_neighbor : neighborhood.second) {
+                for (const shift_type<DIR_RIGHT>& out_neighbor : neighborhood.second) {
                     if (auto tag = query_tag(root, out_neighbor)) {
                         found.insert(tag.value().link);
                     }
@@ -298,13 +297,12 @@ struct UTagger {
 
 };
 
-extern template class cdbg::UTagger<storage::BitStorage>;
-extern template class cdbg::UTagger<storage::ByteStorage>;
-extern template class cdbg::UTagger<storage::NibbleStorage>;
-extern template class cdbg::UTagger<storage::QFStorage>;
-extern template class cdbg::UTagger<storage::SparseppSetStorage>;
+extern template class UTagger<BitStorage>;
+extern template class UTagger<ByteStorage>;
+extern template class UTagger<NibbleStorage>;
+extern template class UTagger<QFStorage>;
+extern template class UTagger<SparseppSetStorage>;
 
-}
 }
 
 #endif

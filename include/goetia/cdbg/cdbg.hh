@@ -55,7 +55,6 @@
 
 
 namespace goetia {
-namespace cdbg {
 
 template <class T>
 struct cDBG;
@@ -69,7 +68,7 @@ public:
     typedef GraphType<StorageType, ShifterType> graph_type;
 
     typedef typename graph_type::shifter_type   shifter_type;
-    typedef hashing::HashExtender<shifter_type> extender_type;
+    typedef HashExtender<shifter_type> extender_type;
     typedef typename shifter_type::alphabet     alphabet;
     typedef typename shifter_type::hash_type    hash_type;
 	typedef typename hash_type::value_type      value_type;
@@ -428,7 +427,7 @@ public:
 
         std::vector<DecisionNode*> query_dnodes(const std::string& sequence)  {
 
-            hashing::KmerIterator<shifter_type> kmers(sequence, this->K);
+            KmerIterator<shifter_type> kmers(sequence, this->K);
             std::vector<DecisionNode*> result;
             while(!kmers.done()) {
                 hash_type h = kmers.next();
@@ -607,7 +606,7 @@ public:
                 auto unode = it->second.get();
                 auto counts = dbg->query_sequence(unode->sequence);
                 if (std::any_of(counts.begin(), counts.end(), 
-                                [](storage::count_t i){ return i == 0; })) {
+                                [](count_t i){ return i == 0; })) {
                     out << unode->node_id << ";"
                         << unode->left_end() << ";"
                         << unode->right_end() << ";"
@@ -743,28 +742,26 @@ public:
 
 };
 
-}
+extern template class goetia::cDBG<goetia::dBG<goetia::BitStorage, goetia::FwdLemireShifter>>;
+extern template class goetia::cDBG<goetia::dBG<goetia::BitStorage, goetia::CanLemireShifter>>;
 
-extern template class cdbg::cDBG<dBG<storage::BitStorage, hashing::FwdLemireShifter>>;
-extern template class cdbg::cDBG<dBG<storage::BitStorage, hashing::CanLemireShifter>>;
+extern template class goetia::cDBG<goetia::dBG<goetia::PHMapStorage, goetia::FwdLemireShifter>>;
+extern template class goetia::cDBG<goetia::dBG<goetia::PHMapStorage, goetia::CanLemireShifter>>;
 
-extern template class cdbg::cDBG<dBG<storage::PHMapStorage, hashing::FwdLemireShifter>>;
-extern template class cdbg::cDBG<dBG<storage::PHMapStorage, hashing::CanLemireShifter>>;
+extern template class goetia::cDBG<goetia::dBG<goetia::BTreeStorage, goetia::FwdLemireShifter>>;
+extern template class goetia::cDBG<goetia::dBG<goetia::BTreeStorage, goetia::CanLemireShifter>>;
 
-extern template class cdbg::cDBG<dBG<storage::BTreeStorage, hashing::FwdLemireShifter>>;
-extern template class cdbg::cDBG<dBG<storage::BTreeStorage, hashing::CanLemireShifter>>;
+extern template class goetia::cDBG<goetia::dBG<goetia::SparseppSetStorage, goetia::FwdLemireShifter>>;
+extern template class goetia::cDBG<goetia::dBG<goetia::SparseppSetStorage, goetia::CanLemireShifter>>;
 
-extern template class cdbg::cDBG<dBG<storage::SparseppSetStorage, hashing::FwdLemireShifter>>;
-extern template class cdbg::cDBG<dBG<storage::SparseppSetStorage, hashing::CanLemireShifter>>;
+extern template class goetia::cDBG<goetia::dBG<goetia::ByteStorage, goetia::FwdLemireShifter>>;
+extern template class goetia::cDBG<goetia::dBG<goetia::ByteStorage, goetia::CanLemireShifter>>;
 
-extern template class cdbg::cDBG<dBG<storage::ByteStorage, hashing::FwdLemireShifter>>;
-extern template class cdbg::cDBG<dBG<storage::ByteStorage, hashing::CanLemireShifter>>;
+extern template class goetia::cDBG<goetia::dBG<goetia::NibbleStorage, goetia::FwdLemireShifter>>;
+extern template class goetia::cDBG<goetia::dBG<goetia::NibbleStorage, goetia::CanLemireShifter>>;
 
-extern template class cdbg::cDBG<dBG<storage::NibbleStorage, hashing::FwdLemireShifter>>;
-extern template class cdbg::cDBG<dBG<storage::NibbleStorage, hashing::CanLemireShifter>>;
-
-extern template class cdbg::cDBG<dBG<storage::QFStorage, hashing::FwdLemireShifter>>;
-extern template class cdbg::cDBG<dBG<storage::QFStorage, hashing::CanLemireShifter>>;
+extern template class goetia::cDBG<goetia::dBG<goetia::QFStorage, goetia::FwdLemireShifter>>;
+extern template class goetia::cDBG<goetia::dBG<goetia::QFStorage, goetia::CanLemireShifter>>;
 
 }
 

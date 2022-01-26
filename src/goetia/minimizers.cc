@@ -12,7 +12,7 @@
 namespace goetia {
 
 template class InteriorMinimizer<uint64_t>;
-template class WKMinimizer<hashing::FwdLemireShifter>;
-template class WKMinimizer<hashing::CanLemireShifter>;
+template class WKMinimizer<FwdLemireShifter>;
+template class WKMinimizer<CanLemireShifter>;
 
 }

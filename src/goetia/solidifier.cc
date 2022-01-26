@@ -10,7 +10,7 @@
 
 namespace goetia {
 
-template class StreamingSolidFilter<dBG<storage::BitStorage, hashing::FwdLemireShifter>>;
-template class StreamingSolidFilter<dBG<storage::QFStorage, hashing::FwdLemireShifter>>;
+template class StreamingSolidFilter<dBG<BitStorage, FwdLemireShifter>>;
+template class StreamingSolidFilter<dBG<QFStorage, FwdLemireShifter>>;
 
 }

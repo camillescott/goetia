@@ -33,21 +33,21 @@ void run_storage_bench() {
     std::vector<size_t> hashes_sizes = {1000000, 10000000, 100000000};
 
 
-    std::unique_ptr<storage::BitStorage> bitstorage;
-    std::unique_ptr<storage::NibbleStorage> nibblestorage;
-    std::unique_ptr<storage::ByteStorage> bytestorage;
-    std::unique_ptr<storage::SparseppSetStorage> sparseppstorage;
-    std::unique_ptr<storage::PHMapStorage> phmapstorage;
-    std::unique_ptr<storage::BTreeStorage> btreestorage;
+    std::unique_ptr<BitStorage> bitstorage;
+    std::unique_ptr<NibbleStorage> nibblestorage;
+    std::unique_ptr<ByteStorage> bytestorage;
+    std::unique_ptr<SparseppSetStorage> sparseppstorage;
+    std::unique_ptr<PHMapStorage> phmapstorage;
+    std::unique_ptr<BTreeStorage> btreestorage;
     
     std::cout << "storage_type, n_hashes, bench, time" << std::endl;
     for (auto n_hashes : hashes_sizes) {
-        bitstorage = std::make_unique<storage::BitStorage>(n_hashes / 4, 4);
-        nibblestorage = std::make_unique<storage::NibbleStorage>(n_hashes / 4, 4);
-        bytestorage = std::make_unique<storage::ByteStorage>(n_hashes / 4, 4);
-        sparseppstorage  = std::make_unique<storage::SparseppSetStorage>();
-        phmapstorage = std::make_unique<storage::PHMapStorage>();
-        btreestorage = std::make_unique<storage::BTreeStorage>();
+        bitstorage = std::make_unique<BitStorage>(n_hashes / 4, 4);
+        nibblestorage = std::make_unique<NibbleStorage>(n_hashes / 4, 4);
+        bytestorage = std::make_unique<ByteStorage>(n_hashes / 4, 4);
+        sparseppstorage  = std::make_unique<SparseppSetStorage>();
+        phmapstorage = std::make_unique<PHMapStorage>();
+        btreestorage = std::make_unique<BTreeStorage>();
 
         auto hashes = generate_hashes(n_hashes);
 

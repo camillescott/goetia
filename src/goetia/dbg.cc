@@ -14,77 +14,77 @@
 
 namespace goetia {
 
-    template class dBG<storage::BitStorage, hashing::FwdLemireShifter>;
-    template class Masked<storage::BitStorage, hashing::FwdLemireShifter, std::set<typename hashing::FwdLemireShifter::hash_type>>;
-    template class dBG<storage::BitStorage, hashing::CanLemireShifter>;
-    template class dBG<storage::BitStorage, hashing::FwdUnikmerShifter>;
-    template class dBG<storage::BitStorage, hashing::CanUnikmerShifter>;
+    template class dBG<BitStorage, FwdLemireShifter>;
+    template class Masked<BitStorage, FwdLemireShifter, std::set<typename FwdLemireShifter::hash_type>>;
+    template class dBG<BitStorage, CanLemireShifter>;
+    template class dBG<BitStorage, FwdUnikmerShifter>;
+    template class dBG<BitStorage, CanUnikmerShifter>;
 
-    template class dBG<storage::SparseppSetStorage, hashing::FwdLemireShifter>;
-    template class dBG<storage::SparseppSetStorage, hashing::CanLemireShifter>;
-    template class dBG<storage::SparseppSetStorage, hashing::FwdUnikmerShifter>;
-    template class dBG<storage::SparseppSetStorage, hashing::CanUnikmerShifter>;
+    template class dBG<SparseppSetStorage, FwdLemireShifter>;
+    template class dBG<SparseppSetStorage, CanLemireShifter>;
+    template class dBG<SparseppSetStorage, FwdUnikmerShifter>;
+    template class dBG<SparseppSetStorage, CanUnikmerShifter>;
 
-    template class dBG<storage::ByteStorage, hashing::FwdLemireShifter>;
-    template class dBG<storage::ByteStorage, hashing::CanLemireShifter>;
-    template class dBG<storage::ByteStorage, hashing::FwdUnikmerShifter>;
-    template class dBG<storage::ByteStorage, hashing::CanUnikmerShifter>;
+    template class dBG<ByteStorage, FwdLemireShifter>;
+    template class dBG<ByteStorage, CanLemireShifter>;
+    template class dBG<ByteStorage, FwdUnikmerShifter>;
+    template class dBG<ByteStorage, CanUnikmerShifter>;
 
-    template class dBG<storage::NibbleStorage, hashing::FwdLemireShifter>;
-    template class dBG<storage::NibbleStorage, hashing::CanLemireShifter>;
-    template class dBG<storage::NibbleStorage, hashing::FwdUnikmerShifter>;
-    template class dBG<storage::NibbleStorage, hashing::CanUnikmerShifter>;
+    template class dBG<NibbleStorage, FwdLemireShifter>;
+    template class dBG<NibbleStorage, CanLemireShifter>;
+    template class dBG<NibbleStorage, FwdUnikmerShifter>;
+    template class dBG<NibbleStorage, CanUnikmerShifter>;
 
-    template class dBG<storage::QFStorage, hashing::FwdLemireShifter>;
-    template class dBG<storage::QFStorage, hashing::CanLemireShifter>;
-    template class dBG<storage::QFStorage, hashing::FwdUnikmerShifter>;
-    template class dBG<storage::QFStorage, hashing::CanUnikmerShifter>;
+    template class dBG<QFStorage, FwdLemireShifter>;
+    template class dBG<QFStorage, CanLemireShifter>;
+    template class dBG<QFStorage, FwdUnikmerShifter>;
+    template class dBG<QFStorage, CanUnikmerShifter>;
 
-    template class goetia::dBG<goetia::storage::PHMapStorage, goetia::hashing::FwdLemireShifter>;
-    template class goetia::dBG<goetia::storage::PHMapStorage, goetia::hashing::CanLemireShifter>;
-    template class goetia::dBG<goetia::storage::PHMapStorage, goetia::hashing::FwdUnikmerShifter>;
-    template class goetia::dBG<goetia::storage::PHMapStorage, goetia::hashing::CanUnikmerShifter>;
+    template class goetia::dBG<goetia::PHMapStorage, goetia::FwdLemireShifter>;
+    template class goetia::dBG<goetia::PHMapStorage, goetia::CanLemireShifter>;
+    template class goetia::dBG<goetia::PHMapStorage, goetia::FwdUnikmerShifter>;
+    template class goetia::dBG<goetia::PHMapStorage, goetia::CanUnikmerShifter>;
    
-    template class goetia::dBG<goetia::storage::BTreeStorage, goetia::hashing::FwdLemireShifter>;
-    template class goetia::dBG<goetia::storage::BTreeStorage, goetia::hashing::CanLemireShifter>;
-    template class goetia::dBG<goetia::storage::BTreeStorage, goetia::hashing::FwdUnikmerShifter>;
-    template class goetia::dBG<goetia::storage::BTreeStorage, goetia::hashing::CanUnikmerShifter>;
+    template class goetia::dBG<goetia::BTreeStorage, goetia::FwdLemireShifter>;
+    template class goetia::dBG<goetia::BTreeStorage, goetia::CanLemireShifter>;
+    template class goetia::dBG<goetia::BTreeStorage, goetia::FwdUnikmerShifter>;
+    template class goetia::dBG<goetia::BTreeStorage, goetia::CanUnikmerShifter>;
 
 
-    template class hashing::KmerIterator<dBG<storage::BitStorage, hashing::FwdLemireShifter>>;
-    template class hashing::KmerIterator<dBG<storage::BitStorage, hashing::CanLemireShifter>>;
-    template class hashing::KmerIterator<dBG<storage::BitStorage, hashing::FwdUnikmerShifter>>;
-    template class hashing::KmerIterator<dBG<storage::BitStorage, hashing::CanUnikmerShifter>>;
+    template class KmerIterator<dBG<BitStorage, FwdLemireShifter>>;
+    template class KmerIterator<dBG<BitStorage, CanLemireShifter>>;
+    template class KmerIterator<dBG<BitStorage, FwdUnikmerShifter>>;
+    template class KmerIterator<dBG<BitStorage, CanUnikmerShifter>>;
 
-    template class hashing::KmerIterator<dBG<storage::SparseppSetStorage, hashing::FwdLemireShifter>>;
-    template class hashing::KmerIterator<dBG<storage::SparseppSetStorage, hashing::CanLemireShifter>>;
-    template class hashing::KmerIterator<dBG<storage::SparseppSetStorage, hashing::FwdUnikmerShifter>>;
-    template class hashing::KmerIterator<dBG<storage::SparseppSetStorage, hashing::CanUnikmerShifter>>;
+    template class KmerIterator<dBG<SparseppSetStorage, FwdLemireShifter>>;
+    template class KmerIterator<dBG<SparseppSetStorage, CanLemireShifter>>;
+    template class KmerIterator<dBG<SparseppSetStorage, FwdUnikmerShifter>>;
+    template class KmerIterator<dBG<SparseppSetStorage, CanUnikmerShifter>>;
 
-    template class hashing::KmerIterator<dBG<storage::ByteStorage, hashing::FwdLemireShifter>>;
-    template class hashing::KmerIterator<dBG<storage::ByteStorage, hashing::CanLemireShifter>>;
-    template class hashing::KmerIterator<dBG<storage::ByteStorage, hashing::FwdUnikmerShifter>>;
-    template class hashing::KmerIterator<dBG<storage::ByteStorage, hashing::CanUnikmerShifter>>;
+    template class KmerIterator<dBG<ByteStorage, FwdLemireShifter>>;
+    template class KmerIterator<dBG<ByteStorage, CanLemireShifter>>;
+    template class KmerIterator<dBG<ByteStorage, FwdUnikmerShifter>>;
+    template class KmerIterator<dBG<ByteStorage, CanUnikmerShifter>>;
 
-    template class hashing::KmerIterator<dBG<storage::NibbleStorage, hashing::FwdLemireShifter>>;
-    template class hashing::KmerIterator<dBG<storage::NibbleStorage, hashing::CanLemireShifter>>;
-    template class hashing::KmerIterator<dBG<storage::NibbleStorage, hashing::FwdUnikmerShifter>>;
-    template class hashing::KmerIterator<dBG<storage::NibbleStorage, hashing::CanUnikmerShifter>>;
+    template class KmerIterator<dBG<NibbleStorage, FwdLemireShifter>>;
+    template class KmerIterator<dBG<NibbleStorage, CanLemireShifter>>;
+    template class KmerIterator<dBG<NibbleStorage, FwdUnikmerShifter>>;
+    template class KmerIterator<dBG<NibbleStorage, CanUnikmerShifter>>;
 
-    template class hashing::KmerIterator<dBG<storage::QFStorage, hashing::FwdLemireShifter>>;
-    template class hashing::KmerIterator<dBG<storage::QFStorage, hashing::CanLemireShifter>>;
-    template class hashing::KmerIterator<dBG<storage::QFStorage, hashing::FwdUnikmerShifter>>;
-    template class hashing::KmerIterator<dBG<storage::QFStorage, hashing::CanUnikmerShifter>>;
+    template class KmerIterator<dBG<QFStorage, FwdLemireShifter>>;
+    template class KmerIterator<dBG<QFStorage, CanLemireShifter>>;
+    template class KmerIterator<dBG<QFStorage, FwdUnikmerShifter>>;
+    template class KmerIterator<dBG<QFStorage, CanUnikmerShifter>>;
 
-    template class goetia::hashing::KmerIterator<goetia::dBG<goetia::storage::PHMapStorage, goetia::hashing::FwdLemireShifter>>;
-    template class goetia::hashing::KmerIterator<goetia::dBG<goetia::storage::PHMapStorage, goetia::hashing::CanLemireShifter>>;
-    template class goetia::hashing::KmerIterator<goetia::dBG<goetia::storage::PHMapStorage, goetia::hashing::FwdUnikmerShifter>>;
-    template class goetia::hashing::KmerIterator<goetia::dBG<goetia::storage::PHMapStorage, goetia::hashing::CanUnikmerShifter>>;
+    template class goetia::KmerIterator<goetia::dBG<goetia::PHMapStorage, goetia::FwdLemireShifter>>;
+    template class goetia::KmerIterator<goetia::dBG<goetia::PHMapStorage, goetia::CanLemireShifter>>;
+    template class goetia::KmerIterator<goetia::dBG<goetia::PHMapStorage, goetia::FwdUnikmerShifter>>;
+    template class goetia::KmerIterator<goetia::dBG<goetia::PHMapStorage, goetia::CanUnikmerShifter>>;
 
-    template class goetia::hashing::KmerIterator<goetia::dBG<goetia::storage::BTreeStorage, goetia::hashing::FwdLemireShifter>>;
-    template class goetia::hashing::KmerIterator<goetia::dBG<goetia::storage::BTreeStorage, goetia::hashing::CanLemireShifter>>;
-    template class goetia::hashing::KmerIterator<goetia::dBG<goetia::storage::BTreeStorage, goetia::hashing::FwdUnikmerShifter>>;
-    template class goetia::hashing::KmerIterator<goetia::dBG<goetia::storage::BTreeStorage, goetia::hashing::CanUnikmerShifter>>;
+    template class goetia::KmerIterator<goetia::dBG<goetia::BTreeStorage, goetia::FwdLemireShifter>>;
+    template class goetia::KmerIterator<goetia::dBG<goetia::BTreeStorage, goetia::CanLemireShifter>>;
+    template class goetia::KmerIterator<goetia::dBG<goetia::BTreeStorage, goetia::FwdUnikmerShifter>>;
+    template class goetia::KmerIterator<goetia::dBG<goetia::BTreeStorage, goetia::CanUnikmerShifter>>;
 
 
 }

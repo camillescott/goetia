@@ -114,7 +114,7 @@ template <template <class, class, class...> class GraphType,
                     class StorageType,
                            class ShifterType,
                                   class... Extras> // Dummy param to handle query in derived classes
-class UnitigWalker<GraphType<StorageType, ShifterType, Extras...>> : public hashing::extender_selector<ShifterType>::type {
+class UnitigWalker<GraphType<StorageType, ShifterType, Extras...>> : public extender_selector<ShifterType>::type {
 
     typedef GraphType<StorageType, ShifterType, Extras...>     Derived;
 
@@ -122,13 +122,13 @@ public:
 
     typedef Derived                                 graph_type;
     typedef ShifterType                             shifter_type;
-    typedef typename hashing::extender_selector<shifter_type>::type extender_type;
+    typedef typename extender_selector<shifter_type>::type extender_type;
 
     typedef typename extender_type::hash_type       hash_type;
     typedef typename hash_type::value_type          value_type;
 
     template<bool Dir>
-        using shift_type = hashing::Shift<hash_type, Dir>;
+        using shift_type = Shift<hash_type, Dir>;
     typedef typename extender_type::shift_left_type  shift_left_type;
     typedef typename extender_type::shift_right_type shift_right_type;
 
@@ -137,8 +137,8 @@ public:
     typedef std::pair<std::vector<kmer_type>,
                       std::vector<kmer_type>>        neighbor_pair_type;
 
-    typedef std::pair<std::vector<shift_type<hashing::DIR_LEFT>>,
-                      std::vector<shift_type<hashing::DIR_RIGHT>>> shift_pair_type;
+    typedef std::pair<std::vector<shift_type<DIR_LEFT>>,
+                      std::vector<shift_type<DIR_RIGHT>>> shift_pair_type;
 
     typedef TraversalState::State                    State;
     typedef NullWalkFunctor<hash_type>               null_walk_func_t;
@@ -154,7 +154,7 @@ public:
     template<bool Dir>
     struct WalkBase {
         kmer_type                                        start;
-        std::vector<hashing::Shift<hash_type, Dir>> path;
+        std::vector<Shift<hash_type, Dir>> path;
         TraversalState::State                            end_state;
 
         const hash_type head() const {
@@ -170,7 +170,7 @@ public:
         }
     };
 
-    template<bool Dir = hashing::DIR_RIGHT, typename Dummy = void>
+    template<bool Dir = DIR_RIGHT, typename Dummy = void>
     struct WalkImpl : public WalkBase<Dir> {
         using WalkBase<Dir>::start;
         using WalkBase<Dir>::path;
@@ -186,11 +186,11 @@ public:
             return std::move(str);
         }
 
-        const std::string glue(const WalkImpl<hashing::DIR_LEFT>& left) const {
+        const std::string glue(const WalkImpl<DIR_LEFT>& left) const {
             return left.to_string() + this->to_string().substr(start.kmer.size());
         }
 
-        const std::string glue(const WalkImpl<hashing::DIR_RIGHT>& right) const {
+        const std::string glue(const WalkImpl<DIR_RIGHT>& right) const {
             return this->to_string() + right.to_string().substr(start.kmer.size());
         }
 
@@ -205,10 +205,10 @@ public:
     };
 
     template<typename Dummy>
-    struct WalkImpl<hashing::DIR_LEFT, Dummy> : public WalkBase<hashing::DIR_LEFT> {
-        using WalkBase<hashing::DIR_LEFT>::start;
-        using WalkBase<hashing::DIR_LEFT>::path;
-        using WalkBase<hashing::DIR_LEFT>::end_state;
+    struct WalkImpl<DIR_LEFT, Dummy> : public WalkBase<DIR_LEFT> {
+        using WalkBase<DIR_LEFT>::start;
+        using WalkBase<DIR_LEFT>::path;
+        using WalkBase<DIR_LEFT>::end_state;
 
         const char retreat_symbol() const {
             size_t position = path.size();
@@ -230,7 +230,7 @@ public:
             return std::move(str);
         }
 
-        const std::string glue(const WalkImpl<hashing::DIR_RIGHT>& right) const {
+        const std::string glue(const WalkImpl<DIR_RIGHT>& right) const {
             return this->to_string() + right.to_string().substr(start.kmer.size());
         }
     };
@@ -249,7 +249,7 @@ public:
         using walk_type::glue;
     };
 
-    typedef std::pair<Walk<hashing::DIR_LEFT>, Walk<hashing::DIR_RIGHT>> walk_pair_type;
+    typedef std::pair<Walk<DIR_LEFT>, Walk<DIR_RIGHT>> walk_pair_type;
 
 
     using extender_type::set_cursor;
@@ -376,7 +376,7 @@ public:
      */
     template<bool Dir>
     auto filter_nodes(const std::vector<shift_type<Dir>>& extensions,
-                      std::vector<storage::count_t>& counts)
+                      std::vector<count_t>& counts)
     -> std::vector<shift_type<Dir>> {
 
         std::vector<shift_type<Dir>> result;
@@ -444,14 +444,14 @@ public:
      *
      * @Returns   Vector of valid shifts in the graph.
      */
-    template<class Ret = shift_type<hashing::DIR_LEFT>>
+    template<class Ret = shift_type<DIR_LEFT>>
     inline auto in_neighbors()
     -> std::vector<Ret> {
         
         return in_neighbors(type<Ret>());
     }
 
-    template<class Ret = shift_type<hashing::DIR_LEFT>>
+    template<class Ret = shift_type<DIR_LEFT>>
     inline auto in_neighbors(const std::string& seed)
     -> std::vector<Ret> {
         this->set_cursor(seed);
@@ -460,7 +460,7 @@ public:
 
 private:
 
-    template<class Ret = shift_type<hashing::DIR_LEFT>>
+    template<class Ret = shift_type<DIR_LEFT>>
     inline auto in_neighbors(type<Ret>)
     -> std::vector<Ret> {
         return filter_nodes(this->left_extensions());
@@ -481,14 +481,14 @@ public:
      *
      * @Returns   Vector of valid shifts in the graph.
      */
-    template<class Ret = shift_type<hashing::DIR_RIGHT>>
+    template<class Ret = shift_type<DIR_RIGHT>>
     inline auto out_neighbors()
     -> std::vector<Ret> {
         
         return out_neighbors(type<Ret>());
     }
 
-    template<class Ret = shift_type<hashing::DIR_RIGHT>>
+    template<class Ret = shift_type<DIR_RIGHT>>
     inline auto out_neighbors(const std::string& seed)
     -> std::vector<Ret> {
         this->set_cursor(seed);
@@ -497,7 +497,7 @@ public:
 
 private:
 
-    template<class Ret = shift_type<hashing::DIR_RIGHT>>
+    template<class Ret = shift_type<DIR_RIGHT>>
     inline auto out_neighbors(type<Ret>)
     -> std::vector<Ret> {
         return filter_nodes(this->right_extensions());
@@ -558,7 +558,7 @@ public:
      *
      * @Returns   kmer_t objects with the left k-mers.
      */
-    std::vector<kmer_type> build_left_kmers(const std::vector<shift_type<hashing::DIR_LEFT>>& nodes,
+    std::vector<kmer_type> build_left_kmers(const std::vector<shift_type<DIR_LEFT>>& nodes,
                                             const std::string&                       root) {
         std::vector<kmer_type> kmers;
         auto _prefix = derived().prefix(root);
@@ -578,7 +578,7 @@ public:
      *
      * @Returns   kmer_t objects with the right k-mers.
      */
-    std::vector<kmer_type> build_right_kmers(const std::vector<shift_type<hashing::DIR_RIGHT>>& nodes,
+    std::vector<kmer_type> build_right_kmers(const std::vector<shift_type<DIR_RIGHT>>& nodes,
                                              const std::string& root) {
         std::vector<kmer_type> kmers;
         auto _suffix = derived().suffix(root);
@@ -625,11 +625,11 @@ public:
      * 
      * @tparam WalkFunctor 
      * @param f 
-     * @return std::pair<State, std::vector<shift_type<hashing::DIR_LEFT>>> 
+     * @return std::pair<State, std::vector<shift_type<DIR_LEFT>>> 
      */
     template<typename WalkFunctor>
     auto step_left(WalkFunctor& f)
-    -> std::pair<State, std::vector<shift_type<hashing::DIR_LEFT>>> {
+    -> std::pair<State, std::vector<shift_type<DIR_LEFT>>> {
 
         auto neighbors = this->filter_nodes(this->left_extensions());
         auto state = look_state(neighbors);
@@ -647,10 +647,10 @@ public:
     /**
      * @brief Overload for step_left with default null functor for WalkFunctor.
      * 
-     * @return std::pair<State, std::vector<shift_type<hashing::DIR_LEFT>>> 
+     * @return std::pair<State, std::vector<shift_type<DIR_LEFT>>> 
      */
     auto step_left()
-    -> std::pair<State, std::vector<shift_type<hashing::DIR_LEFT>>> {
+    -> std::pair<State, std::vector<shift_type<DIR_LEFT>>> {
         null_walk_func_t func;
         return step_left(func);
     }
@@ -663,11 +663,11 @@ public:
      * 
      * @tparam WalkFunctor 
      * @param f 
-     * @return std::pair<State, std::vector<shift_type<hashing::DIR_RIGHT>>> 
+     * @return std::pair<State, std::vector<shift_type<DIR_RIGHT>>> 
      */
     template<typename WalkFunctor>
     auto step_right(WalkFunctor& f)
-    -> std::pair<State, std::vector<shift_type<hashing::DIR_RIGHT>>> {
+    -> std::pair<State, std::vector<shift_type<DIR_RIGHT>>> {
 
         auto neighbors = this->filter_nodes(this->right_extensions());
         auto state = look_state(neighbors);
@@ -685,10 +685,10 @@ public:
     /**
      * @brief Overload for step_right with default null functor for WalkFunctor.
      * 
-     * @return std::pair<State, std::vector<shift_type<hashing::DIR_RIGHT>>> 
+     * @return std::pair<State, std::vector<shift_type<DIR_RIGHT>>> 
      */
     auto step_right()
-    -> std::pair<State, std::vector<shift_type<hashing::DIR_RIGHT>>> {
+    -> std::pair<State, std::vector<shift_type<DIR_RIGHT>>> {
         null_walk_func_t func;
         return step_right(func);
     }
@@ -703,16 +703,16 @@ public:
      * @tparam WalkFunctor 
      * @param seed 
      * @param f 
-     * @return Walk<hashing::DIR_LEFT> 
+     * @return Walk<DIR_LEFT> 
      */
     template<typename WalkFunctor>
-    Walk<hashing::DIR_LEFT> walk_left(const std::string& seed,
+    Walk<DIR_LEFT> walk_left(const std::string& seed,
                                       WalkFunctor& f) {
 
         this->set_cursor(seed);
         auto seed_hash = this->get();
         if (!derived().query(seed_hash)) {
-            Walk<hashing::DIR_LEFT> walk{kmer_type{seed_hash, this->get_cursor()},
+            Walk<DIR_LEFT> walk{kmer_type{seed_hash, this->get_cursor()},
                                          {},
                                          State::BAD_SEED};
             return walk;
@@ -725,9 +725,9 @@ public:
      * @brief Overload for walk_left with default null walk functor.
      * 
      * @param seed 
-     * @return Walk<hashing::DIR_LEFT> 
+     * @return Walk<DIR_LEFT> 
      */
-    Walk<hashing::DIR_LEFT> walk_left(const std::string& seed) {
+    Walk<DIR_LEFT> walk_left(const std::string& seed) {
         null_walk_func_t func;
         return walk_left(seed, func);
     }
@@ -741,12 +741,12 @@ public:
      * 
      * @tparam WalkFunctor 
      * @param f 
-     * @return Walk<hashing::DIR_LEFT> 
+     * @return Walk<DIR_LEFT> 
      */
     template<typename WalkFunctor>
-    Walk<hashing::DIR_LEFT> walk_left(WalkFunctor& f) {
+    Walk<DIR_LEFT> walk_left(WalkFunctor& f) {
 
-        Walk<hashing::DIR_LEFT> walk;
+        Walk<DIR_LEFT> walk;
 
         hash_type start_hash = this->get();
         this->seen.clear();
@@ -788,9 +788,9 @@ public:
     /**
      * @brief Overload for walk_left with default null walk functor.
      * 
-     * @return Walk<hashing::DIR_LEFT> 
+     * @return Walk<DIR_LEFT> 
      */
-    Walk<hashing::DIR_LEFT> walk_left() {
+    Walk<DIR_LEFT> walk_left() {
         null_walk_func_t func;
         return walk_left(func);
     }
@@ -805,16 +805,16 @@ public:
      * @tparam WalkFunctor 
      * @param seed 
      * @param f 
-     * @return Walk<hashing::DIR_RIGHT> 
+     * @return Walk<DIR_RIGHT> 
      */
     template<typename WalkFunctor>
-    Walk<hashing::DIR_RIGHT> walk_right(const std::string& seed,
+    Walk<DIR_RIGHT> walk_right(const std::string& seed,
                                         WalkFunctor& f) {
 
         this->set_cursor(seed);
         auto seed_hash = this->get();
         if (!derived().query(seed_hash)) {
-            Walk<hashing::DIR_RIGHT> walk{kmer_type{seed_hash, this->get_cursor()},
+            Walk<DIR_RIGHT> walk{kmer_type{seed_hash, this->get_cursor()},
                                            {},
                                            State::BAD_SEED};
             return walk;
@@ -826,9 +826,9 @@ public:
      * @brief Overload for walk_right with default null walk functor.
      * 
      * @param seed 
-     * @return Walk<hashing::DIR_RIGHT> 
+     * @return Walk<DIR_RIGHT> 
      */
-    Walk<hashing::DIR_RIGHT> walk_right(const std::string& seed) {
+    Walk<DIR_RIGHT> walk_right(const std::string& seed) {
         null_walk_func_t func;
         return walk_right(seed, func);
     }
@@ -842,12 +842,12 @@ public:
      * 
      * @tparam WalkFunctor 
      * @param f 
-     * @return Walk<hashing::DIR_RIGHT> 
+     * @return Walk<DIR_RIGHT> 
      */
     template<typename WalkFunctor>
-    Walk<hashing::DIR_RIGHT> walk_right(WalkFunctor& f) {
+    Walk<DIR_RIGHT> walk_right(WalkFunctor& f) {
 
-        Walk<hashing::DIR_RIGHT> walk;
+        Walk<DIR_RIGHT> walk;
 
         hash_type start_hash = this->get();
         this->seen.clear();
@@ -886,9 +886,9 @@ public:
     /**
      * @brief Overload for walk_right with default null walk functor.
      * 
-     * @return Walk<hashing::DIR_RIGHT> 
+     * @return Walk<DIR_RIGHT> 
      */
-    Walk<hashing::DIR_RIGHT> walk_right() {
+    Walk<DIR_RIGHT> walk_right() {
         null_walk_func_t func;
         return walk_right(func);
     }
@@ -957,7 +957,7 @@ public:
                              std::vector<hash_type>&      decision_hashes,
                              std::vector<neighbor_pair_type>& decision_neighbors) {
 
-        hashing::KmerIterator<UnitigWalker> iter(sequence, this);
+        KmerIterator<UnitigWalker> iter(sequence, this);
         size_t pos = 0;
         while(!iter.done()) {
             hash_type h = iter.next();

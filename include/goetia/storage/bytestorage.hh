@@ -59,7 +59,6 @@
 #   define MAX_KCOUNT 255
 
 namespace goetia {
-namespace storage {
 
 /*
  * \class ByteStorage
@@ -289,7 +288,6 @@ public:
                             const ByteStorage &store);
 };
 
-}
 }
 
 #endif

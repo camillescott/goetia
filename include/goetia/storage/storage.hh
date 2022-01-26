@@ -73,7 +73,6 @@
 
 
 namespace goetia {
-namespace storage {
 
 using MuxGuard = std::lock_guard<std::mutex>;
 
@@ -191,7 +190,6 @@ inline std::vector<uint64_t> get_n_primes_near_x(uint32_t n, uint64_t x)
 }
 
 
-}
 }
 
 #endif 

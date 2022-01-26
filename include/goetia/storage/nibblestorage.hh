@@ -58,7 +58,6 @@
 
 
 namespace goetia {
-namespace storage {
 
 
 class NibbleStorage;
@@ -231,7 +230,6 @@ public:
     void serialize(std::ofstream& out) {}
 };
 
-}
 }
 
 #endif

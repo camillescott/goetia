@@ -9,7 +9,7 @@
 
 #include "goetia/metrics.hh"
 
-namespace goetia::metrics {
+namespace goetia {
 
     template class ReservoirSample<uint64_t>;
     template class ReservoirSample<double>;

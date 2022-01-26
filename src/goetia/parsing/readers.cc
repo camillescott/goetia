@@ -9,7 +9,7 @@
 #include "goetia/parsing/readers.hh"
 #include "goetia/sequences/alphabets.hh"
 
-namespace goetia::parsing {
+namespace goetia {
 
 
 template<class Alphabet>
@@ -41,8 +41,8 @@ template class FastxParser<DNA_SIMPLE>;
 template class FastxParser<DNAN_SIMPLE>;
 template class FastxParser<IUPAC_NUCL>;
 
-template class SplitPairedReader<parsing::FastxParser<DNA_SIMPLE>>;
-template class SplitPairedReader<parsing::FastxParser<DNAN_SIMPLE>>;
-template class SplitPairedReader<parsing::FastxParser<IUPAC_NUCL>>;
+template class SplitPairedReader<FastxParser<DNA_SIMPLE>>;
+template class SplitPairedReader<FastxParser<DNAN_SIMPLE>>;
+template class SplitPairedReader<FastxParser<IUPAC_NUCL>>;
 
 }

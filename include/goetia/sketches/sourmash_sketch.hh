@@ -17,7 +17,7 @@
 #include "goetia/sketches/sourmash/sourmash.hpp"
 
 
-namespace goetia::sketches {
+namespace goetia {
 
     struct SourmashSketch {
 
@@ -81,7 +81,7 @@ namespace goetia::sketches {
             }
         };
 
-        using Processor = InserterProcessor<Sketch, parsing::FastxParser<DNAN_SIMPLE>>;
+        using Processor = InserterProcessor<Sketch, FastxParser<DNAN_SIMPLE>>;
     };
 }  // namespace goetia::sketches
 

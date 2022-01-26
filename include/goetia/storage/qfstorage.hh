@@ -68,7 +68,6 @@ struct quotient_filter;
 typedef quotient_filter QF;
 
 namespace goetia {
-namespace storage {
 
 
 class QFStorage;
@@ -151,7 +150,6 @@ public:
 
 };
 
-}
 }
 
 #endif

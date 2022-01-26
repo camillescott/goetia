@@ -55,7 +55,6 @@
 
 using namespace std;
 using namespace goetia;
-using namespace goetia::storage;
 
 
 const bool

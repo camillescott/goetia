@@ -17,7 +17,6 @@
 using namespace utils;
 
 namespace goetia {
-namespace parsing {
 
 bool check_char(const char c, const std::string against) {
     for (auto ag : against) {
@@ -108,5 +107,4 @@ bool check_is_right(const std::string& name) {
     return false;
 }
 
-}
 }

@@ -15,8 +15,8 @@ using namespace std;
 namespace goetia {
 void test_assemble_right() {
     uint16_t K = 21;
-    auto g = make_shared<dBG<storage::SparseppSetStorage,
-                             hashing::DefaultShifter>>(21, 1000, 4);
+    auto g = make_shared<dBG<SparseppSetStorage,
+                             DefaultShifter>>(21, 1000, 4);
     auto assembler = make_assembler(g);
 
     string S = "TACATGCTTACTCACAGCACCCCTTCTAATGCGTAACCAGGCGTGGAATT";
@@ -41,8 +41,8 @@ void test_assemble_right() {
 
 void test_assemble_left() {
     uint16_t K = 21;
-    auto g = make_shared<dBG<storage::SparseppSetStorage,
-                             hashing::DefaultShifter>>(21, 1000, 4);
+    auto g = make_shared<dBG<SparseppSetStorage,
+                             DefaultShifter>>(21, 1000, 4);
     auto assembler = make_assembler(g);
 
     string S = "TACATGCTTACTCACAGCACCCCTTCTAATGCGTAACCAGGCGTGGAATT";

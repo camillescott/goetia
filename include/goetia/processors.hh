@@ -43,20 +43,20 @@ namespace goetia {
  * @tparam ParserType Sequencing parsing type.
  */
 template <class Derived,
-          class ParserType = parsing::FastxParser<>>
+          class ParserType = FastxParser<>>
 class FileProcessor {
 
 protected:
 
-    metrics::IntervalCounter timer;
-    metrics::Gauge           _n_sequences;
+    IntervalCounter timer;
+    Gauge           _n_sequences;
     bool                     _verbose;
 
 public:
 
     typedef typename ParserType::alphabet alphabet;
 
-    FileProcessor(uint64_t interval = metrics::IntervalCounter::DEFAULT_INTERVAL,
+    FileProcessor(uint64_t interval = IntervalCounter::DEFAULT_INTERVAL,
                   bool     verbose  = false)
         : timer(interval),
           _n_sequences{"timing", "n_sequences"},
@@ -83,7 +83,7 @@ public:
                      bool strict = false,
                      uint32_t min_length=0,
                      bool force_name_match=false) {
-        auto reader = parsing::SplitPairedReader<ParserType>::build(left_filename,
+        auto reader = SplitPairedReader<ParserType>::build(left_filename,
                                                                     right_filename,
                                                                     strict,
                                                                     min_length,
@@ -91,7 +91,7 @@ public:
         return process(reader);
     }
 
-    std::tuple<uint64_t, uint64_t> process(std::shared_ptr<parsing::SplitPairedReader<ParserType>>& reader) {
+    std::tuple<uint64_t, uint64_t> process(std::shared_ptr<SplitPairedReader<ParserType>>& reader) {
         uint64_t n_sequences, time_total;
         bool remaining = true;
         while(1) {
@@ -132,7 +132,7 @@ public:
      *
      * @Param bundle ReadBundle containing the two sequences.
      */
-    uint64_t process_sequence(parsing::RecordPair& pair) {
+    uint64_t process_sequence(RecordPair& pair) {
         uint64_t time_passed = 0;
 
         if (pair.first) {
@@ -159,7 +159,7 @@ public:
                           << e.what() << std::endl;
             }
             return {};
-        }  catch (parsing::InvalidRead& e) {
+        }  catch (InvalidRead& e) {
             if (_verbose) {
                 std::cerr << "WARNING: Invalid sequence encountered at "
                           << this->n_sequences()
@@ -177,8 +177,8 @@ public:
      *
      * @Returns   Tuple containing <total seqs processed, total time passed, whether sequences remain>
      */
-    std::tuple<uint64_t, uint64_t, bool> advance(std::shared_ptr<parsing::SplitPairedReader<ParserType>>& reader) {
-        std::optional<parsing::RecordPair> bundle;
+    std::tuple<uint64_t, uint64_t, bool> advance(std::shared_ptr<SplitPairedReader<ParserType>>& reader) {
+        std::optional<RecordPair> bundle;
         while (!reader->is_complete()) {
             bundle = handle_next(*reader);
             
@@ -207,7 +207,7 @@ public:
      */
     std::tuple<uint64_t, uint64_t, bool> advance(std::shared_ptr<ParserType>& parser) {
 
-        std::optional<parsing::Record> record;
+        std::optional<Record> record;
         // Iterate through the reads and consume their k-mers.
         while (!parser->is_complete()) {
             record = handle_next(*parser);
@@ -277,7 +277,7 @@ private:
  * @tparam ParserType   Sequence parser type.
  */
 template <class InserterType,
-          class ParserType = parsing::FastxParser<>>
+          class ParserType = FastxParser<>>
 class InserterProcessor : public FileProcessor<InserterProcessor<InserterType, ParserType>,
                                                ParserType> {
 
@@ -294,14 +294,14 @@ public:
     typedef typename Base::alphabet alphabet;
     
     InserterProcessor(std::shared_ptr<InserterType> inserter,
-                      uint64_t interval = metrics::IntervalCounter::DEFAULT_INTERVAL,
+                      uint64_t interval = IntervalCounter::DEFAULT_INTERVAL,
                       bool     verbose  = false)
         : Base(interval, verbose),
           inserter(inserter)
     {
     }
 
-    uint64_t process_sequence(const parsing::Record& sequence) {
+    uint64_t process_sequence(const Record& sequence) {
         try {
             return inserter->insert_sequence(sequence.sequence);
         } catch (SequenceLengthException &e) {
@@ -329,7 +329,7 @@ public:
 
     
     static auto build(std::shared_ptr<InserterType> inserter,
-               uint64_t interval = metrics::IntervalCounter::DEFAULT_INTERVAL)
+               uint64_t interval = IntervalCounter::DEFAULT_INTERVAL)
     -> std::shared_ptr<InserterProcessor<InserterType, ParserType>> {
         return std::make_shared<InserterProcessor<InserterType, ParserType>>(inserter, interval);
     }
@@ -345,7 +345,7 @@ public:
  * @tparam ParserType Sequence parser type.
  */
 template <class FilterType,
-          class ParserType = parsing::FastxParser<>>
+          class ParserType = FastxParser<>>
 class FilterProcessor : public FileProcessor<FilterProcessor<FilterType, ParserType>,
                                              ParserType> {
 
@@ -353,7 +353,7 @@ protected:
 
     std::shared_ptr<FilterType> filter;
     std::ofstream               _output_stream; 
-    metrics::Gauge              _n_passed;
+    Gauge              _n_passed;
 
     typedef FileProcessor<FilterProcessor<FilterType, ParserType>,
                           ParserType> Base;
@@ -365,7 +365,7 @@ public:
     
     FilterProcessor(std::shared_ptr<FilterType> filter,
                     const std::string           output_filename,
-                    uint64_t interval = metrics::IntervalCounter::DEFAULT_INTERVAL,
+                    uint64_t interval = IntervalCounter::DEFAULT_INTERVAL,
                     bool     verbose  = false)
         : Base(interval, verbose),
           filter(filter),
@@ -378,7 +378,7 @@ public:
         _output_stream.close();
     }
 
-    uint64_t process_sequence(const parsing::Record& sequence) {
+    uint64_t process_sequence(const Record& sequence) {
         bool passed = false;
         uint64_t time_taken = 0;
         try {
@@ -418,7 +418,7 @@ public:
 
     static auto build(std::shared_ptr<FilterType> filter,
                       const std::string&          output_filename,
-                      uint64_t interval = metrics::IntervalCounter::DEFAULT_INTERVAL,
+                      uint64_t interval = IntervalCounter::DEFAULT_INTERVAL,
                       bool verbose      = false)
     -> std::shared_ptr<FilterProcessor<FilterType, ParserType>> {
 
@@ -437,14 +437,14 @@ public:
  *
  * @tparam ParserType Sequence parser type.
  */
-template <class ParserType = parsing::FastxParser<>>
+template <class ParserType = FastxParser<>>
 class MergeProcessor : public FileProcessor<MergeProcessor<ParserType>,
                                              ParserType> {
 
 protected:
 
     std::ofstream               _output_stream; 
-    metrics::Gauge              _n_passed;
+    Gauge              _n_passed;
 
     typedef FileProcessor<MergeProcessor<ParserType>,
                           ParserType> Base;
@@ -455,7 +455,7 @@ public:
     typedef typename Base::alphabet alphabet;
     
     MergeProcessor(const std::string           output_filename,
-                   uint64_t interval = metrics::IntervalCounter::DEFAULT_INTERVAL,
+                   uint64_t interval = IntervalCounter::DEFAULT_INTERVAL,
                    bool     verbose  = false)
         : Base(interval, verbose),
           _output_stream(output_filename.c_str()),
@@ -467,7 +467,7 @@ public:
         _output_stream.close();
     }
 
-    uint64_t process_sequence(const parsing::Record& sequence) {
+    uint64_t process_sequence(const Record& sequence) {
         sequence.write_fastx(_output_stream);
 
         return sequence.sequence.size();
@@ -482,7 +482,7 @@ public:
     }
 
     static auto build(const std::string&          output_filename,
-                      uint64_t interval = metrics::IntervalCounter::DEFAULT_INTERVAL,
+                      uint64_t interval = IntervalCounter::DEFAULT_INTERVAL,
                       bool verbose      = false)
     -> std::shared_ptr<MergeProcessor<ParserType>> {
 

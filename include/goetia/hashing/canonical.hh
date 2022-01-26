@@ -13,7 +13,7 @@
 #include <iostream>
 #include <limits>
 
-namespace goetia::hashing {
+namespace goetia {
 
 inline constexpr bool DIR_LEFT = false;
 inline constexpr bool DIR_RIGHT = true;
@@ -491,35 +491,35 @@ operator<<(std::ostream& os, const Partitioned<ValueType>& p) {
 
 
 
-typedef goetia::hashing::Partitioned<goetia::hashing::Hash<>> Unikmer;
-typedef goetia::hashing::Partitioned<goetia::hashing::Canonical<>> CanonicalUnikmer;
+typedef goetia::Partitioned<goetia::Hash<>> Unikmer;
+typedef goetia::Partitioned<goetia::Canonical<>> CanonicalUnikmer;
 
-typedef goetia::hashing::Wmer<goetia::hashing::Hash<>, goetia::hashing::Unikmer> UnikmerWmer;
-typedef goetia::hashing::Wmer<goetia::hashing::Canonical<>, goetia::hashing::CanonicalUnikmer> CanonicalUnikmerWmer;
+typedef goetia::Wmer<goetia::Hash<>, goetia::Unikmer> UnikmerWmer;
+typedef goetia::Wmer<goetia::Canonical<>, goetia::CanonicalUnikmer> CanonicalUnikmerWmer;
 
-typedef goetia::hashing::Shift<goetia::hashing::Hash<>, goetia::hashing::DIR_LEFT> LeftShift;
-typedef goetia::hashing::Shift<goetia::hashing::Hash<>, goetia::hashing::DIR_RIGHT> RightShift;
-typedef goetia::hashing::Shift<goetia::hashing::Canonical<>, goetia::hashing::DIR_LEFT> LeftCanonicalShift;
-typedef goetia::hashing::Shift<goetia::hashing::Canonical<>, goetia::hashing::DIR_RIGHT> RightCanonicalShift;
+typedef goetia::Shift<goetia::Hash<>, goetia::DIR_LEFT> LeftShift;
+typedef goetia::Shift<goetia::Hash<>, goetia::DIR_RIGHT> RightShift;
+typedef goetia::Shift<goetia::Canonical<>, goetia::DIR_LEFT> LeftCanonicalShift;
+typedef goetia::Shift<goetia::Canonical<>, goetia::DIR_RIGHT> RightCanonicalShift;
 
 }
 
-extern template class goetia::hashing::Hash<uint64_t>;
-extern template class goetia::hashing::Canonical<goetia::hashing::Hash<uint64_t>>;
+extern template class goetia::Hash<uint64_t>;
+extern template class goetia::Canonical<goetia::Hash<uint64_t>>;
 
-extern template class goetia::hashing::Kmer<goetia::hashing::Hash<uint64_t>>;
-extern template class goetia::hashing::Kmer<goetia::hashing::Canonical<uint64_t>>;
+extern template class goetia::Kmer<goetia::Hash<uint64_t>>;
+extern template class goetia::Kmer<goetia::Canonical<uint64_t>>;
 
-extern template class goetia::hashing::Kmer<goetia::hashing::UnikmerWmer>;
-extern template class goetia::hashing::Kmer<goetia::hashing::CanonicalUnikmerWmer>;
+extern template class goetia::Kmer<goetia::UnikmerWmer>;
+extern template class goetia::Kmer<goetia::CanonicalUnikmerWmer>;
 
-extern template class goetia::hashing::Wmer<goetia::hashing::Hash<uint64_t>, goetia::hashing::Unikmer>;
-extern template class goetia::hashing::Wmer<goetia::hashing::Canonical<uint64_t>, goetia::hashing::CanonicalUnikmer>;
+extern template class goetia::Wmer<goetia::Hash<uint64_t>, goetia::Unikmer>;
+extern template class goetia::Wmer<goetia::Canonical<uint64_t>, goetia::CanonicalUnikmer>;
 
-extern template class goetia::hashing::Shift<goetia::hashing::Hash<uint64_t>, goetia::hashing::DIR_LEFT>;
-extern template class goetia::hashing::Shift<goetia::hashing::Hash<uint64_t>, goetia::hashing::DIR_RIGHT>;
-extern template class goetia::hashing::Shift<goetia::hashing::Canonical<uint64_t>, goetia::hashing::DIR_LEFT>;
-extern template class goetia::hashing::Shift<goetia::hashing::Canonical<uint64_t>, goetia::hashing::DIR_RIGHT>;
+extern template class goetia::Shift<goetia::Hash<uint64_t>, goetia::DIR_LEFT>;
+extern template class goetia::Shift<goetia::Hash<uint64_t>, goetia::DIR_RIGHT>;
+extern template class goetia::Shift<goetia::Canonical<uint64_t>, goetia::DIR_LEFT>;
+extern template class goetia::Shift<goetia::Canonical<uint64_t>, goetia::DIR_RIGHT>;
 
 
 

@@ -12,25 +12,25 @@
 
 namespace goetia {
 
-    template class PdBG<storage::BitStorage, hashing::FwdUnikmerShifter>;
-    template class PdBG<storage::BitStorage, hashing::CanUnikmerShifter>;
+    template class PdBG<BitStorage, FwdUnikmerShifter>;
+    template class PdBG<BitStorage, CanUnikmerShifter>;
 
-    template class PdBG<storage::SparseppSetStorage, hashing::FwdUnikmerShifter>;
-    template class PdBG<storage::SparseppSetStorage, hashing::CanUnikmerShifter>;
+    template class PdBG<SparseppSetStorage, FwdUnikmerShifter>;
+    template class PdBG<SparseppSetStorage, CanUnikmerShifter>;
 
-    template class PdBG<storage::PHMapStorage, hashing::FwdUnikmerShifter>;
-    template class PdBG<storage::PHMapStorage, hashing::CanUnikmerShifter>;
+    template class PdBG<PHMapStorage, FwdUnikmerShifter>;
+    template class PdBG<PHMapStorage, CanUnikmerShifter>;
 
-    template class PdBG<storage::BTreeStorage, hashing::FwdUnikmerShifter>;
-    template class PdBG<storage::BTreeStorage, hashing::CanUnikmerShifter>;
+    template class PdBG<BTreeStorage, FwdUnikmerShifter>;
+    template class PdBG<BTreeStorage, CanUnikmerShifter>;
 
-    template class PdBG<storage::ByteStorage, hashing::FwdUnikmerShifter>;
-    template class PdBG<storage::ByteStorage, hashing::CanUnikmerShifter>;
+    template class PdBG<ByteStorage, FwdUnikmerShifter>;
+    template class PdBG<ByteStorage, CanUnikmerShifter>;
 
-    template class PdBG<storage::NibbleStorage, hashing::FwdUnikmerShifter>;
-    template class PdBG<storage::NibbleStorage, hashing::CanUnikmerShifter>;
+    template class PdBG<NibbleStorage, FwdUnikmerShifter>;
+    template class PdBG<NibbleStorage, CanUnikmerShifter>;
 
-    template class PdBG<storage::QFStorage, hashing::FwdUnikmerShifter>;
-    template class PdBG<storage::QFStorage, hashing::CanUnikmerShifter>;
+    template class PdBG<QFStorage, FwdUnikmerShifter>;
+    template class PdBG<QFStorage, CanUnikmerShifter>;
 
 }

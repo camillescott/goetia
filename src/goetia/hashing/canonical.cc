@@ -10,24 +10,24 @@
 
 
 
-namespace goetia::hashing {
+namespace goetia {
 
-    template class goetia::hashing::Hash<uint64_t>;
-    template class goetia::hashing::Canonical<goetia::hashing::Hash<uint64_t>>;
+    template class goetia::Hash<uint64_t>;
+    template class goetia::Canonical<goetia::Hash<uint64_t>>;
 
-    template class goetia::hashing::Kmer<goetia::hashing::Hash<uint64_t>>;
-    template class goetia::hashing::Kmer<goetia::hashing::Canonical<uint64_t>>;
+    template class goetia::Kmer<goetia::Hash<uint64_t>>;
+    template class goetia::Kmer<goetia::Canonical<uint64_t>>;
 
-    template class goetia::hashing::Kmer<goetia::hashing::UnikmerWmer>;
-    template class goetia::hashing::Kmer<goetia::hashing::CanonicalUnikmerWmer>;
+    template class goetia::Kmer<goetia::UnikmerWmer>;
+    template class goetia::Kmer<goetia::CanonicalUnikmerWmer>;
 
-    template class goetia::hashing::Wmer<goetia::hashing::Hash<uint64_t>, goetia::hashing::Unikmer>;
-    template class goetia::hashing::Wmer<goetia::hashing::Canonical<uint64_t>, goetia::hashing::CanonicalUnikmer>;
+    template class goetia::Wmer<goetia::Hash<uint64_t>, goetia::Unikmer>;
+    template class goetia::Wmer<goetia::Canonical<uint64_t>, goetia::CanonicalUnikmer>;
 
-    template class goetia::hashing::Shift<goetia::hashing::Hash<uint64_t>, goetia::hashing::DIR_LEFT>;
-    template class goetia::hashing::Shift<goetia::hashing::Hash<uint64_t>, goetia::hashing::DIR_RIGHT>;
-    template class goetia::hashing::Shift<goetia::hashing::Canonical<uint64_t>, goetia::hashing::DIR_LEFT>;
-    template class goetia::hashing::Shift<goetia::hashing::Canonical<uint64_t>, goetia::hashing::DIR_RIGHT>;
+    template class goetia::Shift<goetia::Hash<uint64_t>, goetia::DIR_LEFT>;
+    template class goetia::Shift<goetia::Hash<uint64_t>, goetia::DIR_RIGHT>;
+    template class goetia::Shift<goetia::Canonical<uint64_t>, goetia::DIR_LEFT>;
+    template class goetia::Shift<goetia::Canonical<uint64_t>, goetia::DIR_RIGHT>;
 
 }
 

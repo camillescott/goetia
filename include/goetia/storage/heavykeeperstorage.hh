@@ -12,7 +12,7 @@
 #include "goetia/sketches/sketch/include/sketch/hk.h"
 #include "goetia/storage/storage.hh"
 
-namespace goetia::storage {
+namespace goetia {
 
 class HKStorage;
 

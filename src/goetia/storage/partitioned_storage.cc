@@ -11,10 +11,10 @@
 #include "goetia/storage/storage_types.hh"
 
 
-template class goetia::storage::PartitionedStorage<goetia::storage::BitStorage>;
-template class goetia::storage::PartitionedStorage<goetia::storage::ByteStorage>;
-template class goetia::storage::PartitionedStorage<goetia::storage::NibbleStorage>;
-template class goetia::storage::PartitionedStorage<goetia::storage::QFStorage>;
-template class goetia::storage::PartitionedStorage<goetia::storage::SparseppSetStorage>;
-template class goetia::storage::PartitionedStorage<goetia::storage::PHMapStorage>;
-template class goetia::storage::PartitionedStorage<goetia::storage::BTreeStorage>;
+template class goetia::PartitionedStorage<goetia::BitStorage>;
+template class goetia::PartitionedStorage<goetia::ByteStorage>;
+template class goetia::PartitionedStorage<goetia::NibbleStorage>;
+template class goetia::PartitionedStorage<goetia::QFStorage>;
+template class goetia::PartitionedStorage<goetia::SparseppSetStorage>;
+template class goetia::PartitionedStorage<goetia::PHMapStorage>;
+template class goetia::PartitionedStorage<goetia::BTreeStorage>;

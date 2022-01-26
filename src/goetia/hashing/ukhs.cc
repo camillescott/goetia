@@ -13,7 +13,7 @@
 #include "goetia/hashing/ukhs.hh"
 
 
-namespace goetia::hashing {
+namespace goetia {
 
     template class UKHS<FwdLemireShifter>;
     template class UKHS<CanLemireShifter>;

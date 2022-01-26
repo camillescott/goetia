@@ -11,9 +11,9 @@
 
 namespace goetia {
 
-    template class DiginormFilter<dBG<storage::NibbleStorage, hashing::FwdLemireShifter>>;
-    template class DiginormFilter<dBG<storage::NibbleStorage, hashing::CanLemireShifter>>;
+    template class DiginormFilter<dBG<NibbleStorage, FwdLemireShifter>>;
+    template class DiginormFilter<dBG<NibbleStorage, CanLemireShifter>>;
 
-    template class DiginormFilter<dBG<storage::ByteStorage, hashing::FwdLemireShifter>>;
-    template class DiginormFilter<dBG<storage::ByteStorage, hashing::CanLemireShifter>>;
+    template class DiginormFilter<dBG<ByteStorage, FwdLemireShifter>>;
+    template class DiginormFilter<dBG<ByteStorage, CanLemireShifter>>;
 }

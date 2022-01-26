@@ -17,8 +17,6 @@
 
 namespace goetia {
 
-namespace storage {
-
 
 const count_t
 SparseppSetStorage::insert_and_query(value_type h) {
@@ -95,8 +93,6 @@ SparseppSetStorage::deserialize(std::ifstream& in) {
     auto storage = SparseppSetStorage::build();
     storage->_store->unserialize(BaseSppSerializer(), &in);
     return storage;
-}
-
 }
 
 }

@@ -69,7 +69,6 @@ KSEQ_INIT(gzFile, gzread)
 
 
 namespace goetia {
-namespace parsing {
 
 struct NoMoreReadsAvailable : public  GoetiaFileException {
     explicit NoMoreReadsAvailable(const std::string& msg) :
@@ -334,15 +333,13 @@ public:
     }
 };
 
-extern template class parsing::FastxParser<DNA_SIMPLE>;
-extern template class parsing::FastxParser<DNAN_SIMPLE>;
-extern template class parsing::FastxParser<IUPAC_NUCL>;
+extern template class goetia::FastxParser<goetia::DNA_SIMPLE>;
+extern template class goetia::FastxParser<goetia::DNAN_SIMPLE>;
+extern template class goetia::FastxParser<goetia::IUPAC_NUCL>;
 
-extern template class parsing::SplitPairedReader<parsing::FastxParser<DNA_SIMPLE>>;
-extern template class parsing::SplitPairedReader<parsing::FastxParser<DNAN_SIMPLE>>;
-extern template class parsing::SplitPairedReader<parsing::FastxParser<IUPAC_NUCL>>;
-
-} // namespace parsing
+extern template class goetia::SplitPairedReader<goetia::FastxParser<goetia::DNA_SIMPLE>>;
+extern template class goetia::SplitPairedReader<goetia::FastxParser<goetia::DNAN_SIMPLE>>;
+extern template class goetia::SplitPairedReader<goetia::FastxParser<goetia::IUPAC_NUCL>>;
 
 } // namespace goetia
 

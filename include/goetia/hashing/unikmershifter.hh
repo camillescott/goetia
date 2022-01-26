@@ -9,7 +9,7 @@
 #include "goetia/hashing/ukhs.hh"
 #include "goetia/hashing/hashshifter.hh"
 
-namespace goetia::hashing {
+namespace goetia {
     extern template class HashShifter<FwdUnikmerPolicy>;
     extern template class HashShifter<CanUnikmerPolicy>;
 

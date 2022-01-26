@@ -16,7 +16,7 @@
 #include <iterator>
 #include <random>
 
-namespace goetia::metrics {
+namespace goetia {
 
 /**
  * @Synopsis  Streaming reservoir sampling: continuously calling

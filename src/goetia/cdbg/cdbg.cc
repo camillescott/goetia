@@ -24,7 +24,7 @@
 #   define pdebug(x) do {} while (0)
 # endif
 
-namespace goetia::cdbg {
+namespace goetia {
 
 
 template <template <class, class> class GraphType,
@@ -338,7 +338,7 @@ Graph::clip_unode(bool      clip_from,
 
     auto unode = switch_unode_ends(old_unode_end, new_unode_end);
     assert(unode != nullptr);
-    pdebug("CLIP: " << *unode << " from " << (clip_from == hashing::DIR_LEFT ? std::string("LEFT") : std::string("RIGHT")) <<
+    pdebug("CLIP: " << *unode << " from " << (clip_from == DIR_LEFT ? std::string("LEFT") : std::string("RIGHT")) <<
            " and swap " << old_unode_end << " to " << new_unode_end);
 
     if (unode->sequence.length() == this->K) {
@@ -347,7 +347,7 @@ Graph::clip_unode(bool      clip_from,
         pdebug("CLIP complete: deleted null unode.");
     } else {
         metrics->n_clips++;
-        if (clip_from == hashing::DIR_LEFT) {
+        if (clip_from == DIR_LEFT) {
             unode->sequence = unode->sequence.substr(1);
             unode->set_left_end(new_unode_end);
 
@@ -395,11 +395,11 @@ Graph::extend_unode(bool               ext_dir,
     assert(unode != nullptr); 
 
     pdebug("EXTEND: from " << old_unode_end << " to " << new_unode_end
-           << (ext_dir == hashing::DIR_LEFT ? std::string(" to LEFT") : std::string(" to RIGHT"))
+           << (ext_dir == DIR_LEFT ? std::string(" to LEFT") : std::string(" to RIGHT"))
            << " adding " << new_sequence << " to"
            << std::endl << *unode);
     
-    if (ext_dir == hashing::DIR_RIGHT) {
+    if (ext_dir == DIR_RIGHT) {
         unode->extend_right(new_unode_end, new_sequence);
     } else {
         unode->extend_left(new_unode_end, new_sequence);
@@ -546,7 +546,7 @@ Graph::merge_unodes(const std::string& span_sequence,
             pdebug("Overlap between merged sequence, trimming right " << n_span_kmers);
             extend = span_sequence.substr(this->K-1, n_span_kmers);
         //} 
-        extend_unode(hashing::DIR_RIGHT,
+        extend_unode(DIR_RIGHT,
                      extend,
                      left_end, // this is left_unode's right_end
                      left_unode->left_end(),
@@ -571,7 +571,7 @@ Graph::merge_unodes(const std::string& span_sequence,
         new_right_end = right_unode->right_end();
 
         delete_unode(right_unode);
-        extend_unode(hashing::DIR_RIGHT,
+        extend_unode(DIR_RIGHT,
                      right_sequence,
                      left_end,
                      new_right_end,
@@ -689,7 +689,7 @@ cDBG<GraphType<StorageType, ShifterType>>
 
     auto time_start = std::chrono::system_clock::now();
 
-    metrics::ReservoirSample<size_t> component_size_sample(sample_size);
+    ReservoirSample<size_t> component_size_sample(sample_size);
     size_t max_component = 0;
     size_t min_component = std::numeric_limits<size_t>::max();
     auto components = cdbg->find_connected_components();
@@ -744,25 +744,25 @@ cDBG<GraphType<StorageType, ShifterType>>
     return bin_sums;
 }
 
-template class cdbg::cDBG<dBG<storage::BitStorage, hashing::FwdLemireShifter>>;
-template class cdbg::cDBG<dBG<storage::BitStorage, hashing::CanLemireShifter>>;
+template class cDBG<goetia::dBG<BitStorage, FwdLemireShifter>>;
+template class cDBG<goetia::dBG<BitStorage, CanLemireShifter>>;
 
-template class cdbg::cDBG<dBG<storage::SparseppSetStorage, hashing::FwdLemireShifter>>;
-template class cdbg::cDBG<dBG<storage::SparseppSetStorage, hashing::CanLemireShifter>>;
+template class cDBG<goetia::dBG<SparseppSetStorage, FwdLemireShifter>>;
+template class cDBG<goetia::dBG<SparseppSetStorage, CanLemireShifter>>;
 
-template class cdbg::cDBG<dBG<storage::PHMapStorage, hashing::FwdLemireShifter>>;
-template class cdbg::cDBG<dBG<storage::PHMapStorage, hashing::CanLemireShifter>>;
+template class cDBG<goetia::dBG<PHMapStorage, FwdLemireShifter>>;
+template class cDBG<goetia::dBG<PHMapStorage, CanLemireShifter>>;
 
-template class cdbg::cDBG<dBG<storage::BTreeStorage, hashing::FwdLemireShifter>>;
-template class cdbg::cDBG<dBG<storage::BTreeStorage, hashing::CanLemireShifter>>;
+template class cDBG<goetia::dBG<BTreeStorage, FwdLemireShifter>>;
+template class cDBG<goetia::dBG<BTreeStorage, CanLemireShifter>>;
 
-template class cdbg::cDBG<dBG<storage::ByteStorage, hashing::FwdLemireShifter>>;
-template class cdbg::cDBG<dBG<storage::ByteStorage, hashing::CanLemireShifter>>;
+template class cDBG<goetia::dBG<ByteStorage, FwdLemireShifter>>;
+template class cDBG<goetia::dBG<ByteStorage, CanLemireShifter>>;
 
-template class cdbg::cDBG<dBG<storage::NibbleStorage, hashing::FwdLemireShifter>>;
-template class cdbg::cDBG<dBG<storage::NibbleStorage, hashing::CanLemireShifter>>;
+template class cDBG<goetia::dBG<NibbleStorage, FwdLemireShifter>>;
+template class cDBG<goetia::dBG<NibbleStorage, CanLemireShifter>>;
 
-template class cdbg::cDBG<dBG<storage::QFStorage, hashing::FwdLemireShifter>>;
-template class cdbg::cDBG<dBG<storage::QFStorage, hashing::CanLemireShifter>>;
+template class cDBG<goetia::dBG<QFStorage, FwdLemireShifter>>;
+template class cDBG<goetia::dBG<QFStorage, CanLemireShifter>>;
 
 }

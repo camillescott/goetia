@@ -14,7 +14,6 @@
 #include "goetia/sequences/exceptions.hh"
 
 namespace goetia {
-namespace cdbg {
 
 template <class CompactorType,
           class SignatureType>
@@ -28,11 +27,11 @@ struct SaturatingCompactor {
 
 
     class Processor : public FileProcessor<Processor,
-                                           parsing::FastxParser<>> {
+                                           FastxParser<>> {
 
     protected:
 
-        typedef FileProcessor<Processor, parsing::FastxParser<>> BaseType;
+        typedef FileProcessor<Processor, FastxParser<>> BaseType;
 
     public:
         
@@ -43,7 +42,7 @@ struct SaturatingCompactor {
 
         Processor(std::shared_ptr<compactor_type> compactor,
                   std::shared_ptr<signature_type> signature,
-                  uint64_t interval = metrics::IntervalCounter::DEFAULT_INTERVAL)
+                  uint64_t interval = IntervalCounter::DEFAULT_INTERVAL)
             : BaseType(interval),
               compactor(compactor),
               signature(signature)
@@ -51,7 +50,7 @@ struct SaturatingCompactor {
 
         }
 
-        uint64_t process_sequence(const parsing::Record& read) {
+        uint64_t process_sequence(const Record& read) {
             try {
                 compactor->insert_sequence(read.sequence);
                 signature->insert_sequence(read.sequence);
@@ -83,7 +82,7 @@ struct SaturatingCompactor {
 
         static std::shared_ptr<Processor> build(std::shared_ptr<compactor_type> compactor,
                                                 std::shared_ptr<signature_type> signature,
-                                                uint64_t interval = metrics::IntervalCounter::DEFAULT_INTERVAL) {
+                                                uint64_t interval = IntervalCounter::DEFAULT_INTERVAL) {
             return std::make_shared<Processor>(compactor,
                                                signature,
                                                interval);
@@ -92,7 +91,6 @@ struct SaturatingCompactor {
     };
 };
 
-}
 }
 
 #endif

@@ -11,10 +11,10 @@
 
 namespace goetia {
 
-    template class cdbg::UTagger<storage::BitStorage>;
-    template class cdbg::UTagger<storage::ByteStorage>;
-    template class cdbg::UTagger<storage::NibbleStorage>;
-    template class cdbg::UTagger<storage::QFStorage>;
-    template class cdbg::UTagger<storage::SparseppSetStorage>;
+    template class UTagger<BitStorage>;
+    template class UTagger<ByteStorage>;
+    template class UTagger<NibbleStorage>;
+    template class UTagger<QFStorage>;
+    template class UTagger<SparseppSetStorage>;
 
 }

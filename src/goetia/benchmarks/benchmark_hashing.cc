@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-using namespace goetia::hashing;
+using namespace goetia;
 
 int main() {
     std::string known_kmer = "TCACCTGTGTTGTGCTACTTGCGGCGC";

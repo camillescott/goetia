@@ -14,7 +14,6 @@
 #include "goetia/storage/sparsepp/spp.h"
 
 namespace goetia {
-namespace storage {
 
 class BaseSppSerializer {
 public:
@@ -90,9 +89,6 @@ public:
     }
 };
 
-
-
-}
 }
 
 #endif

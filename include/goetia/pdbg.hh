@@ -36,11 +36,11 @@
 
 namespace goetia {
 
-using storage::PartitionedStorage;
-using storage::StorageTraits;
+using goetia::PartitionedStorage;
+using goetia::StorageTraits;
 
 template <class BaseStorageType,
-          class ShifterType = hashing::FwdUnikmerShifter>
+          class ShifterType = FwdUnikmerShifter>
 class PdBG {
 
 public:
@@ -102,7 +102,7 @@ public:
     explicit PdBG(uint16_t K,
                   uint16_t partition_K,
                   std::shared_ptr<ukhs_type>& ukhs,
-                  std::shared_ptr<storage::PartitionedStorage<BaseStorageType>> S)
+                  std::shared_ptr<PartitionedStorage<BaseStorageType>> S)
         : K           (K),
           ukhs        (ukhs),
           partitioner (K, partition_K, ukhs),
@@ -135,7 +135,7 @@ public:
 
     inline std::vector<hash_type> get_hashes(const std::string& sequence) {
 
-        hashing::KmerIterator<extender_type> iter(sequence, &partitioner);
+        KmerIterator<extender_type> iter(sequence, &partitioner);
         std::vector<hash_type> kmer_hashes;
 
         while(!iter.done()) {
@@ -165,7 +165,7 @@ public:
         return S->insert(h.value(), h.minimizer.partition);
     }
 
-    inline const storage::count_t insert_and_query(const std::string& kmer) {
+    inline const count_t insert_and_query(const std::string& kmer) {
 
         partitioner.set_cursor(kmer);
         auto h = partitioner.get();
@@ -173,27 +173,27 @@ public:
         return S->insert_and_query(h.value(), h.minimizer.partition);
     }
 
-    inline const storage::count_t insert_and_query(const hash_type& h) {
+    inline const count_t insert_and_query(const hash_type& h) {
         return S->insert_and_query(h.value(), h.minimizer.partition);
     }
 
-    inline const storage::count_t query(const std::string& kmer) {
+    inline const count_t query(const std::string& kmer) {
         auto h = hash(kmer);
         return S->query(h.value(), h.minimizer.partition);
     }
 
-    inline const storage::count_t query(const hash_type& h) {
+    inline const count_t query(const hash_type& h) {
         return S->query(h.value(), h.minimizer.partition);
     }
 
     inline const uint64_t insert_sequence(const std::string&             sequence,
                                    std::vector<hash_type>&        kmer_hashes,
-                                   std::vector<storage::count_t>& counts) {
+                                   std::vector<count_t>& counts) {
 
-        hashing::KmerIterator<extender_type> iter(sequence, &partitioner);
+        KmerIterator<extender_type> iter(sequence, &partitioner);
 
         size_t           pos = 0;
-        storage::count_t count;
+        count_t count;
         while(!iter.done()) {
             auto h = iter.next();
             count = insert_and_query(h);
@@ -210,7 +210,7 @@ public:
     inline const uint64_t insert_sequence(const std::string&   sequence,
                                    std::set<hash_type>& new_kmers) {
 
-        hashing::KmerIterator<extender_type> iter(sequence, &partitioner);
+        KmerIterator<extender_type> iter(sequence, &partitioner);
 
         size_t pos = 0;
         bool is_new;
@@ -226,7 +226,7 @@ public:
     }
 
     inline const uint64_t insert_sequence(const std::string& sequence) {
-        hashing::KmerIterator<extender_type> iter(sequence, &partitioner);
+        KmerIterator<extender_type> iter(sequence, &partitioner);
 
         uint64_t n_consumed = 0;
         while(!iter.done()) {
@@ -237,7 +237,7 @@ public:
     }
 
     inline const uint64_t insert_sequence_rolling(const std::string& sequence) {
-        hashing::KmerIterator<extender_type> iter(sequence, &partitioner);
+        KmerIterator<extender_type> iter(sequence, &partitioner);
 
         auto              h             = iter.next();
         uint64_t          cur_pid       = h.minimizer.partition;
@@ -257,10 +257,10 @@ public:
     }
 
 
-    inline std::vector<storage::count_t> insert_and_query_sequence(const std::string& sequence) {
+    inline std::vector<count_t> insert_and_query_sequence(const std::string& sequence) {
 
-        hashing::KmerIterator<extender_type> iter(sequence, &partitioner);
-        std::vector<storage::count_t> counts(sequence.length() - K + 1);
+        KmerIterator<extender_type> iter(sequence, &partitioner);
+        std::vector<count_t> counts(sequence.length() - K + 1);
 
         size_t pos = 0;
         while(!iter.done()) {
@@ -273,10 +273,10 @@ public:
     }
 
 
-    inline std::vector<storage::count_t> query_sequence(const std::string& sequence) {
+    inline std::vector<count_t> query_sequence(const std::string& sequence) {
 
-        hashing::KmerIterator<extender_type> iter(sequence, &partitioner);
-        std::vector<storage::count_t> counts(sequence.length() - K + 1);
+        KmerIterator<extender_type> iter(sequence, &partitioner);
+        std::vector<count_t> counts(sequence.length() - K + 1);
 
         size_t pos = 0;
         while(!iter.done()) {
@@ -289,10 +289,10 @@ public:
     }
 
 
-    inline std::vector<storage::count_t> query_sequence_rolling(const std::string& sequence) {
+    inline std::vector<count_t> query_sequence_rolling(const std::string& sequence) {
 
-        hashing::KmerIterator<extender_type> iter(sequence, &partitioner);
-        std::vector<storage::count_t> counts(sequence.length() - K + 1);
+        KmerIterator<extender_type> iter(sequence, &partitioner);
+        std::vector<count_t> counts(sequence.length() - K + 1);
         
         hash_type         h             = iter.next();
         uint64_t          cur_pid       = h.minimizer.partition;
@@ -315,14 +315,14 @@ public:
 
 
     inline void query_sequence(const std::string&             sequence,
-                        std::vector<storage::count_t>& counts,
+                        std::vector<count_t>& counts,
                         std::vector<hash_type>&        hashes) {
 
-        hashing::KmerIterator<extender_type> iter(sequence, &partitioner);
+        KmerIterator<extender_type> iter(sequence, &partitioner);
 
         while(!iter.done()) {
             auto h = iter.next();
-            storage::count_t result = query(h);
+            count_t result = query(h);
             counts.push_back(result);
             hashes.push_back(h);
         }
@@ -330,11 +330,11 @@ public:
 
 
     inline void query_sequence(const std::string&             sequence,
-                        std::vector<storage::count_t>& counts,
+                        std::vector<count_t>& counts,
                         std::vector<hash_type>&        hashes,
                         std::set<hash_type>&           new_hashes) {
 
-        hashing::KmerIterator<extender_type> iter(sequence, &partitioner);
+        KmerIterator<extender_type> iter(sequence, &partitioner);
 
         while(!iter.done()) {
             auto h = iter.next();
@@ -368,7 +368,7 @@ public:
         return kmer.substr(0, this->K - 1);
     }
 
-    std::vector<kmer_type> build_left_kmers(const std::vector<shift_type<hashing::DIR_LEFT>>& nodes,
+    std::vector<kmer_type> build_left_kmers(const std::vector<shift_type<DIR_LEFT>>& nodes,
                                             const std::string& root) {
         std::vector<kmer_type> kmers;
         auto _prefix = prefix(root);
@@ -379,7 +379,7 @@ public:
         return kmers;
     }
 
-    std::vector<kmer_type> build_right_kmers(const std::vector<shift_type<hashing::DIR_RIGHT>>& nodes,
+    std::vector<kmer_type> build_right_kmers(const std::vector<shift_type<DIR_RIGHT>>& nodes,
                                              const std::string& root) {
         std::vector<kmer_type> kmers;
         auto _suffix = suffix(root);
@@ -456,24 +456,24 @@ public:
 
 }
 
-extern template class goetia::PdBG<goetia::storage::BitStorage, goetia::hashing::FwdUnikmerShifter>;
-extern template class goetia::PdBG<goetia::storage::BitStorage, goetia::hashing::CanUnikmerShifter>;
+extern template class goetia::PdBG<goetia::BitStorage, goetia::FwdUnikmerShifter>;
+extern template class goetia::PdBG<goetia::BitStorage, goetia::CanUnikmerShifter>;
 
-extern template class goetia::PdBG<goetia::storage::SparseppSetStorage, goetia::hashing::FwdUnikmerShifter>;
-extern template class goetia::PdBG<goetia::storage::SparseppSetStorage, goetia::hashing::CanUnikmerShifter>;
+extern template class goetia::PdBG<goetia::SparseppSetStorage, goetia::FwdUnikmerShifter>;
+extern template class goetia::PdBG<goetia::SparseppSetStorage, goetia::CanUnikmerShifter>;
 
-extern template class goetia::PdBG<goetia::storage::PHMapStorage, goetia::hashing::FwdUnikmerShifter>;
-extern template class goetia::PdBG<goetia::storage::PHMapStorage, goetia::hashing::CanUnikmerShifter>;
+extern template class goetia::PdBG<goetia::PHMapStorage, goetia::FwdUnikmerShifter>;
+extern template class goetia::PdBG<goetia::PHMapStorage, goetia::CanUnikmerShifter>;
 
-extern template class goetia::PdBG<goetia::storage::BTreeStorage, goetia::hashing::FwdUnikmerShifter>;
-extern template class goetia::PdBG<goetia::storage::BTreeStorage, goetia::hashing::CanUnikmerShifter>;
+extern template class goetia::PdBG<goetia::BTreeStorage, goetia::FwdUnikmerShifter>;
+extern template class goetia::PdBG<goetia::BTreeStorage, goetia::CanUnikmerShifter>;
 
-extern template class goetia::PdBG<goetia::storage::ByteStorage, goetia::hashing::FwdUnikmerShifter>;
-extern template class goetia::PdBG<goetia::storage::ByteStorage, goetia::hashing::CanUnikmerShifter>;
+extern template class goetia::PdBG<goetia::ByteStorage, goetia::FwdUnikmerShifter>;
+extern template class goetia::PdBG<goetia::ByteStorage, goetia::CanUnikmerShifter>;
 
-extern template class goetia::PdBG<goetia::storage::NibbleStorage, goetia::hashing::FwdUnikmerShifter>;
-extern template class goetia::PdBG<goetia::storage::NibbleStorage, goetia::hashing::CanUnikmerShifter>;
+extern template class goetia::PdBG<goetia::NibbleStorage, goetia::FwdUnikmerShifter>;
+extern template class goetia::PdBG<goetia::NibbleStorage, goetia::CanUnikmerShifter>;
 
-extern template class goetia::PdBG<goetia::storage::QFStorage, goetia::hashing::FwdUnikmerShifter>;
-extern template class goetia::PdBG<goetia::storage::QFStorage, goetia::hashing::CanUnikmerShifter>;
+extern template class goetia::PdBG<goetia::QFStorage, goetia::FwdUnikmerShifter>;
+extern template class goetia::PdBG<goetia::QFStorage, goetia::CanUnikmerShifter>;
 #endif

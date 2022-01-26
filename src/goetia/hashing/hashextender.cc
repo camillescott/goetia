@@ -10,10 +10,10 @@
 #include "goetia/hashing/hashextender.hh"
 #include "goetia/hashing/shifter_types.hh"
 
-namespace goetia::hashing {
+namespace goetia {
 
-    template class DefaultExtensionPolicy<goetia::hashing::FwdLemireShifter>;
-    template class DefaultExtensionPolicy<goetia::hashing::CanLemireShifter>;
+    template class DefaultExtensionPolicy<goetia::FwdLemireShifter>;
+    template class DefaultExtensionPolicy<goetia::CanLemireShifter>;
 
     template class HashExtender<DefaultExtensionPolicy<FwdLemireShifter>>;
     template HashExtender<DefaultExtensionPolicy<FwdLemireShifter>>::HashExtender(uint16_t);

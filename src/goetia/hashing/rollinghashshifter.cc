@@ -11,11 +11,8 @@
 
 namespace goetia {
 
-namespace hashing {
-
 template class LemireShifterPolicy<Hash<uint64_t>>;
 template class LemireShifterPolicy<Canonical<uint64_t>>;
 
-}
 }
 

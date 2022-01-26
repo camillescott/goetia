@@ -12,10 +12,10 @@
 #include "goetia/hashing/rollinghashshifter.hh"
 
 
-template class goetia::hashing::HashShifter<goetia::hashing::FwdLemirePolicy>;
-template goetia::hashing::HashShifter<goetia::hashing::FwdLemirePolicy>::HashShifter(uint16_t);
-template goetia::hashing::HashShifter<goetia::hashing::FwdLemirePolicy>::HashShifter(const std::string&, uint16_t);
+template class goetia::HashShifter<goetia::FwdLemirePolicy>;
+template goetia::HashShifter<goetia::FwdLemirePolicy>::HashShifter(uint16_t);
+template goetia::HashShifter<goetia::FwdLemirePolicy>::HashShifter(const std::string&, uint16_t);
 
-template class goetia::hashing::HashShifter<goetia::hashing::CanLemirePolicy>;
-template goetia::hashing::HashShifter<goetia::hashing::CanLemirePolicy>::HashShifter(uint16_t);
-template goetia::hashing::HashShifter<goetia::hashing::CanLemirePolicy>::HashShifter(const std::string&, uint16_t);
+template class goetia::HashShifter<goetia::CanLemirePolicy>;
+template goetia::HashShifter<goetia::CanLemirePolicy>::HashShifter(uint16_t);
+template goetia::HashShifter<goetia::CanLemirePolicy>::HashShifter(const std::string&, uint16_t);

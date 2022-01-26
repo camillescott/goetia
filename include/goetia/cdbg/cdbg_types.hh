@@ -35,7 +35,6 @@
 
 
 namespace goetia {
-namespace cdbg {
 
 typedef uint64_t id_t;
 
@@ -103,7 +102,6 @@ enum update_meta_t {
     MERGE_UNODES
 };
 
-}
 }
 
 #undef pdebug

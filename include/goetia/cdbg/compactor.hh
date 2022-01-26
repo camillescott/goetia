@@ -22,7 +22,6 @@
 
 
 namespace goetia {
-namespace cdbg {
 
 # ifdef DEBUG_CPTR
 #   define pdebug(x) do { std::cerr << std::endl << "@ " << __FILE__ <<\
@@ -48,7 +47,7 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
 
 
     typedef ShifterType                                shifter_type;
-    typedef hashing::extender_selector_t<shifter_type> extender_type;
+    typedef extender_selector_t<shifter_type> extender_type;
 
     typedef typename shifter_type::alphabet     alphabet;
     typedef typename shifter_type::hash_type    hash_type;
@@ -56,7 +55,7 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
     typedef typename shifter_type::kmer_type    kmer_type;
 
     template<bool Dir>
-        using shift_type = hashing::Shift<hash_type, Dir>;
+        using shift_type = Shift<hash_type, Dir>;
 
     typedef UnitigWalker<graph_type>               walker_type;
     template<bool Dir>
@@ -330,7 +329,7 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
 
             pdebug("FIND SEGMENTS: " << sequence);
 
-            hashing::KmerIterator<extender_type> kmers(sequence, this->K);
+            KmerIterator<extender_type> kmers(sequence, this->K);
             hash_type prev_hash, cur_hash;
             size_t pos = 0;
             bool cur_new = false, prev_new = false, cur_seen = false, prev_seen = false;
@@ -375,7 +374,7 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
                 pdebug("sequence ended on new k-mer");
                 hash_type right_flank = cur_hash;
                 dbg->set_cursor(sequence.c_str() + sequence.length() - this->K);
-                std::vector<shift_type<hashing::DIR_RIGHT>>
+                std::vector<shift_type<DIR_RIGHT>>
                     rneighbors = dbg->filter_nodes(dbg->right_extensions(),
                                                    new_kmers);
                 pdebug("rneighbors: " << rneighbors.size());
@@ -399,7 +398,7 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
             if (preprocess[1].start_pos == 0) {
                 pdebug("handle first segment pos 0 edge case");
                 dbg->set_cursor(sequence);
-                std::vector<shift_type<hashing::DIR_LEFT>>
+                std::vector<shift_type<DIR_LEFT>>
                     lneighbors = dbg->filter_nodes(dbg->left_extensions(),
                                                    new_kmers);
                 if (lneighbors.size() == 1) {
@@ -670,12 +669,12 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
                 bool clip_from;
                 if (root.value() == unode_to_split->left_end().value()) {
                     new_end = dbg->hash(unode_to_split->sequence.c_str() + 1);
-                    clip_from = hashing::DIR_LEFT;
+                    clip_from = DIR_LEFT;
                 } else {
                     new_end = dbg->hash(unode_to_split->sequence.c_str()
                                          + unode_to_split->sequence.size()
                                          - this->K - 1);
-                    clip_from = hashing::DIR_RIGHT;
+                    clip_from = DIR_RIGHT;
                 }
                 cdbg->clip_unode(clip_from,
                                  root,
@@ -866,7 +865,7 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
                 pdebug("extend unode right");
                 auto trimmed_seq = sequence.substr(segment.start_pos + this->K - 1,
                                                    segment.length - this->K + 1);
-                cdbg->extend_unode(hashing::DIR_RIGHT,
+                cdbg->extend_unode(DIR_RIGHT,
                                    trimmed_seq,
                                    segment.left_flank,
                                    segment.right_anchor,
@@ -876,7 +875,7 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
                 pdebug("extend unode left");
                 auto trimmed_seq = sequence.substr(segment.start_pos,
                                                    segment.length - this->K + 1);
-                cdbg->extend_unode(hashing::DIR_LEFT,
+                cdbg->extend_unode(DIR_LEFT,
                                    trimmed_seq,
                                    segment.right_flank,
                                    segment.left_anchor,
@@ -1145,7 +1144,7 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
     };
     */
 
-    template <class ParserType = parsing::FastxParser<>>
+    template <class ParserType = FastxParser<>>
     class NormalizingCompactor : public FileProcessor<NormalizingCompactor<ParserType>,
                                                       ParserType> { 
     protected:
@@ -1153,7 +1152,7 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
 
         bool median_count_at_least(const std::string&          sequence,
                                    unsigned int                cutoff,
-                                   dBG<storage::ByteStorage,
+                                   dBG<ByteStorage,
                                        ShifterType> *          counts) {
 
             auto kmers = counts->get_hash_iter(sequence);
@@ -1191,7 +1190,7 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
         std::shared_ptr<Compactor>                              compactor;
         std::shared_ptr<graph_type>                             graph;
 
-        std::unique_ptr<dBG<storage::ByteStorage, ShifterType>> counts;
+        std::unique_ptr<dBG<ByteStorage, ShifterType>> counts;
         unsigned int                                            cutoff;
         size_t                                                  n_seq_updates;
 
@@ -1204,27 +1203,27 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
         
         NormalizingCompactor(std::shared_ptr<Compactor> compactor,
                              unsigned int               cutoff,
-                             uint64_t interval = metrics::IntervalCounter::DEFAULT_INTERVAL)
+                             uint64_t interval = IntervalCounter::DEFAULT_INTERVAL)
             : Base(interval),
               compactor(compactor),
               graph(compactor->dbg),
               cutoff(cutoff),
               n_seq_updates(0)
         {
-            auto storage = storage::ByteStorage::build(100000000, 4);
+            auto storage = ByteStorage::build(100000000, 4);
             auto hasher = graph->get_hasher();
-            counts = std::make_unique<dBG<storage::ByteStorage,
+            counts = std::make_unique<dBG<ByteStorage,
                                           ShifterType>>(storage, hasher);
         }
 
         static std::shared_ptr<NormalizingCompactor> build(std::shared_ptr<Compactor> compactor,
                                                            unsigned int cutoff,
-                                                           uint64_t interval = metrics::IntervalCounter::DEFAULT_INTERVAL) {
+                                                           uint64_t interval = IntervalCounter::DEFAULT_INTERVAL) {
             return std::make_shared<NormalizingCompactor>(compactor, cutoff, interval);
 
         }
 
-        uint64_t process_sequence(const parsing::Record& read) {
+        uint64_t process_sequence(const Record& read) {
 
             uint64_t sequence_n_kmers = read.sequence.length() - compactor->K + 1;
 
@@ -1271,7 +1270,7 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
 
     private:
 
-        std::unique_ptr<dBG<storage::NibbleStorage,
+        std::unique_ptr<dBG<NibbleStorage,
                             ShifterType>> abund_filter;
 
     public:
@@ -1289,10 +1288,10 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
               dbg           (compactor->dbg),
               min_abund     (min_abund)
         {
-            std::shared_ptr<storage::NibbleStorage> abund_storage = storage::NibbleStorage::build(abund_table_size,
+            std::shared_ptr<NibbleStorage> abund_storage = NibbleStorage::build(abund_table_size,
                                                                                                   n_abund_tables);
             auto abund_hasher = dbg->get_hasher();
-            abund_filter = std::make_unique<dBG<storage::NibbleStorage,
+            abund_filter = std::make_unique<dBG<NibbleStorage,
                                                 ShifterType>>(abund_storage,
                                                               abund_hasher);
         }
@@ -1307,7 +1306,7 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
 
         std::vector<std::pair<size_t, size_t>> find_solid_segments(const std::string& sequence) {
             std::vector<hash_type>  hashes;
-            std::vector<storage::count_t> counts;
+            std::vector<count_t> counts;
             abund_filter->insert_sequence(sequence, hashes, counts);
 
             std::vector<std::pair<size_t, size_t>> segments;
@@ -1357,17 +1356,16 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
 
 
 }
-}
 
-extern template class goetia::cdbg::StreamingCompactor<goetia::dBG<goetia::storage::SparseppSetStorage, goetia::hashing::FwdLemireShifter>>;
-extern template class goetia::cdbg::StreamingCompactor<goetia::dBG<goetia::storage::PHMapStorage, goetia::hashing::FwdLemireShifter>>;
-// extern template class goetia::cdbg::StreamingCompactor<goetia::dBG<goetia::storage::BitStorage, goetia::hashing::FwdLemireShifter>>;
-// extern template class goetia::cdbg::StreamingCompactor<goetia::dBG<goetia::storage::ByteStorage, goetia::hashing::FwdLemireShifter>>;
-// extern template class goetia::cdbg::StreamingCompactor<goetia::dBG<goetia::storage::NibbleStorage, goetia::hashing::FwdLemireShifter>>;
-// extern template class goetia::cdbg::StreamingCompactor<goetia::dBG<goetia::storage::QFStorage, goetia::hashing::FwdLemireShifter>>;
+extern template class goetia::StreamingCompactor<goetia::dBG<goetia::SparseppSetStorage, goetia::FwdLemireShifter>>;
+extern template class goetia::StreamingCompactor<goetia::dBG<goetia::PHMapStorage, goetia::FwdLemireShifter>>;
+// extern template class goetia::StreamingCompactor<goetia::dBG<goetia::BitStorage, goetia::FwdLemireShifter>>;
+// extern template class goetia::StreamingCompactor<goetia::dBG<goetia::ByteStorage, goetia::FwdLemireShifter>>;
+// extern template class goetia::StreamingCompactor<goetia::dBG<goetia::NibbleStorage, goetia::FwdLemireShifter>>;
+// extern template class goetia::StreamingCompactor<goetia::dBG<goetia::QFStorage, goetia::FwdLemireShifter>>;
 
-extern template class std::deque<goetia::cdbg::StreamingCompactor<goetia::dBG<goetia::storage::SparseppSetStorage, goetia::hashing::FwdLemireShifter>>>;
-extern template class std::deque<goetia::cdbg::StreamingCompactor<goetia::dBG<goetia::storage::PHMapStorage, goetia::hashing::FwdLemireShifter>>>;
+extern template class std::deque<goetia::StreamingCompactor<goetia::dBG<goetia::SparseppSetStorage, goetia::FwdLemireShifter>>>;
+extern template class std::deque<goetia::StreamingCompactor<goetia::dBG<goetia::PHMapStorage, goetia::FwdLemireShifter>>>;
 
 
 #undef pdebug

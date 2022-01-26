@@ -14,7 +14,6 @@
 
 namespace goetia {
 
-namespace storage {
 
 
 const count_t
@@ -93,8 +92,6 @@ BTreeStorage::deserialize(std::ifstream& in) {
     storage->_store->unserialize(BaseSppSerializer(), &in);
     return storage;
     */
-}
-
 }
 
 }

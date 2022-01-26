@@ -39,13 +39,12 @@
 # endif
 
 namespace goetia {
-namespace cdbg {
 
 
 template <class StorageType>
 struct uDBG {
 
-    typedef dBG<StorageType, hashing::CanUnikmerShifter> graph_type;
+    typedef dBG<StorageType, CanUnikmerShifter> graph_type;
 
     // inject dependent typename boilerplate: see goetia/meta.hh
     _goetia_model_typedefs_from_graphtype(graph_type);
@@ -154,15 +153,14 @@ struct uDBG {
 
 };
 
-extern template class cdbg::uDBG<storage::BitStorage>;
-extern template class cdbg::uDBG<storage::ByteStorage>;
-extern template class cdbg::uDBG<storage::NibbleStorage>;
-extern template class cdbg::uDBG<storage::QFStorage>;
-extern template class cdbg::uDBG<storage::SparseppSetStorage>;
+extern template class uDBG<BitStorage>;
+extern template class uDBG<ByteStorage>;
+extern template class uDBG<NibbleStorage>;
+extern template class uDBG<QFStorage>;
+extern template class uDBG<SparseppSetStorage>;
 
 
 
-}
 }
 
 #undef pdebug

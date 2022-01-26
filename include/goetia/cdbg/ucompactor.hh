@@ -37,7 +37,6 @@
 # endif
 
 namespace goetia {
-namespace cdbg {
 
 namespace TipType {
     enum Type {
@@ -215,7 +214,6 @@ struct UStreamingCompactor {
 
 };
 
-}
 }
 
 #undef pdebug

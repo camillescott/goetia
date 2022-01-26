@@ -19,29 +19,28 @@
 #include "goetia/cdbg/cdbg_types.hh"
 
 namespace goetia {
-namespace cdbg {
 
 
 class cDBGMetrics {
 
 public:
 
-    metrics::Gauge                    n_full;
-    metrics::Gauge                    n_tips;
-    metrics::Gauge                    n_islands;
-    metrics::Gauge                    n_trivial;
-    metrics::Gauge                    n_circular;
-    metrics::Gauge                    n_loops;
-    metrics::Gauge                    n_dnodes;
-    metrics::Gauge                    n_unodes;
+    Gauge                    n_full;
+    Gauge                    n_tips;
+    Gauge                    n_islands;
+    Gauge                    n_trivial;
+    Gauge                    n_circular;
+    Gauge                    n_loops;
+    Gauge                    n_dnodes;
+    Gauge                    n_unodes;
 
 
-    metrics::Gauge                    n_splits;
-    metrics::Gauge                    n_merges;
-    metrics::Gauge                    n_extends;
-    metrics::Gauge                    n_clips;
-    metrics::Gauge                    n_deletes;
-    metrics::Gauge                    n_circular_merges;
+    Gauge                    n_splits;
+    Gauge                    n_merges;
+    Gauge                    n_extends;
+    Gauge                    n_clips;
+    Gauge                    n_deletes;
+    Gauge                    n_circular_merges;
     
     cDBGMetrics() :
         n_full            {"node_type", "full_unode"},
@@ -84,7 +83,7 @@ public:
     friend std::ostream& operator<<(std::ostream& o, const cDBGMetrics& c);
 
 private:
-    metrics::Gauge& get_cdbg_node_gauage(node_meta_t meta) {
+    Gauge& get_cdbg_node_gauage(node_meta_t meta) {
         switch(meta) {
             case FULL:
                 return n_full;
@@ -122,7 +121,6 @@ inline std::ostream& operator<<(std::ostream& o, const cDBGMetrics& c) {
     return o;
 }
 
-}
 }
 
 #endif

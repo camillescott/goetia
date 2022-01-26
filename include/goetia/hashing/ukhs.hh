@@ -29,7 +29,7 @@
 #include "goetia/hashing/hashshifter.hh"
 
 
-namespace goetia::hashing { 
+namespace goetia { 
 
 void test();
 

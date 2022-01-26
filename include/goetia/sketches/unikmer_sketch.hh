@@ -31,7 +31,6 @@
 #include "goetia/pdbg.hh"
 
 namespace goetia {
-namespace sketches {
 
 
 class IncompatibleSketch : public GoetiaException {
@@ -46,8 +45,8 @@ struct UnikmerSketch {
 
     typedef StorageType                                 storage_type;
     typedef StorageTraits<StorageType>                  storage_traits;
-    typedef hashing::UnikmerLemirePolicy<HashType>      shift_policy;
-    typedef hashing::HashShifter<shift_policy>          shifter_type;
+    typedef UnikmerLemirePolicy<HashType>      shift_policy;
+    typedef HashShifter<shift_policy>          shifter_type;
     typedef typename shifter_type::ukhs_type            ukhs_type;
     typedef PdBG<StorageType, shifter_type>             pdbg_type;
 
@@ -145,31 +144,30 @@ struct UnikmerSketch {
 
 };
 
-extern template class sketches::UnikmerSketch<storage::BitStorage, hashing::Hash<uint64_t>>;
-extern template class sketches::UnikmerSketch<storage::BitStorage, hashing::Canonical<uint64_t>>;
+extern template class UnikmerSketch<BitStorage, Hash<uint64_t>>;
+extern template class UnikmerSketch<BitStorage, Canonical<uint64_t>>;
 
-extern template class sketches::UnikmerSketch<storage::SparseppSetStorage, hashing::Hash<uint64_t>>;
-extern template class sketches::UnikmerSketch<storage::SparseppSetStorage, hashing::Canonical<uint64_t>>;
+extern template class UnikmerSketch<SparseppSetStorage, Hash<uint64_t>>;
+extern template class UnikmerSketch<SparseppSetStorage, Canonical<uint64_t>>;
 
-extern template class sketches::UnikmerSketch<storage::PHMapStorage, hashing::Hash<uint64_t>>;
-extern template class sketches::UnikmerSketch<storage::PHMapStorage, hashing::Canonical<uint64_t>>;
+extern template class UnikmerSketch<PHMapStorage, Hash<uint64_t>>;
+extern template class UnikmerSketch<PHMapStorage, Canonical<uint64_t>>;
 
-extern template class sketches::UnikmerSketch<storage::BTreeStorage, hashing::Hash<uint64_t>>;
-extern template class sketches::UnikmerSketch<storage::BTreeStorage, hashing::Canonical<uint64_t>>;
+extern template class UnikmerSketch<BTreeStorage, Hash<uint64_t>>;
+extern template class UnikmerSketch<BTreeStorage, Canonical<uint64_t>>;
 
-extern template class sketches::UnikmerSketch<storage::ByteStorage, hashing::Hash<uint64_t>>;
-extern template class sketches::UnikmerSketch<storage::ByteStorage, hashing::Canonical<uint64_t>>;
+extern template class UnikmerSketch<ByteStorage, Hash<uint64_t>>;
+extern template class UnikmerSketch<ByteStorage, Canonical<uint64_t>>;
 
-extern template class sketches::UnikmerSketch<storage::NibbleStorage, hashing::Hash<uint64_t>>;
-extern template class sketches::UnikmerSketch<storage::NibbleStorage, hashing::Canonical<uint64_t>>;
+extern template class UnikmerSketch<NibbleStorage, Hash<uint64_t>>;
+extern template class UnikmerSketch<NibbleStorage, Canonical<uint64_t>>;
 
-extern template class sketches::UnikmerSketch<storage::QFStorage, hashing::Hash<uint64_t>>;
-extern template class sketches::UnikmerSketch<storage::QFStorage, hashing::Canonical<uint64_t>>;
+extern template class UnikmerSketch<QFStorage, Hash<uint64_t>>;
+extern template class UnikmerSketch<QFStorage, Canonical<uint64_t>>;
 
-extern template class sketches::UnikmerSketch<storage::HLLStorage, hashing::Hash<uint64_t>>;
-extern template class sketches::UnikmerSketch<storage::HLLStorage, hashing::Canonical<uint64_t>>;
+extern template class UnikmerSketch<HLLStorage, Hash<uint64_t>>;
+extern template class UnikmerSketch<HLLStorage, Canonical<uint64_t>>;
 
-}
 }
 
 

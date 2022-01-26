@@ -63,7 +63,6 @@
 
 using namespace std;
 using namespace goetia;
-using namespace goetia::storage;
 
 std::shared_ptr<BitStorage>
 BitStorage::build(uint64_t max_table, uint16_t N) {

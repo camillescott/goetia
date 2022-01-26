@@ -44,22 +44,22 @@ public:
 
     typedef ShifterType                              shifter_type;
     typedef StorageType                              storage_type;
-    typedef storage::StorageTraits<storage_type>     storage_traits;
+    typedef StorageTraits<storage_type>     storage_traits;
 
     typedef UnitigWalker<dBG<StorageType, ShifterType>> walker_type;
     typedef typename walker_type::extender_type      extender_type;
 
-    typedef hashing::KmerIterator<ShifterType>       kmer_iter_type;
+    typedef KmerIterator<ShifterType>       kmer_iter_type;
     typedef typename walker_type::alphabet           alphabet;
 
     typedef typename walker_type::hash_type          hash_type;
     typedef typename walker_type::kmer_type          kmer_type;
 
     template<bool Dir>
-        using shift_type = hashing::Shift<hash_type, Dir>;
+        using shift_type = Shift<hash_type, Dir>;
 
-    typedef std::pair<std::vector<shift_type<hashing::DIR_LEFT>>,
-                      std::vector<shift_type<hashing::DIR_RIGHT>>> shift_pair_type;
+    typedef std::pair<std::vector<shift_type<DIR_LEFT>>,
+                      std::vector<shift_type<DIR_RIGHT>>> shift_pair_type;
 
     typedef std::pair<std::vector<kmer_type>,
                       std::vector<kmer_type>>             neighbor_pair_type;
@@ -153,11 +153,11 @@ public:
      *
      * @Returns    Post-insertion count of the element.
      */
-    inline const storage::count_t insert_and_query(hash_type& kmer) {
+    inline const count_t insert_and_query(hash_type& kmer) {
         return S->insert_and_query(kmer.value());
     }
 
-    inline const storage::count_t insert_and_query(const std::string& kmer) {
+    inline const count_t insert_and_query(const std::string& kmer) {
         return S->insert_and_query(this->hash(kmer).value());
     }
 
@@ -168,11 +168,11 @@ public:
      *
      * @Returns   The count of the k-mer.
      */
-    const storage::count_t query(const std::string& kmer) {
+    const count_t query(const std::string& kmer) {
         return query(this->hash(kmer));
     }
 
-    const storage::count_t query(const hash_type& h) const {
+    const count_t query(const hash_type& h) const {
         return S->query(h.value());
     }
 
@@ -248,12 +248,12 @@ public:
      */
     uint64_t insert_sequence(const std::string&          sequence,
                              std::vector<hash_type>&  kmer_hashes,
-                             std::vector<storage::count_t>& counts) {
+                             std::vector<count_t>& counts) {
     
-        hashing::KmerIterator<ShifterType> iter(sequence, static_cast<ShifterType*>(this));
+        KmerIterator<ShifterType> iter(sequence, static_cast<ShifterType*>(this));
 
         size_t           pos = 0;
-        storage::count_t count;
+        count_t count;
         while(!iter.done()) {
             auto h = iter.next();
             count  = insert_and_query(h);
@@ -270,7 +270,7 @@ public:
     uint64_t insert_sequence(const std::string&      sequence,
                              std::set<hash_type>& new_kmers) {
 
-        hashing::KmerIterator<ShifterType> iter(sequence, this);
+        KmerIterator<ShifterType> iter(sequence, this);
 
         size_t pos = 0;
         bool is_new;
@@ -287,7 +287,7 @@ public:
 
     uint64_t insert_sequence(const std::string& sequence) {
     
-        hashing::KmerIterator<ShifterType> iter(sequence, this);
+        KmerIterator<ShifterType> iter(sequence, this);
 
         while(!iter.done()) {
             insert(iter.next());
@@ -299,7 +299,7 @@ public:
     uint64_t insert_sequence(const std::string& sequence,
                              uint64_t&          n_new) {
     
-        hashing::KmerIterator<ShifterType> iter(sequence, this);
+        KmerIterator<ShifterType> iter(sequence, this);
         
         n_new = 0;
         while(!iter.done()) {
@@ -316,10 +316,10 @@ public:
      *
      * @Returns  The counts. 
      */
-    std::vector<storage::count_t> insert_and_query_sequence(const std::string& sequence)  {
+    std::vector<count_t> insert_and_query_sequence(const std::string& sequence)  {
 
-        hashing::KmerIterator<ShifterType> iter(sequence, this);
-        std::vector<storage::count_t> counts(sequence.length() - K + 1);
+        KmerIterator<ShifterType> iter(sequence, this);
+        std::vector<count_t> counts(sequence.length() - K + 1);
 
         size_t pos = 0;
         while(!iter.done()) {
@@ -338,10 +338,10 @@ public:
      *
      * @Returns   The counts.
      */
-    std::vector<storage::count_t> query_sequence(const std::string& sequence)  {
+    std::vector<count_t> query_sequence(const std::string& sequence)  {
 
-        hashing::KmerIterator<ShifterType> iter(sequence, this);
-        std::vector<storage::count_t> counts(sequence.length() - K + 1);
+        KmerIterator<ShifterType> iter(sequence, this);
+        std::vector<count_t> counts(sequence.length() - K + 1);
 
         size_t pos = 0;
         while(!iter.done()) {
@@ -354,25 +354,25 @@ public:
     }
 
     void query_sequence(const std::string&             sequence,
-                        std::vector<storage::count_t>& counts,
+                        std::vector<count_t>& counts,
                         std::vector<hash_type>&  hashes) {
 
-        hashing::KmerIterator<ShifterType> iter(sequence, this);
+        KmerIterator<ShifterType> iter(sequence, this);
 
         while(!iter.done()) {
             hash_type h = iter.next();
-            storage::count_t result = query(h);
+            count_t result = query(h);
             counts.push_back(result);
             hashes.push_back(h);
         }
     }
 
     void query_sequence(const std::string& sequence,
-                        std::vector<storage::count_t>& counts,
+                        std::vector<count_t>& counts,
                         std::vector<hash_type>& hashes,
                         std::set<hash_type>& new_hashes) {
 
-        hashing::KmerIterator<ShifterType> iter(sequence, this);
+        KmerIterator<ShifterType> iter(sequence, this);
 
         while(!iter.done()) {
             hash_type h = iter.next();
@@ -411,9 +411,9 @@ public:
     }
 
     auto get_hash_iter(const std::string& sequence)
-    -> std::shared_ptr<hashing::KmerIterator<ShifterType>> {
+    -> std::shared_ptr<KmerIterator<ShifterType>> {
 
-        return std::make_shared<hashing::KmerIterator<ShifterType>>(sequence, this);
+        return std::make_shared<KmerIterator<ShifterType>>(sequence, this);
     }
 
     ShifterType get_hasher() {
@@ -457,7 +457,7 @@ struct Masked : public UnitigWalker<Masked<StorageType, ShifterType, MaskType>> 
     {
     }
 
-    const storage::count_t query(const std::string& kmer) {
+    const count_t query(const std::string& kmer) {
         hash_type h = shifter_type::hash(kmer, K);
         if (mask.count(h)) {
             return 0;
@@ -465,17 +465,17 @@ struct Masked : public UnitigWalker<Masked<StorageType, ShifterType, MaskType>> 
         return S->query(h.value());
     }
 
-    const storage::count_t query(const hash_type& h) const  {
+    const count_t query(const hash_type& h) const  {
         if (mask.count(h)) {
             return 0;
         }
         return S->query(h.value());
     }
 
-    std::vector<storage::count_t> query_sequence(const std::string& sequence)  {
+    std::vector<count_t> query_sequence(const std::string& sequence)  {
 
-        hashing::KmerIterator<ShifterType> iter(sequence, this);
-        std::vector<storage::count_t> counts(sequence.length() - K + 1);
+        KmerIterator<ShifterType> iter(sequence, this);
+        std::vector<count_t> counts(sequence.length() - K + 1);
 
         size_t pos = 0;
         while(!iter.done()) {
@@ -500,110 +500,110 @@ std::shared_ptr<Masked<StorageType, ShifterType, MaskType>> make_masked(dBG<Stor
 }
 
 
-extern template class goetia::dBG<goetia::storage::BitStorage, goetia::hashing::FwdLemireShifter>;
-extern template class goetia::dBG<goetia::storage::BitStorage, goetia::hashing::CanLemireShifter>;
-extern template class goetia::dBG<goetia::storage::BitStorage, goetia::hashing::FwdUnikmerShifter>;
-extern template class goetia::dBG<goetia::storage::BitStorage, goetia::hashing::CanUnikmerShifter>;
+extern template class goetia::dBG<goetia::BitStorage, goetia::FwdLemireShifter>;
+extern template class goetia::dBG<goetia::BitStorage, goetia::CanLemireShifter>;
+extern template class goetia::dBG<goetia::BitStorage, goetia::FwdUnikmerShifter>;
+extern template class goetia::dBG<goetia::BitStorage, goetia::CanUnikmerShifter>;
 
-extern template class goetia::dBG<goetia::storage::SparseppSetStorage, goetia::hashing::FwdLemireShifter>;
-extern template class goetia::dBG<goetia::storage::SparseppSetStorage, goetia::hashing::CanLemireShifter>;
-extern template class goetia::dBG<goetia::storage::SparseppSetStorage, goetia::hashing::FwdUnikmerShifter>;
-extern template class goetia::dBG<goetia::storage::SparseppSetStorage, goetia::hashing::CanUnikmerShifter>;
+extern template class goetia::dBG<goetia::SparseppSetStorage, goetia::FwdLemireShifter>;
+extern template class goetia::dBG<goetia::SparseppSetStorage, goetia::CanLemireShifter>;
+extern template class goetia::dBG<goetia::SparseppSetStorage, goetia::FwdUnikmerShifter>;
+extern template class goetia::dBG<goetia::SparseppSetStorage, goetia::CanUnikmerShifter>;
 
-extern template class goetia::dBG<goetia::storage::ByteStorage, goetia::hashing::FwdLemireShifter>;
-extern template class goetia::dBG<goetia::storage::ByteStorage, goetia::hashing::CanLemireShifter>;
-extern template class goetia::dBG<goetia::storage::ByteStorage, goetia::hashing::FwdUnikmerShifter>;
-extern template class goetia::dBG<goetia::storage::ByteStorage, goetia::hashing::CanUnikmerShifter>;
+extern template class goetia::dBG<goetia::ByteStorage, goetia::FwdLemireShifter>;
+extern template class goetia::dBG<goetia::ByteStorage, goetia::CanLemireShifter>;
+extern template class goetia::dBG<goetia::ByteStorage, goetia::FwdUnikmerShifter>;
+extern template class goetia::dBG<goetia::ByteStorage, goetia::CanUnikmerShifter>;
 
-extern template class goetia::dBG<goetia::storage::NibbleStorage, goetia::hashing::FwdLemireShifter>;
-extern template class goetia::dBG<goetia::storage::NibbleStorage, goetia::hashing::CanLemireShifter>;
-extern template class goetia::dBG<goetia::storage::NibbleStorage, goetia::hashing::FwdUnikmerShifter>;
-extern template class goetia::dBG<goetia::storage::NibbleStorage, goetia::hashing::CanUnikmerShifter>;
+extern template class goetia::dBG<goetia::NibbleStorage, goetia::FwdLemireShifter>;
+extern template class goetia::dBG<goetia::NibbleStorage, goetia::CanLemireShifter>;
+extern template class goetia::dBG<goetia::NibbleStorage, goetia::FwdUnikmerShifter>;
+extern template class goetia::dBG<goetia::NibbleStorage, goetia::CanUnikmerShifter>;
 
-extern template class goetia::dBG<goetia::storage::QFStorage, goetia::hashing::FwdLemireShifter>;
-extern template class goetia::dBG<goetia::storage::QFStorage, goetia::hashing::CanLemireShifter>;
-extern template class goetia::dBG<goetia::storage::QFStorage, goetia::hashing::FwdUnikmerShifter>;
-extern template class goetia::dBG<goetia::storage::QFStorage, goetia::hashing::CanUnikmerShifter>;
+extern template class goetia::dBG<goetia::QFStorage, goetia::FwdLemireShifter>;
+extern template class goetia::dBG<goetia::QFStorage, goetia::CanLemireShifter>;
+extern template class goetia::dBG<goetia::QFStorage, goetia::FwdUnikmerShifter>;
+extern template class goetia::dBG<goetia::QFStorage, goetia::CanUnikmerShifter>;
 
-extern template class goetia::dBG<goetia::storage::PHMapStorage, goetia::hashing::FwdLemireShifter>;
-extern template class goetia::dBG<goetia::storage::PHMapStorage, goetia::hashing::CanLemireShifter>;
-extern template class goetia::dBG<goetia::storage::PHMapStorage, goetia::hashing::FwdUnikmerShifter>;
-extern template class goetia::dBG<goetia::storage::PHMapStorage, goetia::hashing::CanUnikmerShifter>;
+extern template class goetia::dBG<goetia::PHMapStorage, goetia::FwdLemireShifter>;
+extern template class goetia::dBG<goetia::PHMapStorage, goetia::CanLemireShifter>;
+extern template class goetia::dBG<goetia::PHMapStorage, goetia::FwdUnikmerShifter>;
+extern template class goetia::dBG<goetia::PHMapStorage, goetia::CanUnikmerShifter>;
 
-extern template class goetia::dBG<goetia::storage::BTreeStorage, goetia::hashing::FwdLemireShifter>;
-extern template class goetia::dBG<goetia::storage::BTreeStorage, goetia::hashing::CanLemireShifter>;
-extern template class goetia::dBG<goetia::storage::BTreeStorage, goetia::hashing::FwdUnikmerShifter>;
-extern template class goetia::dBG<goetia::storage::BTreeStorage, goetia::hashing::CanUnikmerShifter>;
+extern template class goetia::dBG<goetia::BTreeStorage, goetia::FwdLemireShifter>;
+extern template class goetia::dBG<goetia::BTreeStorage, goetia::CanLemireShifter>;
+extern template class goetia::dBG<goetia::BTreeStorage, goetia::FwdUnikmerShifter>;
+extern template class goetia::dBG<goetia::BTreeStorage, goetia::CanUnikmerShifter>;
 
-extern template class goetia::UnitigWalker<goetia::dBG<goetia::storage::BitStorage, goetia::hashing::FwdLemireShifter>>;
-extern template class goetia::UnitigWalker<goetia::dBG<goetia::storage::BitStorage, goetia::hashing::CanLemireShifter>>;
-extern template class goetia::UnitigWalker<goetia::dBG<goetia::storage::BitStorage, goetia::hashing::FwdUnikmerShifter>>;
-extern template class goetia::UnitigWalker<goetia::dBG<goetia::storage::BitStorage, goetia::hashing::CanUnikmerShifter>>;
+extern template class goetia::UnitigWalker<goetia::dBG<goetia::BitStorage, goetia::FwdLemireShifter>>;
+extern template class goetia::UnitigWalker<goetia::dBG<goetia::BitStorage, goetia::CanLemireShifter>>;
+extern template class goetia::UnitigWalker<goetia::dBG<goetia::BitStorage, goetia::FwdUnikmerShifter>>;
+extern template class goetia::UnitigWalker<goetia::dBG<goetia::BitStorage, goetia::CanUnikmerShifter>>;
 
-extern template class goetia::UnitigWalker<goetia::dBG<goetia::storage::SparseppSetStorage, goetia::hashing::FwdLemireShifter>>;
-extern template class goetia::UnitigWalker<goetia::dBG<goetia::storage::SparseppSetStorage, goetia::hashing::CanLemireShifter>>;
-extern template class goetia::UnitigWalker<goetia::dBG<goetia::storage::SparseppSetStorage, goetia::hashing::FwdUnikmerShifter>>;
-extern template class goetia::UnitigWalker<goetia::dBG<goetia::storage::SparseppSetStorage, goetia::hashing::CanUnikmerShifter>>;
+extern template class goetia::UnitigWalker<goetia::dBG<goetia::SparseppSetStorage, goetia::FwdLemireShifter>>;
+extern template class goetia::UnitigWalker<goetia::dBG<goetia::SparseppSetStorage, goetia::CanLemireShifter>>;
+extern template class goetia::UnitigWalker<goetia::dBG<goetia::SparseppSetStorage, goetia::FwdUnikmerShifter>>;
+extern template class goetia::UnitigWalker<goetia::dBG<goetia::SparseppSetStorage, goetia::CanUnikmerShifter>>;
 
-extern template class goetia::UnitigWalker<goetia::dBG<goetia::storage::ByteStorage, goetia::hashing::FwdLemireShifter>>;
-extern template class goetia::UnitigWalker<goetia::dBG<goetia::storage::ByteStorage, goetia::hashing::CanLemireShifter>>;
-extern template class goetia::UnitigWalker<goetia::dBG<goetia::storage::ByteStorage, goetia::hashing::FwdUnikmerShifter>>;
-extern template class goetia::UnitigWalker<goetia::dBG<goetia::storage::ByteStorage, goetia::hashing::CanUnikmerShifter>>;
+extern template class goetia::UnitigWalker<goetia::dBG<goetia::ByteStorage, goetia::FwdLemireShifter>>;
+extern template class goetia::UnitigWalker<goetia::dBG<goetia::ByteStorage, goetia::CanLemireShifter>>;
+extern template class goetia::UnitigWalker<goetia::dBG<goetia::ByteStorage, goetia::FwdUnikmerShifter>>;
+extern template class goetia::UnitigWalker<goetia::dBG<goetia::ByteStorage, goetia::CanUnikmerShifter>>;
 
-extern template class goetia::UnitigWalker<goetia::dBG<goetia::storage::NibbleStorage, goetia::hashing::FwdLemireShifter>>;
-extern template class goetia::UnitigWalker<goetia::dBG<goetia::storage::NibbleStorage, goetia::hashing::CanLemireShifter>>;
-extern template class goetia::UnitigWalker<goetia::dBG<goetia::storage::NibbleStorage, goetia::hashing::FwdUnikmerShifter>>;
-extern template class goetia::UnitigWalker<goetia::dBG<goetia::storage::NibbleStorage, goetia::hashing::CanUnikmerShifter>>;
+extern template class goetia::UnitigWalker<goetia::dBG<goetia::NibbleStorage, goetia::FwdLemireShifter>>;
+extern template class goetia::UnitigWalker<goetia::dBG<goetia::NibbleStorage, goetia::CanLemireShifter>>;
+extern template class goetia::UnitigWalker<goetia::dBG<goetia::NibbleStorage, goetia::FwdUnikmerShifter>>;
+extern template class goetia::UnitigWalker<goetia::dBG<goetia::NibbleStorage, goetia::CanUnikmerShifter>>;
 
-extern template class goetia::UnitigWalker<goetia::dBG<goetia::storage::QFStorage, goetia::hashing::FwdLemireShifter>>;
-extern template class goetia::UnitigWalker<goetia::dBG<goetia::storage::QFStorage, goetia::hashing::CanLemireShifter>>;
-extern template class goetia::UnitigWalker<goetia::dBG<goetia::storage::QFStorage, goetia::hashing::FwdUnikmerShifter>>;
-extern template class goetia::UnitigWalker<goetia::dBG<goetia::storage::QFStorage, goetia::hashing::CanUnikmerShifter>>;
+extern template class goetia::UnitigWalker<goetia::dBG<goetia::QFStorage, goetia::FwdLemireShifter>>;
+extern template class goetia::UnitigWalker<goetia::dBG<goetia::QFStorage, goetia::CanLemireShifter>>;
+extern template class goetia::UnitigWalker<goetia::dBG<goetia::QFStorage, goetia::FwdUnikmerShifter>>;
+extern template class goetia::UnitigWalker<goetia::dBG<goetia::QFStorage, goetia::CanUnikmerShifter>>;
 
-extern template class goetia::UnitigWalker<goetia::dBG<goetia::storage::PHMapStorage, goetia::hashing::FwdLemireShifter>>;
-extern template class goetia::UnitigWalker<goetia::dBG<goetia::storage::PHMapStorage, goetia::hashing::CanLemireShifter>>;
-extern template class goetia::UnitigWalker<goetia::dBG<goetia::storage::PHMapStorage, goetia::hashing::FwdUnikmerShifter>>;
-extern template class goetia::UnitigWalker<goetia::dBG<goetia::storage::PHMapStorage, goetia::hashing::CanUnikmerShifter>>;
+extern template class goetia::UnitigWalker<goetia::dBG<goetia::PHMapStorage, goetia::FwdLemireShifter>>;
+extern template class goetia::UnitigWalker<goetia::dBG<goetia::PHMapStorage, goetia::CanLemireShifter>>;
+extern template class goetia::UnitigWalker<goetia::dBG<goetia::PHMapStorage, goetia::FwdUnikmerShifter>>;
+extern template class goetia::UnitigWalker<goetia::dBG<goetia::PHMapStorage, goetia::CanUnikmerShifter>>;
 
-extern template class goetia::UnitigWalker<goetia::dBG<goetia::storage::BTreeStorage, goetia::hashing::FwdLemireShifter>>;
-extern template class goetia::UnitigWalker<goetia::dBG<goetia::storage::BTreeStorage, goetia::hashing::CanLemireShifter>>;
-extern template class goetia::UnitigWalker<goetia::dBG<goetia::storage::BTreeStorage, goetia::hashing::FwdUnikmerShifter>>;
-extern template class goetia::UnitigWalker<goetia::dBG<goetia::storage::BTreeStorage, goetia::hashing::CanUnikmerShifter>>;
+extern template class goetia::UnitigWalker<goetia::dBG<goetia::BTreeStorage, goetia::FwdLemireShifter>>;
+extern template class goetia::UnitigWalker<goetia::dBG<goetia::BTreeStorage, goetia::CanLemireShifter>>;
+extern template class goetia::UnitigWalker<goetia::dBG<goetia::BTreeStorage, goetia::FwdUnikmerShifter>>;
+extern template class goetia::UnitigWalker<goetia::dBG<goetia::BTreeStorage, goetia::CanUnikmerShifter>>;
 
-extern template class goetia::hashing::KmerIterator<goetia::dBG<goetia::storage::BitStorage, goetia::hashing::FwdLemireShifter>>;
-extern template class goetia::hashing::KmerIterator<goetia::dBG<goetia::storage::BitStorage, goetia::hashing::CanLemireShifter>>;
-extern template class goetia::hashing::KmerIterator<goetia::dBG<goetia::storage::BitStorage, goetia::hashing::FwdUnikmerShifter>>;
-extern template class goetia::hashing::KmerIterator<goetia::dBG<goetia::storage::BitStorage, goetia::hashing::CanUnikmerShifter>>;
+extern template class goetia::KmerIterator<goetia::dBG<goetia::BitStorage, goetia::FwdLemireShifter>>;
+extern template class goetia::KmerIterator<goetia::dBG<goetia::BitStorage, goetia::CanLemireShifter>>;
+extern template class goetia::KmerIterator<goetia::dBG<goetia::BitStorage, goetia::FwdUnikmerShifter>>;
+extern template class goetia::KmerIterator<goetia::dBG<goetia::BitStorage, goetia::CanUnikmerShifter>>;
 
-extern template class goetia::hashing::KmerIterator<goetia::dBG<goetia::storage::SparseppSetStorage, goetia::hashing::FwdLemireShifter>>;
-extern template class goetia::hashing::KmerIterator<goetia::dBG<goetia::storage::SparseppSetStorage, goetia::hashing::CanLemireShifter>>;
-extern template class goetia::hashing::KmerIterator<goetia::dBG<goetia::storage::SparseppSetStorage, goetia::hashing::FwdUnikmerShifter>>;
-extern template class goetia::hashing::KmerIterator<goetia::dBG<goetia::storage::SparseppSetStorage, goetia::hashing::CanUnikmerShifter>>;
+extern template class goetia::KmerIterator<goetia::dBG<goetia::SparseppSetStorage, goetia::FwdLemireShifter>>;
+extern template class goetia::KmerIterator<goetia::dBG<goetia::SparseppSetStorage, goetia::CanLemireShifter>>;
+extern template class goetia::KmerIterator<goetia::dBG<goetia::SparseppSetStorage, goetia::FwdUnikmerShifter>>;
+extern template class goetia::KmerIterator<goetia::dBG<goetia::SparseppSetStorage, goetia::CanUnikmerShifter>>;
 
-extern template class goetia::hashing::KmerIterator<goetia::dBG<goetia::storage::ByteStorage, goetia::hashing::FwdLemireShifter>>;
-extern template class goetia::hashing::KmerIterator<goetia::dBG<goetia::storage::ByteStorage, goetia::hashing::CanLemireShifter>>;
-extern template class goetia::hashing::KmerIterator<goetia::dBG<goetia::storage::ByteStorage, goetia::hashing::FwdUnikmerShifter>>;
-extern template class goetia::hashing::KmerIterator<goetia::dBG<goetia::storage::ByteStorage, goetia::hashing::CanUnikmerShifter>>;
+extern template class goetia::KmerIterator<goetia::dBG<goetia::ByteStorage, goetia::FwdLemireShifter>>;
+extern template class goetia::KmerIterator<goetia::dBG<goetia::ByteStorage, goetia::CanLemireShifter>>;
+extern template class goetia::KmerIterator<goetia::dBG<goetia::ByteStorage, goetia::FwdUnikmerShifter>>;
+extern template class goetia::KmerIterator<goetia::dBG<goetia::ByteStorage, goetia::CanUnikmerShifter>>;
 
-extern template class goetia::hashing::KmerIterator<goetia::dBG<goetia::storage::NibbleStorage, goetia::hashing::FwdLemireShifter>>;
-extern template class goetia::hashing::KmerIterator<goetia::dBG<goetia::storage::NibbleStorage, goetia::hashing::CanLemireShifter>>;
-extern template class goetia::hashing::KmerIterator<goetia::dBG<goetia::storage::NibbleStorage, goetia::hashing::FwdUnikmerShifter>>;
-extern template class goetia::hashing::KmerIterator<goetia::dBG<goetia::storage::NibbleStorage, goetia::hashing::CanUnikmerShifter>>;
+extern template class goetia::KmerIterator<goetia::dBG<goetia::NibbleStorage, goetia::FwdLemireShifter>>;
+extern template class goetia::KmerIterator<goetia::dBG<goetia::NibbleStorage, goetia::CanLemireShifter>>;
+extern template class goetia::KmerIterator<goetia::dBG<goetia::NibbleStorage, goetia::FwdUnikmerShifter>>;
+extern template class goetia::KmerIterator<goetia::dBG<goetia::NibbleStorage, goetia::CanUnikmerShifter>>;
 
-extern template class goetia::hashing::KmerIterator<goetia::dBG<goetia::storage::QFStorage, goetia::hashing::FwdLemireShifter>>;
-extern template class goetia::hashing::KmerIterator<goetia::dBG<goetia::storage::QFStorage, goetia::hashing::CanLemireShifter>>;
-extern template class goetia::hashing::KmerIterator<goetia::dBG<goetia::storage::QFStorage, goetia::hashing::FwdUnikmerShifter>>;
-extern template class goetia::hashing::KmerIterator<goetia::dBG<goetia::storage::QFStorage, goetia::hashing::CanUnikmerShifter>>;
+extern template class goetia::KmerIterator<goetia::dBG<goetia::QFStorage, goetia::FwdLemireShifter>>;
+extern template class goetia::KmerIterator<goetia::dBG<goetia::QFStorage, goetia::CanLemireShifter>>;
+extern template class goetia::KmerIterator<goetia::dBG<goetia::QFStorage, goetia::FwdUnikmerShifter>>;
+extern template class goetia::KmerIterator<goetia::dBG<goetia::QFStorage, goetia::CanUnikmerShifter>>;
 
-extern template class goetia::hashing::KmerIterator<goetia::dBG<goetia::storage::PHMapStorage, goetia::hashing::FwdLemireShifter>>;
-extern template class goetia::hashing::KmerIterator<goetia::dBG<goetia::storage::PHMapStorage, goetia::hashing::CanLemireShifter>>;
-extern template class goetia::hashing::KmerIterator<goetia::dBG<goetia::storage::PHMapStorage, goetia::hashing::FwdUnikmerShifter>>;
-extern template class goetia::hashing::KmerIterator<goetia::dBG<goetia::storage::PHMapStorage, goetia::hashing::CanUnikmerShifter>>;
+extern template class goetia::KmerIterator<goetia::dBG<goetia::PHMapStorage, goetia::FwdLemireShifter>>;
+extern template class goetia::KmerIterator<goetia::dBG<goetia::PHMapStorage, goetia::CanLemireShifter>>;
+extern template class goetia::KmerIterator<goetia::dBG<goetia::PHMapStorage, goetia::FwdUnikmerShifter>>;
+extern template class goetia::KmerIterator<goetia::dBG<goetia::PHMapStorage, goetia::CanUnikmerShifter>>;
 
-extern template class goetia::hashing::KmerIterator<goetia::dBG<goetia::storage::BTreeStorage, goetia::hashing::FwdLemireShifter>>;
-extern template class goetia::hashing::KmerIterator<goetia::dBG<goetia::storage::BTreeStorage, goetia::hashing::CanLemireShifter>>;
-extern template class goetia::hashing::KmerIterator<goetia::dBG<goetia::storage::BTreeStorage, goetia::hashing::FwdUnikmerShifter>>;
-extern template class goetia::hashing::KmerIterator<goetia::dBG<goetia::storage::BTreeStorage, goetia::hashing::CanUnikmerShifter>>;
+extern template class goetia::KmerIterator<goetia::dBG<goetia::BTreeStorage, goetia::FwdLemireShifter>>;
+extern template class goetia::KmerIterator<goetia::dBG<goetia::BTreeStorage, goetia::CanLemireShifter>>;
+extern template class goetia::KmerIterator<goetia::dBG<goetia::BTreeStorage, goetia::FwdUnikmerShifter>>;
+extern template class goetia::KmerIterator<goetia::dBG<goetia::BTreeStorage, goetia::CanUnikmerShifter>>;
 
 
 

@@ -16,16 +16,16 @@
 #include "goetia/nameof.hpp"
 
 #define _goetia_model_typedefs_from_shiftertype(shifter_type) \
-    typedef typename hashing::extender_selector<shifter_type>::type extender_type; \
+    typedef typename extender_selector<shifter_type>::type extender_type; \
     typedef typename shifter_type::alphabet          alphabet; \
     typedef typename shifter_type::hash_type         hash_type; \
 	typedef typename hash_type::value_type           value_type; \
     typedef typename shifter_type::kmer_type         kmer_type; \
-    template<bool Dir> using shift_type = hashing::Shift<hash_type, Dir>; \
+    template<bool Dir> using shift_type = Shift<hash_type, Dir>; \
     typedef std::pair<std::vector<kmer_type>, \
                       std::vector<kmer_type>>         neighbor_pair_type;\
-    typedef std::pair<std::vector<shift_type<hashing::DIR_LEFT>>,\
-                      std::vector<shift_type<hashing::DIR_RIGHT>>> shift_pair_type;
+    typedef std::pair<std::vector<shift_type<DIR_LEFT>>,\
+                      std::vector<shift_type<DIR_RIGHT>>> shift_pair_type;
 
 #define _goetia_model_typedefs_from_graphtype(graph_type) \
     typedef typename graph_type::shifter_type   shifter_type; \

@@ -21,7 +21,6 @@
 
 
 namespace goetia {
-namespace parsing {
 
 
 struct Record {
@@ -71,7 +70,6 @@ bool check_is_left(const std::string& name);
 
 bool check_is_right(const std::string& name);
 
-}
 }
 
 #endif

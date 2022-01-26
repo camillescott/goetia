@@ -11,10 +11,10 @@
 #include "goetia/hashing/rollinghashshifter.hh"
 
 
-template class goetia::cdbg::StreamingCompactor<goetia::dBG<goetia::storage::SparseppSetStorage, goetia::hashing::FwdLemireShifter>>;
-template class goetia::cdbg::StreamingCompactor<goetia::dBG<goetia::storage::PHMapStorage, goetia::hashing::FwdLemireShifter>>;
-// template class goetia::cdbg::StreamingCompactor<goetia::dBG<goetia::storage::BitStorage, goetia::hashing::FwdLemireShifter>>;
-// template class goetia::cdbg::StreamingCompactor<goetia::dBG<goetia::storage::ByteStorage, goetia::hashing::FwdLemireShifter>>;
-// template class goetia::cdbg::StreamingCompactor<goetia::dBG<goetia::storage::NibbleStorage, goetia::hashing::FwdLemireShifter>>;
-// template class goetia::cdbg::StreamingCompactor<goetia::dBG<goetia::storage::QFStorage, goetia::hashing::FwdLemireShifter>>;
+template class goetia::StreamingCompactor<goetia::dBG<goetia::SparseppSetStorage, goetia::FwdLemireShifter>>;
+template class goetia::StreamingCompactor<goetia::dBG<goetia::PHMapStorage, goetia::FwdLemireShifter>>;
+// template class goetia::StreamingCompactor<goetia::dBG<goetia::BitStorage, goetia::FwdLemireShifter>>;
+// template class goetia::StreamingCompactor<goetia::dBG<goetia::ByteStorage, goetia::FwdLemireShifter>>;
+// template class goetia::StreamingCompactor<goetia::dBG<goetia::NibbleStorage, goetia::FwdLemireShifter>>;
+// template class goetia::StreamingCompactor<goetia::dBG<goetia::QFStorage, goetia::FwdLemireShifter>>;
 

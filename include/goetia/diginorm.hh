@@ -73,7 +73,7 @@ struct DiginormFilter<GraphType<StorageType, ShifterType>> {
                                 graph_type&        graph)
     -> std::pair<bool, std::vector<hash_type>> {
         
-        std::vector<goetia::storage::count_t> counts;
+        std::vector<goetia::count_t> counts;
         std::vector<hash_type> hashes;
         graph.query_sequence(sequence, counts, hashes);
 

@@ -169,7 +169,7 @@ struct WKMinimizer {
 
         auto get_minimizers(const std::string& sequence)
         -> typename minimizer_type::vector_type {
-            hashing::KmerIterator<ShifterType> iter(sequence, K);
+            KmerIterator<ShifterType> iter(sequence, K);
             this->reset();
             
             while(!iter.done()) {
@@ -181,7 +181,7 @@ struct WKMinimizer {
         }
 
         std::vector<value_type> get_minimizer_values(const std::string& sequence) {
-            hashing::KmerIterator<ShifterType> iter(sequence, K);
+            KmerIterator<ShifterType> iter(sequence, K);
             this->reset();
 
             while(!iter.done()) {
@@ -205,7 +205,7 @@ struct WKMinimizer {
 
 
     class Processor : public FileProcessor<Processor,
-                                           parsing::FastxParser<>> {
+                                           FastxParser<>> {
 
     protected:
 
@@ -213,7 +213,7 @@ struct WKMinimizer {
         std::string   _output_filename;
         std::ofstream _output_stream;
 
-        typedef FileProcessor<Processor, parsing::FastxParser<>> Base;
+        typedef FileProcessor<Processor, FastxParser<>> Base;
     public:
 
         using Base::process_sequence;
@@ -221,7 +221,7 @@ struct WKMinimizer {
         Processor(int32_t window_size,
                   uint16_t K,
                   const std::string& output_filename,
-                  uint64_t interval = metrics::IntervalCounter::DEFAULT_INTERVAL)
+                  uint64_t interval = IntervalCounter::DEFAULT_INTERVAL)
             : Base(interval),
               M(window_size, K),
               _output_filename(output_filename),
@@ -233,7 +233,7 @@ struct WKMinimizer {
             _output_stream.close();
         }
 
-        uint64_t process_sequence(const parsing::Record& read) {
+        uint64_t process_sequence(const Record& read) {
             auto minimizers = M.get_minimizers(read.sequence);
 
             for (const auto& min : minimizers) {
@@ -253,8 +253,8 @@ struct WKMinimizer {
 };
 
 extern template class InteriorMinimizer<uint64_t>;
-extern template class WKMinimizer<hashing::FwdLemireShifter>;
-extern template class WKMinimizer<hashing::CanLemireShifter>;
+extern template class WKMinimizer<FwdLemireShifter>;
+extern template class WKMinimizer<CanLemireShifter>;
 
 }
 

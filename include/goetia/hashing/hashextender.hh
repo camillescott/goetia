@@ -22,7 +22,7 @@
 
 
 
-namespace goetia::hashing {
+namespace goetia {
 
 
 // Detectors for delegating extension machinery    
@@ -446,11 +446,11 @@ extern template class KmerIterator<CanUnikmerExtender>;
 
 }
 
-extern template class goetia::hashing::DefaultExtensionPolicy<goetia::hashing::FwdLemireShifter>;
-extern template class goetia::hashing::DefaultExtensionPolicy<goetia::hashing::CanLemireShifter>;
+extern template class goetia::DefaultExtensionPolicy<goetia::FwdLemireShifter>;
+extern template class goetia::DefaultExtensionPolicy<goetia::CanLemireShifter>;
 
-extern template class goetia::hashing::HashExtender<goetia::hashing::DefaultExtensionPolicy<goetia::hashing::HashShifter<goetia::hashing::FwdLemirePolicy>>>;
-extern template class goetia::hashing::HashExtender<goetia::hashing::DefaultExtensionPolicy<goetia::hashing::HashShifter<goetia::hashing::CanLemirePolicy>>>;
+extern template class goetia::HashExtender<goetia::DefaultExtensionPolicy<goetia::HashShifter<goetia::FwdLemirePolicy>>>;
+extern template class goetia::HashExtender<goetia::DefaultExtensionPolicy<goetia::HashShifter<goetia::CanLemirePolicy>>>;
 
 
 

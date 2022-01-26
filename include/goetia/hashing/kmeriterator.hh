@@ -27,7 +27,6 @@
 
 
 namespace goetia {
-namespace hashing {
 
 template <class ShifterType>
 class KmerIterator {
@@ -148,7 +147,6 @@ extern template class KmerIterator<FwdUnikmerShifter>;
 extern template class KmerIterator<CanUnikmerShifter>;
 
 
-}
 }
 
 #undef pdebug

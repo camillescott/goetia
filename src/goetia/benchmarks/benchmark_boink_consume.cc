@@ -7,7 +7,7 @@
 
 using namespace goetia;
 
-typedef dBG<storage::BitStorage, hashing::DefaultShifter> GraphType;
+typedef dBG<BitStorage, hashing::DefaultShifter> GraphType;
 
 int main(int argc, char *argv[]) {
     auto graph = std::make_shared<GraphType>(21, 100000000, 4);

@@ -10,7 +10,7 @@
 #include "goetia/hashing/unikmershifter.hh"
 #include "goetia/hashing/hashshifter.hh"
 
-namespace goetia::hashing {
+namespace goetia {
 
     template class HashShifter<FwdUnikmerPolicy>;
     template HashShifter<FwdUnikmerPolicy>::HashShifter(uint16_t, uint16_t&&, std::shared_ptr<typename FwdUnikmerPolicy::ukhs_type>&&);

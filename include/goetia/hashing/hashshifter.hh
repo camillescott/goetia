@@ -27,7 +27,7 @@
 #include "goetia/hashing/rollinghashshifter.hh"
 
 
-namespace goetia::hashing {
+namespace goetia {
 
 
 class UninitializedShifterException : public GoetiaException {

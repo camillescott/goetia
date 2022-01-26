@@ -16,7 +16,7 @@
 
 #include "goetia/ring_span.hpp"
 
-namespace goetia::hashing {
+namespace goetia {
 
 void test();
 

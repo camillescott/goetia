@@ -60,7 +60,6 @@
 
 
 namespace goetia {
-namespace storage {
 
 
 class BitStorage;
@@ -242,7 +241,6 @@ public:
     void serialize(std::ofstream& out) {}
 };
 
-}
 }
 
 #endif

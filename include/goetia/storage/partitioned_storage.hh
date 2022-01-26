@@ -25,7 +25,6 @@
 #include <vector>
 
 namespace goetia {
-namespace storage {
 
 
 template <class BaseStorageType>
@@ -164,11 +163,11 @@ public:
         throw GoetiaException("Method not available!");
     }
 
-    const storage::count_t insert_and_query(value_type khash) {
+    const count_t insert_and_query(value_type khash) {
         throw GoetiaException("Method not available!");
     }
 
-    const storage::count_t query(value_type khash) const {
+    const count_t query(value_type khash) const {
         throw GoetiaException("Method not available!");
     }
 
@@ -190,14 +189,13 @@ public:
 };
 
 
-extern template class goetia::storage::PartitionedStorage<goetia::storage::BitStorage>;
-extern template class goetia::storage::PartitionedStorage<goetia::storage::ByteStorage>;
-extern template class goetia::storage::PartitionedStorage<goetia::storage::NibbleStorage>;
-extern template class goetia::storage::PartitionedStorage<goetia::storage::QFStorage>;
-extern template class goetia::storage::PartitionedStorage<goetia::storage::SparseppSetStorage>;
-extern template class goetia::storage::PartitionedStorage<goetia::storage::PHMapStorage>;
-extern template class goetia::storage::PartitionedStorage<goetia::storage::BTreeStorage>;
+extern template class goetia::PartitionedStorage<goetia::BitStorage>;
+extern template class goetia::PartitionedStorage<goetia::ByteStorage>;
+extern template class goetia::PartitionedStorage<goetia::NibbleStorage>;
+extern template class goetia::PartitionedStorage<goetia::QFStorage>;
+extern template class goetia::PartitionedStorage<goetia::SparseppSetStorage>;
+extern template class goetia::PartitionedStorage<goetia::PHMapStorage>;
+extern template class goetia::PartitionedStorage<goetia::BTreeStorage>;
 
-}
 }
 #endif

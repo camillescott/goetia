@@ -10,43 +10,44 @@
 #include "goetia/storage/storage_types.hh"
 #include "goetia/hashing/rollinghashshifter.hh"
 #include "goetia/hashing/ukhs.hh"
+#include "goetia/traversal/unitig_walker.hh"
 
 namespace goetia {
 
-    template class UnitigWalker<dBG<storage::BitStorage, hashing::FwdLemireShifter>>;
-    template class UnitigWalker<dBG<storage::BitStorage, hashing::CanLemireShifter>>;
-    template class UnitigWalker<dBG<storage::BitStorage, hashing::FwdUnikmerShifter>>;
-    template class UnitigWalker<dBG<storage::BitStorage, hashing::CanUnikmerShifter>>;
+    template class UnitigWalker<dBG<BitStorage, FwdLemireShifter>>;
+    template class UnitigWalker<dBG<BitStorage, CanLemireShifter>>;
+    template class UnitigWalker<dBG<BitStorage, FwdUnikmerShifter>>;
+    template class UnitigWalker<dBG<BitStorage, CanUnikmerShifter>>;
 
-    template class UnitigWalker<dBG<storage::SparseppSetStorage, hashing::FwdLemireShifter>>;
-    template class UnitigWalker<dBG<storage::SparseppSetStorage, hashing::CanLemireShifter>>;
-    template class UnitigWalker<dBG<storage::SparseppSetStorage, hashing::FwdUnikmerShifter>>;
-    template class UnitigWalker<dBG<storage::SparseppSetStorage, hashing::CanUnikmerShifter>>;
+    template class UnitigWalker<dBG<SparseppSetStorage, FwdLemireShifter>>;
+    template class UnitigWalker<dBG<SparseppSetStorage, CanLemireShifter>>;
+    template class UnitigWalker<dBG<SparseppSetStorage, FwdUnikmerShifter>>;
+    template class UnitigWalker<dBG<SparseppSetStorage, CanUnikmerShifter>>;
 
-    template class UnitigWalker<dBG<storage::ByteStorage, hashing::FwdLemireShifter>>;
-    template class UnitigWalker<dBG<storage::ByteStorage, hashing::CanLemireShifter>>;
-    template class UnitigWalker<dBG<storage::ByteStorage, hashing::FwdUnikmerShifter>>;
-    template class UnitigWalker<dBG<storage::ByteStorage, hashing::CanUnikmerShifter>>;
+    template class UnitigWalker<dBG<ByteStorage, FwdLemireShifter>>;
+    template class UnitigWalker<dBG<ByteStorage, CanLemireShifter>>;
+    template class UnitigWalker<dBG<ByteStorage, FwdUnikmerShifter>>;
+    template class UnitigWalker<dBG<ByteStorage, CanUnikmerShifter>>;
 
-    template class UnitigWalker<dBG<storage::NibbleStorage, hashing::FwdLemireShifter>>;
-    template class UnitigWalker<dBG<storage::NibbleStorage, hashing::CanLemireShifter>>;
-    template class UnitigWalker<dBG<storage::NibbleStorage, hashing::FwdUnikmerShifter>>;
-    template class UnitigWalker<dBG<storage::NibbleStorage, hashing::CanUnikmerShifter>>;
+    template class UnitigWalker<dBG<NibbleStorage, FwdLemireShifter>>;
+    template class UnitigWalker<dBG<NibbleStorage, CanLemireShifter>>;
+    template class UnitigWalker<dBG<NibbleStorage, FwdUnikmerShifter>>;
+    template class UnitigWalker<dBG<NibbleStorage, CanUnikmerShifter>>;
 
-    template class UnitigWalker<dBG<storage::QFStorage, hashing::FwdLemireShifter>>;
-    template class UnitigWalker<dBG<storage::QFStorage, hashing::CanLemireShifter>>;
-    template class UnitigWalker<dBG<storage::QFStorage, hashing::FwdUnikmerShifter>>;
-    template class UnitigWalker<dBG<storage::QFStorage, hashing::CanUnikmerShifter>>;
+    template class UnitigWalker<dBG<QFStorage, FwdLemireShifter>>;
+    template class UnitigWalker<dBG<QFStorage, CanLemireShifter>>;
+    template class UnitigWalker<dBG<QFStorage, FwdUnikmerShifter>>;
+    template class UnitigWalker<dBG<QFStorage, CanUnikmerShifter>>;
 
-    template class goetia::UnitigWalker<goetia::dBG<goetia::storage::PHMapStorage, goetia::hashing::FwdLemireShifter>>;
-    template class goetia::UnitigWalker<goetia::dBG<goetia::storage::PHMapStorage, goetia::hashing::CanLemireShifter>>;
-    template class goetia::UnitigWalker<goetia::dBG<goetia::storage::PHMapStorage, goetia::hashing::FwdUnikmerShifter>>;
-    template class goetia::UnitigWalker<goetia::dBG<goetia::storage::PHMapStorage, goetia::hashing::CanUnikmerShifter>>;
+    template class goetia::UnitigWalker<goetia::dBG<goetia::PHMapStorage, goetia::FwdLemireShifter>>;
+    template class goetia::UnitigWalker<goetia::dBG<goetia::PHMapStorage, goetia::CanLemireShifter>>;
+    template class goetia::UnitigWalker<goetia::dBG<goetia::PHMapStorage, goetia::FwdUnikmerShifter>>;
+    template class goetia::UnitigWalker<goetia::dBG<goetia::PHMapStorage, goetia::CanUnikmerShifter>>;
 
-    template class goetia::UnitigWalker<goetia::dBG<goetia::storage::BTreeStorage, goetia::hashing::FwdLemireShifter>>;
-    template class goetia::UnitigWalker<goetia::dBG<goetia::storage::BTreeStorage, goetia::hashing::CanLemireShifter>>;
-    template class goetia::UnitigWalker<goetia::dBG<goetia::storage::BTreeStorage, goetia::hashing::FwdUnikmerShifter>>;
-    template class goetia::UnitigWalker<goetia::dBG<goetia::storage::BTreeStorage, goetia::hashing::CanUnikmerShifter>>;
+    template class goetia::UnitigWalker<goetia::dBG<goetia::BTreeStorage, goetia::FwdLemireShifter>>;
+    template class goetia::UnitigWalker<goetia::dBG<goetia::BTreeStorage, goetia::CanLemireShifter>>;
+    template class goetia::UnitigWalker<goetia::dBG<goetia::BTreeStorage, goetia::FwdUnikmerShifter>>;
+    template class goetia::UnitigWalker<goetia::dBG<goetia::BTreeStorage, goetia::CanUnikmerShifter>>;
 
 
 

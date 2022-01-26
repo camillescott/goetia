@@ -16,7 +16,7 @@
 
 #include "goetia/hashing/rollinghash/cyclichash.h"
 
-namespace goetia::hashing {
+namespace goetia {
 
 
 template<class HashType>
