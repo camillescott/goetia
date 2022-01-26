@@ -206,6 +206,7 @@ function(cppyy_add_bindings pkg)
     # Set up cppyy-generator args.
     #
     list(APPEND ARG_GENERATE_OPTIONS "-std=c++${ARG_LANGUAGE_STANDARD}")
+    list(APPEND ARG_GENERATE_OPTIONS "-march=native")
     if(${CONDA_ACTIVE})
         # get the libcxx headers installed by conda
         execute_process(COMMAND bash -c "cat `find $CONDA_PREFIX -iname 'libcxx-*.json' -type f` | python -c \"import sys, json; print(json.load(sys.stdin)['extracted_package_dir'], end='')\""
