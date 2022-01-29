@@ -17,9 +17,10 @@
 #include <optional>
 #include <utility>
 #include <limits>
+#include <vector>
+#include <string>
 
 #include "goetia/goetia.hh"
-#include "goetia/meta.hh"
 #include "goetia/sequences/alphabets.hh"
 #include "goetia/storage/sparsepp/spp.h"
 
@@ -31,15 +32,15 @@
 
 namespace goetia { 
 
-void test();
 
 template <class ShifterType>
 struct UKHS {
 
-    typedef typename ShifterType::hash_type hash_type;
-    typedef typename hash_type::value_type  value_type;
+    typedef ShifterType                      shifter_type;
+    typedef typename shifter_type::hash_type hash_type;
+    typedef typename hash_type::value_type   value_type;
 
-    typedef Partitioned<hash_type>          Unikmer;
+    typedef Partitioned<hash_type>           Unikmer;
 
 
 protected:
@@ -58,26 +59,8 @@ public:
     const uint16_t K;
 
     explicit UKHS(uint16_t W,
-                 uint16_t K,
-                 std::vector<std::string>& ukhs) 
-        : K (K),
-          W (W)
-    {
-        if (ukhs.front().size() != K) {
-            throw GoetiaException("K does not match k-mer size from provided UKHS");
-        }
-
-        uint64_t pid = 0;
-        for (const auto& unikmer : ukhs) {
-            hash_type h = ShifterType::hash(unikmer, K);
-
-            if (!pmap.count(h.value())) {
-                hashes.push_back(h);
-                pmap[h.value()] = pid;
-                ++pid;
-            }
-        }
-    }
+                  uint16_t K,
+                  std::vector<std::string>& unikmers);
 
     static std::shared_ptr<UKHS> build(uint16_t W,
                                       uint16_t K,
@@ -103,6 +86,8 @@ public:
         return pmap.size();
     }
 };
+
+
 
 template<typename T>
 struct UnikmerShifterPolicy;
@@ -545,25 +530,30 @@ protected:
  * @tparam HashType 
  * @tparam Alphabet 
  */
-template <typename HashType, typename Alphabet=DNA_SIMPLE>
+
+
+template <typename HashType, typename Alphabet=goetia::DNA_SIMPLE>
 struct UnikmerLemirePolicy : public UnikmerShifterPolicy<LemireShifterPolicy<HashType, Alphabet>>
 {
     protected:
-        using UnikmerShifterPolicy<LemireShifterPolicy<HashType, Alphabet>>::UnikmerShifterPolicy;
+        using UnikmerShifterPolicy<goetia::LemireShifterPolicy<HashType, Alphabet>>::UnikmerShifterPolicy;
 };
 
-typedef UnikmerLemirePolicy<Hash<uint64_t>> FwdUnikmerPolicy;
-typedef UnikmerLemirePolicy<Canonical<uint64_t>> CanUnikmerPolicy;
 
-extern template class UKHS<FwdLemireShifter>;
-extern template class UKHS<CanLemireShifter>;
-
-extern template class UnikmerShifterPolicy<FwdLemirePolicy>;
-extern template class UnikmerShifterPolicy<CanLemirePolicy>;
-
-extern template class UnikmerLemirePolicy<Hash<uint64_t>, DNA_SIMPLE>;
-extern template class UnikmerLemirePolicy<Canonical<uint64_t>, DNA_SIMPLE>;
+typedef UnikmerLemirePolicy<goetia::Hash<uint64_t>> FwdUnikmerPolicy;
+typedef UnikmerLemirePolicy<goetia::Canonical<uint64_t>> CanUnikmerPolicy;
 
 }
+
+extern template class goetia::UKHS<goetia::FwdLemireShifter>;
+extern template class goetia::UKHS<goetia::CanLemireShifter>;
+
+extern template class goetia::UnikmerShifterPolicy<goetia::FwdLemirePolicy>;
+extern template class goetia::UnikmerShifterPolicy<goetia::CanLemirePolicy>;
+
+extern template class goetia::UnikmerLemirePolicy<goetia::Hash<uint64_t>, goetia::DNA_SIMPLE>;
+extern template class goetia::UnikmerLemirePolicy<goetia::Canonical<uint64_t>, goetia::DNA_SIMPLE>;
+
+
 
 #endif

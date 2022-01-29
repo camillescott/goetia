@@ -318,7 +318,7 @@ def test_pdbg_n_unique(random_sequence, ksize, length, benchmark, partitioned_gr
     for kmer in kmer_set:
         assert graph.query(kmer)
 
-    if check_trait(libgoetia.storage.is_probabilistic, type(store)):
+    if type(store).is_probabilistic:
         assert abs(len(kmer_set) - graph.n_unique()) < length * .001
     else:
         assert len(kmer_set) == graph.n_unique()

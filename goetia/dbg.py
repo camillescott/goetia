@@ -40,7 +40,7 @@ def get_graph_args(parser):
 def process_graph_args(args):
     process_storage_args(args)
 
-    args.hasher_t = getattr(libgoetia.hashing, args.hasher)
+    args.hasher_t = getattr(libgoetia, args.hasher)
     args.graph_t = libgoetia.dBG[args.storage, args.hasher_t]
 
 

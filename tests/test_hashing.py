@@ -161,8 +161,8 @@ def test_seq_too_large(hasher, ksize, hash_method):
 def test_canonical_rolling_hash(ksize, length, random_sequence):
     seq = random_sequence()
 
-    can_hasher = libgoetia.hashing.CanLemireShifter(ksize)
-    fwd_hasher = libgoetia.hashing.FwdLemireShifter(ksize)
+    can_hasher = libgoetia.CanLemireShifter(ksize)
+    fwd_hasher = libgoetia.FwdLemireShifter(ksize)
 
     for kmer in kmers(seq, ksize):
         rc_kmer = fwd_hasher.alphabet.reverse_complement(kmer)
@@ -235,14 +235,14 @@ def test_shift_right(hasher, ksize, length, random_sequence):
 @using(ksize=27)
 def test_kmeriterator_owner_init(hasher_type, ksize):
     hasher_type, _ = hasher_type
-    it = libgoetia.hashing.KmerIterator[hasher_type](known_kmer, ksize)
+    it = libgoetia.KmerIterator[hasher_type](known_kmer, ksize)
     assert it.first().value in known_hashes
 
 
 #@pytest.mark.parametrize('hasher_type', [FwdLemireShifter, CanLemireShifter], indirect=True)
 #@using(ksize=27)
 #def test_kmeriterator_nonowner_init(hasher, ksize, length, random_sequence):
-#    it = libgoetia.hashing.KmerIterator[type(hasher)](known_kmer, hasher.__smartptr__().get())
+#    it = libgoetia.KmerIterator[type(hasher)](known_kmer, hasher.__smartptr__().get())
 #    assert it.first().value in known_hashes
 #    assert hasher.get().value in known_hashes
 
@@ -250,7 +250,7 @@ def test_kmeriterator_owner_init(hasher_type, ksize):
 @pytest.mark.parametrize('hasher_type', [FwdLemireShifter, CanLemireShifter], indirect=True)
 @using(ksize=27)
 def test_kmeriterator_proto_init(hasher, ksize):
-    it = libgoetia.hashing.KmerIterator[type(hasher)](known_kmer, hasher)
+    it = libgoetia.KmerIterator[type(hasher)](known_kmer, hasher)
     assert it.first().value in known_hashes
 
 
@@ -260,7 +260,7 @@ def test_kmeriterator(hasher, ksize, length, random_sequence):
 
     exp = [hasher.hash(kmer).value for kmer in kmers(s, ksize)]
     
-    it = libgoetia.hashing.KmerIterator[type(hasher)](s, ksize)
+    it = libgoetia.KmerIterator[type(hasher)](s, ksize)
     act = []
     while not it.done():
         h = it.next()
@@ -275,7 +275,7 @@ def test_kmeriterator_from_proto(hasher, ksize, length, random_sequence):
 
     exp = [hasher.hash(kmer).value for kmer in kmers(s, ksize)]
     
-    it = libgoetia.hashing.KmerIterator[type(hasher)](s, hasher)
+    it = libgoetia.KmerIterator[type(hasher)](s, hasher)
     act = []
     while not it.done():
         h = it.next()
@@ -292,7 +292,7 @@ def test_kmeriterator_hashextender(hasher, ksize, length, random_sequence):
 
     exp = [extender.hash(kmer).value for kmer in kmers(s, ksize)]
     
-    it = libgoetia.hashing.KmerIterator[type(extender)](s, ksize)
+    it = libgoetia.KmerIterator[type(extender)](s, ksize)
     act = []
     while not it.done():
         h = it.next()
@@ -333,7 +333,7 @@ def test_shift_right_left_right(hasher, ksize, length, random_sequence):
 def test_unikmer_shifter_kmeriterator(ksize, length, random_sequence, unikmer_shifter):
     shifter, uk_ksize, uk_map = unikmer_shifter
     seq = random_sequence()
-    it = libgoetia.hashing.KmerIterator[type(shifter)](seq, shifter)
+    it = libgoetia.KmerIterator[type(shifter)](seq, shifter)
     i = 0
     while not it.done():
         kmer = seq[i:i+ksize]

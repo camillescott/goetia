@@ -546,19 +546,19 @@ class TestUnitigBuildExtend(object):
         assert compactor.cdbg.n_unodes == 1
         unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
         assert unode.sequence == left
-        assert unode.meta == libgoetia.cdbg.ISLAND
+        assert unode.meta == libgoetia.ISLAND
 
         compactor.insert_sequence(right)
         assert compactor.cdbg.n_unodes == 2
         unode = compactor.cdbg.query_unode_end(graph.hash(right[:ksize]))
         assert unode.sequence == right
-        assert unode.meta == libgoetia.cdbg.ISLAND
+        assert unode.meta == libgoetia.ISLAND
 
         compactor.insert_sequence(left + right)
         assert compactor.cdbg.n_unodes == 1
         unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
         assert unode.sequence == left + right
-        assert unode.meta == libgoetia.cdbg.ISLAND
+        assert unode.meta == libgoetia.ISLAND
         assert compactor.cdbg.query_unode_end(graph.hash(left[-ksize:])) is None
         assert compactor.cdbg.query_unode_end(graph.hash(right[:ksize])) is None
 
@@ -576,19 +576,19 @@ class TestUnitigBuildExtend(object):
         assert compactor.cdbg.n_unodes == 1
         unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
         assert unode.sequence == left
-        assert unode.meta == libgoetia.cdbg.ISLAND
+        assert unode.meta == libgoetia.ISLAND
 
         compactor.insert_sequence(right)
         assert compactor.cdbg.n_unodes == 2
         unode = compactor.cdbg.query_unode_end(graph.hash(right[:ksize]))
         assert unode.sequence == right
-        assert unode.meta == libgoetia.cdbg.ISLAND
+        assert unode.meta == libgoetia.ISLAND
 
         compactor.insert_sequence(merger)
         assert compactor.cdbg.n_unodes == 1
         unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
         assert unode.sequence == sequence
-        assert unode.meta == libgoetia.cdbg.ISLAND
+        assert unode.meta == libgoetia.ISLAND
         assert compactor.cdbg.query_unode_end(graph.hash(left[-ksize:])) is None
         assert compactor.cdbg.query_unode_end(graph.hash(right[:ksize])) is None
 
@@ -607,19 +607,19 @@ class TestUnitigBuildExtend(object):
         assert compactor.cdbg.n_unodes == 1
         unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
         assert unode.sequence == left
-        assert unode.meta == libgoetia.cdbg.ISLAND
+        assert unode.meta == libgoetia.ISLAND
 
         compactor.insert_sequence(right)
         assert compactor.cdbg.n_unodes == 2
         unode = compactor.cdbg.query_unode_end(graph.hash(right[:ksize]))
         assert unode.sequence == right
-        assert unode.meta == libgoetia.cdbg.ISLAND
+        assert unode.meta == libgoetia.ISLAND
 
         compactor.insert_sequence(sequence)
         assert compactor.cdbg.n_unodes == 1
         unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
         assert unode.sequence == sequence
-        assert unode.meta == libgoetia.cdbg.ISLAND
+        assert unode.meta == libgoetia.ISLAND
         assert compactor.cdbg.query_unode_end(graph.hash(left[-ksize:])) is None
         assert compactor.cdbg.query_unode_end(graph.hash(right[:ksize])) is None
 
@@ -638,21 +638,21 @@ class TestUnitigBuildExtend(object):
         assert compactor.cdbg.n_unitig_ends == 1
         unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
         assert unode.sequence == left
-        assert unode.meta == libgoetia.cdbg.TRIVIAL
+        assert unode.meta == libgoetia.TRIVIAL
 
         compactor.insert_sequence(right)
         assert compactor.cdbg.n_unodes == 2
         assert compactor.cdbg.n_unitig_ends == 3
         unode = compactor.cdbg.query_unode_end(graph.hash(right[:ksize]))
         assert unode.sequence == right
-        assert unode.meta == libgoetia.cdbg.ISLAND
+        assert unode.meta == libgoetia.ISLAND
 
         compactor.insert_sequence(merger)
         assert compactor.cdbg.n_unodes == 1
         assert compactor.cdbg.n_unitig_ends == 2
         unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
         assert unode.sequence == sequence
-        assert unode.meta == libgoetia.cdbg.ISLAND
+        assert unode.meta == libgoetia.ISLAND
 
     def test_trivial_merge_right(self, ksize, length, graph, compactor, linear_path, check_fp):
         sequence = linear_path()
@@ -669,21 +669,21 @@ class TestUnitigBuildExtend(object):
         assert compactor.cdbg.n_unitig_ends == 2
         unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
         assert unode.sequence == left
-        assert unode.meta == libgoetia.cdbg.ISLAND
+        assert unode.meta == libgoetia.ISLAND
 
         compactor.insert_sequence(right)
         assert compactor.cdbg.n_unodes == 2
         assert compactor.cdbg.n_unitig_ends == 3
         unode = compactor.cdbg.query_unode_end(graph.hash(right[:ksize]))
         assert unode.sequence == right
-        assert unode.meta == libgoetia.cdbg.TRIVIAL
+        assert unode.meta == libgoetia.TRIVIAL
 
         compactor.insert_sequence(merger)
         assert compactor.cdbg.n_unodes == 1
         assert compactor.cdbg.n_unitig_ends == 2
         unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
         assert unode.sequence == sequence
-        assert unode.meta == libgoetia.cdbg.ISLAND
+        assert unode.meta == libgoetia.ISLAND
 
     def test_suffix_extend(self, ksize, length, internal_pivot,
                                 graph, compactor, linear_path, check_fp):
@@ -699,13 +699,13 @@ class TestUnitigBuildExtend(object):
         assert compactor.cdbg.n_unodes == 1
         unode = compactor.cdbg.query_unode_end(graph.hash(left[:ksize]))
         assert unode.sequence == left
-        assert unode.meta == libgoetia.cdbg.ISLAND
+        assert unode.meta == libgoetia.ISLAND
 
         compactor.insert_sequence(right)
         assert compactor.cdbg.n_unodes == 1
         unode = compactor.cdbg.query_unode_end(graph.hash(right[-ksize:]))
         assert unode.sequence == sequence
-        assert unode.meta == libgoetia.cdbg.ISLAND
+        assert unode.meta == libgoetia.ISLAND
         assert compactor.cdbg.query_unode_end(graph.hash(left[-ksize:])) is None
 
 
@@ -784,13 +784,13 @@ class TestUnitigSplit(object):
         assert top_unode is not None
         assert top_unode.sequence == top[1:]
         assert top_unode.right_end == graph.hash(top[-ksize:])
-        assert top_unode.meta == libgoetia.cdbg.TIP
+        assert top_unode.meta == libgoetia.TIP
         
         bottom_unode = compactor.cdbg.query_unode_end(graph.hash(bottom[1:ksize+1]))
         assert bottom_unode is not None
         assert bottom_unode.sequence == bottom[1:]
         assert bottom_unode.right_end == graph.hash(bottom[-ksize:])
-        assert bottom_unode.meta == libgoetia.cdbg.TIP
+        assert bottom_unode.meta == libgoetia.TIP
 
     @using(tip_length=[2,4],
            ksize=15,
@@ -815,13 +815,13 @@ class TestUnitigSplit(object):
         assert top_unode is not None
         assert top_unode.sequence == top[:-1]
         assert top_unode.left_end == graph.hash(top[:ksize])
-        assert top_unode.meta == libgoetia.cdbg.TIP
+        assert top_unode.meta == libgoetia.TIP
         
         bottom_unode = compactor.cdbg.query_unode_end(graph.hash(bottom[-(ksize+1):-1]))
         assert bottom_unode is not None
         assert bottom_unode.sequence == bottom[:-1]
         assert bottom_unode.left_end == graph.hash(bottom[:ksize])
-        assert bottom_unode.meta == libgoetia.cdbg.TIP
+        assert bottom_unode.meta == libgoetia.TIP
 
     @using(ksize=15,
            length=150)
@@ -1141,7 +1141,7 @@ class TestCircularUnitigs:
         unode = compactor.cdbg.query_unode_end(graph.hash(sequence[:ksize]))
         assert unode is not None
         assert unode.right_end == graph.hash(sequence[:ksize])
-        assert unode.meta == libgoetia.cdbg.CIRCULAR
+        assert unode.meta == libgoetia.CIRCULAR
 
     @using(ksize=15,
            length=20)
@@ -1156,7 +1156,7 @@ class TestCircularUnitigs:
         unode = compactor.cdbg.query_unode_end(graph.hash(sequence[:ksize]))
         assert unode.right_end == graph.hash(sequence[:ksize])
         assert unode.sequence == sequence[:length+ksize-1]
-        assert unode.meta == libgoetia.cdbg.CIRCULAR
+        assert unode.meta == libgoetia.CIRCULAR
 
     @using(ksize=15,
            length=40)
@@ -1176,7 +1176,7 @@ class TestCircularUnitigs:
         unode = compactor.cdbg.query_unode_end(graph.hash(start[:ksize]))
         assert unode.right_end == graph.hash(start[:ksize])
         assert unode.sequence == sequence[:length+ksize-1]
-        assert unode.meta == libgoetia.cdbg.CIRCULAR
+        assert unode.meta == libgoetia.CIRCULAR
 
     @using(ksize=15, length=50)
     @pytest.mark.parametrize("offset", range(1,7), ids=lambda offset: 'offset={0}'.format(offset))
@@ -1206,7 +1206,7 @@ class TestCircularUnitigs:
         unode = compactor.cdbg.query_unode_end(graph.hash(expected[:ksize]))
         assert unode.right_end == graph.hash(expected[:ksize])
         assert unode.sequence == expected
-        assert unode.meta == libgoetia.cdbg.CIRCULAR
+        assert unode.meta == libgoetia.CIRCULAR
 
     @using(ksize=7, length=20)
     @pytest.mark.parametrize("offset", range(1,6), ids=lambda offset: 'offset={0}'.format(offset))
@@ -1230,7 +1230,7 @@ class TestCircularUnitigs:
         unode = compactor.cdbg.query_unode_end(graph.hash(sequence[:ksize]))
         assert unode.right_end == graph.hash(sequence[:ksize])
         assert unode.sequence == sequence
-        assert unode.meta == libgoetia.cdbg.CIRCULAR
+        assert unode.meta == libgoetia.CIRCULAR
 
     @using(ksize=7, length=20)
     def test_split_circular_tangle_chain(self, ksize, length, graph, compactor,
@@ -1267,8 +1267,8 @@ class TestCircularUnitigs:
         assert loop_unode is not None
         assert loop_unode.right_end == graph.hash(loop[:ksize])
         assert loop_unode.sequence == loop
-        assert loop_unode.meta == libgoetia.cdbg.CIRCULAR
-        loop_unode = libgoetia.cdbg.cDBG[type(graph)].UnitigNode.build(loop_unode)
+        assert loop_unode.meta == libgoetia.CIRCULAR
+        loop_unode = libgoetia.cDBG[type(graph)].UnitigNode.build(loop_unode)
 
         compactor.insert_sequence(tail)
         assert compactor.cdbg.n_dnodes == 1
@@ -1301,8 +1301,8 @@ class TestCircularUnitigs:
         assert loop_unode is not None
         assert loop_unode.right_end == graph.hash(loop[:ksize])
         assert loop_unode.sequence == loop
-        assert loop_unode.meta == libgoetia.cdbg.CIRCULAR
-        loop_unode = libgoetia.cdbg.cDBG[type(graph)].UnitigNode.build(loop_unode)
+        assert loop_unode.meta == libgoetia.CIRCULAR
+        loop_unode = libgoetia.cDBG[type(graph)].UnitigNode.build(loop_unode)
 
         compactor.insert_sequence(tail)
         assert compactor.cdbg.n_dnodes == 1
@@ -1318,7 +1318,7 @@ class TestCircularUnitigs:
             print(cycled_loop_unode)
             assert cycled_loop_unode is not None
             assert cycled_loop_unode.right_end == graph.hash(loop[-ksize:])
-            assert cycled_loop_unode.meta == libgoetia.cdbg.FULL
+            assert cycled_loop_unode.meta == libgoetia.FULL
         else:
             # dnode is last k-mer in loop
             cycled_loop_unode = compactor.cdbg.query_unode_end(graph.hash(loop[pivot-1:pivot-1+ksize]))   
@@ -1326,7 +1326,7 @@ class TestCircularUnitigs:
             print('pivot:', pivot)
             assert cycled_loop_unode is not None
             assert cycled_loop_unode.left_end == graph.hash(loop[:ksize])
-            assert cycled_loop_unode.meta == libgoetia.cdbg.FULL
+            assert cycled_loop_unode.meta == libgoetia.FULL
 
         print('\n', loop_unode, sep='')
         print(cycled_loop_unode)

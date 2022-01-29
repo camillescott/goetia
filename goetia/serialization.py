@@ -8,11 +8,11 @@ class cDBGSerialization:
     def enum_from_str(file_format):
         if file_format in cDBGSerialization.FORMATS:
             if file_format == 'graphml':
-                return libgoetia.cdbg.GRAPHML
+                return libgoetia.GRAPHML
             elif file_format == 'fasta':
-                return libgoetia.cdbg.FASTA
+                return libgoetia.FASTA
             elif file_format == 'gfa1':
-                return libgoetia.cdbg.GFA1
+                return libgoetia.GFA1
             else:
                 raise NotImplementedError("Support for {0} not yet "
                                           "implemented".format(file_format))

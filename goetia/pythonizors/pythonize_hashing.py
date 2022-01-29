@@ -5,7 +5,7 @@ from cppyy.gbl import std
 
 UKHS_CACHE = dict()
 
-def pythonize_goetia_hashing(klass, name):
+def pythonize_goetia(klass, name):
 
     ukhs_inst, template = is_template_inst(name, 'UKHS')
     if ukhs_inst:

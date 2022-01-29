@@ -12,6 +12,13 @@
 #include "goetia/hashing/rollinghashshifter.hh"
 #include "goetia/storage/storage_types.hh"
 
+// save diagnostic state
+#pragma GCC diagnostic push 
+#pragma GCC diagnostic ignored "-Wsign-compare"
+#pragma GCC diagnostic ignored "-Wchar-subscripts"
+#include "goetia/parsing/gfakluge/gfakluge.hpp"
+#pragma GCC diagnostic pop
+
 
 # ifdef DEBUG_CDBG
 #   define pdebug(x) do { std::ostringstream stream; \
@@ -25,6 +32,66 @@
 # endif
 
 namespace goetia {
+
+
+template <template <class, class> class GraphType,
+          class StorageType,
+          class ShifterType>
+cDBG<GraphType<StorageType, ShifterType>>::
+CompactNode::CompactNode(id_t node_id,
+                    const std::string& sequence,
+                    node_meta_t meta)
+            : _meta(meta),
+              node_id(node_id),
+              component_id(NULL_ID),
+              sequence(sequence)
+        {
+        }
+
+
+template <template <class, class> class GraphType,
+          class StorageType,
+          class ShifterType>
+cDBG<GraphType<StorageType, ShifterType>>::
+DecisionNode::DecisionNode(id_t node_id, const std::string& sequence)
+            : CompactNode(node_id, sequence, DECISION),
+              _dirty(true),
+              _left_degree(0),
+              _right_degree(0),
+              _count(1)
+        {    
+        }
+
+
+template <template <class, class> class GraphType,
+          class StorageType,
+          class ShifterType>
+cDBG<GraphType<StorageType, ShifterType>>::
+UnitigNode::UnitigNode(id_t node_id,
+                   hash_type left_end,
+                   hash_type right_end,
+                   const std::string& sequence,
+                   node_meta_t meta)
+            : CompactNode(node_id, sequence, meta),
+              _left_end(left_end),
+              _right_end(right_end) { 
+        }
+
+template <template <class, class> class GraphType,
+          class StorageType,
+          class ShifterType>
+cDBG<GraphType<StorageType, ShifterType>>::
+Graph::Graph(std::shared_ptr<graph_type> dbg,
+             uint64_t minimizer_window_size)
+    : K(dbg->K),
+      dbg(dbg),
+      _n_updates(0),
+      _unitig_id_counter(UNITIG_START_ID),
+      _n_unitig_nodes(0),
+      component_id_counter(0)
+{
+    metrics = std::make_shared<cDBGMetrics>();
+}
 
 
 template <template <class, class> class GraphType,

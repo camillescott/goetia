@@ -1,6 +1,6 @@
 from goetia.pythonizors.utils import is_template_inst
 
-def pythonize_goetia_parsing(klass, name):
+def pythonize_goetia(klass, name):
     is_fastx, _ = is_template_inst(name, 'FastxParser')
     if is_fastx:
         def __iter__(self):

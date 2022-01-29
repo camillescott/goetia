@@ -27,7 +27,8 @@ def main():
     cppyy_extra_flags = get_cppflags() or ''
     extra_flags = ' '.join([cppyy_extra_flags, args.extra_cxxflags])
     print('EXTRA:', extra_flags)
-    print('GENREFLEX:', args.genreflex_args)
+    print('GENREFLEX BIN:', genreflex)
+    print('GENREFLEX ARGS:', args.genreflex_args)
 
     args = [args.header_file, '--cxxflags', extra_flags] + args.genreflex_args
     

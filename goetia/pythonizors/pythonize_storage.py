@@ -9,7 +9,7 @@
 from goetia.pythonizors.utils import make_tuple_from_type
 
 
-def pythonize_goetia_storage(klass, name):
+def pythonize_goetia(klass, name):
     from goetia.utils import pretty_repr
 
     if name.strip(' ').endswith('Storage'):

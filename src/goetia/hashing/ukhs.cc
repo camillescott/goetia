@@ -15,6 +15,29 @@
 
 namespace goetia {
 
+    template<class ShifterType>
+    UKHS<ShifterType>::UKHS(uint16_t W, uint16_t K,
+                            std::vector<std::string>& unikmers)
+        : K (K),
+          W (W)
+    {
+        if (unikmers.front().size() != K) {
+            throw GoetiaException("K does not match k-mer size from provided UKHS");
+        }
+        
+        uint64_t pid = 0;
+        for (const std::string& unikmer : unikmers) {
+            hash_type h = shifter_type::hash(unikmer, K);
+
+            if (!pmap.count(h.value())) {
+                hashes.push_back(h);
+                pmap[h.value()] = pid;
+                ++pid;
+            }
+        }
+    }
+
+
     template class UKHS<FwdLemireShifter>;
     template class UKHS<CanLemireShifter>;
     template class UnikmerShifterPolicy<FwdLemirePolicy>;

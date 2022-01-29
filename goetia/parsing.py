@@ -15,8 +15,8 @@ import os
 
 PAIRING_MODES     = ('split', 'interleaved', 'single')
 
-FastxParser       = libgoetia.parsing.FastxParser
-SplitPairedReader = libgoetia.parsing.SplitPairedReader
+FastxParser       = libgoetia.FastxParser
+SplitPairedReader = libgoetia.SplitPairedReader
 
 
 def read_fastx(filename, alphabet=DNA_SIMPLE, strict=False, min_length=0):

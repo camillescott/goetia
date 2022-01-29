@@ -54,7 +54,7 @@ class GoetiaArgumentParser(argparse.ArgumentParser):
 
 def get_output_interval_args(parser):
     group = parser.add_argument_group('reporting')
-    group.add_argument('--interval', type=int, default=libgoetia.metrics.IntervalCounter.DEFAULT_INTERVAL)
+    group.add_argument('--interval', type=int, default=libgoetia.IntervalCounter.DEFAULT_INTERVAL)
     return group
 
 

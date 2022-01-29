@@ -54,20 +54,17 @@ typedef std::vector<std::string> StringVector;
  * STEP: None of the above: we can move.
  *
  */
-namespace TraversalState {
-
-    enum State {
-        STOP_FWD,
-        DECISION_FWD,
-        DECISION_BKW,
-        STOP_SEEN,
-        STOP_MASKED,
-        STOP_CALLBACK,
-        BAD_SEED,
-        GRAPH_ERROR,
-        STEP
-    };
-}
+enum class TraversalState {
+    STOP_FWD,
+    DECISION_FWD,
+    DECISION_BKW,
+    STOP_SEEN,
+    STOP_MASKED,
+    STOP_CALLBACK,
+    BAD_SEED,
+    GRAPH_ERROR,
+    STEP
+};
 
 
 template<typename HashType>
@@ -140,7 +137,7 @@ public:
     typedef std::pair<std::vector<shift_type<DIR_LEFT>>,
                       std::vector<shift_type<DIR_RIGHT>>> shift_pair_type;
 
-    typedef TraversalState::State                    State;
+    typedef TraversalState                    State;
     typedef NullWalkFunctor<hash_type>               null_walk_func_t;
 
 private:
@@ -155,7 +152,7 @@ public:
     struct WalkBase {
         kmer_type                                        start;
         std::vector<Shift<hash_type, Dir>> path;
-        TraversalState::State                            end_state;
+        TraversalState                            end_state;
 
         const hash_type head() const {
             return this->start;

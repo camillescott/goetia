@@ -26,9 +26,7 @@
 #pragma GCC diagnostic ignored "-Wsign-compare"
 #pragma GCC diagnostic ignored "-Wchar-subscripts"
 #include "goetia/storage/sparsepp/spp.h"
-#include "goetia/parsing/gfakluge/gfakluge.hpp"
 #pragma GCC diagnostic pop
-//#include "goetia/utils/stringutils.h"
 
 #include "goetia/goetia.hh"
 #include "goetia/metrics.hh"
@@ -60,7 +58,9 @@ template <class T>
 struct cDBG;
 
 
-template <template <class, class> class GraphType, class StorageType, class ShifterType>
+template <template <class, class> class GraphType,
+          class StorageType,
+          class ShifterType>
 struct cDBG<GraphType<StorageType, ShifterType>> {
 
 public:
@@ -71,10 +71,10 @@ public:
     typedef HashExtender<shifter_type> extender_type;
     typedef typename shifter_type::alphabet     alphabet;
     typedef typename shifter_type::hash_type    hash_type;
-	typedef typename hash_type::value_type      value_type;
+  	typedef typename hash_type::value_type      value_type;
     typedef typename shifter_type::kmer_type    kmer_type;
 
-    typedef UnitigWalker<GraphType<StorageType, ShifterType>> walker_type;
+  //typedef UnitigWalker<GraphType<StorageType, ShifterType>> walker_type;
 
 
     class CompactNode {
@@ -91,13 +91,7 @@ public:
         
         CompactNode(id_t node_id,
                     const std::string& sequence,
-                    node_meta_t meta)
-            : _meta(meta),
-              node_id(node_id),
-              component_id(NULL_ID),
-              sequence(sequence)
-        {
-        }
+                    node_meta_t meta);
 
         std::string revcomp() const {
             return alphabet::reverse_complement(sequence);
@@ -133,14 +127,7 @@ public:
 
     public:
 
-        DecisionNode(id_t node_id, const std::string& sequence)
-            : CompactNode(node_id, sequence, DECISION),
-              _dirty(true),
-              _left_degree(0),
-              _right_degree(0),
-              _count(1)
-        {    
-        }
+        DecisionNode(id_t node_id, const std::string& sequence);
 
         static std::shared_ptr<DecisionNode> build(const DecisionNode& other) {
             return std::make_shared<DecisionNode>(other.node_id, other.sequence);
@@ -220,11 +207,7 @@ public:
                    hash_type left_end,
                    hash_type right_end,
                    const std::string& sequence,
-                   node_meta_t meta = ISLAND)
-            : CompactNode(node_id, sequence, meta),
-              _left_end(left_end),
-              _right_end(right_end) { 
-        }
+                   node_meta_t meta = ISLAND);
 
         static std::shared_ptr<UnitigNode> build(const UnitigNode& other) {
             return std::make_shared<UnitigNode>(other.node_id,
@@ -344,16 +327,7 @@ public:
         std::shared_ptr<cDBGMetrics> metrics;
 
         Graph(std::shared_ptr<graph_type> dbg,
-              uint64_t minimizer_window_size=8)
-            : K(dbg->K),
-              dbg(dbg),
-              _n_updates(0),
-              _unitig_id_counter(UNITIG_START_ID),
-              _n_unitig_nodes(0),
-              component_id_counter(0)
-        {
-            metrics = std::make_shared<cDBGMetrics>();
-        }
+              uint64_t minimizer_window_size=8);
 
         std::unique_lock<std::mutex> lock_nodes() {
             return std::unique_lock<std::mutex>(mutex);
@@ -748,22 +722,11 @@ extern template class goetia::cDBG<goetia::dBG<goetia::BitStorage, goetia::CanLe
 extern template class goetia::cDBG<goetia::dBG<goetia::PHMapStorage, goetia::FwdLemireShifter>>;
 extern template class goetia::cDBG<goetia::dBG<goetia::PHMapStorage, goetia::CanLemireShifter>>;
 
-extern template class goetia::cDBG<goetia::dBG<goetia::BTreeStorage, goetia::FwdLemireShifter>>;
-extern template class goetia::cDBG<goetia::dBG<goetia::BTreeStorage, goetia::CanLemireShifter>>;
-
 extern template class goetia::cDBG<goetia::dBG<goetia::SparseppSetStorage, goetia::FwdLemireShifter>>;
 extern template class goetia::cDBG<goetia::dBG<goetia::SparseppSetStorage, goetia::CanLemireShifter>>;
 
-extern template class goetia::cDBG<goetia::dBG<goetia::ByteStorage, goetia::FwdLemireShifter>>;
-extern template class goetia::cDBG<goetia::dBG<goetia::ByteStorage, goetia::CanLemireShifter>>;
-
-extern template class goetia::cDBG<goetia::dBG<goetia::NibbleStorage, goetia::FwdLemireShifter>>;
-extern template class goetia::cDBG<goetia::dBG<goetia::NibbleStorage, goetia::CanLemireShifter>>;
-
-extern template class goetia::cDBG<goetia::dBG<goetia::QFStorage, goetia::FwdLemireShifter>>;
-extern template class goetia::cDBG<goetia::dBG<goetia::QFStorage, goetia::CanLemireShifter>>;
-
 }
+
 
 #undef pdebug
 #endif

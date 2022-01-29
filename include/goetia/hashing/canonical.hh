@@ -104,7 +104,7 @@ struct Canonical {
     }
 
     Canonical(const value_type fw,
-                   const value_type rc)
+              const value_type rc)
         : fw_hash(fw),
           rc_hash(rc)
     {

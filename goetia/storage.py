@@ -11,14 +11,14 @@ import math
 from goetia import libgoetia
 from goetia.utils import check_trait
 
-typenames = [(t, t.__name__.replace(' ', '')) for t in [libgoetia.storage.SparseppSetStorage,
-                                                        libgoetia.storage.PHMapStorage,
-                                                        libgoetia.storage.BitStorage,
-                                                        libgoetia.storage.ByteStorage,
-                                                        libgoetia.storage.NibbleStorage,
-                                                        libgoetia.storage.QFStorage,
-                                                        libgoetia.storage.BTreeStorage,
-                                                        libgoetia.storage.HLLStorage]]
+typenames = [(t, t.__name__.replace(' ', '')) for t in [libgoetia.SparseppSetStorage,
+                                                        libgoetia.PHMapStorage,
+                                                        libgoetia.BitStorage,
+                                                        libgoetia.ByteStorage,
+                                                        libgoetia.NibbleStorage,
+                                                        libgoetia.QFStorage,
+                                                        libgoetia.BTreeStorage,
+                                                        libgoetia.HLLStorage]]
 
 types = [_type for _type, _name in typenames]
 
@@ -26,8 +26,8 @@ for hasher_t, name in typenames:
     globals()[name] = hasher_t
 
 
-count_t = libgoetia.storage.count_t
-StorageTraits = libgoetia.storage.StorageTraits
+count_t = libgoetia.count_t
+StorageTraits = libgoetia.StorageTraits
 
 
 def get_storage_args(parser, default='SparseppSetStorage',
@@ -54,20 +54,20 @@ def process_storage_args(args):
     if hasattr(args, 'storage_args'):
         return
 
-    args.storage = getattr(libgoetia.storage, args.storage)
+    args.storage = getattr(libgoetia, args.storage)
 
     args.storage_args = ()
-    if args.storage in (libgoetia.storage.BitStorage,
-                        libgoetia.storage.ByteStorage,
-                        libgoetia.storage.NibbleStorage):
+    if args.storage in (libgoetia.BitStorage,
+                        libgoetia.ByteStorage,
+                        libgoetia.NibbleStorage):
 
         args.max_tablesize = int(args.max_tablesize)
         args.storage_args = (args.max_tablesize, args.n_tables)
 
-    elif args.storage is libgoetia.storage.HLLStorage:
+    elif args.storage is libgoetia.HLLStorage:
         args.storage_args = (float(args.error_rate), )
 
-    elif args.storage is libgoetia.storage.QFStorage:
+    elif args.storage is libgoetia.QFStorage:
         args.storage_args = (int(math.ceil(math.log2(args.max_tablesize))), )
 
     else:

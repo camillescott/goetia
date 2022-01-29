@@ -8,7 +8,6 @@
 #include <vector>
 #include <functional>
 #include <omp.h>
-#include <functional>
 
 
 namespace pliib{

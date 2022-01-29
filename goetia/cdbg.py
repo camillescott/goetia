@@ -15,8 +15,8 @@ import curio
 from goetia import libgoetia
 from goetia.serialization import cDBGSerialization
 
-cDBG = libgoetia.cdbg.cDBG
-StreamingCompactor = libgoetia.cdbg.StreamingCompactor
+cDBG = libgoetia.cDBG
+StreamingCompactor = libgoetia.StreamingCompactor
 
 
 async def compute_connected_component_callback(msg,

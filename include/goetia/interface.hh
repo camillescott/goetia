@@ -15,6 +15,7 @@
 #define _GLIBCXX_CONDITION_VARIABLE 1
 
 #include "goetia/goetia.hh"
+#include "goetia/meta.hh"
 
 #include "goetia/storage/storage.hh"
 #include "goetia/storage/nibblestorage.hh"
@@ -26,8 +27,9 @@
 #include "goetia/storage/btreestorage.hh"
 #include "goetia/storage/phmapstorage.hh"
 #include "goetia/storage/sparsepp/spp.h"
-
+//
 #include "goetia/hashing/kmeriterator.hh"
+#include "goetia/hashing/kmer_span.hh"
 #include "goetia/hashing/hashshifter.hh"
 #include "goetia/hashing/hashextender.hh"
 #include "goetia/hashing/ukhs.hh"
@@ -41,8 +43,10 @@
 #include "goetia/parsing/parsing.hh"
 #include "goetia/parsing/readers.hh"
 
-#include "goetia/metrics.hh"
+//#include "goetia/parsing/gfakluge/tinyFA.hpp"
+//#include "goetia/parsing/gfakluge/pliib.hpp"
 
+#include "goetia/metrics.hh"
 
 #include "goetia/dbg.hh"
 #include "goetia/pdbg.hh"
@@ -60,7 +64,7 @@
 #include "goetia/cdbg/udbg.hh"
 #include "goetia/cdbg/utagger.hh"
 #include "goetia/cdbg/saturating_compactor.hh"
-//#include "goetia/cdbg/ucompactor.hh"
+#include "goetia/cdbg/ucompactor.hh"
 
 #include "goetia/minimizers.hh"
 #include "goetia/sketches/unikmer_sketch.hh"
@@ -70,17 +74,17 @@
 
 #include "goetia/benchmarks/bench_storage.hh"
 
-//#include <set>
+#include <set>
 
-//#define STLTYPES_EXPLICIT_INSTANTIATION_DECL(STLTYPE, TTYPE)                      \
-//template class std::STLTYPE< TTYPE >;                                             \
-//template class __gnu_cxx::__normal_iterator<TTYPE*, std::STLTYPE< TTYPE > >;      \
-//template class __gnu_cxx::__normal_iterator<const TTYPE*, std::STLTYPE< TTYPE > >;\
-//namespace __gnu_cxx {                                                             \
-//template bool operator==(const std::STLTYPE< TTYPE >::iterator&,                  \
-//                         const std::STLTYPE< TTYPE >::iterator&);                 \
-//template bool operator!=(const std::STLTYPE< TTYPE >::iterator&,                  \
-//                         const std::STLTYPE< TTYPE >::iterator&);                 \
-//}
+#define STLTYPES_EXPLICIT_INSTANTIATION_DECL(STLTYPE, TTYPE)                      \
+template class std::STLTYPE< TTYPE >;                                             \
+template class __gnu_cxx::__normal_iterator<TTYPE*, std::STLTYPE< TTYPE > >;      \
+template class __gnu_cxx::__normal_iterator<const TTYPE*, std::STLTYPE< TTYPE > >;\
+namespace __gnu_cxx {                                                             \
+template bool operator==(const std::STLTYPE< TTYPE >::iterator&,                  \
+                         const std::STLTYPE< TTYPE >::iterator&);                 \
+template bool operator!=(const std::STLTYPE< TTYPE >::iterator&,                  \
+                         const std::STLTYPE< TTYPE >::iterator&);                 \
+}
 
 #endif

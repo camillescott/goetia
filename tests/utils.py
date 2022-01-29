@@ -66,18 +66,18 @@ def store(storage_type):
 @pytest.fixture
 def partitioned_graph(storage_type, ksize):
 
-    if storage_type in [libgoetia.storage.SparseppSetStorage,
-                        libgoetia.storage.BTreeStorage,
-                        libgoetia.storage.PHMapStorage]:
+    if storage_type in [libgoetia.SparseppSetStorage,
+                        libgoetia.BTreeStorage,
+                        libgoetia.PHMapStorage]:
         params = tuple()
-    elif storage_type is libgoetia.storage.QFStorage:
+    elif storage_type is libgoetia.QFStorage:
         params = (10, )
     else:
         params = (1000, 4)
 
     store = storage_type.build(*params)
     ukhs = UKHS[FwdLemireShifter].load(ksize, 7)
-    pstore = std.make_shared[libgoetia.storage.PartitionedStorage[type(store)]](ukhs.n_hashes(),
+    pstore = std.make_shared[libgoetia.PartitionedStorage[type(store)]](ukhs.n_hashes(),
                                                                                store)
     graph = std.make_shared[libgoetia.PdBG[type(store), FwdUnikmerShifter]](ksize, 7,
                                                                            ukhs,

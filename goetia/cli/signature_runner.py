@@ -102,7 +102,7 @@ class SignatureRunner(CommandRunner):
         def finish_sample(self):
             elapsed_s = time.perf_counter() - self.start_s
             self.print(f'    {self.term.italic}Finshed: {self.term.normal}{elapsed_s:0.4f}s')
-            del self.counter
+            self.counter = Counter(0)
 
         def update(self, t, sequence_t, distance):
             term = self.term

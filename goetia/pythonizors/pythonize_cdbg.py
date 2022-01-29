@@ -1,7 +1,7 @@
 from goetia.pythonizors.utils import *
 
 
-def pythonize_goetia_cdbg(klass, name):
+def pythonize_goetia(klass, name):
 
     cDBG_inst, template = is_template_inst(name, 'cDBG')
 
@@ -42,10 +42,10 @@ def pythonize_goetia_cdbg(klass, name):
     if compactor_inst:
         from goetia import libgoetia
 
-        _ = libgoetia.cdbg.cDBG[klass.graph_type].CompactNode
-        _ = libgoetia.cdbg.cDBG[klass.graph_type].UnitigNode
-        _ = libgoetia.cdbg.cDBG[klass.graph_type].DecisionNode
-        _ = libgoetia.cdbg.cDBG[klass.graph_type].Graph
+        _ = libgoetia.cDBG[klass.graph_type].CompactNode
+        _ = libgoetia.cDBG[klass.graph_type].UnitigNode
+        _ = libgoetia.cDBG[klass.graph_type].DecisionNode
+        _ = libgoetia.cDBG[klass.graph_type].Graph
 
         klass.Compactor.Graph = property(lambda self: self.cdbg)
 

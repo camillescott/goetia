@@ -13,7 +13,7 @@ import numpy as np
 from goetia.pythonizors import utils
 
 
-def pythonize_goetia_sketches(klass, name):
+def pythonize_goetia(klass, name):
     if name == 'SourmashSketch':
 
         def to_sourmash(self):

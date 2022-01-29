@@ -144,29 +144,29 @@ struct UnikmerSketch {
 
 };
 
-extern template class UnikmerSketch<BitStorage, Hash<uint64_t>>;
-extern template class UnikmerSketch<BitStorage, Canonical<uint64_t>>;
+extern template class goetia::UnikmerSketch<goetia::BitStorage, goetia::Hash<uint64_t>>;
+extern template class goetia::UnikmerSketch<goetia::BitStorage, goetia::Canonical<uint64_t>>;
 
-extern template class UnikmerSketch<SparseppSetStorage, Hash<uint64_t>>;
-extern template class UnikmerSketch<SparseppSetStorage, Canonical<uint64_t>>;
+extern template class goetia::UnikmerSketch<goetia::SparseppSetStorage, goetia::Hash<uint64_t>>;
+extern template class goetia::UnikmerSketch<goetia::SparseppSetStorage, goetia::Canonical<uint64_t>>;
 
-extern template class UnikmerSketch<PHMapStorage, Hash<uint64_t>>;
-extern template class UnikmerSketch<PHMapStorage, Canonical<uint64_t>>;
+extern template class goetia::UnikmerSketch<goetia::PHMapStorage, goetia::Hash<uint64_t>>;
+extern template class goetia::UnikmerSketch<goetia::PHMapStorage, goetia::Canonical<uint64_t>>;
 
-extern template class UnikmerSketch<BTreeStorage, Hash<uint64_t>>;
-extern template class UnikmerSketch<BTreeStorage, Canonical<uint64_t>>;
+extern template class goetia::UnikmerSketch<goetia::BTreeStorage, goetia::Hash<uint64_t>>;
+extern template class goetia::UnikmerSketch<goetia::BTreeStorage, goetia::Canonical<uint64_t>>;
 
-extern template class UnikmerSketch<ByteStorage, Hash<uint64_t>>;
-extern template class UnikmerSketch<ByteStorage, Canonical<uint64_t>>;
+extern template class goetia::UnikmerSketch<goetia::ByteStorage, goetia::Hash<uint64_t>>;
+extern template class goetia::UnikmerSketch<goetia::ByteStorage, goetia::Canonical<uint64_t>>;
 
-extern template class UnikmerSketch<NibbleStorage, Hash<uint64_t>>;
-extern template class UnikmerSketch<NibbleStorage, Canonical<uint64_t>>;
+extern template class goetia::UnikmerSketch<goetia::NibbleStorage, goetia::Hash<uint64_t>>;
+extern template class goetia::UnikmerSketch<goetia::NibbleStorage, goetia::Canonical<uint64_t>>;
 
-extern template class UnikmerSketch<QFStorage, Hash<uint64_t>>;
-extern template class UnikmerSketch<QFStorage, Canonical<uint64_t>>;
+extern template class goetia::UnikmerSketch<goetia::QFStorage, goetia::Hash<uint64_t>>;
+extern template class goetia::UnikmerSketch<goetia::QFStorage, goetia::Canonical<uint64_t>>;
 
-extern template class UnikmerSketch<HLLStorage, Hash<uint64_t>>;
-extern template class UnikmerSketch<HLLStorage, Canonical<uint64_t>>;
+extern template class goetia::UnikmerSketch<goetia::HLLStorage, goetia::Hash<uint64_t>>;
+extern template class goetia::UnikmerSketch<goetia::HLLStorage, goetia::Canonical<uint64_t>>;
 
 }
 

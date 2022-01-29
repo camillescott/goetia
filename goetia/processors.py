@@ -30,7 +30,7 @@ from goetia.utils import is_iterable
 
 
 DEFAULT_SOCKET = '/tmp/goetia.sock'
-DEFAULT_INTERVAL = libgoetia.metrics.IntervalCounter.DEFAULT_INTERVAL
+DEFAULT_INTERVAL = libgoetia.IntervalCounter.DEFAULT_INTERVAL
 
 
 class QueueManager:
