@@ -34,5 +34,5 @@ def pythonize_goetia(klass, name):
         klass.cursor = property(klass.get_cursor)
         klass.cursor = klass.cursor.setter(lambda self, seed: self.set_cursor(seed))
 
-        klass.Walk[gbl.goetia.hashing.DIR_LEFT].__str__ = klass.Walk[gbl.goetia.hashing.DIR_LEFT].to_string
-        klass.Walk[gbl.goetia.hashing.DIR_RIGHT].__str__ = klass.Walk[gbl.goetia.hashing.DIR_RIGHT].to_string
+        klass.Walk[gbl.goetia.DIR_LEFT].__str__ = klass.Walk[gbl.goetia.DIR_LEFT].to_string
+        klass.Walk[gbl.goetia.DIR_RIGHT].__str__ = klass.Walk[gbl.goetia.DIR_RIGHT].to_string
