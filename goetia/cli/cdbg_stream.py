@@ -106,9 +106,9 @@ class cDBGRunner(CommandRunner):
         self.storage     = args.storage.build(*args.storage_args)
         self.dbg         = args.graph_t.build(self.storage, self.hasher)
 
-        self.cdbg_t      = libgoetia.cdbg.cDBG[type(self.dbg)]
+        self.cdbg_t      = libgoetia.cDBG[type(self.dbg)]
 
-        self.compactor_t = libgoetia.cdbg.StreamingCompactor[type(self.dbg)]
+        self.compactor_t = libgoetia.StreamingCompactor[type(self.dbg)]
 
         self.compactor = self.compactor_t.Compactor.build(self.dbg)
 
