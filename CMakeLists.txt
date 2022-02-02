@@ -82,7 +82,7 @@ set_target_properties(goetia PROPERTIES LINKER_LANGUAGE CXX)
 set_target_properties(goetia PROPERTIES CXX_VISIBILITY_PRESET default)
 set_property(TARGET goetia PROPERTY LINK_WHAT_YOU_USE TRUE)
 set_property(TARGET goetia PROPERTY VISIBILITY_INLINES_HIDDEN 0)
-#set_property(TARGET goetia PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+set_property(TARGET goetia PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 set_target_properties(goetia PROPERTIES
                       VERSION ${PROJECT_VERSION}
                       SOVERSION 1
