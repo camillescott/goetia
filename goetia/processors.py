@@ -13,6 +13,7 @@ import inspect
 import json
 import signal
 import sys
+import time
 from typing import Any
 
 import curio
@@ -26,7 +27,7 @@ from goetia.messages import (
     SampleFinished,
     SampleStarted,
 )
-from goetia.utils import is_iterable
+from goetia.utils import is_iterable, time_iterable
 
 
 DEFAULT_SOCKET = '/tmp/goetia.sock'
@@ -112,6 +113,10 @@ class MessageHandler:
         assert type(msg_class) is type
         self.handlers[msg_class].append((callback, args, kwargs))
 
+    def on_messages(self, msg_classes, callback, *args, **kwargs):
+        for msg_class in msg_classes:
+            self.handlers[msg_class].append((callback, args, kwargs))
+
 
 @unique_enum
 class RunState(Enum):
@@ -172,6 +177,8 @@ class AsyncSequenceProcessor:
         self.state = RunState.READY
         self.processed = set()
 
+        self.seconds_elapsed = 0
+
         #super().__init__(broadcast_socket)
     
     def get_channel(self, channel: str) -> QueueManager:
@@ -219,14 +226,19 @@ class AsyncSequenceProcessor:
         return listener
 
     def worker(self) -> None:
-        time, n_seqs = 0, 0
-        for sample, name in self.sample_iter:
+        stream_time, n_seqs = 0, 0
+        worker_start_time = time.perf_counter()
+        for (sample, name), sample_start_time, _ in time_iterable(self.sample_iter):
+
             self.worker_q.put(SampleStarted(sample_name=name,  # type: ignore
                                             file_names=sample,
-                                            t=time,
+                                            t=stream_time,
+                                            seconds_elapsed_total=time.perf_counter() - worker_start_time,
                                             sequence=n_seqs))
+
             try:
-                for n_seqs, time, n_skipped in self.processor.chunked_process(*sample):
+                for (n_seqs, stream_time, n_skipped), _, interval_elapsed_time in \
+                    time_iterable(self.processor.chunked_process(*sample)):
                     
                     if self.state is RunState.STOP_SATURATED:
                         # Saturation is tripped externally: just return immediately.
@@ -234,32 +246,38 @@ class AsyncSequenceProcessor:
 
                     if self.state is RunState.SIGINT:
                         # If we're interrupted, inform our listeners that something went wrong.
-                        self.worker_q.put(Error(t=time,  # type: ignore
+                        self.worker_q.put(Error(t=stream_time,  # type: ignore
                                                 sequence=n_seqs,
                                                 sample_name=name,
                                                 file_names=sample,
                                                 error='Process terminated (SIGINT).'))
                         return
 
-                    self.worker_q.put(Interval(t=time,  # type: ignore
+                    self.worker_q.put(Interval(t=stream_time,  # type: ignore
                                                sequence=n_seqs,
-                                               sample_name=name, 
+                                               sample_name=name,
+                                               seconds_elapsed_interval=interval_elapsed_time,
+                                               seconds_elapsed_sample=time.perf_counter() - sample_start_time,
+                                               seconds_elapsed_total=time.perf_counter() - worker_start_time,
                                                file_names=sample))
 
                 self.processed.add(tuple(sample))
-                self.worker_q.put(SampleFinished(t=time,  # type: ignore
+                self.worker_q.put(SampleFinished(t=stream_time,  # type: ignore
                                                  sequence=n_seqs,
                                                  sample_name=name,
+                                                 seconds_elapsed_sample=time.perf_counter() - sample_start_time,
+                                                 seconds_elapsed_total=time.perf_counter() - worker_start_time,
                                                  file_names=sample))
             except Exception as e:
-                self.worker_q.put(Error(t=time,  # type: ignore
+                self.worker_q.put(Error(t=stream_time,  # type: ignore
                                         sequence=n_seqs,
                                         sample_name=name,
                                         file_names=sample,
                                         error=str(e.__traceback__))) 
                 return
             finally:
-                self.worker_q.put(EndStream(t=time,  # type: ignore
+                self.worker_q.put(EndStream(t=stream_time,  # type: ignore
+                                            seconds_elapsed_total=time.perf_counter() - worker_start_time,
                                             sequence=n_seqs))
     
     #def on_error(self, exception):

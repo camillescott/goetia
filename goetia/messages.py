@@ -36,6 +36,10 @@ class Interval(AllMessages, DataClassYAMLMixin, DataClassMessagePackMixin):
     sequence: int
     sample_name: str
     file_names: List[str]
+
+    seconds_elapsed_total: float = 0
+    seconds_elapsed_sample: float = 0
+    seconds_elapsed_interval: float = 0
     modulus: int = 0
     msg_type: MessageType = MessageType.Interval
 
@@ -47,6 +51,8 @@ class SampleStarted(AllMessages, DataClassYAMLMixin, DataClassMessagePackMixin):
     sequence: int
     sample_name: str
     file_names: List[str]
+
+    seconds_elapsed_total: float = 0
     msg_type: MessageType = MessageType.SampleStarted
 
 
@@ -57,6 +63,9 @@ class SampleFinished(AllMessages, DataClassYAMLMixin, DataClassMessagePackMixin)
     sequence: int
     sample_name: str
     file_names: List[str]
+
+    seconds_elapsed_total: float = 0
+    seconds_elapsed_sample: float = 0
     msg_type: MessageType = MessageType.SampleFinished
 
 
@@ -99,4 +108,6 @@ class DistanceCalc(AllMessages, DataClassYAMLMixin, DataClassMessagePackMixin):
 class EndStream(AllMessages, DataClassYAMLMixin, DataClassMessagePackMixin):
     t: int
     sequence: int
+
+    seconds_elapsed_total: float = 0
     msg_type: MessageType = MessageType.EndStream

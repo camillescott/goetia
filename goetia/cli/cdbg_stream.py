@@ -74,24 +74,29 @@ class cDBGRunner(CommandRunner):
             self.print(f'{files}')
 
             self.counter = Counter(0)
-            self.start_s = time.perf_counter()
+            self.interval_start_t = 0
 
-        def finish_sample(self):
-            elapsed_s = time.perf_counter() - self.start_s
-            self.print(f'    {self.term.italic}Finshed: {self.term.normal}{elapsed_s:0.4f}s')
+        def finish_sample(self, seconds_elapsed):
+            self.print(f'    {self.term.italic}Finished: {self.term.normal}{seconds_elapsed:0.4f}s')
             del self.counter
 
-        def update(self, t, sequence_t, compactor):
+        def update(self, t, sequence_t, seconds_elapsed, compactor):
             term = self.term
             if self.counter != 0:
-                 self.print(term.move_up * 5, term.clear_eos, end='')
+                 self.print(term.move_up * 6, term.clear_eos, term.move_x(0), end='')
             report = compactor.get_report()
-            self.print(f'       {term.bold}sequence:       {term.normal}{sequence_t:,}')
+            interval_t = t - self.interval_start_t
+            interval_kmers_per_s = int(interval_t / seconds_elapsed)
+
+            self.print(f'        {term.bold}sequence:       {term.normal}{sequence_t:,}')
             self.print(f'        {term.bold}k-mers:         {term.normal}{t:,}')
             self.print(f'        {term.bold}unique k-mers:  {term.normal}{report.n_unique:,}')
             self.print(f'        {term.bold}unitigs:        {term.normal}{report.n_unodes:,}')
             self.print(f'        {term.bold}decision nodes: {term.normal}{report.n_dnodes:,}')
+            self.print(f'        {term.bold}kmers/s:        {term.normal}{interval_kmers_per_s:,}')
+
             self.counter += 1
+            self.interval_start_t = t
 
     def postprocess_args(self, args):
         process_graph_args(args)
@@ -191,7 +196,7 @@ class cDBGRunner(CommandRunner):
                 async with curio.aopen(file_name, 'a') as fp:
                     await fp.write('\n]\n')
 
-        self.worker_listener.on_message(SampleFinished, close_files, self.to_close)
+        self.worker_listener.on_messages([SampleFinished, Error], close_files, self.to_close)
 
         #
         # Regular diagnostics output
@@ -199,7 +204,8 @@ class cDBGRunner(CommandRunner):
 
         self.worker_listener.on_message(
             Interval,
-            lambda msg, status, compactor: status.update(msg.t, msg.sequence, compactor),
+            lambda msg, status, compactor: \
+                status.update(msg.t, msg.sequence, msg.seconds_elapsed_interval, compactor),
             self.status,
             self.compactor
         )
@@ -211,7 +217,7 @@ class cDBGRunner(CommandRunner):
         )
         self.worker_listener.on_message(
             SampleFinished,
-            lambda msg, status: status.finish_sample(),
+            lambda msg, status: status.finish_sample(msg.seconds_elapsed_sample),
             self.status
         )
                            

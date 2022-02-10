@@ -11,6 +11,7 @@ from dataclasses import is_dataclass
 import itertools
 import os
 import re
+import time
 from typing import TypeVar, Type, Callable, List, Dict, Any
 
 
@@ -26,6 +27,14 @@ def is_iterable(obj):
         isinstance(obj, collections.Iterable)
         and not isinstance(obj, str)
     )
+
+
+def time_iterable(iterable):
+    start = time.perf_counter()
+    for result in iterable:
+        elapsed = time.perf_counter() - start
+        yield result, start, elapsed
+        start = time.perf_counter()
 
 
 class Counter:

@@ -73,6 +73,8 @@ class PairedMergeRunner(CommandRunner):
 
             self.counter = Counter(0)
             self.start_s = time.perf_counter()
+            self.interval_start_s = time.perf_counter()
+            self.interval_sequence_start = 0
 
         def finish_sample(self):
             elapsed_s = time.perf_counter() - self.start_s
@@ -82,6 +84,14 @@ class PairedMergeRunner(CommandRunner):
         def update(self, sequence_t):
             term = self.term
             if self.counter != 0:
-                 self.print(term.move_up, term.clear_eos, term.move_x(0), end='')
+                 self.print(term.move_up * 2, term.clear_eos, term.move_x(0), end='')
+            interval_elapsed_s = time.perf_counter() - self.interval_start_s
+            interval_seqs = sequence_t - self.interval_sequence_start
+            interval_seqs_per_s = int(interval_seqs / interval_elapsed_s)
+
             self.print(f'       {term.bold}sequence:          {term.normal}{sequence_t:,}')
+            self.print(f'       {term.bold}seqs/s:            {term.normal}{interval_seqs_per_s}')
+
             self.counter += 1
+            self.interval_start_s = time.perf_counter()
+            self.interval_sequence_start = sequence_t
