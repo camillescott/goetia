@@ -305,10 +305,10 @@ def process_cdbg_args(args):
     def join(p):
         return p if p is None else os.path.join(args.results_dir, p)
 
-    args.track_cdbg_stats =      join(args.track_cdbg_metrics)
+    args.track_cdbg_metrics    = join(args.track_cdbg_metrics)
     args.track_cdbg_components = join(args.track_cdbg_components)
-    args.save_cdbg =             join(args.save_cdbg)
-    args.track_cdbg_unitig_bp =  join(args.track_unitig_bp)
+    args.save_cdbg             = join(args.save_cdbg)
+    args.track_cdbg_unitig_bp  = join(args.track_unitig_bp)
 
 
 def print_cdbg_args(args):
