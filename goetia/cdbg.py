@@ -93,6 +93,9 @@ async def write_cdbg_metrics_callback(msg,
 
     report = compactor.get_report()
     data = {'t': msg.t,
+            'seq_t': msg.sequence,
+            'rt_elapsed_interval': msg.seconds_elapsed_interval,
+            'rt_elapsed_total': msg.seconds_elapsed_total,
             'sample_name': msg.sample_name,
             'n_full': report.n_full,
             'n_tips': report.n_tips,

@@ -75,6 +75,7 @@ class cDBGRunner(CommandRunner):
 
             self.counter = Counter(0)
             self.interval_start_t = 0
+            self.interval_start_seq = 0
 
         def finish_sample(self, seconds_elapsed):
             self.print(f'    {self.term.italic}Finished: {self.term.normal}{seconds_elapsed:0.4f}s')
@@ -83,10 +84,12 @@ class cDBGRunner(CommandRunner):
         def update(self, t, sequence_t, seconds_elapsed, compactor):
             term = self.term
             if self.counter != 0:
-                 self.print(term.move_up * 6, term.clear_eos, term.move_x(0), end='')
+                 self.print(term.move_up * 7, term.clear_eos, term.move_x(0), end='')
             report = compactor.get_report()
             interval_t = t - self.interval_start_t
             interval_kmers_per_s = int(interval_t / seconds_elapsed)
+            interval_seqs = sequence_t - self.interval_start_seq
+            interval_seqs_per_s = int(interval_seqs / seconds_elapsed)
 
             self.print(f'        {term.bold}sequence:       {term.normal}{sequence_t:,}')
             self.print(f'        {term.bold}k-mers:         {term.normal}{t:,}')
@@ -94,9 +97,11 @@ class cDBGRunner(CommandRunner):
             self.print(f'        {term.bold}unitigs:        {term.normal}{report.n_unodes:,}')
             self.print(f'        {term.bold}decision nodes: {term.normal}{report.n_dnodes:,}')
             self.print(f'        {term.bold}kmers/s:        {term.normal}{interval_kmers_per_s:,}')
+            self.print(f'        {term.bold}seqs/s:         {term.normal}{interval_seqs_per_s:,}')
 
             self.counter += 1
             self.interval_start_t = t
+            self.interval_start_seq = sequence_t
 
     def postprocess_args(self, args):
         process_graph_args(args)

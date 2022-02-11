@@ -90,7 +90,7 @@ class PairedMergeRunner(CommandRunner):
             interval_seqs_per_s = int(interval_seqs / interval_elapsed_s)
 
             self.print(f'       {term.bold}sequence:          {term.normal}{sequence_t:,}')
-            self.print(f'       {term.bold}seqs/s:            {term.normal}{interval_seqs_per_s}')
+            self.print(f'       {term.bold}seqs/s:            {term.normal}{interval_seqs_per_s:,}')
 
             self.counter += 1
             self.interval_start_s = time.perf_counter()
