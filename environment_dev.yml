@@ -11,7 +11,7 @@ dependencies:
     - pytest
     - numpy
     - scipy
-    - mashumaro
+    - mashumaro>=3
     - pandas
     - openmp
     - blessings

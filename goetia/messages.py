@@ -10,7 +10,8 @@ from dataclasses import dataclass, field, is_dataclass
 from enum import Enum, Flag, IntEnum, auto
 from typing import List
 
-from mashumaro import DataClassYAMLMixin, DataClassMessagePackMixin
+from mashumaro.mixins.yaml import DataClassYAMLMixin
+from mashumaro.mixins.msgpack import DataClassMessagePackMixin
 
 from goetia.utils import require_kwargs
 
