@@ -12,6 +12,8 @@ dependencies:
     - numpy
     - scipy
     - mashumaro>=3
+    - pyyaml
+    - msgpack-python
     - pandas
     - openmp
     - blessings
