@@ -144,3 +144,9 @@ async def write_cdbg_callback(msg,
     
     if verbose:
         print(f'Finished writing cDBG.', file=sys.stderr)
+
+
+async def validate_cdbg_callback(msg,
+                                 cdbg,
+                                 out_file_name):
+    cdbg.validate(out_file_name)

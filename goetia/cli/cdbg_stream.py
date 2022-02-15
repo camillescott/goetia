@@ -11,7 +11,8 @@ from goetia import libgoetia
 from goetia.cdbg import (compute_connected_component_callback,
                          compute_unitig_fragmentation_callback,
                          write_cdbg_metrics_callback,
-                         write_cdbg_callback)
+                         write_cdbg_callback,
+                         validate_cdbg_callback)
 from goetia.dbg import get_graph_args, process_graph_args
 from goetia.parsing import get_fastx_args, iter_fastx_inputs
 from goetia.processors import AsyncSequenceProcessor, every_n_intervals
@@ -186,14 +187,22 @@ class cDBGRunner(CommandRunner):
                 self.worker_listener.on_message(Interval,
                                                 every_n_intervals(write_cdbg_callback,
                                                                   n=args.cdbg_tick),
+                                                self.compactor.cdbg,
                                                 args.save_cdbg,
                                                 cdbg_format,
                                                 verbose=args.verbose)
                 self.worker_listener.on_message(SampleFinished,
                                                 write_cdbg_callback,
+                                                self.compactor.cdbg,
                                                 args.save_cdbg,
                                                 cdbg_format,
                                                 verbose=args.verbose)
+
+        if args.validate:
+            self.worker_listener.on_message(SampleFinished,
+                                            validate_cdbg_callback,
+                                            self.compactor.cdbg,
+                                            args.validate)
 
         # Close all files when done
         async def close_files(msg, files):
