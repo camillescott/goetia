@@ -349,7 +349,7 @@ class AsyncSequenceProcessor:
 
 
 def every_n_intervals(func, n=1):
-    poller = libgoetia.metrics.IntervalCounter(n)
+    poller = libgoetia.IntervalCounter(n)
     @functools.wraps(func)
     async def wrapped(msg, *args, **kwargs):
         assert isinstance(msg, Interval)

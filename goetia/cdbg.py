@@ -146,9 +146,13 @@ async def write_cdbg_callback(msg,
                               cdbg,
                               out_file_prefix,
                               out_format,
+                              time_component=None,
                               verbose=False):
 
-    out_file_name = f'{out_file_prefix}.{msg.t}.{out_format}'
+    if time_component is None:
+        out_file_name = f'{out_file_prefix}.{out_format}'
+    else:
+        out_file_name = f'{out_file_prefix}.{msg.t}.{out_format}'
 
     if verbose:
         print(f'Writing cDBG to {out_file_name}...', file=sys.stderr)

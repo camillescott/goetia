@@ -190,6 +190,7 @@ class cDBGRunner(CommandRunner):
                                                 self.compactor.cdbg,
                                                 args.save_cdbg,
                                                 cdbg_format,
+                                                time_component='',
                                                 verbose=args.verbose)
                 self.worker_listener.on_message(SampleFinished,
                                                 write_cdbg_callback,
@@ -323,6 +324,7 @@ def process_cdbg_args(args):
     args.track_cdbg_components = join(args.track_cdbg_components)
     args.save_cdbg             = join(args.save_cdbg)
     args.track_cdbg_unitig_bp  = join(args.track_unitig_bp)
+    args.validate              = join(args.validate)
 
 
 def print_cdbg_args(args):
