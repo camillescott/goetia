@@ -10,7 +10,7 @@
 #include "goetia/sketches/unikmer_sketch.hh"
 
 #include "goetia/storage/storage_types.hh"
-#include "goetia/sketches/hllcounter.hh"
+//#include "goetia/sketches/hllcounter.hh"
 #include "goetia/hashing/canonical.hh"
 
 
@@ -37,6 +37,6 @@ namespace goetia {
     template class UnikmerSketch<QFStorage, Hash<uint64_t>>;
     template class UnikmerSketch<QFStorage, Canonical<uint64_t>>;
 
-    template class UnikmerSketch<HLLStorage, Hash<uint64_t>>;
-    template class UnikmerSketch<HLLStorage, Canonical<uint64_t>>;
+    //template class UnikmerSketch<HLLStorage, Hash<uint64_t>>;
+    //template class UnikmerSketch<HLLStorage, Canonical<uint64_t>>;
 }

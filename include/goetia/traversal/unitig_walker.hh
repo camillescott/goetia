@@ -67,6 +67,47 @@ enum class TraversalState {
 };
 
 
+__attribute__((visibility("default")))
+inline std::ostream&
+operator<<(std::ostream& os, const TraversalState& _this) {
+    os << "<TraversalState state=";
+    switch(_this) {
+        case TraversalState::STOP_FWD:
+            os << "STOP_FWD";
+            break;
+        case TraversalState::DECISION_FWD:
+            os << "DECISION_FWD";
+            break;
+        case TraversalState::DECISION_BKW:
+            os << "DECISION_BKW";
+            break;
+        case TraversalState::STOP_SEEN:
+            os << "STOP_SEEN";
+            break;
+        case TraversalState::STOP_MASKED:
+            os << "STOP_MASKED";
+            break;
+        case TraversalState::STOP_CALLBACK:
+            os << "STOP_CALLBACK";
+            break;
+        case TraversalState::BAD_SEED:
+            os << "BAD_SEED";
+            break;
+        case TraversalState::GRAPH_ERROR:
+            os << "GRAPH_ERROR";
+            break;
+        case TraversalState::STEP:
+            os << "STEP";
+            break;
+        default:
+            os << "UNDEFINED";
+            break;
+    }
+    os << ">";
+    return os;
+}
+
+
 template<typename HashType>
 struct NullWalkFunctor {
     bool operator()(HashType& node) { return true; }
@@ -100,6 +141,19 @@ struct WalkStopper {
 
     protected:
         std::optional<HashType> found;
+};
+
+
+template<typename HashType>
+struct SeenRemover {
+    std::set<HashType>& unseen;
+    explicit SeenRemover(std::set<HashType>& unseen)
+        : unseen(unseen) {}
+    bool operator()(HashType& node) {
+        unseen.erase(node);
+        return true;
+    }
+
 };
 
 
@@ -752,13 +806,13 @@ public:
         walk.start.kmer = this->get_cursor();
 
         // take the first step without check for reverse d-nodes
-        auto step = step_left(f);
+        auto [state, neighbors] = step_left(f);
 
-        if (step.first != State::STEP) {
-            walk.end_state = step.first;
+        if (state != State::STEP) {
+            walk.end_state = state;
             return walk;
         } else {
-            walk.path.push_back(step.second.front());
+            walk.path.push_back(neighbors.front());
         }
 
         while (1) {
@@ -925,6 +979,25 @@ public:
     walk_pair_type walk(const std::string& seed) {
         null_walk_func_t func;
         return walk(seed, func);
+    }
+
+    std::vector<std::string> extract_unitigs(const std::string& sequence,
+                                             std::vector<hash_type>& hashes) {
+        
+
+        std::vector<std::string> unitigs;
+        null_walk_func_t f;
+        std::set<value_type> seq_seen;
+        for (size_t i = 0; i < sequence.size() - this->K + 1; ++i) {
+            if (seq_seen.count(hashes[i].value())) {
+                continue;
+            }
+            auto [lwalk, rwalk] = walk(sequence.substr(i, this->K), f);
+            seq_seen.insert(this->seen.begin(), this->seen.end());
+            unitigs.push_back(lwalk.glue(rwalk));
+        }
+
+        return unitigs;
     }
                   
     bool is_decision_kmer(const std::string& node,

@@ -573,12 +573,14 @@ public:
 
             std::ofstream out;
             out.open(filename);
+            auto vdbg = dbg->clone();
 
             auto lock = lock_nodes();
 
             for (auto it = unitig_nodes.begin(); it != unitig_nodes.end(); ++it) {
                 auto unode = it->second.get();
                 auto counts = dbg->query_sequence(unode->sequence);
+                vdbg->insert_sequence(unode->sequence);
                 if (std::any_of(counts.begin(), counts.end(), 
                                 [](count_t i){ return i == 0; })) {
                     out << unode->node_id << ";"
@@ -589,6 +591,14 @@ public:
                         << std::endl;
                 }
             }
+
+            for (auto it = dnodes_begin(); it != dnodes_end(); ++it) {
+                auto dnode = it->second.get();
+                vdbg->insert_sequence(dnode->sequence);
+            }
+
+            out << "cdbg unique " << vdbg->n_unique() << std::endl;
+            out << "reads unique " << dbg->n_unique() << std::endl;
 
             out.close();
 

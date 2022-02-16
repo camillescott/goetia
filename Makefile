@@ -1,5 +1,6 @@
 LIB_BUILD_DIR = cmake-build
 CONDA_FRONTEND = mamba
+BUILD_TYPE = Release
 
 # $(LIB_BUILD_DIR)/libgoetiaCppyy.so $(LIB_BUILD_DIR)/libgoetia.so
 
@@ -26,7 +27,7 @@ create-dev-env: environment_dev.yml
 	${CONDA_FRONTEND} env update -f environment_dev.yml
 
 configure: FORCE
-	cmake -H. -B$(LIB_BUILD_DIR) -G Ninja
+	cmake -H. -B$(LIB_BUILD_DIR) -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) -G Ninja
 
 build-lib: configure
 	cd $(LIB_BUILD_DIR) && ninja -v

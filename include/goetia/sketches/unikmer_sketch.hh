@@ -25,7 +25,7 @@
 #include "goetia/hashing/ukhs.hh"
 #include "goetia/hashing/unikmershifter.hh"
 #include "goetia/hashing/canonical.hh"
-#include "goetia/sketches/hllcounter.hh"
+//#include "goetia/sketches/hllcounter.hh"
 #include "goetia/storage/storage_types.hh"
 
 #include "goetia/pdbg.hh"
@@ -165,8 +165,8 @@ extern template class goetia::UnikmerSketch<goetia::NibbleStorage, goetia::Canon
 extern template class goetia::UnikmerSketch<goetia::QFStorage, goetia::Hash<uint64_t>>;
 extern template class goetia::UnikmerSketch<goetia::QFStorage, goetia::Canonical<uint64_t>>;
 
-extern template class goetia::UnikmerSketch<goetia::HLLStorage, goetia::Hash<uint64_t>>;
-extern template class goetia::UnikmerSketch<goetia::HLLStorage, goetia::Canonical<uint64_t>>;
+//extern template class goetia::UnikmerSketch<goetia::HLLStorage, goetia::Hash<uint64_t>>;
+//extern template class goetia::UnikmerSketch<goetia::HLLStorage, goetia::Canonical<uint64_t>>;
 
 }
 

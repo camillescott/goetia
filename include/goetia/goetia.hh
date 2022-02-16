@@ -26,6 +26,7 @@
 
 namespace goetia {
 
+
 #define _cerr(x) do { std::ostringstream stream; \
                       stream << x << std::endl; \
                       std::cerr << stream.str(); \
@@ -35,12 +36,14 @@ namespace goetia {
                       std::cout << stream.str(); \
                     } while(0)
 
+
 template <typename T>
 std::string repr(const T& item) {
     std::ostringstream _os;
-    _os << item;
+    static_cast<std::ostream&>(_os) << item;
     return _os.str();
 }
+
 
 template<typename _Ty1, typename _Ty2>
 std::string repr(const std::pair<_Ty1, _Ty2>& _p) {
@@ -49,18 +52,45 @@ std::string repr(const std::pair<_Ty1, _Ty2>& _p) {
     return _os.str();
 }
 
+
 template <template<typename, typename> class Container, class T, class A>
 std::string repr(const Container<T,A>& v) {
     std::ostringstream os;
     os << "[";
+    /*
     for (size_t i = 0; i < v.size(); ++i) {
         os << repr(v[i]);
         if (i != v.size() - 1)
             os << ", ";
     }
+    */
+    size_t i = 0;
+    for (const auto& elem : v) {
+        ++i;
+        os << repr(elem);
+        if (i != v.size())
+            os << ", ";
+    }
     os << "]";
     return os.str();
 }
+
+
+template <template<typename, typename, typename> class Container, class T, class C, class A>
+std::string repr(const Container<T,C,A>& v) {
+    std::ostringstream os;
+    os << "[";
+    size_t i = 0;
+    for (const auto& elem : v) {
+        ++i;
+        os << repr(elem);
+        if (i != v.size())
+            os << ", ";
+    }
+    os << "]";
+    return os.str();
+}
+
 
 template<template<typename, typename> class Container, class T, class A>
 bool contains(const Container<T,A>& collection,
@@ -80,6 +110,7 @@ bool contains(std::vector<T> collection,
     return false;
 }
 
+
 /*
  * Adapted from make_from_tuple: https://en.cppreference.com/w/cpp/utility/make_from_tuple
  */
@@ -91,6 +122,7 @@ std::shared_ptr<T> make_shared_from_tuple_impl( Tuple&& t, std::index_sequence<I
 }
 } // namespace detail
  
+
 template <class T, class Tuple>
 std::shared_ptr<T> make_shared_from_tuple( Tuple&& t )
 {

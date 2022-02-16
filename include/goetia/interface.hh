@@ -70,7 +70,7 @@
 #include "goetia/sketches/unikmer_sketch.hh"
 #include "goetia/sketches/sourmash_sketch.hh"
 #include "goetia/sketches/sourmash/sourmash.hpp"
-#include "goetia/sketches/hllcounter.hh"
+//#include "goetia/sketches/hllcounter.hh"
 
 #include "goetia/benchmarks/bench_storage.hh"
 

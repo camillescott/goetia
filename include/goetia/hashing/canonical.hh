@@ -71,6 +71,7 @@ struct Hash {
     friend bool operator==(const Hash& lhs, const Hash& rhs) {
         return lhs.value() == rhs.value();
     }
+
 };
 
 template<class ValueType>

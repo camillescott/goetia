@@ -358,6 +358,14 @@ Graph::build_unode(const std::string& sequence,
 
     auto lock = lock_nodes();
     id_t id = _unitig_id_counter;
+
+    if (ShifterType::hash(sequence.substr(0, this->K), this->K) != left_end) {
+        std::cout << "left: " << left_end << std::endl;
+        std::cout << "right: " << right_end << std::endl;
+        std::cout << "seq: " << sequence << std::endl;
+        std::cout << "hashed: " << ShifterType::hash(sequence.substr(this->K), this->K) << std::endl;
+        assert(ShifterType::hash(sequence.substr(0, this->K), this->K) == left_end);
+    }
     
     // Transfer the UnitigNode's ownership to the map;
     // get its new memory address

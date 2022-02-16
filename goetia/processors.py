@@ -269,6 +269,8 @@ class AsyncSequenceProcessor:
                                                  seconds_elapsed_total=time.perf_counter() - worker_start_time,
                                                  file_names=sample))
             except Exception as e:
+                print('\n' * 10, file=sys.stderr)
+                import pdb; pdb.post_mortem()
                 self.worker_q.put(Error(t=stream_time,  # type: ignore
                                         sequence=n_seqs,
                                         sample_name=name,

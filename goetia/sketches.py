@@ -8,6 +8,6 @@
 
 from goetia import libgoetia
 
-HLLCounter = libgoetia.HLLStorage
+#HLLCounter = libgoetia.HLLStorage
 SourmashSketch = libgoetia.SourmashSketch
 UnikmerSketch  = libgoetia.UnikmerSketch

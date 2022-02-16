@@ -19,6 +19,20 @@ cDBG = libgoetia.cDBG
 StreamingCompactor = libgoetia.StreamingCompactor
 
 
+def quick_compactor(K):
+    from goetia.dbg import dBG
+    from goetia.storage import PHMapStorage
+    from goetia.hashing import FwdLemireShifter
+
+    storage = PHMapStorage.build()
+    hasher = FwdLemireShifter(K)
+    dbg = dBG[type(storage), type(hasher)].build(storage, hasher)
+    compactor_t = StreamingCompactor[type(dbg)]
+    compactor = compactor_t.Compactor.build(dbg)
+
+    return compactor, compactor_t
+
+
 async def compute_connected_component_callback(msg,
                                                cdbg_type,
                                                cdbg,

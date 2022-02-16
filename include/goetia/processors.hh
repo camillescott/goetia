@@ -283,8 +283,6 @@ class InserterProcessor : public FileProcessor<InserterProcessor<InserterType, P
 
 protected:
 
-    std::shared_ptr<InserterType> inserter;
-
     typedef FileProcessor<InserterProcessor<InserterType, ParserType>,
                           ParserType> Base;
 
@@ -292,6 +290,8 @@ public:
 
     using Base::process_sequence;
     typedef typename Base::alphabet alphabet;
+
+    std::shared_ptr<InserterType> inserter;
     
     InserterProcessor(std::shared_ptr<InserterType> inserter,
                       uint64_t interval = IntervalCounter::DEFAULT_INTERVAL,
@@ -308,18 +308,25 @@ public:
             if (this->_verbose) {
                 std::cerr << "WARNING: Skipped sequence that was too short: sequence number "
                           << this->n_sequences() << " with sequence "
-                          << sequence.sequence 
+                          << sequence.sequence << ", message was "
+                          << e.what()
                           << std::endl;
             }
             return 0;
         } catch (InvalidCharacterException& e) {
+            if (this->_verbose) {
+                std::cerr << "WARNING: got an invalid character exception: sequence number "
+                          << this->n_sequences() << " with sequence "
+                          << sequence.sequence 
+                          << std::endl;
+            }
             return 0;
         } catch (std::exception &e) {
             std::cerr << "ERROR: Exception thrown at " << this->n_sequences()
                       << " with msg: " << e.what()
                       << ". Sequence was: " << sequence.sequence
                       <<  std::endl;
-            throw;
+            throw e;
         }
     }
 
@@ -329,9 +336,10 @@ public:
 
     
     static auto build(std::shared_ptr<InserterType> inserter,
-               uint64_t interval = IntervalCounter::DEFAULT_INTERVAL)
+                      uint64_t interval = IntervalCounter::DEFAULT_INTERVAL,
+                      bool verbose = false)
     -> std::shared_ptr<InserterProcessor<InserterType, ParserType>> {
-        return std::make_shared<InserterProcessor<InserterType, ParserType>>(inserter, interval);
+        return std::make_shared<InserterProcessor<InserterType, ParserType>>(inserter, interval, verbose);
     }
 
 };

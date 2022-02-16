@@ -17,8 +17,7 @@ typenames = [(t, t.__name__.replace(' ', '')) for t in [libgoetia.SparseppSetSto
                                                         libgoetia.ByteStorage,
                                                         libgoetia.NibbleStorage,
                                                         libgoetia.QFStorage,
-                                                        libgoetia.BTreeStorage,
-                                                        libgoetia.HLLStorage]]
+                                                        libgoetia.BTreeStorage]]
 
 types = [_type for _type, _name in typenames]
 
@@ -64,8 +63,8 @@ def process_storage_args(args):
         args.max_tablesize = int(args.max_tablesize)
         args.storage_args = (args.max_tablesize, args.n_tables)
 
-    elif args.storage is libgoetia.HLLStorage:
-        args.storage_args = (float(args.error_rate), )
+    #elif args.storage is libgoetia.HLLStorage:
+    #    args.storage_args = (float(args.error_rate), )
 
     elif args.storage is libgoetia.QFStorage:
         args.storage_args = (int(math.ceil(math.log2(args.max_tablesize))), )

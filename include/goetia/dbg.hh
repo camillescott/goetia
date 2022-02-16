@@ -252,7 +252,6 @@ public:
     
         KmerIterator<ShifterType> iter(sequence, static_cast<ShifterType*>(this));
 
-        size_t           pos = 0;
         count_t count;
         while(!iter.done()) {
             auto h = iter.next();
@@ -260,8 +259,6 @@ public:
 
             kmer_hashes.push_back(h);
             counts.push_back(count);
-
-            ++pos;
         }
 
         return sequence.size() - K + 1;
@@ -272,14 +269,25 @@ public:
 
         KmerIterator<ShifterType> iter(sequence, this);
 
-        size_t pos = 0;
-        bool is_new;
         while(!iter.done()) {
             hash_type h = iter.next();
             if(insert(h)) {
                 new_kmers.insert(h);
             }
-            ++pos;
+        }
+
+        return sequence.size() - K + 1;
+    }
+
+    uint64_t insert_sequence(const std::string&      sequence,
+                             std::vector<hash_type>& hashes) {
+
+        KmerIterator<ShifterType> iter(sequence, this);
+
+        while(!iter.done()) {
+            hash_type h = iter.next();
+            insert(h);
+            hashes.push_back(h);
         }
 
         return sequence.size() - K + 1;
