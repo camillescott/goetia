@@ -112,7 +112,8 @@ public:
         }
 
         if (done()) {
-            throw InvalidCharacterException("past end of iterator");
+            //throw InvalidCharacterException("past end of iterator");
+            return shifter->get();
         }
 
         auto ret = shifter->shift_right(_seq[index - 1], _seq[index + K - 1]);

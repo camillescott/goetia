@@ -245,9 +245,10 @@ protected:
         //std::cout << "UnikmerShifter: " << repr(window_unikmers) << std::endl;
         //std::cout << "UnikmerShifter: " << repr(unikmer_indices) << std::endl;
 
-        if (window_unikmers.size() == 0) {
-            throw GoetiaException("Window should contain unikmer.");
-        }
+        //if (window_unikmers.size() == 0) {
+        //    throw GoetiaException("Window should contain unikmer.");
+        //}
+        assert(window_unikmers.size() != 0);
         return *std::min_element(std::begin(window_unikmers),
                                  std::end(window_unikmers));
     }

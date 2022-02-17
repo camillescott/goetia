@@ -122,16 +122,18 @@ public:
     }
 
     hash_type shift_right(const char& out, const char& in) {
-        if (!initialized) {
-            throw UninitializedShifterException();
-        }
+        //if (!initialized) {
+        //    throw UninitializedShifterException();
+        //}
+        assert(initialized);
         return this->shift_right_impl(out, in);
     }
 
     hash_type shift_left(const char& in, const char& out) {
-        if (!initialized) {
-            throw UninitializedShifterException();
-        }
+        //if (!initialized) {
+        //    throw UninitializedShifterException();
+        //}
+        assert(initialized);
         return this->shift_left_impl(in, out);
     }
 

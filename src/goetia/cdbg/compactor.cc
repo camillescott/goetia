@@ -149,8 +149,50 @@ Compactor::_try_split_unode(kmer_type root,
 
     pdebug(lfiltered.size() << " left, " << rfiltered.size() << " right");
 
-    //auto masked = Masked<StorageType, ShifterType, std::set<hash_type>>(*dbg, processed);
+    bool split_left_success = _try_split_unode_left(root,
+                                                    lfiltered,
+                                                    rfiltered,
+                                                    new_kmers,
+                                                    induced_decision_kmer_hashes,
+                                                    processed);
+    if (split_left_success) {
+        return true;
+    }
+
+    bool split_right_success = _try_split_unode_right(root,
+                                                      lfiltered,
+                                                      rfiltered,
+                                                      new_kmers,
+                                                      induced_decision_kmer_hashes,
+                                                      processed);
+    if (split_right_success) {
+        return true;
+    }
+
+
+    // failed to find a split point. must be flanked by induced d-nodes on either
+    // side before a tag or unode end: aka same unode split by three or more
+    // induced d-nodes
+    pdebug("Attempt to split unode failed from " << root);
+
+    return false;
+}
+
+
+template <template <class, class> class GraphType,
+            class StorageType,
+            class ShifterType>
+bool
+StreamingCompactor<GraphType<StorageType, ShifterType>>::
+Compactor::_try_split_unode_left(kmer_type root,
+                                 std::vector<kmer_type>& lfiltered,
+                                 std::vector<kmer_type>& rfiltered,
+                                 std::set<hash_type>& new_kmers,
+                                 std::set<hash_type>& induced_decision_kmer_hashes,
+                                 std::set<hash_type>& processed) {
+
     WalkStopper<hash_type> stopper_func(processed);
+    UnitigNode * unode_to_split;
 
     if (lfiltered.size()) {
         // size should always be 1 here
@@ -165,6 +207,7 @@ Compactor::_try_split_unode(kmer_type root,
         if (walk.end_state != State::STOP_SEEN) {
             dbg->clear_seen();
 
+            auto original_end_state = walk.end_state;
             if (walk.end_state == State::DECISION_FWD) {
                 //auto step = masked.step_right();
                 auto step = dbg->step_right();
@@ -183,6 +226,23 @@ Compactor::_try_split_unode(kmer_type root,
             pdebug("split point is " << split_point <<
                     " new_right is " << left_unode_new_right
                    << " root was " << root);
+            if (unode_to_split == nullptr) {
+                //std::cout << "root: " << root << std::endl;
+                //std::cout << "start: " << start << std::endl;
+                //std::cout << "original end_state: " << original_end_state << std::endl;
+                //std::cout << "end_state: " << walk.end_state << std::endl;
+                //std::cout << "split_point: " << split_point << std::endl;
+                //std::cout << "left new right: " << left_unode_new_right << std::endl;
+                //std::cout << "path: " << walk.to_string() << std::endl;
+                //std::cout << "lfiltered size: " << lfiltered.size() << std::endl;
+                auto cnode = cdbg->query_cnode(end_hash);
+                if (cnode == nullptr) {
+                    //std::cout << "query was nullptr" << std::endl;
+                } else {
+                    //std::cout << "query not nullptr: " << cnode->sequence << " " << node_meta_repr(cnode->meta()) << std::endl;
+                    return false;
+                }
+            }
             assert(unode_to_split != nullptr);
 
             hash_type right_unode_new_left = dbg->hash(unode_to_split->sequence.c_str() + 
@@ -191,15 +251,15 @@ Compactor::_try_split_unode(kmer_type root,
 
             if (rfiltered.size()) {
                 if (right_unode_new_left.value() != rfiltered.back().value()) {
-                  std::cout << "unode to split: " << *unode_to_split << std::endl;
-                  std::cout << "walk end hash: " << end_hash << std::endl;
-                  std::cout << "walk state: " << walk.end_state << std::endl;
-                  std::cout << "right unode's new left end: " << right_unode_new_left.value() << std::endl;
-                  std::cout << "right unode's new left kmer: " << unode_to_split->sequence.substr(split_point + 1, this->K) << std::endl;
-                  std::cout << "rfiltered size: " << rfiltered.size() << std::endl;
-                  std::cout << "start: " << start << std::endl;
-                  std::cout << "root: " << root << std::endl;
-                  std::cout << "start in induced: " << induced_decision_kmer_hashes.count(start) << std::endl;
+                  //std::cout << "unode to split: " << *unode_to_split << std::endl;
+                  //std::cout << "walk end hash: " << end_hash << std::endl;
+                  //std::cout << "walk state: " << walk.end_state << std::endl;
+                  //std::cout << "right unode's new left end: " << right_unode_new_left.value() << std::endl;
+                  //std::cout << "right unode's new left kmer: " << unode_to_split->sequence.substr(split_point + 1, this->K) << std::endl;
+                  //std::cout << "rfiltered size: " << rfiltered.size() << std::endl;
+                  //std::cout << "start: " << start << std::endl;
+                  //std::cout << "root: " << root << std::endl;
+                  //std::cout << "start in induced: " << induced_decision_kmer_hashes.count(start) << std::endl;
                 }
                 assert(right_unode_new_left.value() == rfiltered.back().value());
             }
@@ -228,6 +288,24 @@ Compactor::_try_split_unode(kmer_type root,
             }
         }
     }
+    return false;
+}
+
+
+template <template <class, class> class GraphType,
+            class StorageType,
+            class ShifterType>
+bool
+StreamingCompactor<GraphType<StorageType, ShifterType>>::
+Compactor::_try_split_unode_right(kmer_type root,
+                                 std::vector<kmer_type>& lfiltered,
+                                 std::vector<kmer_type>& rfiltered,
+                                 std::set<hash_type>& new_kmers,
+                                 std::set<hash_type>& induced_decision_kmer_hashes,
+                                 std::set<hash_type>& processed) {
+
+    WalkStopper<hash_type> stopper_func(processed);
+    UnitigNode * unode_to_split;
 
     if (rfiltered.size()) {
         // size should always be 1 here
@@ -252,6 +330,25 @@ Compactor::_try_split_unode(kmer_type root,
             }
 
             unode_to_split = cdbg->query_unode_end(end_hash);
+
+            if (unode_to_split == nullptr) {
+                //std::cout << "root: " << root << std::endl;
+                //std::cout << "start: " << start << std::endl;
+                //std::cout << "original end_state: " << original_end_state << std::endl;
+                //std::cout << "end_state: " << walk.end_state << std::endl;
+                //std::cout << "split_point: " << split_point << std::endl;
+                //std::cout << "left new right: " << left_unode_new_right << std::endl;
+                //std::cout << "path: " << walk.to_string() << std::endl;
+                //std::cout << "rfiltered size: " << rfiltered.size() << std::endl;
+                auto cnode = cdbg->query_cnode(end_hash);
+                if (cnode == nullptr) {
+                    //std::cout << "query was nullptr" << std::endl;
+                } else {
+                    //std::cout << "query not nullptr: " << cnode->sequence << " " << node_meta_repr(cnode->meta()) << std::endl;
+                    return false;
+                }
+            }
+
             size_t split_point = unode_to_split->sequence.size()
                                                  - walk.path.size()
                                                  - this->K 
@@ -289,14 +386,8 @@ Compactor::_try_split_unode(kmer_type root,
         }
     }
 
-    // failed to find a split point. must be flanked by induced d-nodes on either
-    // side before a tag or unode end: aka same unode split by three or more
-    // induced d-nodes
-    pdebug("Attempt to split unode failed from " << root);
-
     return false;
 }
-
 
 }
 

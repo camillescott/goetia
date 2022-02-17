@@ -618,10 +618,24 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
                                     std::set<hash_type>& new_kmers);
 
         bool _try_split_unode(kmer_type root,
-                            neighbor_pair_type& neighbors,
-                            std::set<hash_type>& new_kmers,
-                            std::set<hash_type>& induced_decision_kmer_hashes,
-                            std::set<hash_type>& processed);
+                              neighbor_pair_type& neighbors,
+                              std::set<hash_type>& new_kmers,
+                              std::set<hash_type>& induced_decision_kmer_hashes,
+                              std::set<hash_type>& processed);
+
+        bool _try_split_unode_left(kmer_type root,
+                                   std::vector<kmer_type>& lfiltered,
+                                   std::vector<kmer_type>& rfiltered,
+                                   std::set<hash_type>& new_kmers,
+                                   std::set<hash_type>& induced_decision_kmer_hashes,
+                                   std::set<hash_type>& processed);
+
+        bool _try_split_unode_right(kmer_type root,
+                                    std::vector<kmer_type>& lfiltered,
+                                    std::vector<kmer_type>& rfiltered,
+                                    std::set<hash_type>& new_kmers,
+                                    std::set<hash_type>& induced_decision_kmer_hashes,
+                                    std::set<hash_type>& processed);
 
         void _update_unode(compact_segment& segment,
                                    const std::string& sequence) {
