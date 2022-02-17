@@ -14,6 +14,7 @@ import json
 import signal
 import sys
 import time
+import traceback
 from typing import Any
 
 import curio
@@ -269,13 +270,11 @@ class AsyncSequenceProcessor:
                                                  seconds_elapsed_total=time.perf_counter() - worker_start_time,
                                                  file_names=sample))
             except Exception as e:
-                print('\n' * 10, file=sys.stderr)
-                import pdb; pdb.post_mortem()
                 self.worker_q.put(Error(t=stream_time,  # type: ignore
                                         sequence=n_seqs,
                                         sample_name=name,
                                         file_names=sample,
-                                        error=str(e.__traceback__))) 
+                                        error="".join(traceback.format_tb(e.__traceback__)))) 
                 return
             finally:
                 self.worker_q.put(EndStream(t=stream_time,  # type: ignore

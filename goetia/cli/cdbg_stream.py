@@ -69,6 +69,10 @@ class cDBGRunner(CommandRunner):
         def print(self, *args, **kwargs):
             print(*args, **kwargs, file=self.file)
 
+        def message(self, *args, **kwargs):
+            self.counter = Counter(0)
+            self.print(*args, **kwargs)
+
         def start_sample(self, sample_name, file_names):
             self.print(f'{self.term.italic}Begin sample: {self.term.normal}{sample_name}')
             files = '\n'.join(['    ' + f for f in file_names])
@@ -108,6 +112,10 @@ class cDBGRunner(CommandRunner):
         process_graph_args(args)
         process_cdbg_args(args)
         self.status = self.StatusOutput(term=self.term)
+        if args.verbose:
+            args.verbose = self.status
+        else:
+            args.verbose = None
 
     def setup(self, args):
         os.makedirs(args.results_dir, exist_ok=True)
@@ -149,8 +157,7 @@ class cDBGRunner(CommandRunner):
             self.worker_listener.on_message(Interval,
                                             write_cdbg_metrics_callback,
                                             self.compactor,
-                                            args.track_cdbg_metrics,
-                                            args.verbose)
+                                            args.track_cdbg_metrics)
             self.to_close.append(args.track_cdbg_metrics)
 
 
@@ -230,9 +237,19 @@ class cDBGRunner(CommandRunner):
             lambda msg, status: status.start_sample(msg.sample_name, msg.file_names),
             self.status
         )
+
         self.worker_listener.on_message(
             SampleFinished,
             lambda msg, status: status.finish_sample(msg.seconds_elapsed_sample),
+            self.status
+        )
+
+        self.worker_listener.on_message(
+            Error,
+            lambda msg, status: status.message(
+                f'ERROR: {msg.sample_name}->{msg.file_names} at time={msg.t}, sequence={msg.sequence} '\
+                f'\n-- BEGIN EXCEPTION --\n{msg.error}\n-- END EXCEPTION --'
+            ),
             self.status
         )
                            
@@ -323,7 +340,7 @@ def process_cdbg_args(args):
     args.track_cdbg_metrics    = join(args.track_cdbg_metrics)
     args.track_cdbg_components = join(args.track_cdbg_components)
     args.save_cdbg             = join(args.save_cdbg)
-    args.track_cdbg_unitig_bp  = join(args.track_unitig_bp)
+    args.track_unitig_bp       = join(args.track_unitig_bp)
     args.validate              = join(args.validate)
 
 

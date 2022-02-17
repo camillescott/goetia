@@ -762,7 +762,7 @@ cDBG<GraphType<StorageType, ShifterType>>
                                       size_t sample_size)
 -> std::tuple<size_t, size_t, size_t, std::vector<size_t>> {
 
-    auto time_start = std::chrono::system_clock::now();
+    //auto time_start = std::chrono::system_clock::now();
 
     ReservoirSample<size_t> component_size_sample(sample_size);
     size_t max_component = 0;
@@ -776,9 +776,9 @@ cDBG<GraphType<StorageType, ShifterType>>
         min_component = (component_size < min_component) ? component_size : min_component;
     }
 
-    auto time_elapsed = std::chrono::system_clock::now() - time_start;
-    _cerr("Finished recomputing components. Elapsed time: " <<
-          std::chrono::duration<double>(time_elapsed).count());
+    //auto time_elapsed = std::chrono::system_clock::now() - time_start;
+    //_cerr("Finished recomputing components. Elapsed time: " <<
+    //      std::chrono::duration<double>(time_elapsed).count());
 
     return {components.size(), min_component, max_component, component_size_sample.get_result()};
 }
@@ -793,9 +793,9 @@ cDBG<GraphType<StorageType, ShifterType>>
                                std::vector<size_t>    bins)
 -> std::vector<size_t> {
 
-    auto time_start = std::chrono::system_clock::now();
+    //auto time_start = std::chrono::system_clock::now();
     auto lock       = cdbg->lock_nodes();
-    _cerr("Summing unitig length bins...");
+    //_cerr("Summing unitig length bins...");
 
     std::vector<size_t> bin_sums(bins.size(), 0);
 
@@ -812,9 +812,9 @@ cDBG<GraphType<StorageType, ShifterType>>
         }
     }
 
-    auto time_elapsed = std::chrono::system_clock::now() - time_start;
-    _cerr("Finished summing unitig length bins. Elapsed time: " <<
-          std::chrono::duration<double>(time_elapsed).count());
+    //auto time_elapsed = std::chrono::system_clock::now() - time_start;
+    //_cerr("Finished summing unitig length bins. Elapsed time: " <<
+    //      std::chrono::duration<double>(time_elapsed).count());
 
     return bin_sums;
 }

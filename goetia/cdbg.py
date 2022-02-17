@@ -38,11 +38,10 @@ async def compute_connected_component_callback(msg,
                                                cdbg,
                                                out_file,
                                                sample_size,
-                                               verbose=False):
+                                               verbose=None):
 
     if verbose:
-        print(f'Computing sample of connected component sizes...',
-              file=sys.stderr)
+        verbose.message(f'Computing sample of connected component sizes...')
 
     result = cdbg_type.compute_connected_component_metrics(cdbg,
                                                            sample_size)
@@ -56,9 +55,8 @@ async def compute_connected_component_callback(msg,
             'sizes': list(sizes)}
 
     if verbose:
-        print(f'Found {n_comps} components, of minimum size {min_comp}, '\
-              f'maximum size {max_comp}.',
-              file=sys.stderr)
+        verbose.message(f'Found {n_comps} components, of minimum size {min_comp}, '\
+              f'maximum size {max_comp}.')
 
     async with curio.aopen(out_file, 'a') as fp:
         if await fp.tell() != 0:
@@ -73,11 +71,10 @@ async def compute_unitig_fragmentation_callback(msg,
                                                 cdbg,
                                                 out_file,
                                                 bins,
-                                                verbose=False):
+                                                verbose=None):
 
     if verbose:
-        print(f'Computing unitig length hist (bins={bins})...',
-              file=sys.stderr)
+        verbose.message(f'Computing unitig length hist (bins={bins})...')
 
     counts = cdbg_type.compute_unitig_fragmentation(cdbg,
                                                     bins)
@@ -89,8 +86,7 @@ async def compute_unitig_fragmentation_callback(msg,
     data[f'[{bin_end},Inf)'] = counts[-1]
 
     if verbose:
-        print(f'Bin counts: {data}',
-              file=sys.stderr)
+        verbose.message(f'Bin counts: {data}')
 
     async with curio.aopen(out_file, 'a') as fp:
         if await fp.tell() != 0:
@@ -103,7 +99,7 @@ async def compute_unitig_fragmentation_callback(msg,
 async def write_cdbg_metrics_callback(msg,
                                       compactor,
                                       out_file,
-                                      verbose=False):
+                                      verbose=None):
 
     report = compactor.get_report()
     data = {'t': msg.t,
@@ -130,9 +126,6 @@ async def write_cdbg_metrics_callback(msg,
             'n_unique_kmers': report.n_unique,
             'estimated_fp': report.estimated_fp}
     
-    if verbose:
-        print(f'Writing metrics: {report.n_dnodes} decision nodes, {report.n_updates} updates...',
-              file=sys.stderr)
 
     async with curio.aopen(out_file, 'a') as fp:
         if await fp.tell() != 0:
@@ -147,7 +140,7 @@ async def write_cdbg_callback(msg,
                               out_file_prefix,
                               out_format,
                               time_component=None,
-                              verbose=False):
+                              verbose=None):
 
     if time_component is None:
         out_file_name = f'{out_file_prefix}.{out_format}'
@@ -155,13 +148,13 @@ async def write_cdbg_callback(msg,
         out_file_name = f'{out_file_prefix}.{msg.t}.{out_format}'
 
     if verbose:
-        print(f'Writing cDBG to {out_file_name}...', file=sys.stderr)
+        verbose.message(f'Writing cDBG to {out_file_name}...')
 
     cdbg.write(out_file_name,
                 cDBGSerialization.enum_from_str(out_format))
     
     if verbose:
-        print(f'Finished writing cDBG.', file=sys.stderr)
+        verbose.message(f'Finished writing cDBG.', file=sys.stderr)
 
 
 async def validate_cdbg_callback(msg,
