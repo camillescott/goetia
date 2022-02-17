@@ -222,6 +222,8 @@ Graph::find_connected_components()
 
     auto lock = this->lock_nodes();
 
+    std::string start_cursor = dbg->get_cursor();
+
     spp::sparse_hash_set<id_t>                    seen;
     spp::sparse_hash_map<id_t, std::vector<id_t>> components;
 
@@ -247,6 +249,8 @@ Graph::find_connected_components()
             components[component_id] = component_node_ids;
         }
     }
+
+    dbg->set_cursor(start_cursor);
 
     return components;
 }
@@ -327,7 +331,7 @@ Graph::build_dnode(hash_type hash,
     /* Build a new DecisionNode; or, if the given k-mer hash
      * already has a DecisionNode, do nothing.
      */
-    auto lock = lock_nodes();
+    //auto lock = lock_nodes();
     DecisionNode * dnode = query_dnode(hash);
     if (dnode == nullptr) {
         pdebug("BUILD_DNODE: " << hash << ", " << kmer);
@@ -356,7 +360,7 @@ Graph::build_unode(const std::string& sequence,
                    hash_type right_end)
 -> UnitigNode * {
 
-    auto lock = lock_nodes();
+    //auto lock = lock_nodes();
     id_t id = _unitig_id_counter;
 
     if (ShifterType::hash(sequence.substr(0, this->K), this->K) != left_end) {
@@ -409,7 +413,7 @@ Graph::clip_unode(bool      clip_from,
                   hash_type old_unode_end,
                   hash_type new_unode_end) {
 
-    auto lock = lock_nodes();
+    //auto lock = lock_nodes();
 
     auto unode = switch_unode_ends(old_unode_end, new_unode_end);
     assert(unode != nullptr);
@@ -460,7 +464,7 @@ Graph::extend_unode(bool               ext_dir,
                     hash_type new_unode_end,
                     std::vector<hash_type>& new_tags) {
 
-    auto lock = lock_nodes();
+    //auto lock = lock_nodes();
 
     auto unode = switch_unode_ends(old_unode_end, new_unode_end);
     if (unode->meta() == TRIVIAL) {
@@ -513,7 +517,7 @@ Graph::split_unode(id_t node_id,
     hash_type right_unode_right_end;
 
     {
-        auto lock = lock_nodes();
+        //auto lock = lock_nodes();
 
         unode = query_unode_id(node_id);
         assert(unode != nullptr);
@@ -594,7 +598,7 @@ Graph::merge_unodes(const std::string& span_sequence,
     hash_type new_right_end;
 
     {
-        auto lock = lock_nodes();
+        //auto lock = lock_nodes();
 
         auto left_unode_it = unitig_end_map.find(left_end);
         if (left_unode_it == unitig_end_map.end()) {

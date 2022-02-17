@@ -256,6 +256,8 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
             if (hashes == nullptr) {
                 hashes = std::make_shared<std::vector<hash_type>>();
             }
+            
+            auto lock = cdbg->lock_nodes();
 
             find_new_segments(sequence,
                               *hashes,
