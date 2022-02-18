@@ -173,7 +173,7 @@ cDBG<GraphType<StorageType, ShifterType>>::
 Graph::traverse_breadth_first(CompactNode* root)
 -> std::vector<CompactNode*> {
 
-    std::set<id_t> seen;
+    phmap::parallel_flat_hash_set<id_t> seen;
     std::vector<CompactNode*> node_q( {root} );
     std::vector<CompactNode*> result;
 

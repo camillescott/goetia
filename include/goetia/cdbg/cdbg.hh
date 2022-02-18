@@ -284,7 +284,7 @@ public:
         /* Map of k-mer hash --> DecisionNode. DecisionNodes take
          * their k-mer hash value as their Node ID.
          */
-        typedef spp::sparse_hash_map<value_type,
+        typedef phmap::parallel_flat_hash_map<value_type,
                                      std::unique_ptr<DecisionNode>> dnode_map_t;
         typedef typename dnode_map_t::const_iterator dnode_iter_t;
 
@@ -292,7 +292,7 @@ public:
          * for the UnitigNodes' pointers; k-mer maps are stored elsewhere,
          * mapping k-mers to Node IDs.
          */
-        typedef spp::sparse_hash_map<id_t,
+        typedef phmap::parallel_flat_hash_map<id_t,
                                      std::unique_ptr<UnitigNode>> unode_map_t;
         typedef typename unode_map_t::const_iterator unode_iter_t;
 
@@ -304,9 +304,9 @@ public:
         // The actual ID --> UNode map
         unode_map_t unitig_nodes;
         // The map from Unitig end k-mer hashes to UnitigNodes
-        spp::sparse_hash_map<value_type, UnitigNode*> unitig_end_map;
+        phmap::parallel_flat_hash_map<value_type, UnitigNode*> unitig_end_map;
         // The map from dBG k-mer tags to UnitigNodes
-        spp::sparse_hash_map<value_type, UnitigNode*> unitig_tag_map;
+        phmap::parallel_flat_hash_map<value_type, UnitigNode*> unitig_tag_map;
 
         //std::mutex dnode_mutex;
         //std::mutex unode_mutex;
