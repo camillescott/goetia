@@ -28,7 +28,7 @@ from goetia.messages import (
     SampleFinished,
     SampleStarted,
 )
-from goetia.utils import is_iterable, time_iterable
+from goetia.utils import is_iterable, time_iterable, Counter
 
 
 DEFAULT_SOCKET = '/tmp/goetia.sock'
@@ -354,6 +354,56 @@ def every_n_intervals(func, n=1):
         assert isinstance(msg, Interval)
         if poller.poll():
             await func(msg, *args, **kwargs)
+    return wrapped
+
+
+def every_fib_intervals(func):
+    def fibs():
+        a = 1
+        b = 1
+        while True:
+            yield a
+            a, b = b, a + b
+    gen = fibs()
+    fib = next(gen)
+    ticks = 1
+
+    @functools.wraps(func)
+    async def wrapped(msg, *args, **kwargs):
+        nonlocal fib, ticks
+        assert isinstance(msg, Interval)
+        if ticks >= fib:
+            await func(msg, *args, **kwargs)
+            ticks = 1
+            fib = next(gen)
+        else:
+            ticks += 1
+
+    return wrapped
+
+
+def every_exp_intervals(func, r=.08):
+    def exp_growth(start, r):
+        t = 0
+        while True:
+            yield start * (1.0 + r) ** t
+            t += 1
+    
+    gen = exp_growth(1, r)
+    mark = next(gen)
+    ticks = 1
+
+    @functools.wraps(func)
+    async def wrapped(msg, *args, **kwargs):
+        nonlocal mark, ticks
+        assert isinstance(msg, Interval)
+        if ticks >= int(mark):
+            await func(msg, *args, **kwargs)
+            ticks = 1
+            mark = next(gen)
+        else:
+            ticks += 1
+
     return wrapped
 
 
