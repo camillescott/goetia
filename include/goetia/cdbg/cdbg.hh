@@ -26,6 +26,7 @@
 #pragma GCC diagnostic ignored "-Wsign-compare"
 #pragma GCC diagnostic ignored "-Wchar-subscripts"
 #include "goetia/storage/sparsepp/spp.h"
+#include "goetia/storage/phmap/phmap.h"
 #pragma GCC diagnostic pop
 
 #include "goetia/goetia.hh"
@@ -474,7 +475,7 @@ public:
             -> std::vector<CompactNode*>;
 
         auto find_connected_components()
-            -> spp::sparse_hash_map<id_t, std::vector<id_t>>;
+            -> phmap::parallel_flat_hash_map<id_t, std::vector<id_t>>;
 
         /*
          * Graph Mutation

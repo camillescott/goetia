@@ -218,14 +218,14 @@ template <template <class, class> class GraphType,
 auto
 cDBG<GraphType<StorageType, ShifterType>>::
 Graph::find_connected_components()
--> spp::sparse_hash_map<id_t, std::vector<id_t>>{
+-> phmap::parallel_flat_hash_map<id_t, std::vector<id_t>>{
 
     auto lock = this->lock_nodes();
 
     std::string start_cursor = dbg->get_cursor();
 
-    spp::sparse_hash_set<id_t>                    seen;
-    spp::sparse_hash_map<id_t, std::vector<id_t>> components;
+    phmap::parallel_flat_hash_set<id_t>                    seen;
+    phmap::parallel_flat_hash_map<id_t, std::vector<id_t>> components;
 
     for (auto unitig_it = unodes_begin(); unitig_it != unodes_end(); unitig_it++) {
         auto root = unitig_it->second.get();

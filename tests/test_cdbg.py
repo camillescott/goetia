@@ -1402,7 +1402,9 @@ class TestFindConnectedComponents:
         print(components)
         assert len(components[0]) == 6
         dl, dr = graph.hash(wild[L:L+ksize]), graph.hash(wild[R:R+ksize])
-        assert all((ID in components[0] for ID in (0,1,2,3,dl,dr)))
+        print(list(components[0]))
+        print(dl, dr)
+        assert all((ID in list(components[0]) for ID in (0,1,2,3,dl.value,dr.value)))
 
     @using(ksize=21, length=100)
     @pytest.mark.parametrize('n_components', [10, 50, 100])
