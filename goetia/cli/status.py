@@ -41,6 +41,8 @@ class StatusOutput:
         del self.counter
 
     def update(self, t, sequence_t, seconds_elapsed, *args):
+        if not hasattr(self, 'counter'):
+            return
         if len(args) != len(self.names):
             raise ValueError(f'Got {len(args)} values, expected {len(self.names)}.')
 
