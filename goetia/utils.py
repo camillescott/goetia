@@ -54,6 +54,9 @@ class Counter:
     def __eq__(self, other):
         return self.count == other
 
+    def __ge__(self, other):
+        return self.count >= other
+
 
 def grouper(n, iterable):
     iterable = iter(iterable)

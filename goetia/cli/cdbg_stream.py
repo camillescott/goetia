@@ -15,7 +15,10 @@ from goetia.cdbg import (compute_connected_component_callback,
                          validate_cdbg_callback)
 from goetia.dbg import get_graph_args, process_graph_args
 from goetia.parsing import get_fastx_args, iter_fastx_inputs
-from goetia.processors import AsyncSequenceProcessor, every_n_intervals
+from goetia.processors import (AsyncSequenceProcessor,
+                               every_n_intervals,
+                               every_exp_intervals,
+                               every_fib_intervals)
 from goetia.messages import (Interval, SampleStarted, SampleFinished, Error, AllMessages)
 from goetia.metadata import CUR_TIME
 from goetia.serialization import cDBGSerialization
@@ -160,7 +163,6 @@ class cDBGRunner(CommandRunner):
                                             args.track_cdbg_metrics)
             self.to_close.append(args.track_cdbg_metrics)
 
-
         if args.track_unitig_bp:
             if args.unitig_bp_bins is None:
                 bins = [args.ksize, 100, 200, 500, 1000]
@@ -177,11 +179,17 @@ class cDBGRunner(CommandRunner):
                                             verbose=args.verbose)
             self.to_close.append(args.track_unitig_bp)
 
-
         if args.track_cdbg_components:
+            comp_callback = None
+            if args.cdbg_components_tick == 'fib':
+                comp_callback = every_fib_intervals(compute_connected_component_callback)
+            elif args.cdbg_components_tick == 'exp':
+                comp_callback = every_exp_intervals(compute_connected_component_callback)
+            else:
+                comp_callback = every_n_intervals(compute_connected_component_callback,
+                                                  n=int(args.cdbg_components_tick))
             self.worker_listener.on_message(Interval,
-                                            every_n_intervals(compute_connected_component_callback,
-                                                              n=args.cdbg_components_tick),
+                                            comp_callback,
                                             self.cdbg_t,
                                             self.compactor.cdbg,
                                             args.track_cdbg_components,
@@ -307,7 +315,6 @@ def get_cdbg_args(parser):
                         default=10000,
                         help='Number of components to sample for size.')
     group.add_argument('--cdbg-components-tick',
-                       type=int,
                        default=5,
                        help='Sample and save distribution every N interval ticks.')
 

@@ -11,10 +11,25 @@ import sys
 import time
 
 
+class Elapsed:
+    def __init__(self):
+        self.start = time.perf_counter()
+        self.end = None
+        self.elapsed = -1
+
+    def stop(self):
+        self.end = time.perf_counter()
+        self.elapsed = self.end - self.start
+
+    def __str__(self):
+        return f'{self.elapsed:0.2f}s'
+
+    def __float__(self):
+        return self.elapsed
+
+
 @contextmanager
-def measure_time(fp=sys.stdout, *args, **kwargs):
-    start = time.perf_counter()
-    yield
-    end = time.perf_counter()
-    elapsed = end - start
-    print(f'Elapsed: {elapsed:0.4f}', file=fp)
+def time_block():
+    e = Elapsed()
+    yield e
+    e.stop()

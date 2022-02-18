@@ -14,6 +14,7 @@ import curio
 
 from goetia import libgoetia
 from goetia.serialization import cDBGSerialization
+from goetia.timer import time_block
 
 cDBG = libgoetia.cDBG
 StreamingCompactor = libgoetia.StreamingCompactor
@@ -43,20 +44,21 @@ async def compute_connected_component_callback(msg,
     if verbose:
         verbose.message(f'Computing sample of connected component sizes...')
 
-    result = cdbg_type.compute_connected_component_metrics(cdbg,
-                                                           sample_size)
-    n_comps, min_comp, max_comp, sizes = result
+    with time_block() as elapsed:
+        result = cdbg_type.compute_connected_component_metrics(cdbg,
+                                                               sample_size)
+        n_comps, min_comp, max_comp, sizes = result
 
-    data = {'t': msg.t,
-            'sample_name': msg.sample_name,
-            'n_components': n_comps,
-            'max': max_comp,
-            'min': min_comp,
-            'sizes': list(sizes)}
+        data = {'t': msg.t,
+                'sample_name': msg.sample_name,
+                'n_components': n_comps,
+                'max': max_comp,
+                'min': min_comp,
+                'sizes': list(sizes)}
 
     if verbose:
-        verbose.message(f'Found {n_comps} components, of minimum size {min_comp}, '\
-              f'maximum size {max_comp}.')
+        verbose.message(f'Found {n_comps} components, minimum size {min_comp}, '\
+                        f'maximum size {max_comp} (took {elapsed}).')
 
     async with curio.aopen(out_file, 'a') as fp:
         if await fp.tell() != 0:
