@@ -56,6 +56,7 @@ set(_headers
     include/goetia/storage/storage_types.hh
     include/goetia/traversal/unitig_walker.hh
     include/goetia/utils/stringutils.h
+    include/goetia/streamhasher.hh
 )
 
 set(_sources
@@ -101,6 +102,7 @@ set(_sources
     src/goetia/parsing/parsing.cc
     src/goetia/minimizers.cc
     src/goetia/storage/cqf/gqf.c
+    src/goetia/streamhasher.cc
 )
 
 set(_interface_headers
@@ -152,6 +154,7 @@ set(_interface_headers
     include/goetia/storage/storage.hh
     include/goetia/storage/storage_types.hh
     include/goetia/traversal/unitig_walker.hh
+    include/goetia/streamhasher.hh
 )
 
 set(_data

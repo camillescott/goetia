@@ -16,6 +16,7 @@ from goetia.cli.solid_filter import SolidFilterRunner
 from goetia.cli.sourmash_stream import SourmashRunner
 from goetia.cli.draff_stream import DraffRunner
 from goetia.cli.merge_paired import PairedMergeRunner
+from goetia.cli.streamhasher import StreamHasherRunner
 
 
 def about(func):
@@ -78,6 +79,10 @@ def main():
     merge_split_parser = utils_commands.add_parser('merge-paired')
     merge_split_command = PairedMergeRunner(merge_split_parser)
     merge_split_parser.set_defaults(func=about(merge_split_command.run))
+
+    streamhasher_parser = utils_commands.add_parser('hash-stream')
+    streamhasher_command = StreamHasherRunner(streamhasher_parser)
+    streamhasher_parser.set_defaults(func=about(streamhasher_command.run))
 
     # run the command
     args = parser.parse_args()

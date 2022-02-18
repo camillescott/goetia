@@ -15,8 +15,8 @@ from goetia.utils import Counter
 
 class StatusOutput:
 
-    def __init__(self, names, term=None, file=sys.stderr):
-        self.names = names
+    def __init__(self, names=None, term=None, file=sys.stderr):
+        self.names = [] if names is None else names
         self.file = file
         self.term = term or blessings.Terminal()
 

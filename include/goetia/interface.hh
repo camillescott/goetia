@@ -74,6 +74,8 @@
 
 #include "goetia/benchmarks/bench_storage.hh"
 
+#include "goetia/streamhasher.hh"
+
 #include <set>
 
 #define STLTYPES_EXPLICIT_INSTANTIATION_DECL(STLTYPE, TTYPE)                      \
