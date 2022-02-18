@@ -238,7 +238,8 @@ class AsyncSequenceProcessor:
                                             sequence=n_seqs))
 
             try:
-                for (n_seqs, stream_time, n_skipped), _, interval_elapsed_time in \
+                for (n_seqs, stream_time, n_skipped), \
+                    interval_start_time, interval_elapsed_time in \
                     time_iterable(self.processor.chunked_process(*sample)):
                     
                     if self.state is RunState.STOP_SATURATED:
@@ -260,6 +261,7 @@ class AsyncSequenceProcessor:
                                                seconds_elapsed_interval=interval_elapsed_time,
                                                seconds_elapsed_sample=time.perf_counter() - sample_start_time,
                                                seconds_elapsed_total=time.perf_counter() - worker_start_time,
+                                               start_time_seconds=interval_start_time,
                                                file_names=sample))
 
                 self.processed.add(tuple(sample))

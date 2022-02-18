@@ -59,7 +59,7 @@ def pythonize_goetia(klass, name):
             def wrapped(W, K, ukhs=None, storage_args=None):
                 if ukhs is None:
                     ukhs = klass.ukhs_type.load(W, K)
-                if storage_args is None:
+                if (storage_args is None) or (len(storage_args) == 0):
                     sig = build_func(W, K, ukhs.__smartptr__())
                 else:
                     params = klass.storage_type.make_params(*storage_args)

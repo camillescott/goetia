@@ -17,6 +17,7 @@ from goetia import __version__
 from goetia.cli.args import get_output_interval_args
 from goetia.cli.runner import CommandRunner
 from goetia.cli.signature_frame import SignatureStreamFrame
+from goetia.cli.status import StatusOutput
 from goetia.messages import (
     DistanceCalc,
     Error,
@@ -81,44 +82,12 @@ class SignatureRunner(CommandRunner):
 
         super().__init__(parser, description=description)
 
-
-    class StatusOutput:
-
-        def __init__(self, term=None, file=sys.stderr):
-            self.file = file
-            self.term = term or blessings.Terminal()
-
-        def print(self, *args, **kwargs):
-            print(*args, **kwargs, file=self.file)
-
-        def start_sample(self, sample_name, file_names):
-            self.print(f'{self.term.italic}Begin sample: {self.term.normal}{sample_name}')
-            files = '\n'.join(['    ' + f for f in file_names])
-            self.print(f'{files}')
-
-            self.counter = Counter(0)
-            self.start_s = time.perf_counter()
-
-        def finish_sample(self):
-            elapsed_s = time.perf_counter() - self.start_s
-            self.print(f'    {self.term.italic}Finshed: {self.term.normal}{elapsed_s:0.4f}s')
-            self.counter = Counter(0)
-
-        def update(self, t, sequence_t, distance):
-            term = self.term
-            if self.counter != 0:
-                 self.print(term.move_up * 3, term.clear_eos, end='')
-            self.print(f'       {term.bold}distance: {term.normal}{distance}')
-            self.print(f'        {term.bold}sequence: {term.normal}{sequence_t:,}')
-            self.print(f'        {term.bold}k-mers:   {term.normal}{t:,}')
-            self.counter += 1
-
     def postprocess_args(self, args):
         if args.term_graph:
             self.term_graph = Namespace()
             self.term_graph.term = self.term  # type: ignore
         else:
-            self.status = self.StatusOutput(term=self.term)
+            self.status = StatusOutput(['distance'], term=self.term)
 
         if args.save_stream and not args.save_sig:
             print('--save-stream requires --save-sig', file=sys.stderr)
@@ -174,7 +143,10 @@ class SignatureRunner(CommandRunner):
                                        distance=distance,
                                        stat=stat,
                                        stat_type=runner.cutoff.name,
-                                       file_names=msg.file_names)
+                                       file_names=msg.file_names,
+                                       seconds_elapsed_total=msg.seconds_elapsed_total,
+                                       seconds_elapsed_sample=msg.seconds_elapsed_sample,
+                                       seconds_elapsed_interval=time.perf_counter()-msg.start_time_seconds)
                 events_q.put(out_msg)
 
             if cutoff_reached and args.saturate:
@@ -288,14 +260,17 @@ class SignatureRunner(CommandRunner):
             lambda msg, status: status.start_sample(msg.sample_name, msg.file_names),
             self.status
         )
+
         self.worker_listener.on_message(
             SampleFinished,
-            lambda msg, status: status.finish_sample(),
+            lambda msg, status: status.finish_sample(msg.seconds_elapsed_sample),
             self.status
         )
+
         self.events_listener.on_message(
             DistanceCalc,
-            lambda msg, status: status.update(msg.t, msg.sequence, msg.distance),
-            self.status
+            lambda msg, status: \
+                status.update(msg.t, msg.sequence, msg.seconds_elapsed_interval, msg.distance),
+            self.status,
         )
 
