@@ -16,6 +16,7 @@ from goetia.cdbg import (compute_connected_component_callback,
 from goetia.dbg import get_graph_args, process_graph_args
 from goetia.parsing import get_fastx_args, iter_fastx_inputs
 from goetia.processors import (AsyncSequenceProcessor,
+                               AsyncJSONStreamWriter,
                                every_n_intervals,
                                every_exp_intervals,
                                every_fib_intervals)
@@ -157,11 +158,11 @@ class cDBGRunner(CommandRunner):
         self.to_close = []
 
         if args.track_cdbg_metrics:
+            self.metrics_stream = AsyncJSONStreamWriter(args.track_cdbg_metrics)
             self.worker_listener.on_message(Interval,
                                             write_cdbg_metrics_callback,
                                             self.compactor,
-                                            args.track_cdbg_metrics)
-            self.to_close.append(args.track_cdbg_metrics)
+                                            self.metrics_stream)
 
         if args.track_unitig_bp:
             if args.unitig_bp_bins is None:
@@ -169,15 +170,15 @@ class cDBGRunner(CommandRunner):
             else:
                 bins = args.unitig_bp_bins
             
+            self.unitig_bp_stream = AsyncJSONStreamWriter(args.track_unitig_bp)
             self.worker_listener.on_message(Interval,
                                             every_n_intervals(compute_unitig_fragmentation_callback,
                                                               n=args.unitig_bp_tick),
                                             self.cdbg_t,
                                             self.compactor.cdbg,
-                                            args.track_unitig_bp,
+                                            self.unitig_bp_stream,
                                             bins,
                                             verbose=args.verbose)
-            self.to_close.append(args.track_unitig_bp)
 
         if args.track_cdbg_components:
             comp_callback = None
@@ -188,14 +189,15 @@ class cDBGRunner(CommandRunner):
             else:
                 comp_callback = every_n_intervals(compute_connected_component_callback,
                                                   n=int(args.cdbg_components_tick))
+
+            self.components_stream = AsyncJSONStreamWriter(args.track_cdbg_components)
             self.worker_listener.on_message(Interval,
                                             comp_callback,
                                             self.cdbg_t,
                                             self.compactor.cdbg,
-                                            args.track_cdbg_components,
+                                            self.components_stream,
                                             args.component_sample_size,
                                             verbose=args.verbose)
-            self.to_close.append(args.track_cdbg_components)
 
         if args.save_cdbg:
             for cdbg_format in args.save_cdbg_format:
@@ -219,14 +221,6 @@ class cDBGRunner(CommandRunner):
                                             validate_cdbg_callback,
                                             self.compactor.cdbg,
                                             args.validate)
-
-        # Close all files when done
-        async def close_files(msg, files):
-            for file_name in files:
-                async with curio.aopen(file_name, 'a') as fp:
-                    await fp.write('\n]\n')
-
-        self.worker_listener.on_messages([SampleFinished, Error], close_files, self.to_close)
 
         #
         # Regular diagnostics output

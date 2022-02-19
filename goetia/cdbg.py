@@ -37,7 +37,7 @@ def quick_compactor(K):
 async def compute_connected_component_callback(msg,
                                                cdbg_type,
                                                cdbg,
-                                               out_file,
+                                               out_stream,
                                                sample_size,
                                                verbose=None):
 
@@ -60,18 +60,13 @@ async def compute_connected_component_callback(msg,
         verbose.message(f'Found {n_comps} components, minimum size {min_comp}, '\
                         f'maximum size {max_comp} (took {elapsed}).')
 
-    async with curio.aopen(out_file, 'a') as fp:
-        if await fp.tell() != 0:
-            await fp.write(',\n')
-        else:
-            await fp.write('[\n')
-        await fp.write(json.dumps(data))
+    await out_stream.write(data)
 
 
 async def compute_unitig_fragmentation_callback(msg,
                                                 cdbg_type,
                                                 cdbg,
-                                                out_file,
+                                                out_stream,
                                                 bins,
                                                 verbose=None):
 
@@ -90,17 +85,12 @@ async def compute_unitig_fragmentation_callback(msg,
     if verbose:
         verbose.message(f'Bin counts: {data}')
 
-    async with curio.aopen(out_file, 'a') as fp:
-        if await fp.tell() != 0:
-            await fp.write(',\n')
-        else:
-            await fp.write('[\n')
-        await fp.write(json.dumps(data))
+    await out_stream.write(data)
 
 
 async def write_cdbg_metrics_callback(msg,
                                       compactor,
-                                      out_file,
+                                      out_stream,
                                       verbose=None):
 
     report = compactor.get_report()
@@ -127,14 +117,8 @@ async def write_cdbg_metrics_callback(msg,
             'n_circular_merges': report.n_circular_merges,
             'n_unique_kmers': report.n_unique,
             'estimated_fp': report.estimated_fp}
-    
 
-    async with curio.aopen(out_file, 'a') as fp:
-        if await fp.tell() != 0:
-            await fp.write(',\n')
-        else:
-            await fp.write('[\n')
-        await fp.write(json.dumps(data))
+    await out_stream.write(data)
 
 
 async def write_cdbg_callback(msg,
