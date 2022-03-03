@@ -6,6 +6,7 @@
 # Author : Camille Scott <camille.scott.w@gmail.com>
 # Date   : 05.11.2021
 
+import atexit
 from collections import OrderedDict, defaultdict
 from enum import Enum, unique as unique_enum
 import functools
@@ -409,10 +410,10 @@ def every_exp_intervals(func, r=.08):
     return wrapped
 
 
-class AsyncJSONStreamWriter:
+class JSONStreamWriter:
 
     def __init__(self, filename: str):
-        '''Asynchronously write JSON data to a file.
+        '''Stream-write JSON data to a file.
 
         Writes a stream of JSON objects to a file. The top-level
         element is always a list; list items can be any valid JSON
@@ -427,9 +428,52 @@ class AsyncJSONStreamWriter:
         with open(self.filename, 'w') as fp:
             fp.write('[')
 
-    def __del__(self):
+        atexit.register(self.close)
+
+
+    def close(self):
         with open(self.filename, 'a') as fp:
             fp.write(']')
+        atexit.unregister(self.close)
+
+    @staticmethod
+    def _dumps_data(data: Any, expand: bool = True):
+        buf = ''
+        if isinstance(data, str):
+            # assume already valid JSON object
+            buf = data
+        elif expand and is_iterable(data) and not isinstance(data, dict):
+            # extend the top level list rather than
+            # adding the iterable as an item
+            buf = ','.join((json.dumps(item) for item in data))
+        else:
+            buf = json.dumps(data)
+
+        return buf
+
+    def write(self, data: Any, expand: bool = True):
+        '''Write the given data is a JSON element to the stream.
+        Strings will be written assuming they are already valid JSON;
+        this could result in malformed JSON, so care must be taken.
+        Other data types are passed to json.dumps for serialization.
+
+        Args:
+            data: Data to coerce to JSON.
+            expand: If True, iterables will be expanded into the stream
+                    rather than appended as a single item.
+        '''
+
+        buf = ''
+
+        with open(self.filename, 'a') as fp:
+            if self.n_writes != 0:
+                fp.write(',\n')
+            fp.write(self._dumps_data(data, expand=expand))
+
+        self.n_writes += 1
+
+
+class AsyncJSONStreamWriter(JSONStreamWriter):
 
     async def write(self, data: Any, expand: bool = True):
         '''Write the given data is a JSON element to the stream.
@@ -448,16 +492,7 @@ class AsyncJSONStreamWriter:
         async with curio.aopen(self.filename, 'a') as fp:
             if self.n_writes != 0:
                 await fp.write(',\n')
-            if isinstance(data, str):
-                # assume already valid JSON object
-                buf = data
-            elif expand and is_iterable(data) and not isinstance(data, dict):
-                # extend the top level list rather than
-                # adding the iterable as an item
-                buf = ','.join((json.dumps(item) for item in data))
-            else:
-                buf = json.dumps(data)
-            await fp.write(buf)
+            await fp.write(self._dumps_data(data, expand=expand))
 
         self.n_writes += 1
 
