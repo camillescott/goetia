@@ -210,7 +210,8 @@ public:
     }
 
     double estimated_fp() {
-        double fp = n_occupied() / _tablesizes[0];
+        double fp = static_cast<double>(n_occupied()) / 
+                    static_cast<double>(_tablesizes[0]);
         fp = pow(fp, n_tables());
         return fp;
     }
