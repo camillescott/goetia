@@ -111,7 +111,7 @@ def load_draff_stream(fp):
         fp (file): File handle to parse from.
     '''
 
-    backend = ijson.get_backend('yajl2_c')
+    backend = ijson.get_backend('yajl2')
     for signature in backend.items(fp, 'item'):
         yield DraffSignature.from_dict(signature)
 
@@ -124,7 +124,7 @@ def load_sourmash_stream(fp):
         fp (file): File handle to parse from.
     '''
 
-    backend = ijson.get_backend('yajl2_c')
+    backend = ijson.get_backend('yajl2')
     for signature in backend.items(fp, 'item'):
         data = json.dumps([signature], cls=DecimalEncoder).encode('utf-8')
 
