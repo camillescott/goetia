@@ -9,7 +9,7 @@ dependencies:
     - ijson
     - ninja
     - pytest
-    - numpy
+    - numpy>=1.21
     - scipy
     - mashumaro>=3
     - pyyaml

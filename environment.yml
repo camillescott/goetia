@@ -9,4 +9,4 @@ dependencies:
     - ficus
     - sourmash=3.4.0
     - goetia
-    - numpy
+    - numpy>=1.21
