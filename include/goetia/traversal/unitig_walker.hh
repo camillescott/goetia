@@ -981,20 +981,20 @@ public:
         return walk(seed, func);
     }
 
-    std::vector<std::string> extract_unitigs(const std::string& sequence,
-                                             std::vector<hash_type>& hashes) {
+    auto extract_unitigs(const std::string& sequence,
+                                             std::vector<hash_type>& hashes)
+    -> std::vector<std::pair<Walk<DIR_LEFT>, Walk<DIR_RIGHT>>> {
         
 
-        std::vector<std::string> unitigs;
+        std::vector<std::pair<Walk<DIR_LEFT>, Walk<DIR_RIGHT>>> unitigs;
         null_walk_func_t f;
         std::set<value_type> seq_seen;
         for (size_t i = 0; i < sequence.size() - this->K + 1; ++i) {
             if (seq_seen.count(hashes[i].value())) {
                 continue;
             }
-            auto [lwalk, rwalk] = walk(sequence.substr(i, this->K), f);
+            unitigs.emplace_back(walk(sequence.substr(i, this->K), f));
             seq_seen.insert(this->seen.begin(), this->seen.end());
-            unitigs.push_back(lwalk.glue(rwalk));
         }
 
         return unitigs;
