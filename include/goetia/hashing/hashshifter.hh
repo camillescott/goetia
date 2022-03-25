@@ -30,6 +30,15 @@
 namespace goetia {
 
 
+class HashShifterException : public GoetiaException {
+public:
+    explicit HashShifterException(const std::string& msg = "HashShifter exception.")
+        : GoetiaException(msg)
+    {
+    }
+};
+
+
 class UninitializedShifterException : public GoetiaException {
 public:
     explicit UninitializedShifterException(const std::string& msg = "Shifter used without hash_base being called.")
@@ -122,26 +131,23 @@ public:
     }
 
     hash_type shift_right(const char& out, const char& in) {
-        //if (!initialized) {
-        //    throw UninitializedShifterException();
-        //}
-        assert(initialized);
+        if (!initialized) {
+            throw UninitializedShifterException();
+        }
         return this->shift_right_impl(out, in);
     }
 
     hash_type shift_left(const char& in, const char& out) {
-        //if (!initialized) {
-        //    throw UninitializedShifterException();
-        //}
-        assert(initialized);
+        if (!initialized) {
+            throw UninitializedShifterException();
+        }
         return this->shift_left_impl(in, out);
     }
 
     hash_type hash_base(const std::string& sequence) {
-        //if (sequence.length() < K) {
-        //    throw SequenceLengthException("HashShifter::hash_base: Sequence must at least length K");
-        //}
-        assert(sequence.length() >= this->K);
+        if (sequence.length() < K) {
+            throw InvalidSequenceException("HashShifter::hash_base: Sequence must at least length K");
+        }
 
         hash_type h = hash_base(sequence.c_str());
         return h;
@@ -149,10 +155,9 @@ public:
 
     template<class It>
     hash_type hash_base(It begin, It end) {
-        //if (std::distance(begin, end) != K) {
-        //    throw SequenceLengthException("HashShifter::hash_base: Iterator distance must be length K");
-        //}
-        assert(std::distance(begin, end) == K);
+        if (std::distance(begin, end) != K) {
+            throw InvalidSequenceException("HashShifter::hash_base: Iterator distance must be length K");
+        }
         hash_type h = this->hash_base_impl(begin, end);
         initialized = true;
         return h;
@@ -174,9 +179,8 @@ public:
                           const uint16_t K,
                           ExtraArgs&&... args) {
         if (sequence.length() < K) {
-            throw SequenceLengthException("HashShifter::hash: Sequence must at least length K");
+            throw InvalidSequenceException("HashShifter::hash: Sequence must at least length K");
         }
-        //std::cout << "static HashShifter::hash" << std::endl;
         return hash(sequence.c_str(), K, std::forward<ExtraArgs>(args)...);
     }
 

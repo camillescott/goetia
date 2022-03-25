@@ -27,5 +27,13 @@ public:
 
 };
 
+
+class InvalidSequenceException: public GoetiaException {
+public:
+    explicit InvalidSequenceException(const std::string& msg = "Got invalid sequence (too short or malformed).")
+        : GoetiaException(msg) { }
+
+};
+
 }
 #endif

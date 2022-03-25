@@ -248,7 +248,9 @@ protected:
         //if (window_unikmers.size() == 0) {
         //    throw GoetiaException("Window should contain unikmer.");
         //}
-        assert(window_unikmers.size() != 0);
+        if (window_unikmers.size() ==  0) {
+            throw HashShifterException("No unikmers in window!");
+        }
         return *std::min_element(std::begin(window_unikmers),
                                  std::end(window_unikmers));
     }
