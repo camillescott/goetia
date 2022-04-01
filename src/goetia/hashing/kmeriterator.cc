@@ -17,4 +17,22 @@ namespace goetia {
     template class KmerIterator<FwdUnikmerShifter>;
     template class KmerIterator<CanUnikmerShifter>;
 
+
+    void test_kmer_iterator() {
+        std::string seq = "AAACCATTCTATATCTCTCTTAAAAACTTCTAATA";
+        uint16_t K = 21;
+
+        std::cout << "kmer_iterator" << std::endl;
+        for (const auto& h : hash_sequence<FwdLemireShifter>(seq, 21)) {
+            std::cout << h << " ";
+        } std::cout << std::endl;
+
+        std::cout << "legacy KmerIterator" << std::endl;
+        KmerIterator<FwdLemireShifter> it(seq, K);
+        while (!it.done()) {
+            auto h = it.next();
+            std::cout << h << " ";
+        } std::cout << std::endl;
+    }
+
 }

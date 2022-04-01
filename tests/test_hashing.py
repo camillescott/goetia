@@ -284,7 +284,6 @@ def test_kmeriterator_from_proto(hasher, ksize, length, random_sequence):
     assert act == exp
 
 
-
 @pytest.mark.parametrize('hasher_type', [FwdLemireShifter, CanLemireShifter], indirect=True)
 def test_kmeriterator_hashextender(hasher, ksize, length, random_sequence):
     s = random_sequence()
@@ -299,6 +298,22 @@ def test_kmeriterator_hashextender(hasher, ksize, length, random_sequence):
         act.append(h.value)
     
     assert act == exp
+
+
+@pytest.mark.parametrize('hasher_type', [FwdLemireShifter, CanLemireShifter], indirect=True)
+def test_stl_compat_kmer_iterator(hasher, ksize, length, random_sequence):
+    s = random_sequence()
+
+    exp = [hasher.hash(kmer).value for kmer in kmers(s, ksize)]
+
+    act = []
+    for h in libgoetia.hash_sequence[type(hasher)](s, ksize):
+        act.append(h.value)
+
+    print('\n', exp[:20], '\n', act[:20])
+
+    assert act == exp
+
 
 @using(length=30, ksize=27)
 def test_shift_right_left_right(hasher, ksize, length, random_sequence):

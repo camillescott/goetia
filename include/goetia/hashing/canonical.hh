@@ -53,6 +53,10 @@ struct Hash {
         return hash;
     }
 
+    const bool is_null() const {
+        return value() == std::numeric_limits<value_type>::max();
+    }
+
     operator value_type() const {
         return value();
     }
@@ -123,6 +127,10 @@ struct Canonical {
 
     const value_type value() const {
         return fw_hash < rc_hash ? fw_hash : rc_hash;
+    }
+
+    const bool is_null() const {
+        return (fw_hash == std::numeric_limits<value_type>::max()) && (fw_hash == rc_hash);
     }
 
     operator value_type() const {
@@ -211,6 +219,10 @@ struct Wmer<HashType<ValueType>, MinimizerType> {
         return hash.value();
     }
 
+    const bool is_null() const {
+        return hash.is_null();
+    }
+
     operator value_type() const {
         return hash.value();
     }
@@ -280,7 +292,7 @@ struct Kmer<HashType<ValueType, Extras...>> {
     {
     }
 
-	Kmer()
+	  Kmer()
         : hash(),
           kmer(0, ' ')
     {
@@ -294,6 +306,10 @@ struct Kmer<HashType<ValueType, Extras...>> {
 
     const value_type value() const {
         return hash.value();
+    }
+
+    const bool is_null() const {
+        return hash.is_null();
     }
 
     operator value_type() const {
@@ -385,6 +401,10 @@ struct Shift<HashType<ValueType, Extras...>, Direction> {
 
     const value_type value() const {
         return hash.value();
+    }
+
+    const bool is_null() const {
+        return hash.is_null();
     }
 
     operator value_type() const {
