@@ -69,9 +69,9 @@ public:
     inline hash_type hash_base_impl(const char * sequence) {
         this->hasher.reset();
         for (uint16_t i = 0; i < K; ++i) {
-            //if (sequence[i] == '\0') {
-            //    throw SequenceLengthException("Encountered null terminator in k-mer!");
-            //}
+            if (sequence[i] == '\0') {
+                throw InvalidSequenceException("Encountered null terminator in k-mer!");
+            }
             assert(sequence[i] != '\0');
             this->hasher.eat(sequence[i]);
         }
@@ -185,9 +185,9 @@ LemireShifterPolicy<Canonical<uint64_t>>
     rc_hasher.reset();
 
     for (uint16_t i = 0; i < K; ++i) {
-        //if (sequence[i] == '\0') {
-        //    throw SequenceLengthException("Encountered null terminator in k-mer!");
-        //}
+        if (sequence[i] == '\0') {
+            throw InvalidSequenceException("Encountered null terminator in k-mer!");
+        }
         assert(sequence[i] != '\0');
         hasher.eat(sequence[i]);
         rc_hasher.eat(alphabet::complement(sequence[K - i - 1]));
