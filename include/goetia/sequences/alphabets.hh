@@ -69,6 +69,61 @@ struct Alphabet {
             } 
         }
     }
+
+    template <typename Iterable>
+    static const bool is_valid(const Iterable& sequence) {
+        for (const auto& symbol : sequence) {
+            if (validate(symbol) == '\0') {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    static std::vector<std::string_view> find_valid_windows(const std::string_view sequence,
+                                                            size_t min_size = 1) {
+
+        std::vector<std::string_view> windows;
+        int prev_invalid = -1;
+
+        for (const auto [i, symbol] : enumerate(sequence)) {
+            if (validate(symbol) == '\0') {
+                if ((i - prev_invalid) > min_size) {
+                    windows.push_back(sequence.substr(prev_invalid + 1, i - prev_invalid - 1));
+                }
+                prev_invalid = i;
+            }
+        }
+        if ((sequence.length() - prev_invalid) > min_size) {
+            windows.push_back(sequence.substr(prev_invalid + 1, min_size));
+        }
+
+        return windows;
+    }
+
+    static std::vector<std::string_view> find_and_sanitize_valid_windows(std::string& sequence,
+                                                                         size_t min_size = 1) {
+
+        std::vector<std::string_view> windows;
+        int prev_invalid = -1;
+
+        for (const auto [i, symbol] : enumerate(sequence)) {
+            auto validated = validate(symbol);
+            if (validated == '\0') {
+                if ((i - prev_invalid) > min_size) {
+                    windows.emplace_back(sequence.c_str() + prev_invalid + 1, i - prev_invalid - 1);
+                }
+                prev_invalid = i;
+            } else {
+                sequence[i] = validated;
+            }
+        }
+        if ((sequence.length() - prev_invalid) > min_size) {
+            windows.emplace_back(sequence.c_str() + prev_invalid + 1, sequence.length() - prev_invalid - 1);
+        }
+
+        return windows;
+    }
     
     static const char complement(const char c) {
         return Derived::_complement(c);
