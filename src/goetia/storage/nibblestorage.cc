@@ -50,7 +50,9 @@
 #include <sstream> // IWYU pragma: keep
 #include <fstream>
 #include <iostream>
+#include <stdexcept>
 
+#include "goetia/errors.hh"
 #include "goetia/goetia.hh"
 
 using namespace std;
@@ -133,7 +135,7 @@ void
 NibbleStorage::save(std::string outfilename, uint16_t ksize)
 {
     if (!_counts[0]) {
-        throw GoetiaException();
+        throw SerializationError("No value for counts.");
     }
 
     unsigned int save_ksize = ksize;
@@ -180,11 +182,11 @@ NibbleStorage::load(std::string infilename, uint16_t& ksize)
         } else {
             err = "Unknown error in opening file: " + infilename;
         }
-        throw GoetiaFileException(err + " " + strerror(errno));
+        throw DeserializationError(err + " " + strerror(errno));
     } catch (const std::exception &e) {
         std::string err = "Unknown error opening file: " + infilename + " "
                           + strerror(errno);
-        throw GoetiaFileException(err);
+        throw DeserializationError(err);
     }
 
     if (_counts) {
@@ -215,18 +217,18 @@ NibbleStorage::load(std::string infilename, uint16_t& ksize)
                 err << std::hex << (int) signature[i];
             }
             err << " Should be: " << SAVED_SIGNATURE;
-            throw GoetiaFileException(err.str());
+            throw DeserializationError(err.str());
         } else if (!(version == SAVED_FORMAT_VERSION)) {
             std::ostringstream err;
             err << "Incorrect file format version " << (int) version
                 << " while reading k-mer count file from " << infilename
                 << "; should be " << (int) SAVED_FORMAT_VERSION;
-            throw GoetiaFileException(err.str());
+            throw DeserializationError(err.str());
         } else if (!(ht_type == SAVED_SMALLCOUNT)) {
             std::ostringstream err;
             err << "Incorrect file format type " << (int) ht_type
                 << " while reading k-mer count file from " << infilename;
-            throw GoetiaFileException(err.str());
+            throw DeserializationError(err.str());
         }
 
         infile.read((char *) &save_ksize, sizeof(save_ksize));
@@ -269,11 +271,11 @@ NibbleStorage::load(std::string infilename, uint16_t& ksize)
             err = "Error reading from k-mer count file: " + infilename + " "
                   + strerror(errno);
         }
-        throw GoetiaFileException(err);
+        throw DeserializationError(err);
     } catch (const std::exception &e) {
         std::string err = "Error reading from k-mer count file: " + infilename + " "
                           + strerror(errno);
-        throw GoetiaFileException(err);
+        throw DeserializationError(err);
     }
 }
 

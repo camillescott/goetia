@@ -30,6 +30,7 @@
 #pragma GCC diagnostic pop
 
 #include "goetia/goetia.hh"
+#include "goetia/errors.hh"
 #include "goetia/metrics.hh"
 #include "goetia/traversal/unitig_walker.hh"
 #include "goetia/hashing/kmeriterator.hh"
@@ -625,7 +626,7 @@ public:
                     write_gfa1(out);
                     break;
                 default:
-                    throw GoetiaException("Invalid cDBG format.");
+                    throw std::invalid_argument("Invalid cDBG format.");
             };
         }
 
@@ -733,8 +734,10 @@ extern template class goetia::cDBG<goetia::dBG<goetia::BitStorage, goetia::CanLe
 extern template class goetia::cDBG<goetia::dBG<goetia::PHMapStorage, goetia::FwdLemireShifter>>;
 extern template class goetia::cDBG<goetia::dBG<goetia::PHMapStorage, goetia::CanLemireShifter>>;
 
+/*
 extern template class goetia::cDBG<goetia::dBG<goetia::SparseppSetStorage, goetia::FwdLemireShifter>>;
 extern template class goetia::cDBG<goetia::dBG<goetia::SparseppSetStorage, goetia::CanLemireShifter>>;
+*/
 
 }
 

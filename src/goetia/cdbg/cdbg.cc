@@ -826,12 +826,15 @@ cDBG<GraphType<StorageType, ShifterType>>
 template class cDBG<goetia::dBG<BitStorage, FwdLemireShifter>>;
 template class cDBG<goetia::dBG<BitStorage, CanLemireShifter>>;
 
+/*
 template class cDBG<goetia::dBG<SparseppSetStorage, FwdLemireShifter>>;
 template class cDBG<goetia::dBG<SparseppSetStorage, CanLemireShifter>>;
+*/
 
 template class cDBG<goetia::dBG<PHMapStorage, FwdLemireShifter>>;
 template class cDBG<goetia::dBG<PHMapStorage, CanLemireShifter>>;
 
+/*
 template class cDBG<goetia::dBG<BTreeStorage, FwdLemireShifter>>;
 template class cDBG<goetia::dBG<BTreeStorage, CanLemireShifter>>;
 
@@ -843,5 +846,5 @@ template class cDBG<goetia::dBG<NibbleStorage, CanLemireShifter>>;
 
 template class cDBG<goetia::dBG<QFStorage, FwdLemireShifter>>;
 template class cDBG<goetia::dBG<QFStorage, CanLemireShifter>>;
-
+*/
 }

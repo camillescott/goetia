@@ -11,8 +11,8 @@ import random
 from goetia.hashing import Canonical, StrandAware
 from goetia.parsing import read_fastx
 from goetia.sketches import SourmashSketch, UnikmerSketch
-from goetia.storage import SparseppSetStorage
-from goetia.storage import HLLStorage
+from goetia.storage import PHMapStorage
+#from goetia.storage import HLLStorage
 
 from .utils import *
 
@@ -62,7 +62,7 @@ def test_sourmash_scaled(datadir, ksize):
 def test_draff_to_numpy(datadir):
     rfile = datadir('random-20-a.fa')
 
-    sketch_t = UnikmerSketch[SparseppSetStorage, StrandAware]
+    sketch_t = UnikmerSketch[PHMapStorage, StrandAware]
     sketch = sketch_t.Sketch.build(31, 7)
     processor = sketch_t.Processor.build(sketch)
     processor.process(rfile)
@@ -77,6 +77,7 @@ def test_draff_to_numpy(datadir):
         assert np_val == py_val
 
 
+'''
 def test_hllcounter():
     ints = set(np.random.randint(0, 100000, 100000))
     e = 0.01
@@ -94,6 +95,7 @@ def test_hllcounter():
     print(est)
 
     assert (act - margin) < est < (act + margin)
+'''
 
 
 def test_sourmash_stream(tmpdir, datadir):

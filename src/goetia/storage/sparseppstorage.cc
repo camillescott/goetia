@@ -6,6 +6,7 @@
  * Date   : 30.08.2019
  */
 
+#include "goetia/errors.hh"
 #include "goetia/goetia.hh"
 #include "goetia/storage/sparseppstorage.hh"
 #include "goetia/storage/sparsepp/spp.h"
@@ -79,14 +80,14 @@ SparseppSetStorage::deserialize(std::ifstream& in) {
             << name
             << ", should be "
             << Tagged<SparseppSetStorage>::NAME;
-        throw GoetiaFileException(err.str());
+        throw DeserializationError(err.str());
     } else if (version != Tagged<SparseppSetStorage>::OBJECT_ABI_VERSION) {
         std::ostringstream err;
         err << "File has wrong binary version: found "
             << std::to_string(version)
             << ", expected "
             << std::to_string(Tagged<SparseppSetStorage>::OBJECT_ABI_VERSION);
-        throw GoetiaFileException(err.str());
+        throw DeserializationError(err.str());
 
     }
 

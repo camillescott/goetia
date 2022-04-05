@@ -55,6 +55,7 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+#include <stdexcept>
 
 #include "goetia/goetia.hh"
 
@@ -129,7 +130,7 @@ public:
     void set_use_bigcount(bool b)
     {
         if (!_supports_bigcount) {
-            throw GoetiaException("bigcount is not supported for this storage.");
+            throw std::invalid_argument("bigcount is not supported for this storage.");
         }
         _use_bigcount = b;
     }

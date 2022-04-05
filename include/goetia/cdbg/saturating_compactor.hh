@@ -9,9 +9,9 @@
 #ifndef GOETIA_SATURATING_CPTOR
 #define GOETIA_SATURATING_CPTOR
 
+#include "goetia/errors.hh"
 #include "goetia/processors.hh"
 #include "goetia/parsing/readers.hh"
-#include "goetia/sequences/exceptions.hh"
 
 namespace goetia {
 
@@ -54,13 +54,13 @@ struct SaturatingCompactor {
             try {
                 compactor->insert_sequence(read.sequence);
                 signature->insert_sequence(read.sequence);
-            } catch (InvalidCharacterException &e) {
+            } catch (InvalidSequence& e) {
                 std::cerr << "WARNING: Bad sequence encountered at "
                           << this->_n_reads << ": "
                           << read.sequence << ", exception was "
                           << e.what() << std::endl;
                 return 0;
-            } catch (SequenceLengthException &e) {
+            } catch (SequenceTooShort& e) {
                 std::cerr << "NOTE: Skipped sequence that was too short: read "
                           << this->_n_reads << " with sequence "
                           << read.sequence 

@@ -11,13 +11,11 @@ import math
 from goetia import libgoetia
 from goetia.utils import check_trait
 
-typenames = [(t, t.__name__.replace(' ', '')) for t in [libgoetia.SparseppSetStorage,
-                                                        libgoetia.PHMapStorage,
+typenames = [(t, t.__name__.replace(' ', '')) for t in [libgoetia.PHMapStorage,
                                                         libgoetia.BitStorage,
                                                         libgoetia.ByteStorage,
                                                         libgoetia.NibbleStorage,
-                                                        libgoetia.QFStorage,
-                                                        libgoetia.BTreeStorage]]
+                                                        libgoetia.QFStorage]]
 
 types = [_type for _type, _name in typenames]
 
@@ -29,7 +27,7 @@ count_t = libgoetia.count_t
 StorageTraits = libgoetia.StorageTraits
 
 
-def get_storage_args(parser, default='SparseppSetStorage',
+def get_storage_args(parser, default='PHMapStorage',
                      group_name='storage'):
     if 'storage' in [g.title for g in parser._action_groups]:
         return None

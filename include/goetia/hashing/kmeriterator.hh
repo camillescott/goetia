@@ -23,7 +23,7 @@
 
 #include "goetia/goetia.hh"
 #include "goetia/hashing/hashshifter.hh"
-#include "goetia/sequences/exceptions.hh"
+#include "goetia/errors.hh"
 
 #include "goetia/hashing/shifter_types.hh"
 
@@ -57,7 +57,7 @@ public:
     {
 
         if (_seq.length() < K) {
-            throw SequenceLengthException("Sequence must have length >= K");
+            throw SequenceTooShort(seq);
         }
         shifter = new ShifterType(seq, K, std::forward<Args>(args)...);
     }
@@ -72,7 +72,7 @@ public:
           shifter(shifter) 
     {
         if (_seq.length() < K) {
-            throw SequenceLengthException("Sequence must have length >= K");
+            throw SequenceTooShort(seq);
         }
         shifter->hash_base(_seq);
     }
@@ -87,7 +87,7 @@ public:
     {
 
         if (_seq.length() < K) {
-            throw SequenceLengthException("Sequence must have length >= K");
+            throw SequenceTooShort(seq);
         }
         shifter = new ShifterType(shifter_proto);
         shifter->hash_base(_seq);
@@ -157,7 +157,7 @@ public:
 
 template <typename ShifterType>
 struct kmer_iterator {
-    using value_type         = typename ShifterType::hash_type;
+    using value_type        = typename ShifterType::hash_type;
     using iterator_category = std::input_iterator_tag;
     using difference_type   = int64_t;
     using reference         = const value_type;

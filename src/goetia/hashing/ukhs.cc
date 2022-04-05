@@ -7,6 +7,7 @@
  */
 
 #include <string>
+#include <stdexcept>
 
 #include "goetia/hashing/rollinghashshifter.hh"
 #include "goetia/hashing/hashshifter.hh"
@@ -22,7 +23,7 @@ namespace goetia {
           W (W)
     {
         if (unikmers.front().size() != K) {
-            throw GoetiaException("K does not match k-mer size from provided UKHS");
+            throw std::invalid_argument("K does not match k-mer size from provided UKHS");
         }
         
         uint64_t pid = 0;

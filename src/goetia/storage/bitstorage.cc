@@ -51,13 +51,16 @@
  * Contact: khmer-project@idyll.org
  */
 
+#include "goetia/errors.hh"
 #include "goetia/storage/bitstorage.hh"
 
 #include <errno.h>
 #include <sstream> // IWYU pragma: keep
 #include <fstream>
 #include <iostream>
+#include <stdexcept>
 
+#include "goetia/errors.hh"
 #include "goetia/goetia.hh"
 #include "zlib.h"
 
@@ -104,7 +107,7 @@ void
 BitStorage::update_from(const BitStorage& other)
 {
     if (_tablesizes != other._tablesizes) {
-        throw GoetiaException("both nodegraphs must have same table sizes");
+        throw std::invalid_argument("both nodegraphs must have same table sizes");
     }
 
     byte_t tmp = 0;
@@ -152,7 +155,7 @@ void
 BitStorage::save(std::string outfilename, uint16_t ksize)
 {
     if (!_counts[0]) {
-        throw GoetiaException();
+        throw SerializationError("No value for counts.");
     }
 
     unsigned int save_ksize = ksize;
@@ -183,7 +186,7 @@ BitStorage::save(std::string outfilename, uint16_t ksize)
         outfile.write((const char *) _counts[i], tablebytes);
     }
     if (outfile.fail()) {
-        throw GoetiaFileException(strerror(errno));
+        throw SerializationError(strerror(errno));
     }
     outfile.close();
 }
@@ -210,13 +213,13 @@ BitStorage::load(std::string infilename, uint16_t &ksize)
         } else {
             err = "Unknown error in opening file: " + infilename;
         }
-        throw GoetiaFileException(err);
+        throw DeserializationError(err);
     } catch (const std::exception &e) {
         // Catching std::exception is a stopgap for
         // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=66145
         std::string err = "Unknown error opening file: " + infilename + " "
                           + strerror(errno);
-        throw GoetiaFileException(err);
+        throw DeserializationError(err);
     }
 
     if (_counts) {
@@ -247,18 +250,18 @@ BitStorage::load(std::string infilename, uint16_t &ksize)
                 err << std::hex << (int) signature[i];
             }
             err << " Should be: " << SAVED_SIGNATURE;
-            throw GoetiaFileException(err.str());
+            throw DeserializationError(err.str());
         } else if (!(version == SAVED_FORMAT_VERSION)) {
             std::ostringstream err;
             err << "Incorrect file format version " << (int) version
                 << " while reading k-mer graph from " << infilename
                 << "; should be " << (int) SAVED_FORMAT_VERSION;
-            throw GoetiaFileException(err.str());
+            throw DeserializationError(err.str());
         } else if (!(ht_type == SAVED_HASHBITS)) {
             std::ostringstream err;
             err << "Incorrect file format type " << (int) ht_type
                 << " while reading k-mer graph from " << infilename;
-            throw GoetiaFileException(err.str());
+            throw DeserializationError(err.str());
         }
 
         infile.read((char *) &save_ksize, sizeof(save_ksize));
@@ -296,12 +299,12 @@ BitStorage::load(std::string infilename, uint16_t &ksize)
         } else {
             err = "Error reading from k-mer graph file: " + infilename;
         }
-        throw GoetiaFileException(err);
+        throw DeserializationError(err);
     } catch (const std::exception &e) {
         // Catching std::exception is a stopgap for
         // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=66145
         std::string err = "Unknown error opening file: " + infilename + " "
                           + strerror(errno);
-        throw GoetiaFileException(err);
+        throw DeserializationError(err);
     }
 }

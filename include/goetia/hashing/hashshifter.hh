@@ -20,32 +20,15 @@
 #include "goetia/goetia.hh"
 
 #include "goetia/sequences/alphabets.hh"
-#include "goetia/sequences/exceptions.hh"
 
 #include "goetia/meta.hh"
+#include "goetia/errors.hh"
+#include "goetia/nonstd/expected.hpp"
 
 #include "goetia/hashing/rollinghashshifter.hh"
 
 
 namespace goetia {
-
-
-class HashShifterException : public GoetiaException {
-public:
-    explicit HashShifterException(const std::string& msg = "HashShifter exception.")
-        : GoetiaException(msg)
-    {
-    }
-};
-
-
-class UninitializedShifterException : public GoetiaException {
-public:
-    explicit UninitializedShifterException(const std::string& msg = "Shifter used without hash_base being called.")
-        : GoetiaException(msg)
-    {
-    }
-};
 
 
 template<class ShifterType>
@@ -132,21 +115,21 @@ public:
 
     hash_type shift_right(const char& out, const char& in) {
         if (!initialized) {
-            throw UninitializedShifterException();
+            throw UninitializedShifter();
         }
         return this->shift_right_impl(out, in);
     }
 
     hash_type shift_left(const char& in, const char& out) {
         if (!initialized) {
-            throw UninitializedShifterException();
+            throw UninitializedShifter();
         }
         return this->shift_left_impl(in, out);
     }
 
     hash_type hash_base(const std::string& sequence) {
         if (sequence.length() < K) {
-            throw InvalidSequenceException("HashShifter::hash_base: Sequence must at least length K");
+            throw SequenceTooShort(sequence);
         }
 
         hash_type h = hash_base(sequence.c_str());
@@ -156,7 +139,7 @@ public:
     template<class It>
     hash_type hash_base(It begin, It end) {
         if (std::distance(begin, end) != K) {
-            throw InvalidSequenceException("HashShifter::hash_base: Iterator distance must be length K");
+            throw SequenceTooShort(std::string(begin, end));
         }
         hash_type h = this->hash_base_impl(begin, end);
         initialized = true;
@@ -179,7 +162,7 @@ public:
                           const uint16_t K,
                           ExtraArgs&&... args) {
         if (sequence.length() < K) {
-            throw InvalidSequenceException("HashShifter::hash: Sequence must at least length K");
+            throw SequenceTooShort(sequence);
         }
         return hash(sequence.c_str(), K, std::forward<ExtraArgs>(args)...);
     }

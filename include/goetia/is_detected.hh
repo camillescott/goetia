@@ -9,7 +9,6 @@
  *
  */
 
-
 #ifndef GOETIA_IS_DETECTED_HH
 #define GOETIA_IS_DETECTED_HH
 

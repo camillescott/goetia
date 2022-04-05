@@ -60,6 +60,7 @@
 #include "goetia/goetia.hh"
 #include "goetia/parsing/parsing.hh"
 #include "goetia/sequences/alphabets.hh"
+#include "goetia/errors.hh"
 
 
 extern "C" {
@@ -69,27 +70,6 @@ KSEQ_INIT(gzFile, gzread)
 
 
 namespace goetia {
-
-struct NoMoreReadsAvailable : public  GoetiaFileException {
-    explicit NoMoreReadsAvailable(const std::string& msg) :
-        GoetiaFileException(msg) {}
-    NoMoreReadsAvailable() :
-        GoetiaFileException("No more reads available in this stream.") {}
-};
-
-struct InvalidRead : public  GoetiaException {
-    explicit InvalidRead(const std::string& msg) :
-        GoetiaException(msg) {}
-    InvalidRead() :
-        GoetiaException("Invalid FASTA/Q read") {}
-};
-
-struct InvalidReadPair : public  GoetiaException {
-    explicit InvalidReadPair(const std::string& msg) :
-        GoetiaException(msg) {}
-    InvalidReadPair() :
-        GoetiaException("Invalid read pair detected.") {}
-};
 
 
 template<class Alphabet = DNA_SIMPLE>
@@ -149,7 +129,7 @@ public:
 
     std::optional<Record> next() {
         if (is_complete()) {
-            throw NoMoreReadsAvailable();
+            throw std::out_of_range("No more reads available.");
         }
 
         Record record;
@@ -159,21 +139,15 @@ public:
         int stat = kseq_read(_kseq);
 
         if (stat >= 0) {
-            try {
-                Alphabet::validate(_kseq->seq.s, _kseq->seq.l);
-            } catch (InvalidCharacterException &e) {
+
+            if (!Alphabet::sanitize(_kseq->seq.s, _kseq->seq.l)) {
                 _spin_lock = 0;
                 ++_n_skipped;
                 if (_strict) {
-                    throw e;
+                    throw InvalidSequence(_n_parsed, _kseq->seq.s);
                 } else {
                     stat = -4;
                 }
-
-            } catch (std::exception& e) {
-                ++_n_skipped;
-                _spin_lock = 0;
-                throw e;
             }
 
             if (_kseq->seq.l < _min_length) {
@@ -204,11 +178,11 @@ public:
 
         if (stat == -2) {
             ++_n_skipped;
-            throw InvalidRead("Sequence and quality lengths differ");
+            throw InvalidRecord(_n_parsed, _kseq->seq.s);
         }
 
         if (stat == -3) {
-            throw GoetiaFileException("Error reading stream.");
+            throw StreamReadError(_n_parsed, _filename);
         }
 
         if (stat == -4) {
@@ -271,7 +245,7 @@ public:
 
     bool is_complete() const {
         if (left_parser->is_complete() != right_parser->is_complete()) {
-            throw GoetiaException("Mismatched split paired files.");
+            throw InvalidPairedStream();
         }
         return left_parser->is_complete();
     }
@@ -279,7 +253,7 @@ public:
     RecordPair next() {
 
         if (is_complete()) {
-            throw NoMoreReadsAvailable();
+            throw std::out_of_range("No more reads available.");
         }
 
         std::optional<Record> left, right;
@@ -287,17 +261,17 @@ public:
         
         try {
             left = this->left_parser->next();
-        } catch (InvalidCharacterException) {
+        } catch (InvalidSequence) {
             left_exc_ptr = std::current_exception();
-        } catch (InvalidRead) {
+        } catch (InvalidRecord) {
             left_exc_ptr = std::current_exception();
         }
 
         try {
             right = this->right_parser->next();
-        } catch (InvalidCharacterException) {
+        } catch (InvalidSequence) {
             right_exc_ptr = std::current_exception();
-        } catch (InvalidRead) {
+        } catch (InvalidRecord) {
             right_exc_ptr = std::current_exception();
         }
 
@@ -313,7 +287,9 @@ public:
         if (this->_force_name_match && left && right) {
             if (!check_is_pair(left.value().name, right.value().name)) {
                 if (_strict) {
-                    throw GoetiaException("Unpaired reads");
+                    throw InvalidRecordPair(this->left_parser->n_parsed(),
+                                            left.value().name,
+                                            right.value().name);
                 } else {
                     _n_skipped += 2;
                     return {{}, {}};
@@ -332,6 +308,7 @@ public:
         return left_parser->n_parsed() + right_parser->n_parsed();
     }
 };
+
 
 extern template class goetia::FastxParser<goetia::DNA_SIMPLE>;
 extern template class goetia::FastxParser<goetia::DNAN_SIMPLE>;

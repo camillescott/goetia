@@ -11,6 +11,7 @@ import sys
 import pytest
 
 from goetia import libgoetia
+from goetia.storage import PHMapStorage
 
 from .utils import *
 from .test_cdbg import compactor, compactor_type
@@ -31,7 +32,7 @@ def solid_compactor(graph, compactor, compactor_type, min_abund):
     return _solid_compactor
 
 
-@using(hasher_type=libgoetia.FwdLemireShifter)
+@using(hasher_type=libgoetia.FwdLemireShifter, storage_type=PHMapStorage)
 class TestFindSolidSegments:
 
     @using(ksize=21, length=100, min_abund=2)

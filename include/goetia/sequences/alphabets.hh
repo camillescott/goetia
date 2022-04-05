@@ -14,7 +14,8 @@
 #include <string>
 #include <string_view>
 
-#include "goetia/sequences/exceptions.hh"
+#include "goetia/goetia.hh"
+
 
 #define rc_tbl \
   "                                                                "\
@@ -38,40 +39,34 @@ struct Alphabet {
         return Derived::_validate(c);
     }
 
-    static void validate(char * sequence, const size_t length) {
+    static const bool sanitize(char * sequence, const size_t length) {
+        bool is_valid = true;
+
         for (size_t i = 0; i < length; ++i) {
             const char validated = validate(sequence[i]);
             if (validated == '\0') {
-                std::ostringstream os;
-                os << "Alphabet: Invalid symbol '"
-                   << sequence[i] << "' in sequence "
-                   << std::string(sequence, length)
-                   << " (alphabet=" << SYMBOLS << ").";
-
-                throw InvalidCharacterException(os.str().c_str());
+                is_valid = false;
             } else {
                 sequence[i] = validated;
             }
         }
+
+        return is_valid;
     }
 
-    static void validate(const char * sequence, const size_t length) {
+    static bool validate(const char * sequence, const size_t length) {
         for (size_t i = 0; i < length; ++i) {
             const char validated = validate(sequence[i]);
             if (validated == '\0') {
-                std::ostringstream os;
-                os << "Alphabet: Invalid symbol '"
-                   << sequence[i] << "' in sequence "
-                   << std::string(sequence, length)
-                   << " (alphabet=" << SYMBOLS << ").";
-
-                throw InvalidCharacterException(os.str().c_str());
+                return false;
             } 
         }
+
+        return true;
     }
 
     template <typename Iterable>
-    static const bool is_valid(const Iterable& sequence) {
+    static const bool validate(const Iterable& sequence) {
         for (const auto& symbol : sequence) {
             if (validate(symbol) == '\0') {
                 return false;

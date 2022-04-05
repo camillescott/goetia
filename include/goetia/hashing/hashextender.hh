@@ -123,7 +123,7 @@ public:
     hash_type shift_left(const char& c) {
 
         if (!this->is_loaded()) {
-            throw UninitializedShifterException();
+            throw UninitializedShifter();
         }
 
         return this->shift_left_impl(c);
@@ -144,7 +144,7 @@ public:
     std::vector<shift_left_type> left_extensions() {
 
         if (!this->is_loaded()) {
-            throw UninitializedShifterException();
+            throw UninitializedShifter();
         }
 
         return this->left_extensions_impl();
@@ -160,7 +160,7 @@ public:
      */
     hash_type shift_right(const char& c){
         if (!this->is_loaded()) {
-            throw UninitializedShifterException();
+            throw UninitializedShifter();
         }
 
         return this->shift_right_impl(c);
@@ -182,7 +182,7 @@ public:
     std::vector<shift_right_type> right_extensions() {
 
         if (!this->is_loaded()) {
-            throw UninitializedShifterException();
+            throw UninitializedShifter();
         }
 
         return this->right_extensions_impl();
@@ -197,7 +197,7 @@ public:
      */
     hash_type set_cursor(const std::string& sequence) {
         if (sequence.length() < K) {
-            throw InvalidSequenceException("Sequence must at least length K");
+            throw SequenceTooShort(sequence);
         }
         return set_cursor(sequence.c_str());
     }
@@ -216,7 +216,7 @@ public:
 
     hash_type hash_base(const std::string& sequence) {
         if (sequence.length() < K) {
-            throw InvalidSequenceException("Sequence must at least length K");
+            throw SequenceTooShort(sequence);
         }
 
         return set_cursor(sequence);

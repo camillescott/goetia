@@ -11,6 +11,7 @@
 
 #include "goetia/goetia.hh"
 #include "goetia/meta.hh"
+#include "goetia/errors.hh"
 #include "goetia/sequences/alphabets.hh"
 #include "goetia/hashing/canonical.hh"
 
@@ -27,9 +28,8 @@ protected:
     CyclicHash<value_type> hasher;
 
     explicit LemireShifterPolicyBase(uint16_t K)
-        : hasher(K) {
-        
-        //std::cout << "END RollingBase(K) ctor " << this << std::endl;
+        : hasher(K)
+    {
     }
 
     LemireShifterPolicyBase() = delete;
@@ -70,9 +70,8 @@ public:
         this->hasher.reset();
         for (uint16_t i = 0; i < K; ++i) {
             if (sequence[i] == '\0') {
-                throw InvalidSequenceException("Encountered null terminator in k-mer!");
+                throw SequenceTooShort(sequence);
             }
-            assert(sequence[i] != '\0');
             this->hasher.eat(sequence[i]);
         }
         return get_impl();
@@ -90,7 +89,6 @@ public:
     }
 
     hash_type get_impl() {
-        //std::cout << "RollingHash: get_impl " << this->hasher.hashvalue << std::endl;;
         return {this->hasher.hashvalue};
     }
 
@@ -111,13 +109,11 @@ protected:
         : LemireShifterPolicyBase<HashType>(K),
           K(K)
     {   
-        //std::cout << "END LemireShifterPolicy(K) ctor " << this << " / " << static_cast<LemireShifterPolicyBase<HashType>*>(this) << std::endl;
     }
 
     explicit LemireShifterPolicy(const LemireShifterPolicy& other)
         : LemireShifterPolicy(other.K)
     {
-        //std::cout << "END LemireShifterPolicy(other) ctor " << this << " / " << static_cast<LemireShifterPolicyBase<HashType>*>(this) << std::endl;
     }
 
     LemireShifterPolicy() = delete;
@@ -163,13 +159,8 @@ LemireShifterPolicy<Canonical<uint64_t>>
     while (i < K) {
         hasher.eat(*(begin));
         rc_hasher.eat(alphabet::complement(*(end)));
-
-        //std::cout << "eat: " << *begin << " fwd, " << *end << " rc ("
-        //          << alphabet::complement(*(end)) << ")" << std::endl;
-
         ++begin;
         --end;
-
         ++i;
     }
 
@@ -186,7 +177,7 @@ LemireShifterPolicy<Canonical<uint64_t>>
 
     for (uint16_t i = 0; i < K; ++i) {
         if (sequence[i] == '\0') {
-            throw InvalidSequenceException("Encountered null terminator in k-mer!");
+            throw SequenceTooShort(sequence);
         }
         assert(sequence[i] != '\0');
         hasher.eat(sequence[i]);
