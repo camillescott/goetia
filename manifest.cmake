@@ -1,5 +1,6 @@
 set(_headers
     include/goetia/benchmarks/bench_storage.hh
+    include/goetia/errors.hh
     include/goetia/goetia.hh
     include/goetia/cdbg/cdbg.hh
     include/goetia/cdbg/cdbg_types.hh
@@ -106,6 +107,7 @@ set(_sources
 )
 
 set(_interface_headers
+    include/goetia/errors.hh
     include/goetia/goetia.hh
     include/goetia/cdbg/cdbg.hh
     include/goetia/cdbg/cdbg_types.hh

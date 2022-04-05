@@ -20,10 +20,12 @@ namespace goetia {
     template class dBG<BitStorage, FwdUnikmerShifter>;
     template class dBG<BitStorage, CanUnikmerShifter>;
 
+    /*
     template class dBG<SparseppSetStorage, FwdLemireShifter>;
     template class dBG<SparseppSetStorage, CanLemireShifter>;
     template class dBG<SparseppSetStorage, FwdUnikmerShifter>;
     template class dBG<SparseppSetStorage, CanUnikmerShifter>;
+    */
 
     template class dBG<ByteStorage, FwdLemireShifter>;
     template class dBG<ByteStorage, CanLemireShifter>;
@@ -40,26 +42,29 @@ namespace goetia {
     template class dBG<QFStorage, FwdUnikmerShifter>;
     template class dBG<QFStorage, CanUnikmerShifter>;
 
-    template class goetia::dBG<goetia::PHMapStorage, goetia::FwdLemireShifter>;
-    template class goetia::dBG<goetia::PHMapStorage, goetia::CanLemireShifter>;
-    template class goetia::dBG<goetia::PHMapStorage, goetia::FwdUnikmerShifter>;
-    template class goetia::dBG<goetia::PHMapStorage, goetia::CanUnikmerShifter>;
+    template class dBG<goetia::PHMapStorage, goetia::FwdLemireShifter>;
+    template class dBG<goetia::PHMapStorage, goetia::CanLemireShifter>;
+    template class dBG<goetia::PHMapStorage, goetia::FwdUnikmerShifter>;
+    template class dBG<goetia::PHMapStorage, goetia::CanUnikmerShifter>;
    
-    template class goetia::dBG<goetia::BTreeStorage, goetia::FwdLemireShifter>;
-    template class goetia::dBG<goetia::BTreeStorage, goetia::CanLemireShifter>;
-    template class goetia::dBG<goetia::BTreeStorage, goetia::FwdUnikmerShifter>;
-    template class goetia::dBG<goetia::BTreeStorage, goetia::CanUnikmerShifter>;
-
+    /*
+    template class dBG<goetia::BTreeStorage, goetia::FwdLemireShifter>;
+    template class dBG<goetia::BTreeStorage, goetia::CanLemireShifter>;
+    template class dBG<goetia::BTreeStorage, goetia::FwdUnikmerShifter>;
+    template class dBG<goetia::BTreeStorage, goetia::CanUnikmerShifter>;
+    */
 
     template class KmerIterator<dBG<BitStorage, FwdLemireShifter>>;
     template class KmerIterator<dBG<BitStorage, CanLemireShifter>>;
     template class KmerIterator<dBG<BitStorage, FwdUnikmerShifter>>;
     template class KmerIterator<dBG<BitStorage, CanUnikmerShifter>>;
 
+    /*
     template class KmerIterator<dBG<SparseppSetStorage, FwdLemireShifter>>;
     template class KmerIterator<dBG<SparseppSetStorage, CanLemireShifter>>;
     template class KmerIterator<dBG<SparseppSetStorage, FwdUnikmerShifter>>;
     template class KmerIterator<dBG<SparseppSetStorage, CanUnikmerShifter>>;
+    */
 
     template class KmerIterator<dBG<ByteStorage, FwdLemireShifter>>;
     template class KmerIterator<dBG<ByteStorage, CanLemireShifter>>;
@@ -81,10 +86,11 @@ namespace goetia {
     template class goetia::KmerIterator<goetia::dBG<goetia::PHMapStorage, goetia::FwdUnikmerShifter>>;
     template class goetia::KmerIterator<goetia::dBG<goetia::PHMapStorage, goetia::CanUnikmerShifter>>;
 
+    /*
     template class goetia::KmerIterator<goetia::dBG<goetia::BTreeStorage, goetia::FwdLemireShifter>>;
     template class goetia::KmerIterator<goetia::dBG<goetia::BTreeStorage, goetia::CanLemireShifter>>;
     template class goetia::KmerIterator<goetia::dBG<goetia::BTreeStorage, goetia::FwdUnikmerShifter>>;
     template class goetia::KmerIterator<goetia::dBG<goetia::BTreeStorage, goetia::CanUnikmerShifter>>;
-
+    */
 
 }

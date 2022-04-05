@@ -6,8 +6,11 @@
  * Date   : 21.10.2019
  */
 
+#include <errno.h>
+
 #include "goetia/parsing/readers.hh"
 #include "goetia/sequences/alphabets.hh"
+
 
 namespace goetia {
 
@@ -26,6 +29,9 @@ FastxParser<Alphabet>::FastxParser(const std::string& infile,
         _min_length(min_length)
 {
     _fp = gzopen(_filename.c_str(), "r");
+    if (_fp == Z_NULL) {
+        throw InvalidStream(strerror(errno));
+    }
     _kseq = kseq_init(_fp);
 
     __asm__ __volatile__ ("" ::: "memory");

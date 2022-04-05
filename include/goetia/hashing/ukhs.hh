@@ -18,6 +18,7 @@
 #include <utility>
 #include <limits>
 #include <vector>
+#include <stdexcept>
 #include <string>
 
 #include "goetia/goetia.hh"
@@ -249,7 +250,7 @@ protected:
         //    throw GoetiaException("Window should contain unikmer.");
         //}
         if (window_unikmers.size() ==  0) {
-            throw HashShifterException("No unikmers in window!");
+            throw std::domain_error("No unikmers in window!");
         }
         return *std::min_element(std::begin(window_unikmers),
                                  std::end(window_unikmers));
@@ -502,10 +503,10 @@ protected:
            ukhs_map       (std::move(ukhs))
     {
         if (ukhs_map->W != K) {
-            throw GoetiaException("Shifter K does not match UKHS::Map W.");
+            throw std::invalid_argument("Shifter K does not match UKHS::Map W.");
         }
         if (ukhs_map->K != unikmer_K) {
-            throw GoetiaException("Shifter unikmer_K does not match UKHS::Map K.");
+            throw std::invalid_argument("Shifter unikmer_K does not match UKHS::Map K.");
         }
     }
 

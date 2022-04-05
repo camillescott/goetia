@@ -22,10 +22,10 @@
 #include <string>
 
 #include "goetia/goetia.hh"
+#include "goetia/errors.hh"
 #include "goetia/metrics.hh"
 #include "goetia/parsing/parsing.hh"
 #include "goetia/parsing/readers.hh"
-#include "goetia/sequences/exceptions.hh"
 
 
 namespace goetia {
@@ -151,7 +151,7 @@ public:
         try {
             auto record = reader.next();
             return record;
-        } catch (InvalidCharacterException &e) {
+        } catch (InvalidSequence &e) {
             if (_verbose) {
                 std::cerr << "WARNING: Bad sequence encountered at "
                           << this->n_sequences()
@@ -159,7 +159,7 @@ public:
                           << e.what() << std::endl;
             }
             return {};
-        }  catch (InvalidRead& e) {
+        }  catch (InvalidRecord& e) {
             if (_verbose) {
                 std::cerr << "WARNING: Invalid sequence encountered at "
                           << this->n_sequences()
@@ -304,7 +304,7 @@ public:
     uint64_t process_sequence(const Record& sequence) {
         try {
             return inserter->insert_sequence(sequence.sequence);
-        } catch (SequenceLengthException &e) {
+        } catch (SequenceTooShort& e) {
             if (this->_verbose) {
                 std::cerr << "WARNING: Skipped sequence that was too short: sequence number "
                           << this->n_sequences() << " with sequence "
@@ -313,7 +313,7 @@ public:
                           << std::endl;
             }
             return 0;
-        } catch (InvalidCharacterException& e) {
+        } catch (InvalidSequence& e) {
             if (this->_verbose) {
                 std::cerr << "WARNING: got an invalid character exception: sequence number "
                           << this->n_sequences() << " with sequence "
@@ -391,7 +391,7 @@ public:
         uint64_t time_taken = 0;
         try {
             std::tie(passed, time_taken) = filter->filter_sequence(sequence.sequence);
-        } catch (SequenceLengthException &e) {
+        } catch (SequenceTooShort& e) {
             if (this->_verbose) {
                 std::cerr << "WARNING: Skipped sequence that was too short: read "
                           << this->n_sequences() << " with sequence "
@@ -399,7 +399,7 @@ public:
                           << std::endl;
             }
             return 0;
-        } catch (InvalidCharacterException& e) {
+        } catch (InvalidSequence& e) {
             return 0;
         } catch (std::exception &e) {
             std::cerr << "ERROR: Exception thrown at " << this->n_sequences()

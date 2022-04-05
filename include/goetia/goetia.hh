@@ -11,7 +11,6 @@
 #define GOETIA_MISC_HH
 
 #include <cstdint>
-#include <exception>
 #include <string>
 #include <iostream>
 #include <iterator>
@@ -110,6 +109,32 @@ bool contains(std::vector<T> collection,
     return false;
 }
 
+/*
+ * from https://www.reedbeta.com/blog/python-like-enumerate-in-cpp17/
+ */
+template <typename T,
+          typename TIter = decltype(std::begin(std::declval<T>())),
+          typename = decltype(std::end(std::declval<T>()))>
+constexpr auto enumerate(T && iterable) {
+    struct iterator
+    {
+        size_t i;
+        TIter iter;
+        bool operator != (const iterator & other) const { return iter != other.iter; }
+        void operator ++ () { ++i; ++iter; }
+        auto operator * () const { return std::tie(i, *iter); }
+    };
+
+    struct iterable_wrapper
+    {
+        T iterable;
+        auto begin() { return iterator{ 0, std::begin(iterable) }; }
+        auto end() { return iterator{ 0, std::end(iterable) }; }
+    };
+
+    return iterable_wrapper{ std::forward<T>(iterable) };
+}
+
 
 /*
  * Adapted from make_from_tuple: https://en.cppreference.com/w/cpp/utility/make_from_tuple
@@ -135,47 +160,6 @@ template <typename... Args>
 auto make_tuple_from_tuple(std::tuple<Args...> model_tuple, Args&&... args) {
     return std::make_tuple(std::forward<Args>(args)...);
 }
-
-
-class GoetiaException : public std::exception {
-public:
-    explicit GoetiaException(const std::string& msg = "Generic goetia exception.")
-        : _msg(msg) { }
-
-    virtual ~GoetiaException() throw() { }
-    virtual const char* what() const throw ()
-    {
-        return _msg.c_str();
-    }
-
-protected:
-    const std::string _msg;
-};
-
-class GoetiaFileException: public GoetiaException {
-public:
-    explicit GoetiaFileException(const std::string& msg = "Error reading or writing file.")
-        : GoetiaException(msg) { }
-};
-
-
-class InvalidStream : public GoetiaFileException 
-{
-public:
-    InvalidStream()
-        : GoetiaFileException("Generic InvalidStream error") {}
-    explicit InvalidStream(const std::string& msg)
-        : GoetiaFileException(msg) {}
-};
-
-class StreamReadError : public GoetiaFileException
-{
-public:
-    StreamReadError()
-        : GoetiaFileException("Generic StreamReadError error") {}
-    explicit StreamReadError(const std::string& msg)
-        : GoetiaFileException(msg) {}
-};
 
 
 template <typename T>

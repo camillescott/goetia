@@ -17,11 +17,13 @@
 #ifndef GOETIA_KMERITERATOR_HH
 #define GOETIA_KMERITERATOR_HH
 
+#include <iterator>
 #include <string>
+#include <string_view>
 
 #include "goetia/goetia.hh"
 #include "goetia/hashing/hashshifter.hh"
-#include "goetia/sequences/exceptions.hh"
+#include "goetia/errors.hh"
 
 #include "goetia/hashing/shifter_types.hh"
 
@@ -55,7 +57,7 @@ public:
     {
 
         if (_seq.length() < K) {
-            throw SequenceLengthException("Sequence must have length >= K");
+            throw SequenceTooShort(seq);
         }
         shifter = new ShifterType(seq, K, std::forward<Args>(args)...);
     }
@@ -70,7 +72,7 @@ public:
           shifter(shifter) 
     {
         if (_seq.length() < K) {
-            throw SequenceLengthException("Sequence must have length >= K");
+            throw SequenceTooShort(seq);
         }
         shifter->hash_base(_seq);
     }
@@ -85,7 +87,7 @@ public:
     {
 
         if (_seq.length() < K) {
-            throw SequenceLengthException("Sequence must have length >= K");
+            throw SequenceTooShort(seq);
         }
         shifter = new ShifterType(shifter_proto);
         shifter->hash_base(_seq);
@@ -113,13 +115,25 @@ public:
 
         if (done()) {
             //throw InvalidCharacterException("past end of iterator");
-            return shifter->get();
+            return hash_type();
         }
 
         auto ret = shifter->shift_right(_seq[index - 1], _seq[index + K - 1]);
         index += 1;
 
         return ret;
+    }
+    
+    hash_type get() {
+        if (!_initialized) {
+            return first();
+        }
+
+        if (done()) {
+            return hash_type();
+        }
+
+        return shifter->get();
     }
 
     __attribute__((visibility("default")))
@@ -139,6 +153,98 @@ public:
         return index + K - 1;
     }
 };
+
+
+template <typename ShifterType>
+struct kmer_iterator {
+    using value_type        = typename ShifterType::hash_type;
+    using iterator_category = std::input_iterator_tag;
+    using difference_type   = int64_t;
+    using reference         = const value_type;
+
+    kmer_iterator(ShifterType * shifter, size_t start, const std::string_view sequence)
+        : shifter(shifter), sequence(sequence), index(start)
+    {
+        if (!_out_of_bounds()) {
+            shifter->hash_base(sequence.begin() + index, 
+                               sequence.begin() + index + shifter->K);
+        }
+    }
+
+    reference operator*() const {
+        if (_out_of_bounds()) {
+            return value_type();
+        }
+        return shifter->get();
+    }
+
+    kmer_iterator& operator++() {
+        index += 1;
+        if (!_out_of_bounds()) {
+            shifter->shift_right(sequence[index - 1],
+                                 sequence[index + shifter->K - 1]);
+        }
+        return *this;
+    }
+
+    kmer_iterator operator++(int) {
+        auto tmp = *this;
+        ++(*this);
+        return tmp;
+    }
+
+    friend bool operator==(const kmer_iterator& a, const kmer_iterator& b) {
+        return (*a == *b) && (a.shifter == b.shifter);
+    }
+
+    friend bool operator!=(const kmer_iterator& a, const kmer_iterator& b) {
+        return (*a != *b) || (a.shifter != b.shifter);
+    }
+
+private:
+    ShifterType * shifter;
+    const std::string_view sequence;
+    size_t index;
+
+    const bool _out_of_bounds() const {
+        return index + shifter->K > sequence.length();
+    }
+};
+
+
+template <typename ShifterType,
+          typename... Args>
+struct kmer_iterator_wrapper {
+    const std::string_view sequence;
+    ShifterType shifter;
+
+    kmer_iterator_wrapper(const std::string_view sequence,
+                          uint16_t K,
+                          Args&&... args)
+        : sequence(sequence),
+          shifter(K, std::forward<Args>(args)...) {}
+
+    auto begin() {
+        return kmer_iterator(&shifter, 0, sequence);
+    }
+
+    auto end() {
+        return kmer_iterator(&shifter, sequence.length() - shifter.K + 1, sequence);
+    }
+};
+
+
+template <typename ShifterType,
+          typename... Args>
+constexpr auto hash_sequence(const std::string_view sequence,
+                             uint16_t K,
+                             Args&&... args) {
+
+    return kmer_iterator_wrapper<ShifterType>{ sequence, K, std::forward<Args>(args)... };
+}
+
+
+void test_kmer_iterator();
 
 
 extern template class KmerIterator<FwdLemireShifter>;

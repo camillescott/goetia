@@ -14,6 +14,7 @@
 // it breaks conda builds with cppyy=1.5.5
 #define _GLIBCXX_CONDITION_VARIABLE 1
 
+#include "goetia/errors.hh"
 #include "goetia/goetia.hh"
 #include "goetia/meta.hh"
 
@@ -27,7 +28,7 @@
 #include "goetia/storage/btreestorage.hh"
 #include "goetia/storage/phmapstorage.hh"
 #include "goetia/storage/sparsepp/spp.h"
-//
+
 #include "goetia/hashing/kmeriterator.hh"
 #include "goetia/hashing/kmer_span.hh"
 #include "goetia/hashing/hashshifter.hh"
@@ -38,7 +39,6 @@
 #include "goetia/hashing/canonical.hh"
 
 #include "goetia/sequences/alphabets.hh"
-#include "goetia/sequences/exceptions.hh"
 
 #include "goetia/parsing/parsing.hh"
 #include "goetia/parsing/readers.hh"

@@ -66,7 +66,7 @@ Compactor::_induce_decision_nodes(std::deque<DecisionKmer>& induced_decision_kme
         }
         
         if (n_attempts > max_attempts) {
-            throw GoetiaException("Stuck in split attempt loop, failing.");
+            throw std::runtime_error("Stuck in split attempt loop, failing.");
         }
     }
 }
@@ -392,7 +392,7 @@ Compactor::_try_split_unode_right(kmer_type root,
 }
 
 
-template class goetia::StreamingCompactor<goetia::dBG<goetia::SparseppSetStorage, goetia::FwdLemireShifter>>;
+//template class goetia::StreamingCompactor<goetia::dBG<goetia::SparseppSetStorage, goetia::FwdLemireShifter>>;
 template class goetia::StreamingCompactor<goetia::dBG<goetia::PHMapStorage, goetia::FwdLemireShifter>>;
 // template class goetia::StreamingCompactor<goetia::dBG<goetia::BitStorage, goetia::FwdLemireShifter>>;
 // template class goetia::StreamingCompactor<goetia::dBG<goetia::ByteStorage, goetia::FwdLemireShifter>>;

@@ -30,7 +30,7 @@ struct ReservoirSample {
 
 private:
 
-	std::default_random_engine gen;
+  	std::default_random_engine gen;
     std::vector<T>             samples;
     size_t                     n_sampled;
 
@@ -38,7 +38,7 @@ public:
 
     ReservoirSample(size_t sample_size)
         : gen       (std::random_device()()),
- 		  samples   (sample_size, 0),
+ 		      samples   (sample_size, 0),
           n_sampled (0)
     {
         
@@ -73,7 +73,6 @@ public:
         std::fill(samples.begin(), samples.end(), 0);
         n_sampled = 0;
     }
-
 };
 
 

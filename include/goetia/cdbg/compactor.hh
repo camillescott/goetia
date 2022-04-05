@@ -12,6 +12,7 @@
 #include <assert.h>
 #include <cstdint>
 
+#include "goetia/errors.hh"
 #include "goetia/traversal/unitig_walker.hh"
 #include "goetia/hashing/kmeriterator.hh"
 #include "goetia/dbg.hh"
@@ -1037,13 +1038,13 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
 
             try {
                 compactor->insert_sequence(read.sequence);
-            } catch (InvalidCharacterException &e) {
+            } catch (InvalidSequence& e) {
                 std::cerr << "WARNING: Bad sequence encountered at "
                           << this->_n_reads << ": "
                           << read.sequence << ", exception was "
                           << e.what() << std::endl;
                 return 0;
-            } catch (SequenceLengthException &e) {
+            } catch (SequenceTooShort& e) {
                 std::cerr << "NOTE: Skipped sequence that was too short: read "
                           << this->_n_reads << " with sequence "
                           << read.sequence
@@ -1159,14 +1160,14 @@ struct StreamingCompactor<GraphType<StorageType, ShifterType>> {
 
 }
 
-extern template class goetia::StreamingCompactor<goetia::dBG<goetia::SparseppSetStorage, goetia::FwdLemireShifter>>;
+//extern template class goetia::StreamingCompactor<goetia::dBG<goetia::SparseppSetStorage, goetia::FwdLemireShifter>>;
 extern template class goetia::StreamingCompactor<goetia::dBG<goetia::PHMapStorage, goetia::FwdLemireShifter>>;
 // extern template class goetia::StreamingCompactor<goetia::dBG<goetia::BitStorage, goetia::FwdLemireShifter>>;
 // extern template class goetia::StreamingCompactor<goetia::dBG<goetia::ByteStorage, goetia::FwdLemireShifter>>;
 // extern template class goetia::StreamingCompactor<goetia::dBG<goetia::NibbleStorage, goetia::FwdLemireShifter>>;
 // extern template class goetia::StreamingCompactor<goetia::dBG<goetia::QFStorage, goetia::FwdLemireShifter>>;
 
-extern template class std::deque<goetia::StreamingCompactor<goetia::dBG<goetia::SparseppSetStorage, goetia::FwdLemireShifter>>>;
+//extern template class std::deque<goetia::StreamingCompactor<goetia::dBG<goetia::SparseppSetStorage, goetia::FwdLemireShifter>>>;
 extern template class std::deque<goetia::StreamingCompactor<goetia::dBG<goetia::PHMapStorage, goetia::FwdLemireShifter>>>;
 
 

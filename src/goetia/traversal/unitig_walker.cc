@@ -19,10 +19,12 @@ namespace goetia {
     template class UnitigWalker<dBG<BitStorage, FwdUnikmerShifter>>;
     template class UnitigWalker<dBG<BitStorage, CanUnikmerShifter>>;
 
+    /*
     template class UnitigWalker<dBG<SparseppSetStorage, FwdLemireShifter>>;
     template class UnitigWalker<dBG<SparseppSetStorage, CanLemireShifter>>;
     template class UnitigWalker<dBG<SparseppSetStorage, FwdUnikmerShifter>>;
     template class UnitigWalker<dBG<SparseppSetStorage, CanUnikmerShifter>>;
+    */
 
     template class UnitigWalker<dBG<ByteStorage, FwdLemireShifter>>;
     template class UnitigWalker<dBG<ByteStorage, CanLemireShifter>>;
@@ -44,11 +46,11 @@ namespace goetia {
     template class goetia::UnitigWalker<goetia::dBG<goetia::PHMapStorage, goetia::FwdUnikmerShifter>>;
     template class goetia::UnitigWalker<goetia::dBG<goetia::PHMapStorage, goetia::CanUnikmerShifter>>;
 
+    /*
     template class goetia::UnitigWalker<goetia::dBG<goetia::BTreeStorage, goetia::FwdLemireShifter>>;
     template class goetia::UnitigWalker<goetia::dBG<goetia::BTreeStorage, goetia::CanLemireShifter>>;
     template class goetia::UnitigWalker<goetia::dBG<goetia::BTreeStorage, goetia::FwdUnikmerShifter>>;
     template class goetia::UnitigWalker<goetia::dBG<goetia::BTreeStorage, goetia::CanUnikmerShifter>>;
-
-
+    */
 
 };

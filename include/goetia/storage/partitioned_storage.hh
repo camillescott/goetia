@@ -5,18 +5,11 @@
  * Author : Camille Scott <camille.scott.w@gmail.com>
  * Date   : 30.08.2019
  */
-/* partitioned_storage.hh -- storage classes for the goetia dbg
- *
- * Copyright (C) 2018 Camille Scott
- * All rights reserved.
- *
- * This software may be modified and distributed under the terms
- * of the MIT license.  See the LICENSE file for details.
- */
 
 #ifndef GOETIA_PARTITIONEDSTORAGE_HH
 #define GOETIA_PARTITIONEDSTORAGE_HH
 
+#include "goetia/errors.hh"
 #include "goetia/goetia.hh"
 #include "goetia/storage/storage.hh"
 #include "goetia/storage/storage_types.hh"
@@ -150,7 +143,7 @@ public:
         if (partition < n_partitions) {
             return partitions[partition].get();
         } else {
-            throw GoetiaException("Invalid storage partition: " + std::to_string(partition));
+            throw InvalidPartition(partition);
         }
     }
 
@@ -160,15 +153,15 @@ public:
 
 
     const bool insert(value_type khash ) {
-        throw GoetiaException("Method not available!");
+        throw NotImplemented();
     }
 
     const count_t insert_and_query(value_type khash) {
-        throw GoetiaException("Method not available!");
+        throw NotImplemented();
     }
 
     const count_t query(value_type khash) const {
-        throw GoetiaException("Method not available!");
+        throw NotImplemented();
     }
 
     std::vector<size_t> get_partition_counts() {

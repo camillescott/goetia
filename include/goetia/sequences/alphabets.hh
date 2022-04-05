@@ -14,7 +14,8 @@
 #include <string>
 #include <string_view>
 
-#include "goetia/sequences/exceptions.hh"
+#include "goetia/goetia.hh"
+
 
 #define rc_tbl \
   "                                                                "\
@@ -38,36 +39,85 @@ struct Alphabet {
         return Derived::_validate(c);
     }
 
-    static void validate(char * sequence, const size_t length) {
+    static const bool sanitize(char * sequence, const size_t length) {
+        bool is_valid = true;
+
         for (size_t i = 0; i < length; ++i) {
             const char validated = validate(sequence[i]);
             if (validated == '\0') {
-                std::ostringstream os;
-                os << "Alphabet: Invalid symbol '"
-                   << sequence[i] << "' in sequence "
-                   << std::string(sequence, length)
-                   << " (alphabet=" << SYMBOLS << ").";
-
-                throw InvalidCharacterException(os.str().c_str());
+                is_valid = false;
             } else {
                 sequence[i] = validated;
             }
         }
+
+        return is_valid;
     }
 
-    static void validate(const char * sequence, const size_t length) {
+    static bool validate(const char * sequence, const size_t length) {
         for (size_t i = 0; i < length; ++i) {
             const char validated = validate(sequence[i]);
             if (validated == '\0') {
-                std::ostringstream os;
-                os << "Alphabet: Invalid symbol '"
-                   << sequence[i] << "' in sequence "
-                   << std::string(sequence, length)
-                   << " (alphabet=" << SYMBOLS << ").";
-
-                throw InvalidCharacterException(os.str().c_str());
+                return false;
             } 
         }
+
+        return true;
+    }
+
+    template <typename Iterable>
+    static const bool validate(const Iterable& sequence) {
+        for (const auto& symbol : sequence) {
+            if (validate(symbol) == '\0') {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    static std::vector<std::string_view> find_valid_windows(const std::string_view sequence,
+                                                            size_t min_size = 1) {
+
+        std::vector<std::string_view> windows;
+        int prev_invalid = -1;
+
+        for (const auto [i, symbol] : enumerate(sequence)) {
+            if (validate(symbol) == '\0') {
+                if ((i - prev_invalid) > min_size) {
+                    windows.push_back(sequence.substr(prev_invalid + 1, i - prev_invalid - 1));
+                }
+                prev_invalid = i;
+            }
+        }
+        if ((sequence.length() - prev_invalid) > min_size) {
+            windows.push_back(sequence.substr(prev_invalid + 1, min_size));
+        }
+
+        return windows;
+    }
+
+    static std::vector<std::string_view> find_and_sanitize_valid_windows(std::string& sequence,
+                                                                         size_t min_size = 1) {
+
+        std::vector<std::string_view> windows;
+        int prev_invalid = -1;
+
+        for (const auto [i, symbol] : enumerate(sequence)) {
+            auto validated = validate(symbol);
+            if (validated == '\0') {
+                if ((i - prev_invalid) > min_size) {
+                    windows.emplace_back(sequence.c_str() + prev_invalid + 1, i - prev_invalid - 1);
+                }
+                prev_invalid = i;
+            } else {
+                sequence[i] = validated;
+            }
+        }
+        if ((sequence.length() - prev_invalid) > min_size) {
+            windows.emplace_back(sequence.c_str() + prev_invalid + 1, sequence.length() - prev_invalid - 1);
+        }
+
+        return windows;
     }
     
     static const char complement(const char c) {

@@ -33,13 +33,6 @@
 namespace goetia {
 
 
-class IncompatibleSketch : public GoetiaException {
-public:
-    explicit IncompatibleSketch(const std::string& msg = "Incompatible sketches.")
-        : GoetiaException(msg) { }
-};
-
-
 template <class StorageType, class HashType>
 struct UnikmerSketch {
 
@@ -86,15 +79,15 @@ struct UnikmerSketch {
         }
 
         static std::shared_ptr<Sketch> build(uint16_t W,
-                                                uint16_t K,
-                                                std::shared_ptr<ukhs_type> ukhs_map) {
+                                             uint16_t K,
+                                             std::shared_ptr<ukhs_type> ukhs_map) {
             return std::make_shared<Sketch>(W, K, ukhs_map, storage_traits::default_params);
         }
 
         static std::shared_ptr<Sketch> build(uint16_t W,
-                                                uint16_t K,
-                                                std::shared_ptr<ukhs_type> ukhs_map,
-                                                const typename storage_traits::params_type& storage_params) {
+                                             uint16_t K,
+                                             std::shared_ptr<ukhs_type> ukhs_map,
+                                             const typename storage_traits::params_type& storage_params) {
             return std::make_shared<Sketch>(W, K, ukhs_map, storage_params);
         }
 
